@@ -91,6 +91,7 @@ pass "representative binary patch bytes match docs"
 for path in \
   README.md \
   AGENTS.md \
+  docs/README.md \
   docs/share-readiness.md \
   docs/distribution.md \
   docs/verified-on-this-machine.md \

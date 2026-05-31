@@ -136,6 +136,7 @@ the detailed command/result table.
 
 | Doc | Use it for |
 | --- | --- |
+| [docs/README.md](docs/README.md) | Documentation index grouped by task. |
 | [docs/running.md](docs/running.md) | Windows, CrossOver, Wine launch commands and test matrix. |
 | [docs/share-readiness.md](docs/share-readiness.md) | What is ready to share and what still needs proof. |
 | [docs/crossover-macos.md](docs/crossover-macos.md) | Practical CrossOver bottle setup and troubleshooting. |
