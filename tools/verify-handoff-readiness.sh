@@ -130,6 +130,7 @@ expect_share_status "verify-security-scan-results.sh --results security-scan-res
 expect_share_status "Manual Gameplay Results" "share status missing manual gameplay results section"
 expect_share_status "| Results doc | \`docs/manual-gameplay-verification.md\` |" "share status missing manual gameplay doc"
 expect_share_status "verify-manual-gameplay-results.sh --doc docs/manual-gameplay-verification.md" "share status missing manual gameplay validation command"
+expect_share_status "verify-manual-gameplay-results.sh --doc docs/manual-gameplay-verification.md --allow-incomplete --show-missing" "share status missing manual gameplay gap command"
 if [ ! -f security-scan-results.tsv ]; then
   security_results_status="missing; no scanner results recorded"
 elif tools/verify-security-scan-results.sh --results security-scan-results.tsv >/dev/null 2>&1; then

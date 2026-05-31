@@ -161,6 +161,7 @@ printf '| --- | --- |\n'
 printf '| Results doc | `%s` |\n' "$manual_gameplay_doc"
 printf '| Validation | %s |\n' "$(manual_gameplay_status)"
 printf '| Completion command | `tools/verify-manual-gameplay-results.sh --doc %s` |\n' "$manual_gameplay_doc"
+printf '| Gap command | `tools/verify-manual-gameplay-results.sh --doc %s --allow-incomplete --show-missing` |\n' "$manual_gameplay_doc"
 
 printf '\n## Final Gates\n\n'
 printf '| Gate | Current status |\n'
