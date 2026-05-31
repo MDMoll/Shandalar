@@ -82,6 +82,8 @@ path, because root and `Program/` copies differ by hash. See
 | `Manalink3/` | A packaged Manalink 3 style distribution snapshot with its own `Program/`, `Mods/`, and docs. |
 | `magic_updater/` | Perl/CSV card data updater tooling. |
 | `PlayDeckAnalyser/` | Separate deck analysis utility and configuration. |
+| `docs/generated/` | Preserved command output and evidence snapshots for investigations; start with the concise docs first. |
+| `local/` | Local CrossOver/Wine helper scripts used for smoke testing, not runtime assets. |
 | `archive/` | Preserved generated/local/debug/historical files moved out of the root during the limited reorganization pass. Not a trash folder. |
 
 ## Verified on this machine
@@ -177,3 +179,4 @@ Local checkout path: `/Users/mdmoll/Shandalar/Shandalar`
 | [docs/reorganization.md](docs/reorganization.md) | Exact limited-reorg moves, rationale, commands, and verification. |
 | [docs/gaps.md](docs/gaps.md) | Remaining launch, command-line, duplicate, and build gaps. |
 | [docs/adventure-map-movement.md](docs/adventure-map-movement.md) | Static notes and verification commands for the same-arrow adventure-map stop patch. |
+| [docs/generated/README.md](docs/generated/README.md) | Map for generated evidence snapshots. |
