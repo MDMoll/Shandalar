@@ -41,6 +41,16 @@ Current maintained target kinds include PE executables, PE DLLs, archives,
 Windows scripts, Java archives, Perl scripts, and shell scripts. The output is
 tab-separated: path, kind, byte count, and SHA-256.
 
+Before or after a real scanner pass, print a Markdown-ready evidence baseline
+with the current branch, target counts, priority hashes, and commands:
+
+```sh
+tools/print-security-scan-baseline.sh
+```
+
+This helper does not run a scanner. Use it only to reduce transcription errors
+when filling the reporting table below.
+
 ## Local Scan Commands
 
 Use whichever tools are already trusted on the test machine. Do not download
@@ -52,6 +62,7 @@ scanner installers into this repo.
 | Windows Defender PowerShell | `Start-MpScan -ScanPath "C:\path\to\Shandalar"` |
 | Windows Defender command line | `"%ProgramFiles%\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File "C:\path\to\Shandalar"` |
 | Hash target inventory before external review | `tools/list-security-scan-targets.sh > scan-targets.tsv` |
+| Print Markdown evidence baseline | `tools/print-security-scan-baseline.sh` |
 
 `scan-targets.tsv`, `security-scan-results.tsv`, `clamscan-report.txt`, and
 `windows-defender-report.txt` are ignored local handoff files. Record durable

@@ -40,7 +40,7 @@ conservative.
 | All generated/local clutter has been archived. | `CardArtNew/Thumbs.db` and save-state/export files remain tracked in place pending explicit approval and testing; see [cleanup-move-plan.md](cleanup-move-plan.md). |
 | Public redistribution is approved. | [distribution.md](distribution.md) records that no repository-level license file was found and bundled rightsholder/trademark notices are present. |
 | A patch/docs-only public package exists. | [release-scope.md](release-scope.md) records this as a future path, but no package format or restoration test has been prepared. |
-| Binaries are malware-scanned. | [security-scan.md](security-scan.md) records that ClamAV is not available on this machine and `spctl` did not produce a useful Windows PE safety result; no named malware scanner result is recorded. |
+| Binaries are malware-scanned. | [security-scan.md](security-scan.md) records that ClamAV is not available on this machine and `spctl` did not produce a useful Windows PE safety result; no named malware scanner result is recorded. Use `tools/print-security-scan-baseline.sh` to prepare the evidence template before or after a real scan. |
 | `src/` rebuilds the shipped binaries. | `make -n` still hits missing/generated build inputs and toolchain assumptions. |
 
 ## Push Checklist
