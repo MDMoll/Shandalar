@@ -62,6 +62,11 @@ git switch codex/shandalar-crossover-updates
 
 This flow was verified locally in a disposable `master`-only clone with an
 incremental bundle produced by `tools/create-git-handoff-bundle.sh`.
+To repeat that verification for the current commit, run:
+
+```sh
+tools/verify-handoff-readiness.sh --verify-bundle-import
+```
 
 ## Current Push Failure In This Environment
 

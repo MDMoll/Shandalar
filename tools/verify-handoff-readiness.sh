@@ -6,6 +6,7 @@ cd "$repo_root"
 
 include_crossover=0
 crossover_bottle="MTG"
+verify_bundle_import=0
 
 usage() {
   cat <<'EOF'
@@ -18,6 +19,8 @@ malware scanner, or prove gameplay.
 Options:
   --include-crossover     Also run the local MTG CrossOver bottle-state check.
   --crossover-bottle NAME Bottle name for --include-crossover. Defaults to MTG.
+  --verify-bundle-import  Create a real bundle and import it into a disposable
+                          master-only clone under /private/tmp.
   -h, --help              Show this help.
 EOF
 }
@@ -40,6 +43,9 @@ while [ "$#" -gt 0 ]; do
       shift
       [ "$#" -gt 0 ] || fail "--crossover-bottle requires a value"
       crossover_bottle="$1"
+      ;;
+    --verify-bundle-import)
+      verify_bundle_import=1
       ;;
     -h|--help)
       usage
@@ -78,6 +84,22 @@ bundle_dry_run="$(tools/create-git-handoff-bundle.sh --dry-run --skip-verify --d
 printf '%s\n' "$bundle_dry_run" | grep -q "Receiver verify command:" || fail "bundle dry-run missing receiver verify command"
 printf '%s\n' "$bundle_dry_run" | grep -q "Receiver fetch command:" || fail "bundle dry-run missing receiver fetch command"
 pass "Git bundle dry-run passed"
+
+if [ "$verify_bundle_import" = "1" ]; then
+  real_bundle="/private/tmp/shandalar-handoff-import-${short_sha}-$$.bundle"
+  temp_root="$(mktemp -d "/private/tmp/shandalar-bundle-import-${short_sha}.XXXXXX")"
+  temp_repo="$temp_root/repo"
+
+  tools/create-git-handoff-bundle.sh --skip-verify --dest "$real_bundle" >/dev/null
+  git clone --single-branch --branch master --no-checkout "$repo_root" "$temp_repo" >/dev/null
+  git -C "$temp_repo" bundle verify "$real_bundle" >/dev/null
+  git -C "$temp_repo" fetch "$real_bundle" "refs/heads/codex/shandalar-crossover-updates:refs/heads/codex/shandalar-crossover-updates" >/dev/null
+  imported_sha="$(git -C "$temp_repo" rev-parse --short codex/shandalar-crossover-updates)"
+  [ "$imported_sha" = "$short_sha" ] || fail "bundle import resolved $imported_sha, expected $short_sha"
+  pass "Git bundle import verified in $temp_repo using $real_bundle"
+else
+  pass "Git bundle import verification skipped; pass --verify-bundle-import for a real import test"
+fi
 
 if [ "$include_crossover" = "1" ]; then
   tools/verify-crossover-mtg-state.sh "$crossover_bottle"

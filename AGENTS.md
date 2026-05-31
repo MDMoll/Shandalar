@@ -81,6 +81,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` unless noted.
 | Print the manual gameplay evidence baseline | `tools/print-manual-gameplay-baseline.sh` |
 | Print the security scan evidence baseline | `tools/print-security-scan-baseline.sh` |
 | Run the non-gameplay handoff verifier | `tools/verify-handoff-readiness.sh` |
+| Verify bundle import in a disposable clone | `tools/verify-handoff-readiness.sh --verify-bundle-import` |
 | Run automated share-readiness checks | `tools/verify-share-readiness.sh` |
 | Build dry run | `cd src && make -n` |
 
