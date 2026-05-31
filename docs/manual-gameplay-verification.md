@@ -89,7 +89,7 @@ Expected repo hashes are listed in [runtime-manifest.md](runtime-manifest.md).
 
 | ID | Test | Expected result | Result |
 | --- | --- | --- | --- |
-| S1 | Launch root `Shandalar.exe` from the full checkout or `C:\Shandalar`. | Main menu appears. | Needs testing |
+| S1 | Launch root `Shandalar.exe` from the full checkout or `C:\Shandalar`. | Main menu appears. | Pass: visible launch of `C:\Shandalar\Shandalar.exe` in CrossOver `MTG` reached the `Magic: Shandalar` main menu; see [verified-on-this-machine.md](verified-on-this-machine.md) and [running.md](running.md). New-game flow still untested. |
 | S2 | Start a new game with white. | Character creation reaches the map with default `Player`; no `CreateDIBSection` assertion. | Needs testing |
 | S3 | Repeat new-game start with blue. | Same as S2. | Needs testing |
 | S4 | Repeat new-game start with black. | Same as S2. | Needs testing |
