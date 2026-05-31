@@ -59,6 +59,9 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | [gaps.md](gaps.md) | Remaining runtime, cleanup, build, and distribution gaps. |
 | [git-handoff.md](git-handoff.md) | Exact branch, remote, pre-push checks, and push-auth status. |
 
+For a current generated handoff summary, run
+`tools/print-share-status.sh` from the repository root.
+
 ## Generated Evidence
 
 | Doc | Use it for |

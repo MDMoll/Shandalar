@@ -90,7 +90,7 @@ path, because root and `Program/` copies differ by hash. See
 | `PlayDeckAnalyser/` | Separate deck analysis utility and configuration. |
 | `docs/generated/` | Preserved command output and evidence snapshots for investigations; start with the concise docs first. |
 | `local/` | Local CrossOver/Wine helper scripts used for smoke testing, not runtime assets. |
-| `tools/` | Repo-maintenance helpers, including automated share-readiness checks. |
+| `tools/` | Repo-maintenance helpers, including current share-status reports, automated readiness checks, and handoff artifacts. |
 | `archive/` | Preserved generated/local/debug/historical files moved out of the root during the limited reorganization pass. Not a trash folder. |
 
 ## Verified on this machine
@@ -179,6 +179,7 @@ the detailed command/result table.
 Run the non-gameplay share-readiness checks with:
 
 ```sh
+tools/print-share-status.sh
 tools/verify-share-readiness.sh
 ```
 
@@ -198,6 +199,7 @@ handoff mistakes when a human is ready to test:
 ```sh
 tools/print-manual-gameplay-baseline.sh
 tools/print-security-scan-baseline.sh
+tools/print-share-status.sh
 tools/verify-handoff-readiness.sh
 tools/create-patch-package.sh --dry-run
 tools/list-branch-delta.sh

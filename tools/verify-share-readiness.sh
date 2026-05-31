@@ -181,6 +181,7 @@ for path in \
   tools/list-branch-delta.sh \
   tools/print-manual-gameplay-baseline.sh \
   tools/print-security-scan-baseline.sh \
+  tools/print-share-status.sh \
   tools/verify-handoff-readiness.sh \
   tools/verify-share-readiness.sh \
   tools/verify-crossover-mtg-state.sh \
@@ -210,7 +211,8 @@ for expected in \
   $'archive/backups/Rogues_Org_BAK.csv\tarchive-evidence' \
   $'src/cards/unlimited.c\tsource' \
   $'tools/create-patch-package.sh\tshell-tool' \
-  $'tools/list-branch-delta.sh\tshell-tool'
+  $'tools/list-branch-delta.sh\tshell-tool' \
+  $'tools/print-share-status.sh\tshell-tool'
 do
   path="${expected%$'\t'*}"
   kind="${expected#*$'\t'}"

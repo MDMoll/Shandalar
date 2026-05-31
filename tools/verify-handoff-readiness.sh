@@ -76,6 +76,15 @@ printf '%s\n' "$security_baseline" | grep -q "| Git status | clean |" || fail "s
 printf '%s\n' "$security_baseline" | grep -q "| Tracked scan targets | $security_target_count |" || fail "security scan baseline does not report $security_target_count targets"
 pass "security scan baseline is current"
 
+branch="$(git branch --show-current)"
+safe_branch="$(printf '%s' "$branch" | tr '/: ' '---')"
+share_status="$(tools/print-share-status.sh)"
+printf '%s\n' "$share_status" | grep -q "| Commit | \`$short_sha\`" || fail "share status does not report commit $short_sha"
+printf '%s\n' "$share_status" | grep -q "| Git status | clean |" || fail "share status does not report clean status"
+printf '%s\n' "$share_status" | grep -q "/private/tmp/${safe_branch}-${short_sha}.bundle" || fail "share status missing current bundle path"
+printf '%s\n' "$share_status" | grep -q "Manual gameplay" || fail "share status missing manual gameplay gate"
+pass "share status report is current"
+
 cleanup_dest="/private/tmp/shandalar-cleanup-test-dryrun-${short_sha}-$$"
 tools/create-cleanup-test-copy.sh --dry-run --skip-verify "$cleanup_dest" >/dev/null
 pass "cleanup test copy dry-run passed"

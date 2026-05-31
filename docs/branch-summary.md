@@ -15,7 +15,7 @@ moving runtime-like assets without explicit approval and launch-copy testing.
 | Cleanup evidence | Save-state files, generated caches, duplicate assets, stale references, and risky cleanup candidates are mapped with evidence and confidence. | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), [duplicate-audit.md](duplicate-audit.md), [save-state.md](save-state.md) |
 | Share hygiene | Root `.gitattributes`, controlled-maintenance release scope, patch-only planning, distribution caution, security-scan notes, docs index, local helper scope, and generated-evidence scope are now documented. | [share-readiness.md](share-readiness.md), [release-scope.md](release-scope.md), [patch-package-plan.md](patch-package-plan.md), [distribution.md](distribution.md), [security-scan.md](security-scan.md), [README.md](README.md) |
 | Automated checks | A verifier checks clean tree state, ignored local clutter, generated report/handoff ignore rules, tracked ignored files, binary attributes, protected cleanup false positives, runtime-manifest hashes, representative patch bytes, tracked save/local-state inventory, security-scan target inventory, branch-delta inventory shape, core docs, ASCII maintained text, docs index coverage, and local Markdown links. | [../tools/verify-share-readiness.sh](../tools/verify-share-readiness.sh) |
-| Handoff helpers | Read-only helpers print gameplay/security evidence baselines, dry-run cleanup copies, create a Git bundle plus checksum fallback, and create temporary binary patch artifacts for patch-only planning. | [../tools/README.md](../tools/README.md), [manual-gameplay-verification.md](manual-gameplay-verification.md), [security-scan.md](security-scan.md), [git-handoff.md](git-handoff.md), [patch-package-plan.md](patch-package-plan.md) |
+| Handoff helpers | Read-only helpers print current share status, gameplay/security evidence baselines, dry-run cleanup copies, create a Git bundle plus checksum fallback, and create temporary binary patch artifacts for patch-only planning. | [../tools/README.md](../tools/README.md), [share-readiness.md](share-readiness.md), [manual-gameplay-verification.md](manual-gameplay-verification.md), [security-scan.md](security-scan.md), [git-handoff.md](git-handoff.md), [patch-package-plan.md](patch-package-plan.md) |
 
 ## Ready To Say
 
@@ -44,6 +44,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar`:
 
 ```sh
 git status --short --untracked-files=all
+tools/print-share-status.sh
 tools/verify-share-readiness.sh
 tools/verify-handoff-readiness.sh
 tools/print-manual-gameplay-baseline.sh
