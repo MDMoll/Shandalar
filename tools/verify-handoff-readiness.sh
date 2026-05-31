@@ -81,6 +81,8 @@ branch="$(git branch --show-current)"
 safe_branch="$(printf '%s' "$branch" | tr '/: ' '---')"
 source_ref="refs/heads/$branch"
 dest_ref="refs/heads/$branch"
+default_bundle_path="/private/tmp/${safe_branch}-${short_sha}.bundle"
+default_patch_path="/private/tmp/${safe_branch}-${short_sha}.patch"
 
 tools/verify-share-readiness.sh
 pass "base share-readiness verifier passed"
@@ -101,8 +103,20 @@ pass "security scan baseline is current"
 share_status="$(tools/print-share-status.sh)"
 printf '%s\n' "$share_status" | grep -q "| Commit | \`$short_sha\`" || fail "share status does not report commit $short_sha"
 printf '%s\n' "$share_status" | grep -q "| Git status | clean |" || fail "share status does not report clean status"
-printf '%s\n' "$share_status" | grep -q "/private/tmp/${safe_branch}-${short_sha}.bundle" || fail "share status missing current bundle path"
+printf '%s\n' "$share_status" | grep -q "$default_bundle_path" || fail "share status missing current bundle path"
 printf '%s\n' "$share_status" | grep -q "Default Handoff Artifact Hashes" || fail "share status missing artifact hash section"
+if [ -f "$default_bundle_path" ]; then
+  bundle_sha="$(shasum -a 256 "$default_bundle_path" | awk '{print $1}')"
+  printf '%s\n' "$share_status" | grep -q "| Git bundle | \`$bundle_sha\` |" || fail "share status does not report current bundle hash $bundle_sha"
+else
+  printf '%s\n' "$share_status" | grep -q "| Git bundle | \`missing\` |" || fail "share status does not report missing bundle hash"
+fi
+if [ -f "$default_patch_path" ]; then
+  patch_sha="$(shasum -a 256 "$default_patch_path" | awk '{print $1}')"
+  printf '%s\n' "$share_status" | grep -q "| Binary patch | \`$patch_sha\` |" || fail "share status does not report current patch hash $patch_sha"
+else
+  printf '%s\n' "$share_status" | grep -q "| Binary patch | \`missing\` |" || fail "share status does not report missing patch hash"
+fi
 printf '%s\n' "$share_status" | grep -q "Manual gameplay" || fail "share status missing manual gameplay gate"
 pass "share status report is current"
 
