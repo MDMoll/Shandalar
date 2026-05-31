@@ -20,6 +20,7 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | Doc | Use it for |
 | --- | --- |
 | [runtime-dependencies.md](runtime-dependencies.md) | PE import evidence and runtime dependency guidance. |
+| [runtime-manifest.md](runtime-manifest.md) | SHA-256 manifest for active patched files and protected references. |
 | [magic-exe.md](magic-exe.md) | Dedicated `Magic.exe` behavior, imports, and tests. |
 | [magic-vs-shandalar-runtime.md](magic-vs-shandalar-runtime.md) | How Shandalar and Magic launch paths relate. |
 | [command-line.md](command-line.md) | `--help`, `--e`, `--p`, and command-line evidence. |

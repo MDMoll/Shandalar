@@ -19,7 +19,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` on 2026-05-31.
 | `command -v spctl` | `/usr/sbin/spctl` | macOS Gatekeeper assessment tooling exists, but it is not an antivirus scanner for Windows PE files. |
 | `spctl --assess --type execute --verbose=4 Shandalar.exe` | `Shandalar.exe: internal error in Code Signing subsystem` | No useful safety result for the Windows executable. Do not treat this as a pass or fail. |
 | `file Shandalar.exe Program/Magic.exe ManalinkEh.dll Program/ManalinkEh.dll` | PE32 Windows executable/DLL files. | Confirms the active targets are Windows PE files, so use a scanner that supports that format. |
-| `shasum -a 256 Shandalar.exe Program/Shandalar.exe Magic.exe Program/Magic.exe FaceMaker.exe Program/FaceMaker.exe ManalinkEh.dll Program/ManalinkEh.dll` | Hashes recorded in [share-readiness.md](share-readiness.md), [running.md](running.md), and [magic-exe.md](magic-exe.md). | Hashes identify exactly which patched binaries still need scan results. |
+| `shasum -a 256 Shandalar.exe Program/Shandalar.exe Magic.exe Program/Magic.exe FaceMaker.exe Program/FaceMaker.exe ManalinkEh.dll Program/ManalinkEh.dll` | Hashes recorded in [runtime-manifest.md](runtime-manifest.md), [running.md](running.md), and [magic-exe.md](magic-exe.md). | Hashes identify exactly which patched binaries still need scan results. |
 
 ## What to Scan
 

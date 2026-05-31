@@ -155,6 +155,7 @@ for path in \
   docs/share-readiness.md \
   docs/distribution.md \
   docs/verified-on-this-machine.md \
+  docs/runtime-manifest.md \
   docs/cleanup-audit.md \
   docs/duplicate-audit.md \
   docs/cleanup-move-plan.md \

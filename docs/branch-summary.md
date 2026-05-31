@@ -10,7 +10,7 @@ moving runtime-like assets without explicit approval and launch-copy testing.
 
 | Area | Summary | Pointers |
 | --- | --- | --- |
-| Runtime patches | Active `Shandalar.exe`, `FaceMaker.exe`, `Magic.exe`, and `ManalinkEh.dll` were patched and documented with hashes and representative bytes. | [verified-on-this-machine.md](verified-on-this-machine.md), [running.md](running.md), [magic-exe.md](magic-exe.md), [bugs/](bugs/) |
+| Runtime patches | Active `Shandalar.exe`, `FaceMaker.exe`, `Magic.exe`, and `ManalinkEh.dll` were patched and documented with hashes and representative bytes. | [runtime-manifest.md](runtime-manifest.md), [verified-on-this-machine.md](verified-on-this-machine.md), [running.md](running.md), [magic-exe.md](magic-exe.md), [bugs/](bugs/) |
 | Limited archive reorg | Obvious generated, debug, local-helper, backup, historical doc, and historical link files were moved under `archive/` with history preserved. | [reorganization.md](reorganization.md), [../archive/README.md](../archive/README.md) |
 | Cleanup evidence | Save-state files, generated caches, duplicate assets, stale references, and risky cleanup candidates are mapped with evidence and confidence. | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), [duplicate-audit.md](duplicate-audit.md), [save-state.md](save-state.md) |
 | Share hygiene | Root `.gitattributes`, distribution caution, security-scan notes, docs index, local helper scope, and generated-evidence scope are now documented. | [share-readiness.md](share-readiness.md), [distribution.md](distribution.md), [security-scan.md](security-scan.md), [README.md](README.md) |

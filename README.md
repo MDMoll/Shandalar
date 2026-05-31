@@ -148,6 +148,7 @@ the detailed command/result table.
 | [docs/bugs/duel-freeze-damage-prevention.md](docs/bugs/duel-freeze-damage-prevention.md) | Focused investigation of the Femeref/Samite/Kithkin damage-prevention activation freeze. |
 | [docs/bugs/declared-attacker-undo.md](docs/bugs/declared-attacker-undo.md) | Focused notes for the `Magic.exe` attacker-selection undo patch. |
 | [docs/magic-vs-shandalar-runtime.md](docs/magic-vs-shandalar-runtime.md) | Runtime comparison notes for `Magic.exe` and `Shandalar.exe`. |
+| [docs/runtime-manifest.md](docs/runtime-manifest.md) | SHA-256 manifest for active patched files and protected references. |
 | [docs/runtime-dependencies.md](docs/runtime-dependencies.md) | PE inspection and runtime dependency matrix. |
 | [docs/security-scan.md](docs/security-scan.md) | Antivirus/security scan guidance and reporting template. |
 | [docs/distribution.md](docs/distribution.md) | Distribution/licensing caution for sharing this bundled game tree. |
