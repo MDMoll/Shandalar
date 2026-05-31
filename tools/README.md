@@ -7,7 +7,7 @@ files.
 | --- | --- |
 | `list-security-scan-targets.sh` | Lists tracked executable, DLL, archive, and script files with kind, byte count, and SHA-256 so a scanner pass has an exact target inventory. |
 | `verify-crossover-mtg-state.sh` | Optional local check for this machine's `MTG` CrossOver bottle: copied runtime hashes, `Window = 2`, app-default `win7`, `Shandalar1440=1440x1080`, and paging-file registry state. |
-| `verify-share-readiness.sh` | Runs automated checks for clean-tree status, ignored local clutter, expected tracked ignored files, Git binary attributes, protected cleanup false positives, runtime-manifest hashes, representative patch bytes, tracked save/local-state inventory, core docs, maintained-text ASCII, docs index coverage, and local Markdown links. |
+| `verify-share-readiness.sh` | Runs automated checks for clean-tree status, ignored local clutter, scan-output ignore rules, expected tracked ignored files, Git binary attributes, protected cleanup false positives, patched runtime hashes, runtime-manifest hashes, representative patch bytes, tracked save/local-state inventory, security-scan target inventory, core docs, maintained-text ASCII, docs index coverage, and local Markdown links. |
 
 Run from the repository root:
 

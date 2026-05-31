@@ -159,6 +159,7 @@ the detailed command/result table.
 | [docs/command-line.md](docs/command-line.md) | `--help`, `--e`, `--p`, and command-line evidence. |
 | [docs/save-state.md](docs/save-state.md) | Tracked save slots, screen names, and cleanup plan. |
 | [docs/cleanup-move-plan.md](docs/cleanup-move-plan.md) | Exact pending cleanup moves that need explicit approval or launch-copy testing. |
+| [docs/cleanup-launch-copy-test.md](docs/cleanup-launch-copy-test.md) | Disposable-copy test plan required before moving risky cleanup candidates. |
 | [docs/architecture.md](docs/architecture.md) | High-level repo organization. |
 | [docs/building.md](docs/building.md) | What appears buildable and current blockers. |
 | [docs/file-inventory.md](docs/file-inventory.md) | Counts, large files, duplicate observations, and runtime-critical file types. |
@@ -180,8 +181,9 @@ Run the non-gameplay share-readiness checks with:
 tools/verify-share-readiness.sh
 ```
 
-This verifies the clean tree, ignored local clutter, expected tracked ignored
-file, Git binary attributes, protected cleanup false positives,
-runtime-manifest hashes, representative patch bytes, tracked save/local-state
-inventory, core docs, maintained-text ASCII, docs index coverage, and local
-Markdown links. It does not replace the manual gameplay checklist.
+This verifies the clean tree, ignored local clutter, scan-output ignore rules,
+expected tracked ignored file, Git binary attributes, protected cleanup false
+positives, patched runtime hashes, runtime-manifest hashes, representative patch
+bytes, tracked save/local-state inventory, security-scan target inventory, core
+docs, maintained-text ASCII, docs index coverage, and local Markdown links. It
+does not replace the manual gameplay checklist.
