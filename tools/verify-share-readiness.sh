@@ -52,6 +52,18 @@ else
   pass "working tree cleanliness skipped because ALLOW_DIRTY=1"
 fi
 
+if [ "${ALLOW_IGNORED_LOCAL:-0}" != "1" ]; then
+  ignored_untracked="$(git status --ignored --short --untracked-files=all | awk '/^!! / {print substr($0, 4)}')"
+  if [ -n "$ignored_untracked" ]; then
+    printf 'FAIL: ignored local files are present; remove them or set ALLOW_IGNORED_LOCAL=1:\n' >&2
+    printf '%s\n' "$ignored_untracked" >&2
+    exit 1
+  fi
+  pass "ignored local clutter is absent"
+else
+  pass "ignored local clutter check skipped because ALLOW_IGNORED_LOCAL=1"
+fi
+
 tracked_ignored="$(git ls-files -ci --exclude-standard)"
 [ "$tracked_ignored" = "CardArtNew/Thumbs.db" ] || fail "unexpected tracked ignored files: ${tracked_ignored:-<none>}"
 pass "tracked ignored file inventory is expected"

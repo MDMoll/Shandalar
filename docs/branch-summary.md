@@ -14,7 +14,7 @@ moving runtime-like assets without explicit approval and launch-copy testing.
 | Limited archive reorg | Obvious generated, debug, local-helper, backup, historical doc, and historical link files were moved under `archive/` with history preserved. | [reorganization.md](reorganization.md), [../archive/README.md](../archive/README.md) |
 | Cleanup evidence | Save-state files, generated caches, duplicate assets, stale references, and risky cleanup candidates are mapped with evidence and confidence. | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), [duplicate-audit.md](duplicate-audit.md), [save-state.md](save-state.md) |
 | Share hygiene | Root `.gitattributes`, distribution caution, security-scan notes, docs index, local helper scope, and generated-evidence scope are now documented. | [share-readiness.md](share-readiness.md), [distribution.md](distribution.md), [security-scan.md](security-scan.md), [README.md](README.md) |
-| Automated checks | A verifier checks clean tree state, tracked ignored files, binary attributes, patched hashes, representative patch bytes, core docs, ASCII maintained text, and local Markdown links. | [../tools/verify-share-readiness.sh](../tools/verify-share-readiness.sh) |
+| Automated checks | A verifier checks clean tree state, ignored local clutter, tracked ignored files, binary attributes, patched hashes, representative patch bytes, tracked save/local-state inventory, core docs, ASCII maintained text, and local Markdown links. | [../tools/verify-share-readiness.sh](../tools/verify-share-readiness.sh) |
 
 ## Ready To Say
 
