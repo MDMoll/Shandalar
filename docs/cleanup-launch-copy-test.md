@@ -9,7 +9,7 @@ disposable copy before using `git mv` in the real checkout.
 | Rule | Reason |
 | --- | --- |
 | Do not run candidate moves in the working tree first. | The root and `Program/` layouts may depend on nearby files and exact names. |
-| Copy the whole checkout, not just executables. | Launch targets load adjacent DLLs, data, art, sounds, saves, and config. |
+| Copy the whole working tree, not just executables. | Launch targets load adjacent DLLs, data, art, sounds, saves, and config. Git history is not needed for launch testing. |
 | Test one candidate family at a time. | If the game breaks, the cause stays inspectable. |
 | Record exact paths, commands, and visible behavior. | Cleanup evidence needs to distinguish verified facts from guesses. |
 
@@ -31,11 +31,18 @@ passes.
 If `/private/tmp/shandalar-cleanup-test` already exists, choose a fresh path
 instead of deleting an old test copy blindly.
 
-The helper refuses to overwrite an existing destination and runs
-`tools/verify-share-readiness.sh` first. Use `--dry-run` to validate the
-destination and verifier state without creating a large copy. For exploratory
-local copies only, it also supports `--allow-dirty`, `--allow-ignored-local`,
-and `--skip-verify`; record those flags in the result table if you use them.
+The helper refuses to overwrite an existing destination, omits `.git` by
+default, and runs `tools/verify-share-readiness.sh` first. Use `--dry-run` to
+validate the destination and verifier state without creating a large copy. For
+exploratory local copies only, it also supports `--allow-dirty`,
+`--allow-ignored-local`, `--include-git`, and `--skip-verify`; record those
+flags in the result table if you use them.
+
+## Verified on this machine
+
+| Date | Command | Result |
+| --- | --- | --- |
+| 2026-05-31 | `tools/create-cleanup-test-copy.sh --skip-verify /private/tmp/shandalar-cleanup-copy-smoke-fd6c275b` | Created a 2.0G disposable copy with `Shandalar.exe` present and `.git` omitted. The temp copy was removed after verification. |
 
 ## Candidate Families
 

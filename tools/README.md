@@ -5,7 +5,7 @@ files.
 
 | Tool | Purpose |
 | --- | --- |
-| `create-cleanup-test-copy.sh` | Creates a disposable full-checkout copy for cleanup launch testing after running `verify-share-readiness.sh`; refuses to overwrite an existing destination and supports `--dry-run`. |
+| `create-cleanup-test-copy.sh` | Creates a disposable working-tree copy without `.git` for cleanup launch testing after running `verify-share-readiness.sh`; refuses to overwrite an existing destination and supports `--dry-run` and `--include-git`. |
 | `create-git-handoff-bundle.sh` | Creates a Git bundle plus `.sha256` sidecar for handing off the current branch when GitHub push authentication is unavailable; runs `verify-share-readiness.sh` first and supports `--dry-run` and narrowly scoped `--replace`. |
 | `create-patch-package.sh` | Creates a binary git patch plus `.sha256` sidecar for patch/docs-only package planning; pass `--verify-apply` to test it in a disposable clone and `--replace` to recreate the current default artifact. |
 | `list-branch-delta.sh` | Lists tracked branch changes relative to `master` as TSV with status, path, coarse kind, byte count, and SHA-256 for review or patch-only release planning; pass `--summary` for a Markdown overview. |
@@ -23,6 +23,7 @@ Run from the repository root:
 ```sh
 tools/create-cleanup-test-copy.sh --dry-run
 tools/create-cleanup-test-copy.sh /private/tmp/shandalar-cleanup-test
+tools/create-cleanup-test-copy.sh --include-git /private/tmp/shandalar-cleanup-test-with-git
 tools/create-git-handoff-bundle.sh --dry-run
 tools/create-git-handoff-bundle.sh --replace
 tools/create-patch-package.sh --dry-run
