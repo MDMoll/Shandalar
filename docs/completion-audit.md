@@ -12,7 +12,7 @@ proof.
 | --- | --- | --- |
 | Local maintenance branch | Ready locally | The tree is clean and `tools/verify-share-readiness.sh` passes. |
 | GitHub branch push | Blocked outside repo | Local pushes fail because this environment has no GitHub HTTPS credentials and no accepted SSH key; see [git-handoff.md](git-handoff.md). |
-| Release scope | Controlled maintenance only | [release-scope.md](release-scope.md) records the current branch sharing decision; public full-bundle and patch/docs-only releases remain unprepared. |
+| Release scope | Controlled maintenance only | [release-scope.md](release-scope.md) records the current branch sharing decision; [patch-package-plan.md](patch-package-plan.md) prepares branch-delta inventory for a possible patch/docs-only path; public full-bundle and patch/docs-only releases remain unprepared. |
 | Clean public release | Not proven | Distribution rights, malware scan, and full gameplay verification are still missing. |
 | More file moves | Deferred | Remaining candidates are runtime-like, save-state, art-folder, or package-tree files that need explicit approval and launch-copy testing. |
 
@@ -51,5 +51,5 @@ proof.
 | Push | `git push -u origin codex/shandalar-crossover-updates` succeeds. |
 | Gameplay | Visible Windows or CrossOver run fills the pass/fail rows in [manual-gameplay-verification.md](manual-gameplay-verification.md): launch, character creation, all starting colors, same-arrow map stop, save/load, several duel turns, damage-prevention prompt, and declared-attacker undo. |
 | Security | A named scanner/version records results for patched executables, DLLs, and archives. Use `tools/print-security-scan-baseline.sh` to prepare the target summary and hash evidence, but do not treat it as a scan. |
-| Distribution | Current branch scope is controlled maintenance only. Before any public release, prepare and verify either a patch/docs-only package or rights-verified full bundle. |
+| Distribution | Current branch scope is controlled maintenance only. Before any public release, use [patch-package-plan.md](patch-package-plan.md) to prepare and verify a patch/docs-only package or prepare a rights-verified full bundle. |
 | Cleanup moves | Any additional file moves have explicit approval, `git mv` history, docs updates, and launch-copy verification. |

@@ -25,14 +25,14 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` on 2026-05-31.
 | --- | --- |
 | Public redistribution | Not verified. Do not claim that this repo can be published publicly as-is. |
 | Private maintenance branch | Current branch scope; use only when the recipient already has the same rights context and understands the bundled-game nature of the tree. |
-| Patches and documentation | These are easier to share than bundled proprietary assets, but no separate patch-only package has been prepared yet. |
+| Patches and documentation | These are easier to share than bundled proprietary assets. [patch-package-plan.md](patch-package-plan.md) now records the inventory/restoration-test path, but no patch-only package has been prepared yet. |
 | Runtime redistributables | Do not download or commit third-party runtime installers into this repo. Install them into Windows/CrossOver bottles instead. |
 | Security claims | Separate issue. See [security-scan.md](security-scan.md); no malware scanner result is recorded yet. |
 
 ## If Preparing a Public Release
 
 1. Decide whether the release should be patch/docs-only instead of a full asset
-   bundle.
+   bundle; start with [patch-package-plan.md](patch-package-plan.md).
 2. Identify which files are original game/runtime assets, fan patch files,
    generated evidence, and local-only state.
 3. Verify rights or permission for any redistributed binaries, art, card data,

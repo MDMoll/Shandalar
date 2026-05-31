@@ -9,7 +9,7 @@ This file records the current sharing decision for
 | --- | --- | --- |
 | Controlled maintenance branch | Current branch scope | Share only with recipients who already understand the bundled game/runtime nature of this checkout and the same rights context. |
 | Public full bundle | Not approved | Do not publish this repository as a public asset/game bundle from the current evidence. |
-| Patch/docs-only package | Not prepared | A smaller package may be easier to share, but no file list, patch format, installer, or restoration workflow has been prepared. |
+| Patch/docs-only package | Planning aid prepared, package not prepared | [patch-package-plan.md](patch-package-plan.md) and `tools/list-branch-delta.sh` provide a branch-delta inventory path, but no patch artifact or restoration test is complete. |
 | Rights-verified public bundle | Not proven | No repository-level license was found, and bundled rightsholder/trademark notices are present. |
 
 This is a practical repo-maintenance decision, not legal advice.
@@ -20,6 +20,7 @@ This is a practical repo-maintenance decision, not legal advice.
 | --- | --- |
 | The branch is cleaner and better documented for local maintenance. | Supported by [share-readiness.md](share-readiness.md) and [completion-audit.md](completion-audit.md). |
 | The branch can be pushed to git once authentication works. | Supported locally by a clean tree and `tools/verify-share-readiness.sh`; remote push is still blocked by local GitHub auth. |
+| A branch-delta inventory exists for patch-only planning. | Supported by [patch-package-plan.md](patch-package-plan.md) and `tools/list-branch-delta.sh`. |
 | The branch is a public release. | Do not claim. |
 | The binaries are malware-scanned. | Do not claim until [security-scan.md](security-scan.md) has named scanner/version/hash results. |
 | Gameplay is fully verified. | Do not claim until [manual-gameplay-verification.md](manual-gameplay-verification.md) has concrete pass/fail results. |
@@ -38,7 +39,7 @@ This is a practical repo-maintenance decision, not legal advice.
 | Candidate release | Required work before calling it ready |
 | --- | --- |
 | Private maintenance branch | Push from an authenticated environment, keep this release scope visible, and do not make public redistribution or scanner claims. |
-| Patch/docs-only package | Decide a patch format, list exact source files and binary-diff artifacts, test restoration against a clean local install, and document what original assets the recipient must provide. |
+| Patch/docs-only package | Use [patch-package-plan.md](patch-package-plan.md) to inventory the branch delta, decide a patch format, test restoration against a clean local install, and document what original assets the recipient must provide. |
 | Rights-verified full bundle | Verify rights for binaries, art, card data, deck packs, sounds, videos, archives, and fan-maintained files; run named malware scans; complete manual gameplay verification. |
 
 Until one of the future release paths is prepared and verified, treat this

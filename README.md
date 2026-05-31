@@ -143,6 +143,7 @@ the detailed command/result table.
 | [docs/completion-audit.md](docs/completion-audit.md) | Requirement-by-requirement status for the cleanup/share goal. |
 | [docs/git-handoff.md](docs/git-handoff.md) | Exact branch, remote, pre-push checks, and push-auth status. |
 | [docs/release-scope.md](docs/release-scope.md) | Current branch sharing scope and public-release boundaries. |
+| [docs/patch-package-plan.md](docs/patch-package-plan.md) | Branch-delta inventory and restoration-test plan for any future patch/docs-only package. |
 | [docs/manual-gameplay-verification.md](docs/manual-gameplay-verification.md) | Manual test plan required before claiming the game works end to end. |
 | [docs/crossover-macos.md](docs/crossover-macos.md) | Practical CrossOver bottle setup and troubleshooting. |
 | [docs/magic-exe.md](docs/magic-exe.md) | Dedicated `Magic.exe` notes, imports, hypotheses, and tests. |
@@ -198,6 +199,7 @@ handoff mistakes when a human is ready to test:
 tools/print-manual-gameplay-baseline.sh
 tools/print-security-scan-baseline.sh
 tools/verify-handoff-readiness.sh
+tools/list-branch-delta.sh
 tools/create-cleanup-test-copy.sh --dry-run
 tools/create-git-handoff-bundle.sh --dry-run
 ```

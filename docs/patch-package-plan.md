@@ -1,0 +1,74 @@
+# Patch Package Plan
+
+This branch is currently a controlled maintenance branch, not a public release.
+A patch/docs-only package may be easier to share than a full bundled game tree,
+but it still needs a restoration test before anyone should call it ready.
+
+## Current Status
+
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Branch delta inventory | Prepared | `tools/list-branch-delta.sh` lists current branch changes relative to `master` as TSV. |
+| Patch package file | Not prepared | No `.patch`, installer, or release archive is committed. |
+| Restoration test | Not tested | No clean-install apply-and-launch pass has been recorded. |
+| Public redistribution | Not approved | See [distribution.md](distribution.md) and [release-scope.md](release-scope.md). |
+
+## Inventory Command
+
+Run from `/Users/mdmoll/Shandalar/Shandalar`:
+
+```sh
+tools/list-branch-delta.sh > /private/tmp/shandalar-branch-delta.tsv
+```
+
+Useful review summaries:
+
+```sh
+tools/list-branch-delta.sh | awk -F '\t' 'NR > 1 {count[$4]++} END {for (k in count) print count[k], k}' | sort -nr
+git diff --stat master...HEAD
+```
+
+The TSV columns are:
+
+| Column | Meaning |
+| --- | --- |
+| `status` | Git change status, including rename scores such as `R100`. |
+| `path` | Current path on this branch. |
+| `old_path` | Previous path for renames/copies, otherwise `-`. |
+| `kind` | Coarse review category such as `documentation`, `shell-tool`, `pe-executable`, or `art-resource`. |
+| `bytes` | Current blob size on this branch, or `-` for deletes. |
+| `sha256` | SHA-256 of the current branch blob, or `-` for deletes. |
+
+## Candidate Patch Creation
+
+Use a temp path, not the repository, until the format is chosen:
+
+```sh
+git diff --binary master...HEAD > /private/tmp/shandalar-crossover-updates.patch
+shasum -a 256 /private/tmp/shandalar-crossover-updates.patch
+```
+
+That patch may contain binary deltas for patched executables, DLLs, and added
+FaceMaker support assets. It is a technical transfer artifact, not proof of
+permission to redistribute those bytes.
+
+## Required Restoration Test
+
+Before describing a patch/docs-only package as ready:
+
+| Step | Required proof |
+| --- | --- |
+| Clean base | Start from a clean checkout at the expected base commit or tag. |
+| Apply patch | Apply the candidate patch without rejects. |
+| Verify repo | Run `tools/verify-share-readiness.sh` and `tools/verify-handoff-readiness.sh`. |
+| Verify runtime | Run the manual gameplay checklist in [manual-gameplay-verification.md](manual-gameplay-verification.md). |
+| Verify security | Record a named scanner/version/result in [security-scan.md](security-scan.md). |
+| Verify scope | Update [release-scope.md](release-scope.md) if the release decision changes. |
+
+## Do Not Include Casually
+
+| Item | Why |
+| --- | --- |
+| Generated scanner reports or handoff bundles | These are ignored local artifacts and should be regenerated as needed. |
+| CrossOver bottle registry files | Bottle settings are machine-local; keep reproducible commands in docs. |
+| Extra cleanup moves | Remaining cleanup candidates need explicit approval and launch-copy testing. |

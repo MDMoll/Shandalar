@@ -12,6 +12,7 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | [completion-audit.md](completion-audit.md) | Requirement-by-requirement status for the cleanup/share goal. |
 | [git-handoff.md](git-handoff.md) | Exact branch, remote, pre-push checks, and push-auth status. |
 | [release-scope.md](release-scope.md) | Current branch sharing scope and public-release boundaries. |
+| [patch-package-plan.md](patch-package-plan.md) | Branch-delta inventory and restoration-test plan for any future patch/docs-only package. |
 | [verified-on-this-machine.md](verified-on-this-machine.md) | Detailed local command/result evidence. |
 | [running.md](running.md) | Windows, Wine, and CrossOver launch commands and test matrix. |
 | [manual-gameplay-verification.md](manual-gameplay-verification.md) | Manual test plan required before claiming the game works end to end. |
@@ -52,6 +53,7 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | [reorganization.md](reorganization.md) | Limited archive reorg decision log. |
 | [stale-references.md](stale-references.md) | Old URLs, hard-coded paths, and historical references. |
 | [release-scope.md](release-scope.md) | Current branch sharing scope and public-release boundaries. |
+| [patch-package-plan.md](patch-package-plan.md) | Branch-delta inventory and restoration-test plan for any future patch/docs-only package. |
 | [distribution.md](distribution.md) | Distribution/licensing caution. |
 | [security-scan.md](security-scan.md) | Malware scanner guidance and current scanner availability evidence. |
 | [gaps.md](gaps.md) | Remaining runtime, cleanup, build, and distribution gaps. |
