@@ -173,5 +173,6 @@ tools/verify-share-readiness.sh
 ```
 
 This verifies the clean tree, expected tracked ignored file, Git binary
-attributes, patched runtime hashes, representative patch bytes, core docs, and
-local Markdown links. It does not replace the manual gameplay checklist.
+attributes, patched runtime hashes, representative patch bytes, core docs,
+maintained-text ASCII, and local Markdown links. It does not replace the manual
+gameplay checklist.

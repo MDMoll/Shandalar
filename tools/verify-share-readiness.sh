@@ -108,6 +108,35 @@ pass "core docs exist"
 
 python3 - <<'PY'
 from pathlib import Path
+import sys
+
+checked = 0
+violations = []
+allowed_suffixes = {".md", ".sh", ".vbs"}
+
+for path in sorted(Path(".").rglob("*")):
+    if ".git" in path.parts or path.parts[:2] == ("docs", "generated"):
+        continue
+    if not path.is_file() or path.suffix.lower() not in allowed_suffixes:
+        continue
+
+    checked += 1
+    data = path.read_bytes()
+    for line_no, line in enumerate(data.splitlines(), start=1):
+        if any(byte > 0x7F for byte in line):
+            violations.append((path, line_no))
+            break
+
+if violations:
+    for path, line_no in violations:
+        print(f"non-ASCII text: {path}:{line_no}", file=sys.stderr)
+    sys.exit(1)
+
+print(f"ok: maintained text files are ASCII ({checked} checked)")
+PY
+
+python3 - <<'PY'
+from pathlib import Path
 import re
 import sys
 import urllib.parse
