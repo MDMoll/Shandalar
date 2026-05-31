@@ -35,6 +35,22 @@ git push -u origin codex/shandalar-crossover-updates
 
 Do not push directly to `master` for this cleanup/runtime branch.
 
+## Bundle Fallback
+
+If authenticated push is still unavailable but you need to move the branch as
+Git history, create a bundle from the clean checkout:
+
+```sh
+tools/create-git-handoff-bundle.sh --dry-run
+tools/create-git-handoff-bundle.sh
+```
+
+The default bundle path is `/private/tmp/<branch>-<sha>.bundle`. By default the
+bundle is incremental against `master`, so the receiver should already have the
+repo's `master` branch. Use `--full` for a larger bundle that also includes the
+base ref. This fallback does not replace pushing the branch to GitHub; it is a
+handoff path when credentials are the only blocker.
+
 ## Current Push Failure In This Environment
 
 The repeated push failure from this Codex environment is:

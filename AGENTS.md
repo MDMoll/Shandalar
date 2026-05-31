@@ -77,6 +77,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` unless noted.
 | Count extensions | `find . -type f | awk 'BEGIN{IGNORECASE=1} {n=$0; sub(/^.*\//,"",n); if (n !~ /\./) ext="[none]"; else {ext=n; sub(/^.*\./,"",ext); ext=tolower(ext)}; count[ext]++} END{for (e in count) print count[e], e}' | sort -nr | head -40` |
 | Inspect `.tmp` runtime-looking assets before cleanup | `file Statwin/*.tmp Program/statwin/*.tmp && shasum -a 256 Statwin/*.tmp Program/statwin/*.tmp` |
 | Create a disposable cleanup test copy | `tools/create-cleanup-test-copy.sh /private/tmp/shandalar-cleanup-test` |
+| Dry-run a Git handoff bundle if push auth is unavailable | `tools/create-git-handoff-bundle.sh --dry-run` |
 | Run automated share-readiness checks | `tools/verify-share-readiness.sh` |
 | Build dry run | `cd src && make -n` |
 
