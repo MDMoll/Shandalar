@@ -84,6 +84,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` unless noted.
 | Print the manual gameplay evidence baseline | `tools/print-manual-gameplay-baseline.sh` |
 | Record one manual gameplay field or result | `tools/record-manual-gameplay-result.sh --test D2 --result "Fail: froze at post-combat Done; screenshot /path/to/screenshot.png"` |
 | Print the security scan evidence baseline | `tools/print-security-scan-baseline.sh` |
+| Record scanner evidence after a real scan | `tools/record-security-scan-result.sh --confirmed-real-scan --path Shandalar.exe --scanner "Windows Defender" --version "VERSION" --date 2026-05-31 --result "Clean" --notes "MpCmdRun.exe custom scan completed"` |
 | List branch delta for review or patch-only planning | `tools/list-branch-delta.sh` |
 | Run the non-gameplay handoff verifier | `tools/verify-handoff-readiness.sh` |
 | Verify bundle import in a disposable clone | `tools/verify-handoff-readiness.sh --verify-bundle-import` |

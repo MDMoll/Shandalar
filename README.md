@@ -205,6 +205,7 @@ tools/print-security-scan-baseline.sh
 tools/print-share-status.sh
 tools/record-manual-gameplay-result.sh --test D2 --result "Fail: froze at post-combat Done; screenshot /path/to/screenshot.png"
 tools/create-security-scan-results-template.sh --output security-scan-results.tsv
+tools/record-security-scan-result.sh --confirmed-real-scan --all-current-targets --replace-row --scanner "Windows Defender" --version "VERSION" --date 2026-05-31 --result "Clean" --notes "MpCmdRun.exe custom scan completed"
 tools/verify-final-share-gates.sh
 tools/verify-handoff-readiness.sh --verify-bundle-import --verify-artifacts
 tools/create-git-handoff-bundle.sh --replace

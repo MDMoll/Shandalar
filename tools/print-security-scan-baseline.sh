@@ -120,6 +120,7 @@ print("tools/list-security-scan-targets.sh > scan-targets.tsv")
 print("tools/create-security-scan-results-template.sh --output security-scan-results.tsv")
 print("clamscan -r . > clamscan-report.txt")
 print('"%ProgramFiles%\\Windows Defender\\MpCmdRun.exe" -Scan -ScanType 3 -File "C:\\path\\to\\Shandalar"')
+print('tools/record-security-scan-result.sh --confirmed-real-scan --all-current-targets --replace-row --scanner "Windows Defender" --version "VERSION" --date 2026-05-31 --result "Clean" --notes "MpCmdRun.exe custom scan completed"')
 print("tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all")
 print("```")
 

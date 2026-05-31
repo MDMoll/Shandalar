@@ -59,6 +59,7 @@ hashes, use:
 
 ```sh
 tools/create-security-scan-results-template.sh --output security-scan-results.tsv
+tools/record-security-scan-result.sh --confirmed-real-scan --path Shandalar.exe --scanner "Windows Defender" --version "VERSION" --date 2026-05-31 --result "Clean" --notes "MpCmdRun.exe custom scan completed"
 tools/verify-security-scan-results.sh --results security-scan-results.tsv
 tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all
 ```
@@ -66,6 +67,10 @@ tools/verify-security-scan-results.sh --results security-scan-results.tsv --requ
 The template helper only writes current paths and hashes. Replace every
 `Needs testing` placeholder with the real scanner name, version, date, result,
 and notes after a scan; placeholders intentionally fail validation.
+The recorder helper can update one exact target row, or all current target rows
+with `--all-current-targets --replace-row` after a clean whole-tree scanner
+pass. It refuses to run without `--confirmed-real-scan`; that flag is an
+evidence reminder, not a scan.
 
 The required TSV header is:
 
@@ -90,6 +95,7 @@ scanner installers into this repo.
 | Windows Defender command line | `"%ProgramFiles%\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File "C:\path\to\Shandalar"` |
 | Hash target inventory before external review | `tools/list-security-scan-targets.sh > scan-targets.tsv` |
 | Create scanner result TSV template | `tools/create-security-scan-results-template.sh --output security-scan-results.tsv` |
+| Record one scanner result row after a real scan | `tools/record-security-scan-result.sh --confirmed-real-scan --path Shandalar.exe --scanner "Windows Defender" --version "VERSION" --date 2026-05-31 --result "Clean" --notes "MpCmdRun.exe custom scan completed"` |
 | Print Markdown evidence baseline | `tools/print-security-scan-baseline.sh` |
 | Validate recorded scan rows | `tools/verify-security-scan-results.sh --results security-scan-results.tsv` |
 | Validate full target coverage | `tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all` |
