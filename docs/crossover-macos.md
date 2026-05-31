@@ -241,6 +241,16 @@ Verified registry evidence:
 sed -n '790,825p;965,970p' "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/user.reg"
 ```
 
+Optional local verifier for the current `MTG` bottle state:
+
+```sh
+tools/verify-crossover-mtg-state.sh
+```
+
+This checks the copied `C:\Shandalar` runtime hashes, FaceMaker support files,
+`Window = 2`, app-default `win7`, `Shandalar1440=1440x1080`, and the paging-file
+registry setting. It does not launch the game or prove gameplay.
+
 Expected entries:
 
 ```text

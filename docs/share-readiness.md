@@ -22,6 +22,7 @@ conservative.
 | Completion audit | The original cleanup/share goal is mapped to current proof and final gates. | [completion-audit.md](completion-audit.md). |
 | Automated non-gameplay checks | Repo share-readiness checks are repeatable without launching the game, including ignored-local-clutter checks, local scan-output ignore checks, protected cleanup false positives, runtime-manifest hash checks, tracked save/local-state inventory, security-scan target inventory, maintained-text ASCII, docs index coverage, and local Markdown link validation. | `tools/verify-share-readiness.sh`. |
 | Local helper scope | CrossOver helper scripts are separated from runtime files. | [../local/README.md](../local/README.md). |
+| Optional local CrossOver state check | The current `MTG` bottle state can be checked without launching the game, but this is intentionally not a general share-readiness gate. | `tools/verify-crossover-mtg-state.sh`. |
 | Generated evidence scope | Long command-output snapshots are mapped as evidence, not primary docs. | [generated/README.md](generated/README.md). |
 
 ## Do Not Claim Yet

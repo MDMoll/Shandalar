@@ -45,6 +45,7 @@ Local checkout path: `/Users/mdmoll/Shandalar/Shandalar`
 | Patched `MTG` and `Shandalar-Win8-Test` `C:\Shandalar` launches | Wine `wscript` SendKeys drove the practical C-drive launch paths past the reported crash point; logs show `advfac64.pic`, `magic3.map`, `magic4.map`, and `begin.spr` loaded with no original page fault/assertion. |
 | Same-arrow movement-stop patch | Static disassembly verifies hooks at `0x44398c`, `0x444a2b`, and `0x444aa7`, with code cave `0x46502d`; pressing the same movement key after at least one completed movement step should route through the existing Escape stop path at `0x444a96`. |
 | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --version` | CrossOver 26.1.0 is installed locally. |
+| `tools/verify-crossover-mtg-state.sh` | Optional local verifier passes for bottle `MTG`: copied runtime hashes match the docs, FaceMaker support files are present, both copied Shandalar ini files use `Window = 2`, app-default `win7` and `Shandalar1440=1440x1080` are present, and the paging-file registry setting is present. |
 | `command -v wine` | No standalone `wine` was found in `PATH`. |
 | Earlier timed CrossOver launch attempts from `Program/` in bottle `MTG` | `Shandalar.exe --help`, `Shandalar.exe`, and `Magic.exe` exited with code 53 and no capturable stdout/stderr. This is not a gameplay verification. |
 | `make -n` in `src/` | Dry run reached many compile commands, then stopped because `src/card_id.h` is missing and `functions/utility.obj` had no usable rule. |

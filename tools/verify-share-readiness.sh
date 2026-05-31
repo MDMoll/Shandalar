@@ -162,7 +162,7 @@ security_targets="$(tools/list-security-scan-targets.sh)"
 security_header="$(printf '%s\n' "$security_targets" | sed -n '1p')"
 [ "$security_header" = $'path\tkind\tbytes\tsha256' ] || fail "unexpected security target header: $security_header"
 security_target_count="$(printf '%s\n' "$security_targets" | awk 'NR > 1 {count++} END {print count+0}')"
-[ "$security_target_count" = "224" ] || fail "expected 224 tracked security scan targets, found $security_target_count"
+[ "$security_target_count" = "225" ] || fail "expected 225 tracked security scan targets, found $security_target_count"
 for path in \
   Shandalar.exe \
   Program/Magic.exe \
@@ -172,6 +172,7 @@ for path in \
   DeckInjector.jar \
   "Shandalar help.bat" \
   tools/verify-share-readiness.sh \
+  tools/verify-crossover-mtg-state.sh \
   tools/list-security-scan-targets.sh
 do
   printf '%s\n' "$security_targets" | awk -F '\t' -v p="$path" 'NR > 1 && $1 == p {found=1} END {exit found ? 0 : 1}' || fail "security scan target inventory is missing $path"
