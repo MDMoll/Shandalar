@@ -6,6 +6,15 @@ cd "$repo_root"
 
 base="master"
 branch="$(git branch --show-current)"
+temp_paths=()
+
+cleanup_temp_paths() {
+  local path
+  for path in "${temp_paths[@]}"; do
+    [ -n "$path" ] && rm -rf "$path"
+  done
+}
+trap cleanup_temp_paths EXIT
 
 usage() {
   cat <<'EOF'
@@ -99,6 +108,7 @@ git bundle verify "$bundle_path" >/dev/null
 pass "bundle verifies: $bundle_path"
 
 bundle_temp_root="$(mktemp -d "/private/tmp/shandalar-artifact-bundle-${short_sha}.XXXXXX")"
+temp_paths+=("$bundle_temp_root")
 bundle_temp_repo="$bundle_temp_root/repo"
 git clone --single-branch --branch "$base" --no-checkout "$repo_root" "$bundle_temp_repo" >/dev/null
 git -C "$bundle_temp_repo" fetch "$bundle_path" "$source_ref:$dest_ref" >/dev/null
@@ -110,6 +120,7 @@ verify_checksum "$patch_path" "$patch_checksum_path"
 pass "patch checksum verified: $patch_path"
 
 patch_temp_root="$(mktemp -d "/private/tmp/shandalar-artifact-patch-${short_sha}.XXXXXX")"
+temp_paths+=("$patch_temp_root")
 patch_temp_repo="$patch_temp_root/repo"
 git clone --no-checkout "$repo_root" "$patch_temp_repo" >/dev/null
 git -C "$patch_temp_repo" read-tree "$base_commit"

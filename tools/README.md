@@ -52,3 +52,8 @@ check.
 If you intentionally have ignored local files such as `.DS_Store` during local
 work, use `ALLOW_IGNORED_LOCAL=1 tools/verify-share-readiness.sh` to skip only
 that check.
+
+Verifier-created disposable clones under `/private/tmp` are cleaned up
+automatically. Default handoff artifacts such as `/private/tmp/*.bundle` and
+`/private/tmp/*.patch` are intentionally left in place for sharing until you
+remove them.

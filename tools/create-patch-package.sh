@@ -11,6 +11,15 @@ dest=""
 dry_run=0
 skip_verify=0
 verify_apply=0
+temp_paths=()
+
+cleanup_temp_paths() {
+  local path
+  for path in "${temp_paths[@]}"; do
+    [ -n "$path" ] && rm -rf "$path"
+  done
+}
+trap cleanup_temp_paths EXIT
 
 usage() {
   cat <<'EOF'
@@ -141,6 +150,7 @@ printf 'Created checksum sidecar: %s\n' "$checksum_dest"
 
 if [ "$verify_apply" = "1" ]; then
   temp_root="$(mktemp -d "/private/tmp/shandalar-patch-apply-${short_sha}.XXXXXX")"
+  temp_paths+=("$temp_root")
   temp_repo="$temp_root/repo"
   expected_tree="$(git rev-parse "$branch^{tree}")"
 

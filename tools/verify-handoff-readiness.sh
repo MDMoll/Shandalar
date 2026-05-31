@@ -8,6 +8,15 @@ include_crossover=0
 crossover_bottle="MTG"
 verify_bundle_import=0
 verify_artifacts=0
+temp_paths=()
+
+cleanup_temp_paths() {
+  local path
+  for path in "${temp_paths[@]}"; do
+    [ -n "$path" ] && rm -rf "$path"
+  done
+}
+trap cleanup_temp_paths EXIT
 
 usage() {
   cat <<'EOF'
@@ -114,7 +123,9 @@ pass "Git patch dry-run passed"
 
 if [ "$verify_bundle_import" = "1" ]; then
   real_bundle="/private/tmp/shandalar-handoff-import-${short_sha}-$$.bundle"
+  temp_paths+=("$real_bundle" "${real_bundle}.sha256")
   temp_root="$(mktemp -d "/private/tmp/shandalar-bundle-import-${short_sha}.XXXXXX")"
+  temp_paths+=("$temp_root")
   temp_repo="$temp_root/repo"
 
   tools/create-git-handoff-bundle.sh --skip-verify --dest "$real_bundle" >/dev/null
