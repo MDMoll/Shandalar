@@ -140,6 +140,7 @@ the detailed command/result table.
 | [docs/branch-summary.md](docs/branch-summary.md) | Handoff summary for this cleanup/runtime branch. |
 | [docs/running.md](docs/running.md) | Windows, CrossOver, Wine launch commands and test matrix. |
 | [docs/share-readiness.md](docs/share-readiness.md) | What is ready to share and what still needs proof. |
+| [docs/completion-audit.md](docs/completion-audit.md) | Requirement-by-requirement status for the cleanup/share goal. |
 | [docs/crossover-macos.md](docs/crossover-macos.md) | Practical CrossOver bottle setup and troubleshooting. |
 | [docs/magic-exe.md](docs/magic-exe.md) | Dedicated `Magic.exe` notes, imports, hypotheses, and tests. |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Practical troubleshooting entries, including the start-color DIB assertion. |

@@ -130,6 +130,7 @@ for path in \
   AGENTS.md \
   docs/README.md \
   docs/branch-summary.md \
+  docs/completion-audit.md \
   docs/share-readiness.md \
   docs/distribution.md \
   docs/verified-on-this-machine.md \

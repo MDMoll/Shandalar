@@ -23,7 +23,7 @@ moving runtime-like assets without explicit approval and launch-copy testing.
 | The branch is organized enough for a maintainer to navigate. | [README.md](README.md), [README](../README.md), and [share-readiness.md](share-readiness.md). |
 | The high-confidence non-runtime clutter from the limited plan is archived, not deleted. | [reorganization.md](reorganization.md). |
 | The major runtime files and patches are documented with repeatable checks. | [verified-on-this-machine.md](verified-on-this-machine.md) and `tools/verify-share-readiness.sh`. |
-| Remaining cleanup candidates are intentionally deferred instead of silently removed. | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), and [gaps.md](gaps.md). |
+| Remaining cleanup candidates are intentionally deferred instead of silently removed. | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), [completion-audit.md](completion-audit.md), and [gaps.md](gaps.md). |
 
 ## Do Not Claim Yet
 
