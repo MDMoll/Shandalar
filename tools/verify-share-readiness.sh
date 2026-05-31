@@ -72,11 +72,13 @@ for path in \
   scan-targets.tsv \
   security-scan-results.tsv \
   clamscan-report.txt \
-  windows-defender-report.txt
+  windows-defender-report.txt \
+  codex-shandalar-crossover-updates-test.bundle \
+  codex-shandalar-crossover-updates-test.bundle.sha256
 do
   git check-ignore -q "$path" || fail "$path is not ignored"
 done
-pass "local scan-output files are ignored"
+pass "local generated report/handoff files are ignored"
 
 for path in \
   Shandalar.exe \

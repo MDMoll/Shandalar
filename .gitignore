@@ -7,3 +7,7 @@ scan-targets.tsv
 security-scan-results.tsv
 clamscan-report.txt
 windows-defender-report.txt
+
+# Local git handoff bundles/checksums.
+*.bundle
+*.bundle.sha256

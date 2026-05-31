@@ -181,7 +181,8 @@ Run the non-gameplay share-readiness checks with:
 tools/verify-share-readiness.sh
 ```
 
-This verifies the clean tree, ignored local clutter, scan-output ignore rules,
+This verifies the clean tree, ignored local clutter, generated report/handoff
+ignore rules,
 expected tracked ignored file, Git binary attributes, protected cleanup false
 positives, patched runtime hashes, runtime-manifest hashes, representative patch
 bytes, tracked save/local-state inventory, security-scan target inventory, core
