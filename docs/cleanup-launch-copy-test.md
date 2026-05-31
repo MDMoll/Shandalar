@@ -32,9 +32,10 @@ If `/private/tmp/shandalar-cleanup-test` already exists, choose a fresh path
 instead of deleting an old test copy blindly.
 
 The helper refuses to overwrite an existing destination and runs
-`tools/verify-share-readiness.sh` first. For exploratory local copies only, it
-also supports `--allow-dirty`, `--allow-ignored-local`, and `--skip-verify`;
-record those flags in the result table if you use them.
+`tools/verify-share-readiness.sh` first. Use `--dry-run` to validate the
+destination and verifier state without creating a large copy. For exploratory
+local copies only, it also supports `--allow-dirty`, `--allow-ignored-local`,
+and `--skip-verify`; record those flags in the result table if you use them.
 
 ## Candidate Families
 

@@ -7,6 +7,7 @@ dest=""
 allow_dirty=0
 allow_ignored_local=0
 skip_verify=0
+dry_run=0
 
 usage() {
   cat <<'EOF'
@@ -19,6 +20,7 @@ first unless --skip-verify is passed.
 Options:
   --allow-dirty           Allow an in-progress working tree for copy experiments.
   --allow-ignored-local   Allow ignored local clutter such as .DS_Store.
+  --dry-run               Validate inputs and verifier state without copying.
   --skip-verify           Skip tools/verify-share-readiness.sh.
   -h, --help              Show this help.
 
@@ -39,6 +41,9 @@ while [ "$#" -gt 0 ]; do
       ;;
     --allow-ignored-local)
       allow_ignored_local=1
+      ;;
+    --dry-run)
+      dry_run=1
       ;;
     --skip-verify)
       skip_verify=1
@@ -84,9 +89,18 @@ if [ "$skip_verify" != "1" ]; then
   env_args=()
   [ "$allow_dirty" = "1" ] && env_args+=(ALLOW_DIRTY=1)
   [ "$allow_ignored_local" = "1" ] && env_args+=(ALLOW_IGNORED_LOCAL=1)
-  env "${env_args[@]}" tools/verify-share-readiness.sh
+  if [ "${#env_args[@]}" -gt 0 ]; then
+    env "${env_args[@]}" tools/verify-share-readiness.sh
+  else
+    tools/verify-share-readiness.sh
+  fi
 else
   printf 'warning: skipped tools/verify-share-readiness.sh\n' >&2
+fi
+
+if [ "$dry_run" = "1" ]; then
+  printf 'Dry run only; would create cleanup test copy: %s\n' "$dest"
+  exit 0
 fi
 
 mkdir -p "$(dirname "$dest")"
