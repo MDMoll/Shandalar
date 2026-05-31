@@ -105,6 +105,9 @@ printf '%s\n' "$share_status" | grep -q "| Commit | \`$short_sha\`" || fail "sha
 printf '%s\n' "$share_status" | grep -q "| Git status | clean |" || fail "share status does not report clean status"
 printf '%s\n' "$share_status" | grep -q "$default_bundle_path" || fail "share status missing current bundle path"
 printf '%s\n' "$share_status" | grep -q "Default Handoff Artifact Hashes" || fail "share status missing artifact hash section"
+printf '%s\n' "$share_status" | grep -q "Security Scan Results" || fail "share status missing security scan results section"
+printf '%s\n' "$share_status" | grep -q "| Results file | \`security-scan-results.tsv\` |" || fail "share status missing security scan results file"
+printf '%s\n' "$share_status" | grep -q "verify-security-scan-results.sh --results security-scan-results.tsv --require-all" || fail "share status missing security scan validation command"
 if [ -f "$default_bundle_path" ]; then
   bundle_sha="$(shasum -a 256 "$default_bundle_path" | awk '{print $1}')"
   printf '%s\n' "$share_status" | grep -q "| Git bundle | \`$bundle_sha\` |" || fail "share status does not report current bundle hash $bundle_sha"

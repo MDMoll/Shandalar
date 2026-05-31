@@ -29,6 +29,7 @@ bundle_path="/private/tmp/${safe_branch}-${commit_short}.bundle"
 bundle_checksum_path="${bundle_path}.sha256"
 patch_path="/private/tmp/${safe_branch}-${commit_short}.patch"
 patch_checksum_path="${patch_path}.sha256"
+scan_results_path="security-scan-results.tsv"
 
 artifact_status() {
   local artifact="$1"
@@ -61,6 +62,24 @@ artifact_sha() {
     shasum -a 256 "$artifact" | awk '{print $1}'
   else
     printf 'missing'
+  fi
+}
+
+security_scan_results_status() {
+  if [ ! -f "$scan_results_path" ]; then
+    printf 'missing; no scanner results recorded'
+    return
+  fi
+
+  if tools/verify-security-scan-results.sh --results "$scan_results_path" >/dev/null 2>&1; then
+    if tools/verify-security-scan-results.sh --results "$scan_results_path" --require-all >/dev/null 2>&1; then
+      printf 'present; all %s tracked target rows validate' "$security_target_count"
+    else
+      valid_rows="$(awk -F '\t' 'NR > 1 && NF > 0 {count++} END {print count+0}' "$scan_results_path")"
+      printf 'present; %s recorded row(s) validate, but full coverage is incomplete' "$valid_rows"
+    fi
+  else
+    printf 'present; validation FAILED'
   fi
 }
 
@@ -108,11 +127,18 @@ printf '| --- | --- |\n'
 printf '| Git bundle | `%s` |\n' "$(artifact_sha "$bundle_path")"
 printf '| Binary patch | `%s` |\n' "$(artifact_sha "$patch_path")"
 
+printf '\n## Security Scan Results\n\n'
+printf '| Field | Value |\n'
+printf '| --- | --- |\n'
+printf '| Results file | `%s` |\n' "$scan_results_path"
+printf '| Validation | %s |\n' "$(security_scan_results_status)"
+printf '| Full-coverage command | `tools/verify-security-scan-results.sh --results %s --require-all` |\n' "$scan_results_path"
+
 printf '\n## Final Gates\n\n'
 printf '| Gate | Current status |\n'
 printf '| --- | --- |\n'
 printf '| GitHub push | Needs authenticated `git push -u origin %s` from an environment that can answer GitHub credentials; see `docs/push-auth.md`. |\n' "$branch"
 printf '| Manual gameplay | Needs visible pass/fail evidence in `docs/manual-gameplay-verification.md`. |\n'
-printf '| Security scan | Needs a named scanner/version/result in `docs/security-scan.md`. |\n'
+printf '| Security scan | Needs a named scanner/version/result in `docs/security-scan.md`; validate local TSV evidence with `tools/verify-security-scan-results.sh --require-all`. |\n'
 printf '| Public distribution | Not approved by current evidence; see `docs/release-scope.md` and `docs/distribution.md`. |\n'
 printf '| Additional cleanup moves | Deferred unless explicitly approved and launch-copy tested. |\n'
