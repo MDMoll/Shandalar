@@ -33,6 +33,18 @@ and art stayed in place.
 | `Manalink3/` | Likely packaged duplicate/distribution snapshot | Contains its own `Program/`, `Mods/`, and docs; some sampled mod archives match root `Mods/`. | Directory map plus sampled SHA-256 matches. | Low | Keep as historical packaged distribution until a full hash and launch audit is done. |
 | `archive/historical-docs/README (2).txt`, `archive/historical-docs/Readme13.txt`, `archive/historical-docs/Readme132.txt`, `archive/historical-docs/Readme201.txt` | Stale historical docs | Contain old patch, download, and forum references. | See `docs/stale-references.md`. | Medium | Archived in limited reorg; keep as historical source material. |
 
+## Cleanup False Positives
+
+These paths match naive cleanup words such as `BAK`, `Original`, or `nores`,
+but current evidence says they should stay in place.
+
+| Path/pattern | Why it looks suspicious | Evidence | Current decision |
+| --- | --- | --- | --- |
+| `MENUBAK.PIC`, `Program/MENUBAK.PIC` | `BAK` looks like backup. | Both are legacy `.PIC` data files with identical SHA-256 `34b3acb232d2a40c7e807b70cfcd3c9b95fe47a36e2061e41a6cc0d91c42b335`; `.PIC` files are runtime resources. | Keep in root and `Program/` until a launch-copy test proves otherwise. |
+| `WINBAK01.PIC`, `WINBAK02.PIC`, `WORLBAK1.PIC`, and matching `Program/` copies | `BAK` looks like backup. | Root and `Program/` copies match by SHA-256 pair; names fit window/world backdrop resources, and `.PIC` files are runtime resources. | Keep in root and `Program/`; do not archive by filename alone. |
+| `FaceMaker-Original.exe` | `Original` can look like a stale backup. | Hash `0471afcd0288a07422355ff2af224c40f8b29dc0a864eed90b3399e285f42c7e`; used as the original FaceMaker reference in [bugs/create-dibsection-after-color.md](bugs/create-dibsection-after-color.md). | Preserve as reference evidence. |
+| `FaceMaker-nores.exe`, `Program/FaceMaker-nores.exe` | Superseded by active patched `FaceMaker.exe` copies. | Both hash to `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b`; they match the Korath/no-resolution reference. | Preserve as reference evidence until character-creation testing chooses a canonical helper set. |
+
 ## Category Coverage
 
 | Requested category | Covered by |
@@ -52,6 +64,8 @@ and art stayed in place.
 | `Program/*.dat`, `Program/*.res`, `Program/*.csv`, `Program/*.txt`, `Program/*.ini` | Runtime databases, strings, and configs. |
 | `Program/CardArt`, `Program/DuelArt`, `Program/DuelSounds`, `Program/Sound`, `Program/SPR*`, `Program/Statwin`, `Program/PlayFace`, `Program/Faces` | Asset folders likely used by UI, cards, sounds, sprites, and faces. |
 | `CardArtManalink`, `CardArtNew`, `Cardart`, `Duelart`, `Exp1art`, `Shellart`, `Sound`, `Statwin` | Large art/resource stores. They may look redundant but need runtime tests. |
+| `MENUBAK.PIC`, `WINBAK*.PIC`, `WORLBAK1.PIC`, and matching `Program/` copies | Legacy `.PIC` resources whose names look backup-like but are runtime-looking assets. |
+| `FaceMaker-Original.exe`, `FaceMaker-nores.exe`, `Program/FaceMaker-nores.exe` | Reference executables used to document and verify the active FaceMaker patch lineage. |
 | `src/`, `Program/src/`, `magic_updater/`, `Program/magic_updater/` | Source/updater snapshots with differences. |
 
 ## Quarantine Plan for a Future Approved Pass

@@ -84,10 +84,31 @@ do
 done
 pass "representative binary attributes are set"
 
+for path in \
+  MENUBAK.PIC \
+  Program/MENUBAK.PIC \
+  WINBAK01.PIC \
+  WINBAK02.PIC \
+  WORLBAK1.PIC \
+  Program/WINBAK01.PIC \
+  Program/WINBAK02.PIC \
+  Program/WORLBAK1.PIC \
+  FaceMaker-Original.exe \
+  FaceMaker-nores.exe \
+  Program/FaceMaker-nores.exe
+do
+  expect_tracked_file "$path"
+  git check-attr binary -- "$path" | grep -q ': binary: set' || fail "$path is not marked binary"
+done
+pass "protected cleanup false positives are present"
+
 expect_hash Shandalar.exe ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b
 expect_hash Program/Shandalar.exe ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b
 expect_hash FaceMaker.exe 41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246
 expect_hash Program/FaceMaker.exe 41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246
+expect_hash FaceMaker-Original.exe 0471afcd0288a07422355ff2af224c40f8b29dc0a864eed90b3399e285f42c7e
+expect_hash FaceMaker-nores.exe 43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b
+expect_hash Program/FaceMaker-nores.exe 43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b
 expect_hash Magic.exe 5bf518d66342d79562efb1106449413ada06814a6c14818a1e3101fd470c82d1
 expect_hash Program/Magic.exe 0fb8b87fe35c8be037ae3419a9b9cd70a27df840ae6af6c7488c2685046a74fa
 expect_hash ManalinkEh.dll 6a5fd8057d456d691fb87810eee8dbe1680b18d1c4c79530cbe036cb443df1eb

@@ -39,6 +39,8 @@ proof.
 | `CardArtNew/Thumbs.db` | Generated-looking, but inside a runtime-like art folder; needs explicit approval. |
 | `MAGIC*.SVE`, `MAGIC*.map`, `MAGIC*.fce`, `MAGIC5`, `CSV/MAGIC*/`, `Savedescs`, `FaceMostRecent.txt`, `Screennames/` | Save/local state needs a visible save/load test before archiving or keeping as fixtures. |
 | `Program/Savedescs`, `Manalink3/Program/ScreenNames/` | Package-tree local state; do not move separately from owning package/runtime trees. |
+| `MENUBAK.PIC`, `WINBAK*.PIC`, `WORLBAK1.PIC`, and matching `Program/` copies | Backup-looking names, but current evidence identifies them as legacy `.PIC` resource files. |
+| `FaceMaker-Original.exe`, `FaceMaker-nores.exe`, `Program/FaceMaker-nores.exe` | Reference executables documenting the active FaceMaker patch lineage. |
 | Duplicate decks, mods, art, and package snapshots | Exact hashes prove duplication, not safe removal. Choose canonical paths only after launch-copy tests. |
 
 ## Final Gates Before Marking Complete

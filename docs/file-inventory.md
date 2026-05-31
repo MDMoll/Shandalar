@@ -124,6 +124,13 @@ and the name-seed-plus-movement value `155a668c72867bd1274410eb05ca05fbb7bd9bed8
 | `Statwin/*.tmp` and `Program/statwin/*.tmp` | These look suspicious by extension, but most report as Windows bitmap mask files and live in UI resource folders. Root and Program mask hashes match, while `statscrn.tmp` differs across the two trees. | High keep confidence |
 | `Mods/Art/_undo` | Launcher script defines `_undo` folders for mod rollback staging. | Medium |
 
+## Cleanup False Positives
+
+| Path/pattern | Evidence | Cleanup confidence |
+| --- | --- | --- |
+| `MENUBAK.PIC`, `WINBAK*.PIC`, `WORLBAK1.PIC`, and matching `Program/` copies | `file` reports data; root and `Program/` copies match by SHA-256 pair; `.PIC` is a legacy runtime resource extension in this tree. | High keep confidence despite backup-looking names. |
+| `FaceMaker-Original.exe`, `FaceMaker-nores.exe`, `Program/FaceMaker-nores.exe` | Preserved reference executables for the FaceMaker patch history; hashes are recorded in [bugs/create-dibsection-after-color.md](bugs/create-dibsection-after-color.md). | High keep confidence until a character-creation verification pass chooses otherwise. |
+
 ## Duplicate Observations
 
 | Observation | Evidence | Cleanup confidence |
