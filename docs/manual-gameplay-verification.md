@@ -8,6 +8,16 @@ Use exact paths. Record every result in this file, [running.md](running.md), or
 a focused bug note. If a test fails, record the card/phase/window state before
 changing settings.
 
+Before a visible CrossOver test, run this from the repository root to print the
+current branch, bottle settings, launch commands, and runtime hashes:
+
+```sh
+tools/print-manual-gameplay-baseline.sh
+```
+
+Paste that output into the result notes or use it to fill the environment table
+below, then replace `Needs testing` cells with concrete pass/fail evidence.
+
 ## Test Environment Record
 
 | Field | Value |
