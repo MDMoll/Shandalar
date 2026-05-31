@@ -73,6 +73,7 @@ for path in \
   security-scan-results.tsv \
   clamscan-report.txt \
   windows-defender-report.txt \
+  .codex/environments/environment.toml \
   codex-shandalar-crossover-updates-test.bundle \
   codex-shandalar-crossover-updates-test.bundle.sha256 \
   codex-shandalar-crossover-updates-test.patch \

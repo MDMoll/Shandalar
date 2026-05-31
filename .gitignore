@@ -1,6 +1,7 @@
 .DS_Store
 Thumbs.db
 Desktop.ini
+.codex/
 
 # Local security-scan handoff/report outputs.
 scan-targets.tsv
