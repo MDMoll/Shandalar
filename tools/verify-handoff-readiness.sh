@@ -126,7 +126,12 @@ if git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
   fi
 fi
 expect_share_status "| Branch delta rows | $branch_delta_count | \`tools/list-branch-delta.sh\`; rows classified as \`other\`: $branch_delta_other_count |" "share status does not report current branch-delta count"
-expect_share_status "| Security scan targets | $security_target_count | \`tools/list-security-scan-targets.sh\`; scanner still needs to be run separately |" "share status does not report current security-target count"
+if [ -f security-scan-results.tsv ] && tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all >/dev/null 2>&1; then
+  security_inventory_note="\`tools/list-security-scan-targets.sh\`; local scanner results validate for all current targets"
+else
+  security_inventory_note="\`tools/list-security-scan-targets.sh\`; scanner still needs to be run separately"
+fi
+expect_share_status "| Security scan targets | $security_target_count | $security_inventory_note |" "share status does not report current security-target count"
 expect_share_status "$default_bundle_path" "share status missing current bundle path"
 expect_share_status "Default Handoff Artifact Hashes" "share status missing artifact hash section"
 expect_share_status "Security Scan Results" "share status missing security scan results section"

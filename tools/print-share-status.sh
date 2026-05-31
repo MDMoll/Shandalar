@@ -36,6 +36,10 @@ patch_path="/private/tmp/${safe_branch}-${commit_short}.patch"
 patch_checksum_path="${patch_path}.sha256"
 scan_results_path="security-scan-results.tsv"
 manual_gameplay_doc="docs/manual-gameplay-verification.md"
+security_inventory_note='`tools/list-security-scan-targets.sh`; scanner still needs to be run separately'
+if [ -f "$scan_results_path" ] && tools/verify-security-scan-results.sh --results "$scan_results_path" --require-all >/dev/null 2>&1; then
+  security_inventory_note='`tools/list-security-scan-targets.sh`; local scanner results validate for all current targets'
+fi
 
 artifact_status() {
   local artifact="$1"
@@ -89,6 +93,14 @@ security_scan_results_status() {
   fi
 }
 
+security_gate_status() {
+  if [ -f "$scan_results_path" ] && tools/verify-security-scan-results.sh --results "$scan_results_path" --require-all >/dev/null 2>&1; then
+    printf 'Satisfied locally; named scanner rows validate for all current tracked scan targets. See `docs/security-scan.md`.'
+  else
+    printf 'Needs a named scanner/version/result in `docs/security-scan.md`; validate local TSV evidence with `tools/verify-security-scan-results.sh --require-all`.'
+  fi
+}
+
 manual_gameplay_status() {
   tools/verify-manual-gameplay-results.sh --doc "$manual_gameplay_doc" --allow-incomplete | sed 's/^ok: //'
 }
@@ -127,7 +139,7 @@ printf '\n## Inventory Snapshot\n\n'
 printf '| Inventory | Current count | Notes |\n'
 printf '| --- | ---: | --- |\n'
 printf '| Branch delta rows | %s | `tools/list-branch-delta.sh`; rows classified as `other`: %s |\n' "$branch_delta_count" "$branch_delta_other_count"
-printf '| Security scan targets | %s | `tools/list-security-scan-targets.sh`; scanner still needs to be run separately |\n' "$security_target_count"
+printf '| Security scan targets | %s | %s |\n' "$security_target_count" "$security_inventory_note"
 
 printf '\n## Handoff Commands\n\n'
 printf '```sh\n'
@@ -173,7 +185,7 @@ printf '| Gate | Current status |\n'
 printf '| --- | --- |\n'
 printf '| GitHub push | %s |\n' "$(push_gate_status)"
 printf '| Manual gameplay | Needs visible pass/fail evidence in `docs/manual-gameplay-verification.md`; validate it with `tools/verify-manual-gameplay-results.sh`. |\n'
-printf '| Security scan | Needs a named scanner/version/result in `docs/security-scan.md`; validate local TSV evidence with `tools/verify-security-scan-results.sh --require-all`. |\n'
+printf '| Security scan | %s |\n' "$(security_gate_status)"
 printf '| Public distribution | Not approved by current evidence; see `docs/release-scope.md` and `docs/distribution.md`. |\n'
 printf '| Additional cleanup moves | Deferred unless explicitly approved and launch-copy tested. |\n'
 printf '| Strict final verifier | `tools/verify-final-share-gates.sh` should still fail until manual gameplay and security scan evidence are complete. |\n'
