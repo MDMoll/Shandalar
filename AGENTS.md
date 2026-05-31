@@ -21,6 +21,7 @@ should keep the working tree safe and evidence-driven.
 | Do not casually replace the active `FaceMaker.exe` binaries with the older no-resolution copies. | Root and `Program/FaceMaker.exe` are now no-resolution/Korath-derived plus an additional documented `CreateDIBSection` compatibility patch. |
 | Do not casually replace the patched `ManalinkEh.dll` binaries with older copies. | Root and `Program/ManalinkEh.dll` contain a documented Samite/Femeref/Kithkin damage-prevention activation guard at file offsets `0x3bb035` and `0x381a25`; this patch targets a duel freeze where a healer ability was offered outside the real damage-prevention window. |
 | Do not casually replace the patched `Magic.exe` binaries with older copies. | Root and `Program/Magic.exe` contain a documented declared-attacker undo hook at `0x43c303` with code cave `0x459bc8`; this lets a human player click an already-declared attacker before Done to clear `STATE_ATTACKING`. |
+| Do not treat every `.tmp` file as disposable. | The tracked `Statwin/*.tmp` and `Program/statwin/*.tmp` files are bitmap/mask-like UI resources by `file` output; root and Program `statscrn.tmp` also differ by hash. |
 
 ## Archive Policy
 
@@ -70,6 +71,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` unless noted.
 | Review limited reorg history | `sed -n '1,220p' docs/reorganization.md` |
 | Count files by top directory | `find . -type f | sed 's#^./##' | awk 'BEGIN{FS="/"} {print $1}' | sort | uniq -c | sort -nr | head -40` |
 | Count extensions | `find . -type f | awk 'BEGIN{IGNORECASE=1} {n=$0; sub(/^.*\//,"",n); if (n !~ /\./) ext="[none]"; else {ext=n; sub(/^.*\./,"",ext); ext=tolower(ext)}; count[ext]++} END{for (e in count) print count[e], e}' | sort -nr | head -40` |
+| Inspect `.tmp` runtime-looking assets before cleanup | `file Statwin/*.tmp Program/statwin/*.tmp && shasum -a 256 Statwin/*.tmp Program/statwin/*.tmp` |
 | Build dry run | `cd src && make -n` |
 
 ## CrossOver/Wine Commands to Record

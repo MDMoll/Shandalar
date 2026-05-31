@@ -24,6 +24,7 @@ and art stayed in place.
 | `archive/local-helpers/shandalar_homedoom.bat` | Local helper | Hard-coded `e:\Program Files\Magic` and resolution command. | Original `shandalar_homedoom.bat:1-5`. | Medium | Archived in limited reorg; not main launch guidance. |
 | `src/deploy.bat` | Historical deployment script | Hard-coded `c:\magic2k` and `c:\mingw` paths. | `src/deploy.bat:1-44`. | Medium | Keep as build-history evidence; do not run directly. |
 | `src/build.pl` | Risky build helper | Runs make and copies output to hard-coded Windows paths. | `src/build.pl:47-53`. | Medium | Patch only in a future build-focused pass. |
+| `Statwin/*.tmp` and `Program/statwin/*.tmp` | Runtime-looking UI assets despite `.tmp` suffix | Most are Windows bitmap mask files; they live beside `*.bmp`, `*.avi`, and `statwin.txt` UI resources. Root and Program `statscrn.tmp` differ by SHA-256, so they are not safe duplicate cleanup candidates. | `file Statwin/*.tmp Program/statwin/*.tmp` reports PC bitmap data for the mask files; `shasum -a 256` shows matching root/Program mask hashes but different `statscrn.tmp` hashes. | High keep | Do not archive or ignore by extension; test in a launch copy before any future Statwin cleanup. |
 | Root `Shandalar.exe` | Binary duplicate but current CrossOver `MTG` launch target | Same SHA-256 as `Program/Shandalar.exe`; current `MTG` shortcut targets root `C:\Shandalar\Shandalar.exe`, while direct `Program` launch lacks `zlib.dll`. | Hash comparison plus CrossOver shortcut/log evidence. | High keep | Keep; do not dedupe or move without launch-copy testing. |
 | Root `Magic.exe` | Suspicious/needs manual inspection | Same PE timestamp/import family as `Program/Magic.exe` but different SHA-256. | Hash comparison showed different values. | Low | Keep and test separately; do not overwrite either copy. |
 | `Manalink3/` | Likely packaged duplicate/distribution snapshot | Contains its own `Program/`, `Mods/`, and docs; some sampled mod archives match root `Mods/`. | Directory map plus sampled SHA-256 matches. | Low | Keep as historical packaged distribution until a full hash and launch audit is done. |
@@ -37,7 +38,7 @@ and art stayed in place.
 | Likely duplicate | Targeted duplicate hash audit for `Mods/` vs `Manalink3/Mods/` archives, targeted deck-family duplicate hash audit, root `Shandalar.exe`. |
 | Likely stale historical backup | `archive/backups/Rogues_Org_BAK.csv`, archived old readme files, archived local helper script. |
 | Likely unused by current launch path | Root duplicate candidates and some packaged snapshots, marked low/medium confidence only. |
-| Suspicious/needs manual inspection | Root `Magic.exe`, root-vs-Program DLL differences, local machine helper scripts. |
+| Suspicious/needs manual inspection | Root `Magic.exe`, root-vs-Program DLL differences, local machine helper scripts, and `.tmp` files in runtime resource folders. |
 | Do-not-touch runtime assets | Listed below. |
 
 ## Do-Not-Touch Runtime Assets
@@ -66,6 +67,7 @@ and art stayed in place.
 | Compare two files | `shasum -a 256 path1 path2` |
 | Find likely generated files | `find . -type f \( -name '*.GID' -o -name '*.log' -o -name '*BAK*' -o -name '*.tmp' \) -print` |
 | Full duplicate hash report | `find . -type f -exec shasum -a 256 {} + | sort` |
+| Check whether `.tmp` files are actual temp files | `file Statwin/*.tmp Program/statwin/*.tmp && shasum -a 256 Statwin/*.tmp Program/statwin/*.tmp` |
 
 ## Targeted Duplicate Hash Audit
 

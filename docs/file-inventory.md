@@ -120,6 +120,7 @@ and the name-seed-plus-movement value `155a668c72867bd1274410eb05ca05fbb7bd9bed8
 | `archive/debug-evidence/ML_Debug.txt` | Contains old `D:\Newmagic\...` source/debug paths. | Medium |
 | `archive/debug-evidence/assertFile.txt` | Contains one old assertion source path. | Medium |
 | `CardArtNew/Thumbs.db` | Windows Explorer thumbnail cache; `file` reports `Composite Document File V2 Document`. It remains in place because `CardArtNew/` is a runtime-like art folder and moving anything out of it needs explicit approval. | High generated / medium move confidence |
+| `Statwin/*.tmp` and `Program/statwin/*.tmp` | These look suspicious by extension, but most report as Windows bitmap mask files and live in UI resource folders. Root and Program mask hashes match, while `statscrn.tmp` differs across the two trees. | High keep confidence |
 | `Mods/Art/_undo` | Launcher script defines `_undo` folders for mod rollback staging. | Medium |
 
 ## Duplicate Observations
@@ -131,6 +132,7 @@ and the name-seed-plus-movement value `155a668c72867bd1274410eb05ca05fbb7bd9bed8
 | `Program/FaceData.txt`, `Program/FaceButtons.txt`, and `Program/FaceArt/` match `Manalink3/Program/` after the fix. | `cmp` for text files and `diff -qr` for art directory. | Keep as runtime support for `Program/FaceMaker.exe`. |
 | `Program/Magic.exe` and root `Magic.exe` differ. | Different SHA-256 values. | Do not dedupe without launch comparison. |
 | `Program/zlib.dll` is absent while root `zlib.dll` is present. | Direct logged `MTG` launch of `C:\Shandalar\Program\Shandalar.exe` fails because `Program\zlib.dll` is missing. | Treat `Program/Shandalar.exe` as a deferred alternate CrossOver path until tested in a fixed copy. |
+| `Statwin/*.tmp` and `Program/statwin/*.tmp` are mostly exact pairs, despite the temp-looking extension. | SHA-256 hashes match for the bitmap mask files; `statscrn.tmp` differs between root and Program. | Do not dedupe or archive by extension. |
 | `Mods/` and `Manalink3/Mods/` contain exact duplicate archives. | A targeted SHA-256 audit over `*.7z`, `*.zip`, and `*.rar` in both trees found 15 duplicate hashes covering all 30 archive files in that query. | High duplicate confidence, medium cleanup confidence because mod/distribution layout may matter. |
 | Deck files repeat across many deck folders. | A targeted SHA-256 audit over 492 `.dck` files in the main deck-family folders found 163 duplicate hashes covering 327 files. | High duplicate-file confidence, low cleanup confidence because content duplicates do not prove folder redundancy. |
 | `src/` and `Program/src/` are similar but not identical. | `src/Makefile` and `Program/src/Makefile` have different SHA-256 and content. | Do not dedupe casually. |
