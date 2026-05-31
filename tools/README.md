@@ -16,6 +16,7 @@ files.
 | `verify-crossover-mtg-state.sh` | Optional local check for this machine's `MTG` CrossOver bottle: copied runtime hashes, `Window = 2`, app-default `win7`, `Shandalar1440=1440x1080`, and paging-file registry state. |
 | `verify-handoff-artifacts.sh` | Verifies the default `/private/tmp` bundle and patch artifacts for the current branch tip, including checksum sidecars, bundle import, and patch tree restoration. |
 | `verify-handoff-readiness.sh` | Runs the non-gameplay handoff stack: share-readiness, gameplay/security baseline sanity checks, share-status artifact hash checks, cleanup-copy dry-runs for default no-`.git` and `--include-git` modes, bundle/patch dry-runs, optional bundle-import verification, optional default artifact verification, and optional CrossOver bottle-state verification. |
+| `verify-security-scan-results.sh` | Validates a local scanner-results TSV against the current tracked scan target inventory and hashes; pass `--require-all` before treating the security gate as complete. |
 | `verify-share-readiness.sh` | Runs automated checks for clean-tree status, ignored local clutter, generated report/handoff ignore rules, expected tracked ignored files, Git binary attributes, protected cleanup false positives, patched runtime hashes, runtime-manifest hashes, representative patch bytes, tracked save/local-state inventory, security-scan target inventory, branch-delta inventory shape, core docs, maintained-text ASCII, docs index coverage, and local Markdown links. |
 
 Run from the repository root:
@@ -37,8 +38,13 @@ tools/print-share-status.sh
 tools/verify-handoff-artifacts.sh
 tools/verify-handoff-readiness.sh
 tools/verify-handoff-readiness.sh --verify-bundle-import --verify-artifacts
+tools/verify-security-scan-results.sh --allow-missing
 tools/verify-share-readiness.sh
 ```
+
+After a real scanner writes `security-scan-results.tsv`, run
+`tools/verify-security-scan-results.sh --require-all` before treating the
+security-scan gate as complete.
 
 `verify-crossover-mtg-state.sh` is intentionally local-machine specific. Do not
 make general share-readiness depend on the user having the `MTG` CrossOver

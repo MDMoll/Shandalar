@@ -51,6 +51,25 @@ tools/print-security-scan-baseline.sh
 This helper does not run a scanner. Use it only to reduce transcription errors
 when filling the reporting table below.
 
+To validate a local TSV of scanner results against the current inventory and
+hashes, use:
+
+```sh
+tools/verify-security-scan-results.sh --results security-scan-results.tsv
+tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all
+```
+
+The required TSV header is:
+
+```text
+path	sha256	scanner	version	date	result	notes
+```
+
+`--require-all` must pass before treating the security-scan gate as complete.
+This validator does not run a scanner and does not interpret whether a scanner
+finding is safe; it only proves the rows refer to current tracked targets with
+matching SHA-256 values and non-placeholder scanner metadata.
+
 ## Local Scan Commands
 
 Use whichever tools are already trusted on the test machine. Do not download
@@ -63,6 +82,8 @@ scanner installers into this repo.
 | Windows Defender command line | `"%ProgramFiles%\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File "C:\path\to\Shandalar"` |
 | Hash target inventory before external review | `tools/list-security-scan-targets.sh > scan-targets.tsv` |
 | Print Markdown evidence baseline | `tools/print-security-scan-baseline.sh` |
+| Validate recorded scan rows | `tools/verify-security-scan-results.sh --results security-scan-results.tsv` |
+| Validate full target coverage | `tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all` |
 
 `scan-targets.tsv`, `security-scan-results.tsv`, `clamscan-report.txt`,
 `windows-defender-report.txt`, `*.bundle`, and `*.bundle.sha256` are ignored

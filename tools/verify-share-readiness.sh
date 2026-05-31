@@ -185,6 +185,7 @@ for path in \
   tools/verify-handoff-artifacts.sh \
   tools/verify-handoff-readiness.sh \
   tools/verify-share-readiness.sh \
+  tools/verify-security-scan-results.sh \
   tools/verify-crossover-mtg-state.sh \
   tools/list-security-scan-targets.sh
 do

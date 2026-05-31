@@ -56,7 +56,7 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | [release-scope.md](release-scope.md) | Current branch sharing scope and public-release boundaries. |
 | [patch-package-plan.md](patch-package-plan.md) | Branch-delta inventory and restoration-test plan for any future patch/docs-only package. |
 | [distribution.md](distribution.md) | Distribution/licensing caution. |
-| [security-scan.md](security-scan.md) | Malware scanner guidance and current scanner availability evidence. |
+| [security-scan.md](security-scan.md) | Malware scanner guidance, current scanner availability evidence, and scanner-result TSV validation. |
 | [gaps.md](gaps.md) | Remaining runtime, cleanup, build, and distribution gaps. |
 | [git-handoff.md](git-handoff.md) | Exact branch, remote, pre-push checks, and push-auth status. |
 | [push-auth.md](push-auth.md) | Owner-side HTTPS token, GitHub CLI, and SSH options for pushing the branch. |
