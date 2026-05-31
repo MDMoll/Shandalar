@@ -42,20 +42,24 @@ tools/verify-manual-gameplay-results.sh
 
 ## Test Environment Record
 
+The environment rows below are filled from the automated baseline generated on
+2026-05-31. They identify the current local `MTG` CrossOver test target and
+hashes, but they are not visible gameplay results.
+
 | Field | Value |
 | --- | --- |
-| Date | Needs testing |
-| Tester | Needs testing |
-| Platform | Windows / CrossOver / Wine |
-| CrossOver or Wine version | Needs testing |
-| Bottle name | Needs testing |
-| Bottle Windows version | Needs testing |
-| Virtual desktop | Needs testing |
-| Working directory | Needs testing |
-| Command or shortcut target | Needs testing |
-| `Shandalar.exe` SHA-256 | Needs testing |
-| `Magic.exe` SHA-256 | Needs testing |
-| `ManalinkEh.dll` SHA-256 | Needs testing |
+| Date | 2026-05-31 18:11:38 |
+| Tester | Codex automated baseline only; visible gameplay not run |
+| Platform | macOS 15.7.5 arm64 via CrossOver |
+| CrossOver or Wine version | CrossOver 26.1.0.39808 |
+| Bottle name | MTG |
+| Bottle Windows version | App-default `win7`; system registry Microsoft Windows 7 (6.1) |
+| Virtual desktop | `Shandalar1440=1440x1080` |
+| Working directory | `C:\Shandalar` |
+| Command or shortcut target | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\Shandalar.exe"` |
+| `Shandalar.exe` SHA-256 | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` |
+| `Magic.exe` SHA-256 | `5bf518d66342d79562efb1106449413ada06814a6c14818a1e3101fd470c82d1` |
+| `ManalinkEh.dll` SHA-256 | `6a5fd8057d456d691fb87810eee8dbe1680b18d1c4c79530cbe036cb443df1eb` |
 
 ## CrossOver `MTG` Baseline
 
