@@ -17,6 +17,7 @@ and art stayed in place.
 | `Decks.zip` | Archive duplicate candidate | Deck folders already exist, but archive may be distribution evidence. | `file` reports Zip archive; multiple deck folders exist. | Low | Document, do not delete. |
 | `Magicsaves.7z` | Archive | Could contain useful save files. | `file` reports 7-Zip archive. | Low | Keep unless user asks to extract/audit saves. |
 | `AllMagicFonts.zip` | Archive | Fonts also exist as `.ttf`/`.otf` files. | `file` reports Zip archive; many font files are present. | Low | Keep or document contents later. |
+| `CardArtNew/Thumbs.db` | Generated local-state file inside runtime-like art folder | Windows Explorer thumbnail cache, not card art. | `file CardArtNew/Thumbs.db` reports `Composite Document File V2 Document`; SHA-256 is `d613ed811f078af12887dfb5d056373606c29d036574ee31315c427bf5f101ea`. | High for being generated, medium for moving because it lives inside an art folder | Keep in place until explicit approval to move it with `git mv` into `archive/generated-local/`. |
 | `Mods/Art/*.7z` vs `Manalink3/Mods/Art/*.7z` | Likely duplicate archives | Some sampled archives have identical SHA-256. | `Default Sonic 2014.7z` matched across both trees. | Medium for sampled files, low for full tree. | Build a full hash report before quarantine. |
 | `Mods/Rogues/*.7z` vs `Manalink3/Mods/Rogues/*.7z` | Likely duplicate archives | Sampled archive matched SHA-256. | `Modern Sarlack MtG.7z` matched across both trees. | Medium for sampled files, low for full tree. | Build a full hash report before quarantine. |
 | `Decks - Original`, `Decks_original`, `Decks - Harder`, `Decks_alt`, `decks - rawky`, etc. | Likely duplicate or variant deck sets | Many repeated `.dck` filenames across deck folders. | Duplicate filename counts show many deck names repeated 10 times. | Low | Keep; compare content and runtime references first. |
@@ -33,7 +34,7 @@ and art stayed in place.
 
 | Requested category | Covered by |
 | --- | --- |
-| Definitely generated/recreatable | `archive/generated-local/Duel.GID`, generated/log/debug files. |
+| Definitely generated/recreatable | `archive/generated-local/Duel.GID`, generated/log/debug files, and `CardArtNew/Thumbs.db` pending explicit move approval. |
 | Likely duplicate | Sampled `Mods/` vs `Manalink3/Mods/` archives, root `Shandalar.exe`. |
 | Likely stale historical backup | `archive/backups/Rogues_Org_BAK.csv`, archived old readme files, archived local helper script. |
 | Likely unused by current launch path | Root duplicate candidates and some packaged snapshots, marked low/medium confidence only. |
