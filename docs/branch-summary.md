@@ -24,6 +24,7 @@ moving runtime-like assets without explicit approval and launch-copy testing.
 | The high-confidence non-runtime clutter from the limited plan is archived, not deleted. | [reorganization.md](reorganization.md). |
 | The major runtime files and patches are documented with repeatable checks. | [verified-on-this-machine.md](verified-on-this-machine.md) and `tools/verify-share-readiness.sh`. |
 | Remaining cleanup candidates are intentionally deferred instead of silently removed. | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), [completion-audit.md](completion-audit.md), and [gaps.md](gaps.md). |
+| The branch push handoff is explicit. | [git-handoff.md](git-handoff.md). |
 
 ## Do Not Claim Yet
 
@@ -48,4 +49,4 @@ git push -u origin codex/shandalar-crossover-updates
 ```
 
 If the push fails with an HTTPS credential error, run the same push command
-from an authenticated local terminal.
+from an authenticated local terminal. See [git-handoff.md](git-handoff.md).

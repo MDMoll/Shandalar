@@ -10,6 +10,7 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | [branch-summary.md](branch-summary.md) | Handoff summary for what this branch changes and what remains unproven. |
 | [share-readiness.md](share-readiness.md) | Current branch checklist, push checklist, and remaining unproven claims. |
 | [completion-audit.md](completion-audit.md) | Requirement-by-requirement status for the cleanup/share goal. |
+| [git-handoff.md](git-handoff.md) | Exact branch, remote, pre-push checks, and push-auth status. |
 | [release-scope.md](release-scope.md) | Current branch sharing scope and public-release boundaries. |
 | [verified-on-this-machine.md](verified-on-this-machine.md) | Detailed local command/result evidence. |
 | [running.md](running.md) | Windows, Wine, and CrossOver launch commands and test matrix. |
@@ -53,6 +54,7 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | [distribution.md](distribution.md) | Distribution/licensing caution. |
 | [security-scan.md](security-scan.md) | Malware scanner guidance and current scanner availability evidence. |
 | [gaps.md](gaps.md) | Remaining runtime, cleanup, build, and distribution gaps. |
+| [git-handoff.md](git-handoff.md) | Exact branch, remote, pre-push checks, and push-auth status. |
 
 ## Generated Evidence
 

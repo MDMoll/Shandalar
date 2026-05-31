@@ -1,0 +1,54 @@
+# Git Handoff
+
+This branch is ready locally, but it has not been pushed from this environment
+because GitHub authentication is unavailable here.
+
+## Current Branch State
+
+| Field | Value |
+| --- | --- |
+| Branch | `codex/shandalar-crossover-updates` |
+| Remote | `origin` |
+| Remote URL | `https://github.com/MDMoll/Shandalar.git` |
+| Latest local commit | Run `git log --oneline -1` |
+| Push status | Needs authenticated local terminal |
+
+## Pre-Push Check
+
+Run from `/Users/mdmoll/Shandalar/Shandalar`:
+
+```sh
+git status --short --untracked-files=all
+tools/verify-share-readiness.sh
+git log --oneline -10
+```
+
+Expected `git status --short --untracked-files=all` output is empty. If local
+ignored files such as `.DS_Store`, `scan-targets.tsv`, or scanner reports are
+present, remove them before pushing.
+
+## Push Command
+
+```sh
+git push -u origin codex/shandalar-crossover-updates
+```
+
+Do not push directly to `master` for this cleanup/runtime branch.
+
+## Current Push Failure In This Environment
+
+The repeated push failure from this Codex environment is:
+
+```text
+fatal: could not read Username for 'https://github.com': Device not configured
+```
+
+An SSH push attempt also failed earlier with public-key authentication. Treat
+this as an environment authentication problem, not a branch readiness failure.
+
+## After Pushing
+
+Use [branch-summary.md](branch-summary.md), [share-readiness.md](share-readiness.md),
+and [completion-audit.md](completion-audit.md) for the branch description and
+remaining gates. Do not describe the branch as a public release; see
+[release-scope.md](release-scope.md).

@@ -19,6 +19,7 @@ conservative.
 | Git binary hygiene | Root `.gitattributes` marks legacy runtime/resource/media/archive/save formats as binary. | `git check-attr --all -- Shandalar.exe Program/Magic.exe Cards.dat Statwin/statscrn.tmp README.md`. |
 | Distribution caution | The docs distinguish a cleaned maintenance branch from public redistribution permission. | [distribution.md](distribution.md). |
 | Release scope | Current branch sharing is scoped as controlled maintenance, not public redistribution. | [release-scope.md](release-scope.md). |
+| Git handoff | Branch, remote, pre-push checks, and known auth failure are recorded. | [git-handoff.md](git-handoff.md). |
 | Completion audit | The original cleanup/share goal is mapped to current proof and final gates. | [completion-audit.md](completion-audit.md). |
 | Automated non-gameplay checks | Repo share-readiness checks are repeatable without launching the game, including ignored-local-clutter checks, local scan-output ignore checks, protected cleanup false positives, runtime-manifest hash checks, tracked save/local-state inventory, security-scan target inventory, maintained-text ASCII, docs index coverage, and local Markdown link validation. | `tools/verify-share-readiness.sh`. |
 | Local helper scope | CrossOver helper scripts are separated from runtime files. | [../local/README.md](../local/README.md). |
@@ -52,7 +53,8 @@ git push -u origin codex/shandalar-crossover-updates
 ```
 
 If the push fails with an HTTPS credential error, authenticate GitHub locally and
-rerun the same push command.
+rerun the same push command. See [git-handoff.md](git-handoff.md) for the exact
+remote and recorded failure.
 
 ## First Manual Gameplay Checklist
 

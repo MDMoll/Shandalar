@@ -141,6 +141,7 @@ the detailed command/result table.
 | [docs/running.md](docs/running.md) | Windows, CrossOver, Wine launch commands and test matrix. |
 | [docs/share-readiness.md](docs/share-readiness.md) | What is ready to share and what still needs proof. |
 | [docs/completion-audit.md](docs/completion-audit.md) | Requirement-by-requirement status for the cleanup/share goal. |
+| [docs/git-handoff.md](docs/git-handoff.md) | Exact branch, remote, pre-push checks, and push-auth status. |
 | [docs/release-scope.md](docs/release-scope.md) | Current branch sharing scope and public-release boundaries. |
 | [docs/manual-gameplay-verification.md](docs/manual-gameplay-verification.md) | Manual test plan required before claiming the game works end to end. |
 | [docs/crossover-macos.md](docs/crossover-macos.md) | Practical CrossOver bottle setup and troubleshooting. |
