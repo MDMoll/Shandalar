@@ -78,7 +78,9 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` unless noted.
 | Inspect `.tmp` runtime-looking assets before cleanup | `file Statwin/*.tmp Program/statwin/*.tmp && shasum -a 256 Statwin/*.tmp Program/statwin/*.tmp` |
 | Create a disposable cleanup test copy | `tools/create-cleanup-test-copy.sh /private/tmp/shandalar-cleanup-test` |
 | Dry-run a Git handoff bundle if push auth is unavailable | `tools/create-git-handoff-bundle.sh --dry-run` |
+| Recreate the current Git handoff bundle if push auth is unavailable | `tools/create-git-handoff-bundle.sh --replace` |
 | Dry-run a binary patch package for patch-only planning | `tools/create-patch-package.sh --dry-run` |
+| Recreate and apply-verify the current binary patch package | `tools/create-patch-package.sh --replace --verify-apply` |
 | Print the manual gameplay evidence baseline | `tools/print-manual-gameplay-baseline.sh` |
 | Print the security scan evidence baseline | `tools/print-security-scan-baseline.sh` |
 | List branch delta for review or patch-only planning | `tools/list-branch-delta.sh` |

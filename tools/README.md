@@ -6,8 +6,8 @@ files.
 | Tool | Purpose |
 | --- | --- |
 | `create-cleanup-test-copy.sh` | Creates a disposable full-checkout copy for cleanup launch testing after running `verify-share-readiness.sh`; refuses to overwrite an existing destination and supports `--dry-run`. |
-| `create-git-handoff-bundle.sh` | Creates a Git bundle plus `.sha256` sidecar for handing off the current branch when GitHub push authentication is unavailable; runs `verify-share-readiness.sh` first and supports `--dry-run`. |
-| `create-patch-package.sh` | Creates a binary git patch plus `.sha256` sidecar for patch/docs-only package planning; pass `--verify-apply` to test it in a disposable clone. |
+| `create-git-handoff-bundle.sh` | Creates a Git bundle plus `.sha256` sidecar for handing off the current branch when GitHub push authentication is unavailable; runs `verify-share-readiness.sh` first and supports `--dry-run` and narrowly scoped `--replace`. |
+| `create-patch-package.sh` | Creates a binary git patch plus `.sha256` sidecar for patch/docs-only package planning; pass `--verify-apply` to test it in a disposable clone and `--replace` to recreate the current default artifact. |
 | `list-branch-delta.sh` | Lists tracked branch changes relative to `master` as TSV with status, path, coarse kind, byte count, and SHA-256 for review or patch-only release planning; pass `--summary` for a Markdown overview. |
 | `list-security-scan-targets.sh` | Lists tracked executable, DLL, archive, and script files with kind, byte count, and SHA-256 so a scanner pass has an exact target inventory. |
 | `print-manual-gameplay-baseline.sh` | Prints a Markdown baseline with current branch, CrossOver bottle settings, launch commands, and runtime hashes for visible gameplay testing. |
@@ -24,7 +24,9 @@ Run from the repository root:
 tools/create-cleanup-test-copy.sh --dry-run
 tools/create-cleanup-test-copy.sh /private/tmp/shandalar-cleanup-test
 tools/create-git-handoff-bundle.sh --dry-run
+tools/create-git-handoff-bundle.sh --replace
 tools/create-patch-package.sh --dry-run
+tools/create-patch-package.sh --replace --verify-apply
 tools/list-branch-delta.sh
 tools/list-branch-delta.sh --summary
 tools/list-security-scan-targets.sh

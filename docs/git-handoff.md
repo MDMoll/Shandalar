@@ -46,8 +46,8 @@ Git history, create a bundle from the clean checkout:
 
 ```sh
 tools/create-git-handoff-bundle.sh --dry-run
-tools/create-git-handoff-bundle.sh
-tools/create-patch-package.sh --verify-apply
+tools/create-git-handoff-bundle.sh --replace
+tools/create-patch-package.sh --replace --verify-apply
 tools/verify-handoff-artifacts.sh
 ```
 
@@ -57,6 +57,10 @@ incremental against `master`, so the receiver should already have the repo's
 `master` branch. Use `--full` for a larger bundle that also includes the base
 ref. This fallback does not replace pushing the branch to GitHub; it is a
 handoff path when credentials are the only blocker.
+
+The `--replace` option is intentionally narrow: it only overwrites the exact
+default artifact path and checksum sidecar when they already exist as regular
+files. It refuses directories and symlinks.
 
 To import the incremental bundle into a clone that already has `master`, run
 the receiver commands printed by the helper. The command shape is:

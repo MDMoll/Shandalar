@@ -47,7 +47,7 @@ Use a temp path, not the repository, until the format is chosen:
 
 ```sh
 tools/create-patch-package.sh --dry-run
-tools/create-patch-package.sh --verify-apply
+tools/create-patch-package.sh --replace --verify-apply
 ```
 
 That patch may contain binary deltas for patched executables, DLLs, and added

@@ -11,6 +11,7 @@ dest=""
 full_bundle=0
 dry_run=0
 skip_verify=0
+replace=0
 
 usage() {
   cat <<'EOF'
@@ -27,6 +28,7 @@ Options:
   --dest PATH      Bundle output path. Defaults to /private/tmp/<branch>-<sha>.bundle.
   --full           Include the base ref too, creating a larger but more standalone bundle.
   --dry-run        Validate refs and print the bundle command without writing a file.
+  --replace        Overwrite only the exact destination and checksum sidecar if they exist as regular files.
   --skip-verify    Skip tools/verify-share-readiness.sh.
   -h, --help       Show this help.
 EOF
@@ -59,6 +61,9 @@ while [ "$#" -gt 0 ]; do
       ;;
     --dry-run)
       dry_run=1
+      ;;
+    --replace)
+      replace=1
       ;;
     --skip-verify)
       skip_verify=1
@@ -98,16 +103,41 @@ case "$dest" in
   *) fail "destination must be an absolute path: $dest" ;;
 esac
 
+check_output_path() {
+  local label="$1"
+  local path="$2"
+
+  [ ! -L "$path" ] || fail "$label exists and is a symlink, refusing to replace: $path"
+  if [ -e "$path" ] && [ ! -f "$path" ]; then
+    fail "$label exists and is not a regular file: $path"
+  fi
+}
+
+check_output_path "destination" "$dest"
+check_output_path "checksum sidecar" "$checksum_dest"
+
 if [ -e "$dest" ]; then
   if [ "$dry_run" = "1" ]; then
-    printf 'warning: destination already exists, but dry-run will not overwrite it: %s\n' "$dest" >&2
+    if [ "$replace" = "1" ]; then
+      printf 'warning: destination already exists; dry-run would replace it: %s\n' "$dest" >&2
+    else
+      printf 'warning: destination already exists, but dry-run will not overwrite it: %s\n' "$dest" >&2
+    fi
+  elif [ "$replace" = "1" ]; then
+    printf 'Replacing existing destination: %s\n' "$dest" >&2
   else
     fail "destination already exists: $dest"
   fi
 fi
 if [ -e "$checksum_dest" ]; then
   if [ "$dry_run" = "1" ]; then
-    printf 'warning: checksum sidecar already exists, but dry-run will not overwrite it: %s\n' "$checksum_dest" >&2
+    if [ "$replace" = "1" ]; then
+      printf 'warning: checksum sidecar already exists; dry-run would replace it: %s\n' "$checksum_dest" >&2
+    else
+      printf 'warning: checksum sidecar already exists, but dry-run will not overwrite it: %s\n' "$checksum_dest" >&2
+    fi
+  elif [ "$replace" = "1" ]; then
+    printf 'Replacing existing checksum sidecar: %s\n' "$checksum_dest" >&2
   else
     fail "checksum sidecar already exists: $checksum_dest"
   fi
@@ -143,6 +173,10 @@ if [ "$dry_run" = "1" ]; then
   printf 'Receiver verify command: git bundle verify %q\n' "$dest"
   printf 'Receiver fetch command: git fetch %q %q\n' "$dest" "$source_ref:$dest_ref"
   exit 0
+fi
+
+if [ "$replace" = "1" ]; then
+  rm -f -- "$dest" "$checksum_dest"
 fi
 
 git bundle create "$dest" "${bundle_args[@]}"

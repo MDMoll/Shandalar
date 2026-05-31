@@ -202,6 +202,8 @@ tools/print-manual-gameplay-baseline.sh
 tools/print-security-scan-baseline.sh
 tools/print-share-status.sh
 tools/verify-handoff-readiness.sh --verify-bundle-import --verify-artifacts
+tools/create-git-handoff-bundle.sh --replace
+tools/create-patch-package.sh --replace --verify-apply
 tools/create-patch-package.sh --dry-run
 tools/list-branch-delta.sh
 tools/list-branch-delta.sh --summary

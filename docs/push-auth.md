@@ -78,7 +78,7 @@ Use the bundle fallback to move the branch as Git history without pushing from
 this machine:
 
 ```sh
-tools/create-git-handoff-bundle.sh
+tools/create-git-handoff-bundle.sh --replace
 ```
 
 The helper prints the checksum, `git bundle verify`, and `git fetch` commands
