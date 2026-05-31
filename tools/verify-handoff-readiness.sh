@@ -102,6 +102,7 @@ share_status="$(tools/print-share-status.sh)"
 printf '%s\n' "$share_status" | grep -q "| Commit | \`$short_sha\`" || fail "share status does not report commit $short_sha"
 printf '%s\n' "$share_status" | grep -q "| Git status | clean |" || fail "share status does not report clean status"
 printf '%s\n' "$share_status" | grep -q "/private/tmp/${safe_branch}-${short_sha}.bundle" || fail "share status missing current bundle path"
+printf '%s\n' "$share_status" | grep -q "Default Handoff Artifact Hashes" || fail "share status missing artifact hash section"
 printf '%s\n' "$share_status" | grep -q "Manual gameplay" || fail "share status missing manual gameplay gate"
 pass "share status report is current"
 

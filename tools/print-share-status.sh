@@ -54,6 +54,16 @@ artifact_status() {
   fi
 }
 
+artifact_sha() {
+  local artifact="$1"
+
+  if [ -f "$artifact" ]; then
+    shasum -a 256 "$artifact" | awk '{print $1}'
+  else
+    printf 'missing'
+  fi
+}
+
 printf '# Share Status\n\n'
 printf 'This is a current-state report for handoff. It does not push to GitHub, run a malware scanner, or prove gameplay.\n\n'
 
@@ -91,6 +101,12 @@ printf '| Git bundle | `%s` | %s |\n' "$bundle_path" "$(artifact_status "$bundle
 printf '| Git bundle checksum | `%s` | %s |\n' "$bundle_checksum_path" "$([ -f "$bundle_checksum_path" ] && printf 'present' || printf 'missing')"
 printf '| Binary patch | `%s` | %s |\n' "$patch_path" "$(artifact_status "$patch_path" "$patch_checksum_path")"
 printf '| Binary patch checksum | `%s` | %s |\n' "$patch_checksum_path" "$([ -f "$patch_checksum_path" ] && printf 'present' || printf 'missing')"
+
+printf '\n## Default Handoff Artifact Hashes\n\n'
+printf '| Artifact | SHA-256 |\n'
+printf '| --- | --- |\n'
+printf '| Git bundle | `%s` |\n' "$(artifact_sha "$bundle_path")"
+printf '| Binary patch | `%s` |\n' "$(artifact_sha "$patch_path")"
 
 printf '\n## Final Gates\n\n'
 printf '| Gate | Current status |\n'
