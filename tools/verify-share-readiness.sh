@@ -156,6 +156,7 @@ for path in \
   docs/distribution.md \
   docs/verified-on-this-machine.md \
   docs/runtime-manifest.md \
+  docs/manual-gameplay-verification.md \
   docs/cleanup-audit.md \
   docs/duplicate-audit.md \
   docs/cleanup-move-plan.md \

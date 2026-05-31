@@ -27,7 +27,7 @@ conservative.
 
 | Claim | Why not yet |
 | --- | --- |
-| The game is fully gameplay-verified on CrossOver. | Visible manual testing still needs to confirm character creation, same-arrow map stop, save/load, duel stability, and all five starting colors. |
+| The game is fully gameplay-verified on CrossOver. | Visible manual testing still needs to confirm character creation, same-arrow map stop, save/load, duel stability, and all five starting colors; see [manual-gameplay-verification.md](manual-gameplay-verification.md). |
 | Native Windows behavior is verified. | No native Windows launch pass has been recorded in this checkout. |
 | `Shandalar.exe --help` is documented from actual output. | Local attempts did not capture help text or dialog output. |
 | Duplicate assets are safe to remove. | [duplicate-audit.md](duplicate-audit.md) now measures the full non-git duplicate graph, but no launch-copy removal test has chosen canonical runtime/package paths. |
@@ -53,14 +53,6 @@ rerun the same push command.
 
 ## First Manual Gameplay Checklist
 
-| Test | Record |
-| --- | --- |
-| Launch root `Shandalar.exe` from the full checkout or copied `C:\Shandalar` tree. | Exact path, working directory, Windows/Wine/CrossOver version. |
-| Start a new game for each color. | Whether character creation reaches the map with default `Player`. |
-| Adventure map movement. | Whether pressing the same arrow after a step stops movement. |
-| Enter a duel and play several turns. | Whether `Done`, `Trigger`, and `Decline` remain clickable. |
-| Femeref/Samite/Kithkin damage-prevention scenario. | Card names, phase, and whether the prompt freezes. |
-| Declared attacker undo. | Whether clicking a declared attacker before Done removes it cleanly. |
-
-Record results in [running.md](running.md) or a focused bug note, keeping
-verified observations separate from inferences.
+Use [manual-gameplay-verification.md](manual-gameplay-verification.md) for the
+canonical visible test plan. Record results in that file, [running.md](running.md),
+or a focused bug note, keeping verified observations separate from inferences.

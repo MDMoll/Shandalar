@@ -30,7 +30,7 @@ proof.
 | Stale references are identified with path/line evidence where possible. | Proven locally | [stale-references.md](stale-references.md). | Live URL reachability only if requested. |
 | Generated docs distinguish verified facts from inferences. | Proven locally | Root README evidence-language note plus `Verified on this machine` and `Needs testing` sections across docs. | Keep using that convention for new investigations. |
 | Branch can be shared in git. | Ready locally, push blocked | Clean tree, local commits on `codex/shandalar-crossover-updates`, and verifier pass. | Push from an authenticated GitHub environment. |
-| Something that works. | Partially proven | Static binary hashes/patch bytes pass; CrossOver smoke evidence passed earlier crash points. | Manual gameplay retest is still required before claiming the game works end to end. |
+| Something that works. | Partially proven | Static binary hashes/patch bytes pass; CrossOver smoke evidence passed earlier crash points. | Manual gameplay retest in [manual-gameplay-verification.md](manual-gameplay-verification.md) is still required before claiming the game works end to end. |
 
 ## Do Not Move Yet
 
@@ -48,7 +48,7 @@ proof.
 | Gate | Evidence needed |
 | --- | --- |
 | Push | `git push -u origin codex/shandalar-crossover-updates` succeeds. |
-| Gameplay | Visible Windows or CrossOver run confirms launch, character creation, all starting colors, same-arrow map stop, save/load, several duel turns, damage-prevention prompt, and declared-attacker undo. |
+| Gameplay | Visible Windows or CrossOver run fills the pass/fail rows in [manual-gameplay-verification.md](manual-gameplay-verification.md): launch, character creation, all starting colors, same-arrow map stop, save/load, several duel turns, damage-prevention prompt, and declared-attacker undo. |
 | Security | A named scanner/version records results for patched executables, DLLs, and archives. |
 | Distribution | A decision is recorded: private maintenance branch, patch/docs-only public package, or rights-verified full bundle. |
 | Cleanup moves | Any additional file moves have explicit approval, `git mv` history, docs updates, and launch-copy verification. |

@@ -12,6 +12,7 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | [completion-audit.md](completion-audit.md) | Requirement-by-requirement status for the cleanup/share goal. |
 | [verified-on-this-machine.md](verified-on-this-machine.md) | Detailed local command/result evidence. |
 | [running.md](running.md) | Windows, Wine, and CrossOver launch commands and test matrix. |
+| [manual-gameplay-verification.md](manual-gameplay-verification.md) | Manual test plan required before claiming the game works end to end. |
 | [crossover-macos.md](crossover-macos.md) | CrossOver bottle setup, app-defaults, desktop sizing, and troubleshooting. |
 | [troubleshooting.md](troubleshooting.md) | Practical issue notes and current mitigations. |
 
