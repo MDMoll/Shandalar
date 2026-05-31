@@ -24,7 +24,7 @@ tools/list-branch-delta.sh > /private/tmp/shandalar-branch-delta.tsv
 Useful review summaries:
 
 ```sh
-tools/list-branch-delta.sh | awk -F '\t' 'NR > 1 {count[$4]++} END {for (k in count) print count[k], k}' | sort -nr
+tools/list-branch-delta.sh --summary
 git diff --stat master...HEAD
 ```
 

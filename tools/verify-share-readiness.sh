@@ -196,6 +196,9 @@ branch_delta_count="$(printf '%s\n' "$branch_delta" | awk 'NR > 1 {count++} END 
 [ "$branch_delta_count" -ge "100" ] || fail "expected at least 100 branch-delta rows, found $branch_delta_count"
 branch_delta_other_count="$(printf '%s\n' "$branch_delta" | awk -F '\t' 'NR > 1 && $4 == "other" {count++} END {print count+0}')"
 [ "$branch_delta_other_count" = "0" ] || fail "branch-delta inventory has $branch_delta_other_count rows classified as other"
+branch_delta_summary="$(tools/list-branch-delta.sh --summary)"
+printf '%s\n' "$branch_delta_summary" | grep -q "# Branch Delta Summary" || fail "branch-delta summary missing heading"
+printf '%s\n' "$branch_delta_summary" | grep -q "| Changed paths | $branch_delta_count |" || fail "branch-delta summary does not report $branch_delta_count changed paths"
 for expected in \
   $'README.md\tdocumentation' \
   $'.gitattributes\trepo-metadata' \
