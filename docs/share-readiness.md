@@ -19,7 +19,7 @@ conservative.
 | Git binary hygiene | Root `.gitattributes` marks legacy runtime/resource/media/archive/save formats as binary. | `git check-attr --all -- Shandalar.exe Program/Magic.exe Cards.dat Statwin/statscrn.tmp README.md`. |
 | Distribution caution | The docs distinguish a cleaned maintenance branch from public redistribution permission. | [distribution.md](distribution.md). |
 | Completion audit | The original cleanup/share goal is mapped to current proof and final gates. | [completion-audit.md](completion-audit.md). |
-| Automated non-gameplay checks | Repo share-readiness checks are repeatable without launching the game, including ignored-local-clutter checks, protected cleanup false positives, tracked save/local-state inventory, maintained-text ASCII, docs index coverage, and local Markdown link validation. | `tools/verify-share-readiness.sh`. |
+| Automated non-gameplay checks | Repo share-readiness checks are repeatable without launching the game, including ignored-local-clutter checks, protected cleanup false positives, runtime-manifest hash checks, tracked save/local-state inventory, maintained-text ASCII, docs index coverage, and local Markdown link validation. | `tools/verify-share-readiness.sh`. |
 | Local helper scope | CrossOver helper scripts are separated from runtime files. | [../local/README.md](../local/README.md). |
 | Generated evidence scope | Long command-output snapshots are mapped as evidence, not primary docs. | [generated/README.md](generated/README.md). |
 

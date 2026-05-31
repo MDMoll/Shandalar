@@ -58,3 +58,6 @@ shasum -a 256 Shandalar.exe Program/Shandalar.exe Magic.exe Program/Magic.exe Fa
 file Shandalar.exe Program/Shandalar.exe Magic.exe Program/Magic.exe FaceMaker.exe Program/FaceMaker.exe ManalinkEh.dll Program/ManalinkEh.dll FaceMaker-Original.exe FaceMaker-nores.exe Program/FaceMaker-nores.exe
 tools/verify-share-readiness.sh
 ```
+
+`tools/verify-share-readiness.sh` parses this manifest and checks every listed
+SHA-256 row against the current file bytes.

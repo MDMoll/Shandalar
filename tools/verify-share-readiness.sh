@@ -169,6 +169,45 @@ pass "core docs exist"
 
 python3 - <<'PY'
 from pathlib import Path
+import hashlib
+import re
+import sys
+
+manifest = Path("docs/runtime-manifest.md")
+row_re = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*`([0-9a-f]{64})`\s*\|")
+checked = 0
+failures = []
+
+for line in manifest.read_text(encoding="utf-8").splitlines():
+    match = row_re.match(line)
+    if not match:
+        continue
+
+    rel_path, expected = match.groups()
+    path = Path(rel_path)
+    checked += 1
+
+    if not path.is_file():
+        failures.append(f"missing manifest file: {rel_path}")
+        continue
+
+    actual = hashlib.sha256(path.read_bytes()).hexdigest()
+    if actual != expected:
+        failures.append(f"{rel_path} sha256 {actual} != {expected}")
+
+if checked == 0:
+    failures.append("runtime manifest contains no SHA-256 rows")
+
+if failures:
+    for failure in failures:
+        print(f"manifest mismatch: {failure}", file=sys.stderr)
+    sys.exit(1)
+
+print(f"ok: runtime manifest hashes match current files ({checked} checked)")
+PY
+
+python3 - <<'PY'
+from pathlib import Path
 import sys
 
 checked = 0
