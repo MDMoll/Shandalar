@@ -1,7 +1,7 @@
 # Git Handoff
 
-This branch is ready locally, but it has not been pushed from this environment
-because GitHub authentication is unavailable here.
+This branch has been pushed to GitHub from this environment. Handoff artifacts
+remain useful as credential-independent fallbacks and patch-planning evidence.
 
 ## Current Branch State
 
@@ -11,7 +11,7 @@ because GitHub authentication is unavailable here.
 | Remote | `origin` |
 | Remote URL | `https://github.com/MDMoll/Shandalar.git` |
 | Latest local commit | Run `git log --oneline -1` |
-| Push status | Needs authenticated local terminal |
+| Push status | `origin/codex/shandalar-crossover-updates` matches local `HEAD` when `git rev-parse HEAD @{u}` prints the same SHA twice. |
 
 ## Pre-Push Check
 
@@ -27,7 +27,7 @@ Expected `git status --short --untracked-files=all` output is empty. If local
 ignored files such as `.DS_Store`, `scan-targets.tsv`, or scanner reports are
 present, remove them before pushing.
 
-## Push Command
+## Push Command For New Commits
 
 ```sh
 git push -u origin codex/shandalar-crossover-updates
@@ -35,14 +35,14 @@ git push -u origin codex/shandalar-crossover-updates
 
 Do not push directly to `master` for this cleanup/runtime branch.
 
-If credentials are not already configured, use [push-auth.md](push-auth.md) for
+If future pushes hit credentials again, use [push-auth.md](push-auth.md) for
 HTTPS token, GitHub CLI, and SSH setup paths. Do not commit tokens, private
-keys, or credential-helper output.
+keys, credential-helper output, or `.codex/` environment files.
 
 ## Bundle Fallback
 
-If authenticated push is still unavailable but you need to move the branch as
-Git history, create a bundle from the clean checkout:
+If authenticated push is unavailable in a future environment but you need to
+move the branch as Git history, create a bundle from the clean checkout:
 
 ```sh
 tools/create-git-handoff-bundle.sh --dry-run
@@ -96,17 +96,17 @@ base index to confirm the resulting Git tree matches the branch tip. If you pass
 an explicit branch, use the same ref spelling you used when creating the
 artifacts, because the default artifact path includes the branch/ref text.
 
-## Current Push Failure In This Environment
+## Earlier Push Failure In This Environment
 
-The repeated push failure from this Codex environment is:
+Earlier push attempts from this Codex environment failed with:
 
 ```text
 fatal: could not read Username for 'https://github.com': Device not configured
 ```
 
-An SSH push attempt also failed earlier with public-key authentication. Treat
-this as an environment authentication problem, not a branch readiness failure.
-See [push-auth.md](push-auth.md) for the owner-side remediation paths.
+An SSH push attempt also failed earlier with public-key authentication. The
+current HTTPS push has since succeeded, but keep [push-auth.md](push-auth.md)
+for future credential remediation paths.
 
 ## After Pushing
 

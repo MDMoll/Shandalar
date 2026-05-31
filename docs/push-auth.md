@@ -1,8 +1,8 @@
 # Push Authentication Runbook
 
-This branch is ready locally, but this Codex environment cannot answer GitHub
-credential prompts. Use this from an authenticated local terminal when you are
-ready to publish the branch.
+The current branch has been pushed, and local `HEAD` now tracks
+`origin/codex/shandalar-crossover-updates`. Keep this runbook for future
+credential failures or new commits that need another push.
 
 Do not commit tokens, private keys, credential-helper dumps, or screenshots that
 show credentials.
@@ -14,9 +14,10 @@ show credentials.
 | Repo path | `/Users/mdmoll/Shandalar/Shandalar` |
 | Branch | `codex/shandalar-crossover-updates` |
 | Current remote | `https://github.com/MDMoll/Shandalar.git` |
-| Recorded push failure here | `fatal: could not read Username for 'https://github.com': Device not configured` |
+| Current push state | `git rev-parse HEAD @{u}` printed the same SHA after the successful push. |
+| Earlier recorded push failure here | `fatal: could not read Username for 'https://github.com': Device not configured` |
 
-Before any push attempt:
+Before any future push attempt:
 
 ```sh
 cd /Users/mdmoll/Shandalar/Shandalar

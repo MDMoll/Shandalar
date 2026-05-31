@@ -25,21 +25,21 @@ moving runtime-like assets without explicit approval and launch-copy testing.
 | The high-confidence non-runtime clutter from the limited plan is archived, not deleted. | [reorganization.md](reorganization.md). |
 | The major runtime files and patches are documented with repeatable checks. | [verified-on-this-machine.md](verified-on-this-machine.md) and `tools/verify-share-readiness.sh`. |
 | Remaining cleanup candidates are intentionally deferred instead of silently removed. | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), [completion-audit.md](completion-audit.md), and [gaps.md](gaps.md). |
-| The branch push handoff is explicit, with owner-side auth paths, bundle/patch artifacts, checksum sidecars, and verifier coverage for credential-blocked environments. | [git-handoff.md](git-handoff.md), [push-auth.md](push-auth.md), `tools/create-git-handoff-bundle.sh`, `tools/create-patch-package.sh`, and `tools/verify-handoff-artifacts.sh`. |
+| The branch is pushed and the handoff path is explicit, with owner-side auth notes, bundle/patch artifacts, checksum sidecars, and verifier coverage for credential-blocked environments. | [git-handoff.md](git-handoff.md), [push-auth.md](push-auth.md), `tools/create-git-handoff-bundle.sh`, `tools/create-patch-package.sh`, and `tools/verify-handoff-artifacts.sh`. |
 
 ## Do Not Claim Yet
 
 | Claim | Why not |
 | --- | --- |
 | Fully gameplay verified. | Manual visible Windows/CrossOver gameplay tests are still required. |
-| Final controlled-maintenance gates passed. | `tools/verify-final-share-gates.sh` should fail until push, manual gameplay, and security scan evidence are complete. |
+| Final controlled-maintenance gates passed. | `tools/verify-final-share-gates.sh` should still fail until manual gameplay and security scan evidence are complete. |
 | Public redistribution approved. | No repo-level license was found and bundled rightsholder/trademark notices are present. |
 | Patch/docs-only package prepared. | The current branch is scoped for controlled maintenance; [patch-package-plan.md](patch-package-plan.md) records a branch-delta inventory path, but no patch artifact has been prepared or tested. |
 | Malware scanned. | No named malware scanner result is recorded. |
 | Duplicate assets are safe to remove. | The full duplicate graph is measured, but no canonical runtime/package path has been chosen by launch-copy testing. |
 | Save-state files are public fixtures. | Save/load behavior still needs a manual test before deciding whether to archive or keep them. |
 
-## Before Pushing
+## Before Pushing New Commits
 
 Run from `/Users/mdmoll/Shandalar/Shandalar`:
 
@@ -54,10 +54,10 @@ git log --oneline -10
 git push -u origin codex/shandalar-crossover-updates
 ```
 
-If the push fails with an HTTPS credential error, run the same push command
-from an authenticated local terminal. See [push-auth.md](push-auth.md) for
-HTTPS token, GitHub CLI, and SSH options. If credentials are still unavailable,
-use `tools/create-git-handoff-bundle.sh --replace` to recreate a Git-history
+The current branch has already been pushed. After new commits, rerun the same
+push command. If credentials are unavailable, see [push-auth.md](push-auth.md)
+for HTTPS token, GitHub CLI, and SSH options, or use
+`tools/create-git-handoff-bundle.sh --replace` to recreate a Git-history
 handoff bundle for the current commit.
 The helpers now print receiver-side checksum, `git bundle verify`, `git fetch`,
 and patch-apply commands; `tools/verify-handoff-artifacts.sh` checks the

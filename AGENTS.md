@@ -87,7 +87,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` unless noted.
 | Run the non-gameplay handoff verifier | `tools/verify-handoff-readiness.sh` |
 | Verify bundle import in a disposable clone | `tools/verify-handoff-readiness.sh --verify-bundle-import` |
 | Verify default handoff artifacts too | `tools/verify-handoff-readiness.sh --verify-bundle-import --verify-artifacts` |
-| Run the strict final controlled-maintenance gates | `tools/verify-final-share-gates.sh`; this should fail until remote push, manual gameplay evidence, and security scan coverage are complete. |
+| Run the strict final controlled-maintenance gates | `tools/verify-final-share-gates.sh`; this should still fail until manual gameplay evidence and security scan coverage are complete. |
 | Run automated share-readiness checks | `tools/verify-share-readiness.sh` |
 | Build dry run | `cd src && make -n` |
 

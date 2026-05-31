@@ -113,6 +113,13 @@ branch_delta_count="$(printf '%s\n' "$branch_delta" | awk 'NR > 1 {count++} END 
 branch_delta_other_count="$(printf '%s\n' "$branch_delta" | awk -F '\t' 'NR > 1 && $4 == "other" {count++} END {print count+0}')"
 expect_share_status "| Commit | \`$short_sha\`" "share status does not report commit $short_sha"
 expect_share_status "| Git status | clean |" "share status does not report clean status"
+if git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
+  upstream="$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}')"
+  expect_share_status "| Upstream | \`$upstream\` |" "share status does not report upstream $upstream"
+  if [ "$(git rev-parse HEAD)" = "$(git rev-parse "$upstream")" ]; then
+    expect_share_status "| GitHub push | Pushed; local \`HEAD\` matches \`$upstream\` at \`$short_sha\`. |" "share status does not report pushed upstream state"
+  fi
+fi
 expect_share_status "| Branch delta rows | $branch_delta_count | \`tools/list-branch-delta.sh\`; rows classified as \`other\`: $branch_delta_other_count |" "share status does not report current branch-delta count"
 expect_share_status "| Security scan targets | $security_target_count | \`tools/list-security-scan-targets.sh\`; scanner still needs to be run separately |" "share status does not report current security-target count"
 expect_share_status "$default_bundle_path" "share status missing current bundle path"

@@ -8,6 +8,7 @@ branch="$(git branch --show-current)"
 commit_short="$(git rev-parse --short HEAD)"
 commit_full="$(git rev-parse HEAD)"
 remote="$(git remote get-url origin 2>/dev/null || printf 'not configured')"
+upstream="$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
 status="$(git status --short --untracked-files=all)"
 status_value="clean"
 if [ -n "$status" ]; then
@@ -88,6 +89,20 @@ manual_gameplay_status() {
   tools/verify-manual-gameplay-results.sh --doc "$manual_gameplay_doc" --allow-incomplete | sed 's/^ok: //'
 }
 
+push_gate_status() {
+  if [ -z "$upstream" ]; then
+    printf 'Needs authenticated `git push -u origin %s`; no upstream branch is configured. See `docs/push-auth.md`.' "$branch"
+    return
+  fi
+
+  upstream_sha="$(git rev-parse "$upstream" 2>/dev/null || true)"
+  if [ "$upstream_sha" = "$commit_full" ]; then
+    printf 'Pushed; local `HEAD` matches `%s` at `%s`.' "$upstream" "$commit_short"
+  else
+    printf 'Needs push or pull review; local `HEAD` is `%s`, but `%s` is `%s`.' "$commit_short" "$upstream" "$(git rev-parse --short "$upstream" 2>/dev/null || printf 'unknown')"
+  fi
+}
+
 printf '# Share Status\n\n'
 printf 'This is a current-state report for handoff. It does not push to GitHub, run a malware scanner, or prove gameplay.\n\n'
 
@@ -101,6 +116,7 @@ printf '| Git status | %s |\n' "$status_value"
 printf '| Ignored local files | %s |\n' "$ignored_local"
 printf '| Tracked ignored files | `%s` |\n' "$tracked_ignored"
 printf '| Remote | `%s` |\n' "$remote"
+printf '| Upstream | `%s` |\n' "${upstream:-none}"
 
 printf '\n## Inventory Snapshot\n\n'
 printf '| Inventory | Current count | Notes |\n'
@@ -149,9 +165,9 @@ printf '| Completion command | `tools/verify-manual-gameplay-results.sh --doc %s
 printf '\n## Final Gates\n\n'
 printf '| Gate | Current status |\n'
 printf '| --- | --- |\n'
-printf '| GitHub push | Needs authenticated `git push -u origin %s` from an environment that can answer GitHub credentials; see `docs/push-auth.md`. |\n' "$branch"
+printf '| GitHub push | %s |\n' "$(push_gate_status)"
 printf '| Manual gameplay | Needs visible pass/fail evidence in `docs/manual-gameplay-verification.md`; validate it with `tools/verify-manual-gameplay-results.sh`. |\n'
 printf '| Security scan | Needs a named scanner/version/result in `docs/security-scan.md`; validate local TSV evidence with `tools/verify-security-scan-results.sh --require-all`. |\n'
 printf '| Public distribution | Not approved by current evidence; see `docs/release-scope.md` and `docs/distribution.md`. |\n'
 printf '| Additional cleanup moves | Deferred unless explicitly approved and launch-copy tested. |\n'
-printf '| Strict final verifier | `tools/verify-final-share-gates.sh` should fail until push, manual gameplay, and security scan evidence are complete. |\n'
+printf '| Strict final verifier | `tools/verify-final-share-gates.sh` should still fail until manual gameplay and security scan evidence are complete. |\n'
