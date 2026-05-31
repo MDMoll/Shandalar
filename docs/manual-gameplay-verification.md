@@ -31,6 +31,7 @@ To summarize current gaps without launching the game, run:
 
 ```sh
 tools/verify-manual-gameplay-results.sh --allow-incomplete
+tools/verify-manual-gameplay-results.sh --allow-incomplete --show-missing
 ```
 
 Before claiming the game works end to end, this command must pass without

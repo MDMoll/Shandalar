@@ -20,7 +20,7 @@ files.
 | `verify-final-share-gates.sh` | Strict completion gate for controlled-maintenance sharing; it runs local share-readiness, requires complete manual gameplay evidence, requires full scanner-result coverage, and confirms `origin/<branch>` matches the local branch tip. It is expected to fail until external evidence exists. |
 | `verify-handoff-artifacts.sh` | Verifies the default `/private/tmp` bundle and patch artifacts for the current branch tip, including checksum sidecars, bundle import, and patch tree restoration. |
 | `verify-handoff-readiness.sh` | Runs the non-gameplay handoff stack: share-readiness, gameplay/security baseline sanity checks, share-status inventory/status/hash drift checks, cleanup-copy dry-runs for default no-`.git` and `--include-git` modes, bundle/patch dry-runs, optional bundle-import verification, optional default artifact verification, and optional CrossOver bottle-state verification. |
-| `verify-manual-gameplay-results.sh` | Validates the manual gameplay checklist and fails until required environment fields are filled and all required visible tests pass. |
+| `verify-manual-gameplay-results.sh` | Validates the manual gameplay checklist and fails until required environment fields are filled and all required visible tests pass; pass `--show-missing` to print the exact missing fields and test IDs. |
 | `verify-security-scan-results.sh` | Validates a local scanner-results TSV against the current tracked scan target inventory and hashes; pass `--require-all` before treating the security gate as complete. |
 | `verify-share-readiness.sh` | Runs automated checks for clean-tree status, ignored local clutter, generated report/handoff ignore rules, expected tracked ignored files, Git binary attributes, protected cleanup false positives, patched runtime hashes, runtime-manifest hashes, representative patch bytes, tracked save/local-state inventory, security-scan target inventory, branch-delta inventory shape, core docs, current top-level CrossOver guidance, maintained-text ASCII, docs index coverage, and local Markdown links. |
 
@@ -48,6 +48,7 @@ tools/verify-handoff-artifacts.sh
 tools/verify-handoff-readiness.sh
 tools/verify-handoff-readiness.sh --verify-bundle-import --verify-artifacts
 tools/verify-manual-gameplay-results.sh --allow-incomplete
+tools/verify-manual-gameplay-results.sh --allow-incomplete --show-missing
 tools/verify-security-scan-results.sh --allow-missing
 tools/verify-share-readiness.sh
 ```

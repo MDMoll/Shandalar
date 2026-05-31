@@ -6,6 +6,7 @@ cd "$repo_root"
 
 doc_path="docs/manual-gameplay-verification.md"
 allow_incomplete=0
+show_missing=0
 
 usage() {
   cat <<'EOF'
@@ -19,6 +20,7 @@ Options:
                       Defaults to docs/manual-gameplay-verification.md.
   --allow-incomplete  Print the current status and exit successfully even when
                       evidence is missing or failing.
+  --show-missing      Also print the missing/placeholder fields and test IDs.
   -h, --help          Show this help.
 EOF
 }
@@ -38,6 +40,9 @@ while [ "$#" -gt 0 ]; do
     --allow-incomplete)
       allow_incomplete=1
       ;;
+    --show-missing)
+      show_missing=1
+      ;;
     -h|--help)
       usage
       exit 0
@@ -53,6 +58,7 @@ done
 
 export SHANDALAR_MANUAL_DOC="$doc_path"
 export SHANDALAR_ALLOW_INCOMPLETE="$allow_incomplete"
+export SHANDALAR_SHOW_MISSING="$show_missing"
 
 python3 - <<'PY'
 from pathlib import Path
@@ -62,6 +68,7 @@ import sys
 
 doc_path = Path(os.environ["SHANDALAR_MANUAL_DOC"])
 allow_incomplete = os.environ["SHANDALAR_ALLOW_INCOMPLETE"] == "1"
+show_missing = os.environ["SHANDALAR_SHOW_MISSING"] == "1"
 text = doc_path.read_text(encoding="utf-8")
 
 required_env_fields = [
@@ -198,10 +205,32 @@ if unclear_tests:
 summary = "; ".join(parts) if parts else "manual gameplay evidence is incomplete"
 message = f"manual gameplay incomplete: {summary}; {len(passing_tests)}/{len(required_tests)} required tests pass"
 
+details = []
+if missing_env:
+    details.append(f"missing environment fields: {', '.join(missing_env)}")
+if placeholder_env:
+    details.append(f"environment fields needing evidence: {', '.join(placeholder_env)}")
+if missing_tests:
+    details.append(f"missing required test rows: {', '.join(missing_tests)}")
+if placeholder_tests:
+    details.append(f"required test results needing evidence: {', '.join(placeholder_tests)}")
+if failing_tests:
+    details.append(f"required test results recorded as failing: {', '.join(failing_tests)}")
+if unclear_tests:
+    details.append(f"required test results without Pass/Fail: {', '.join(unclear_tests)}")
+if passing_tests:
+    details.append(f"required tests passing: {', '.join(passing_tests)}")
+
 if allow_incomplete:
     print(f"ok: {message}")
+    if show_missing:
+        for detail in details:
+            print(detail)
     sys.exit(0)
 
 print(f"FAIL: {message}", file=sys.stderr)
+if show_missing:
+    for detail in details:
+        print(f"FAIL: {detail}", file=sys.stderr)
 sys.exit(1)
 PY
