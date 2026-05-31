@@ -55,9 +55,14 @@ To validate a local TSV of scanner results against the current inventory and
 hashes, use:
 
 ```sh
+tools/create-security-scan-results-template.sh --output security-scan-results.tsv
 tools/verify-security-scan-results.sh --results security-scan-results.tsv
 tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all
 ```
+
+The template helper only writes current paths and hashes. Replace every
+`Needs testing` placeholder with the real scanner name, version, date, result,
+and notes after a scan; placeholders intentionally fail validation.
 
 The required TSV header is:
 
@@ -81,6 +86,7 @@ scanner installers into this repo.
 | Windows Defender PowerShell | `Start-MpScan -ScanPath "C:\path\to\Shandalar"` |
 | Windows Defender command line | `"%ProgramFiles%\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File "C:\path\to\Shandalar"` |
 | Hash target inventory before external review | `tools/list-security-scan-targets.sh > scan-targets.tsv` |
+| Create scanner result TSV template | `tools/create-security-scan-results-template.sh --output security-scan-results.tsv` |
 | Print Markdown evidence baseline | `tools/print-security-scan-baseline.sh` |
 | Validate recorded scan rows | `tools/verify-security-scan-results.sh --results security-scan-results.tsv` |
 | Validate full target coverage | `tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all` |

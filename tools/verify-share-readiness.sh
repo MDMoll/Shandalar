@@ -179,6 +179,7 @@ for path in \
   tools/create-cleanup-test-copy.sh \
   tools/create-git-handoff-bundle.sh \
   tools/create-patch-package.sh \
+  tools/create-security-scan-results-template.sh \
   tools/list-branch-delta.sh \
   tools/print-manual-gameplay-baseline.sh \
   tools/print-security-scan-baseline.sh \
@@ -211,6 +212,7 @@ printf '%s\n' "$branch_delta_summary" | grep -q "| Changed paths | $branch_delta
 for expected in \
   $'README.md\tdocumentation' \
   $'.gitattributes\trepo-metadata' \
+  $'tools/create-security-scan-results-template.sh\tshell-tool' \
   $'Magic.exe\tpe-executable' \
   $'Program/FaceArt/fb1\tart-resource' \
   $'archive/backups/Rogues_Org_BAK.csv\tarchive-evidence' \
