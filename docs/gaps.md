@@ -28,7 +28,7 @@ of failure, only work that still needs direct testing or evidence.
 | Gap | Current evidence | Next action |
 | --- | --- | --- |
 | Duplicate cleanup decision | [duplicate-audit.md](duplicate-audit.md) now records a full non-git SHA-256 duplicate summary: 52,045 files scanned, 10,852 duplicate hash groups, 26,189 files in duplicate groups, and about 435.1 MiB of theoretical duplicate bytes. | Decide canonical package/runtime/mod trees only after launch-copy tests; the hash graph is evidence, not removal approval. |
-| Distribution review | [distribution.md](distribution.md) records that no repository-level license file was found and bundled rightsholder/trademark notices are present. | Decide whether future sharing should be private maintenance, patch/docs-only, or a rights-verified public bundle. |
+| Distribution review | [release-scope.md](release-scope.md) records the current branch as controlled maintenance only; [distribution.md](distribution.md) records that no repository-level license file was found and bundled rightsholder/trademark notices are present. | Before public release, prepare and verify either a patch/docs-only package or a rights-verified full bundle. |
 | `src/` rebuild | `make -n` reached compile commands, then stopped on missing `src/card_id.h` and `functions/utility.obj` rule trouble. | Restore/generate missing build inputs and install the expected 32-bit MinGW/yasm toolchain in a build-focused pass. |
 | `Program/src/` vs `src/` relationship | The snapshots are similar but not identical. | Compare trees before deduping or choosing a canonical source tree. |
 | Old URL reachability | Stale-reference docs classify links from local evidence only. | Test network reachability only if the user asks for live-link validation. |

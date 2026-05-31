@@ -4,6 +4,11 @@ This repo has been cleaned and documented for local maintenance and controlled
 git sharing. That is not the same as proving it is safe for public
 redistribution.
 
+The current branch sharing decision is recorded in
+[release-scope.md](release-scope.md): treat this as a controlled maintenance
+branch only unless a patch/docs-only package or rights-verified public bundle is
+prepared later.
+
 ## Verified on this machine
 
 Run from `/Users/mdmoll/Shandalar/Shandalar` on 2026-05-31.
@@ -19,7 +24,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` on 2026-05-31.
 | Topic | Current position |
 | --- | --- |
 | Public redistribution | Not verified. Do not claim that this repo can be published publicly as-is. |
-| Private maintenance branch | Use only when the recipient already has the same rights context and understands the bundled-game nature of the tree. |
+| Private maintenance branch | Current branch scope; use only when the recipient already has the same rights context and understands the bundled-game nature of the tree. |
 | Patches and documentation | These are easier to share than bundled proprietary assets, but no separate patch-only package has been prepared yet. |
 | Runtime redistributables | Do not download or commit third-party runtime installers into this repo. Install them into Windows/CrossOver bottles instead. |
 | Security claims | Separate issue. See [security-scan.md](security-scan.md); no malware scanner result is recorded yet. |

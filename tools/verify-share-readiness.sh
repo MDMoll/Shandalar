@@ -174,6 +174,7 @@ for path in \
   docs/README.md \
   docs/branch-summary.md \
   docs/completion-audit.md \
+  docs/release-scope.md \
   docs/share-readiness.md \
   docs/distribution.md \
   docs/verified-on-this-machine.md \

@@ -12,6 +12,7 @@ proof.
 | --- | --- | --- |
 | Local maintenance branch | Ready locally | The tree is clean and `tools/verify-share-readiness.sh` passes. |
 | GitHub branch push | Blocked outside repo | Local pushes fail because this environment has no GitHub HTTPS credentials and no accepted SSH key. |
+| Release scope | Controlled maintenance only | [release-scope.md](release-scope.md) records the current branch sharing decision; public full-bundle and patch/docs-only releases remain unprepared. |
 | Clean public release | Not proven | Distribution rights, malware scan, and full gameplay verification are still missing. |
 | More file moves | Deferred | Remaining candidates are runtime-like, save-state, art-folder, or package-tree files that need explicit approval and launch-copy testing. |
 
@@ -29,7 +30,7 @@ proof.
 | Cleanup candidates are listed with evidence and confidence, nothing deleted. | Proven for current audit scope | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), [duplicate-audit.md](duplicate-audit.md), and [save-state.md](save-state.md). | Approved launch-copy tests before moving save-state, art-folder, package-tree, or duplicate runtime-like files. |
 | Stale references are identified with path/line evidence where possible. | Proven locally | [stale-references.md](stale-references.md). | Live URL reachability only if requested. |
 | Generated docs distinguish verified facts from inferences. | Proven locally | Root README evidence-language note plus `Verified on this machine` and `Needs testing` sections across docs. | Keep using that convention for new investigations. |
-| Branch can be shared in git. | Ready locally, push blocked | Clean tree, local commits on `codex/shandalar-crossover-updates`, and verifier pass. | Push from an authenticated GitHub environment. |
+| Branch can be shared in git. | Ready locally, push blocked | Clean tree, local commits on `codex/shandalar-crossover-updates`, [release-scope.md](release-scope.md), and verifier pass. | Push from an authenticated GitHub environment. |
 | Something that works. | Partially proven | Static binary hashes/patch bytes pass; CrossOver smoke evidence passed earlier crash points. | Manual gameplay retest in [manual-gameplay-verification.md](manual-gameplay-verification.md) is still required before claiming the game works end to end. |
 
 ## Do Not Move Yet
@@ -50,5 +51,5 @@ proof.
 | Push | `git push -u origin codex/shandalar-crossover-updates` succeeds. |
 | Gameplay | Visible Windows or CrossOver run fills the pass/fail rows in [manual-gameplay-verification.md](manual-gameplay-verification.md): launch, character creation, all starting colors, same-arrow map stop, save/load, several duel turns, damage-prevention prompt, and declared-attacker undo. |
 | Security | A named scanner/version records results for patched executables, DLLs, and archives. |
-| Distribution | A decision is recorded: private maintenance branch, patch/docs-only public package, or rights-verified full bundle. |
+| Distribution | Current branch scope is controlled maintenance only. Before any public release, prepare and verify either a patch/docs-only package or rights-verified full bundle. |
 | Cleanup moves | Any additional file moves have explicit approval, `git mv` history, docs updates, and launch-copy verification. |

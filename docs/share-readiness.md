@@ -18,6 +18,7 @@ conservative.
 | Cleanup evidence | Remaining candidates are inventoried with confidence instead of being deleted. | [cleanup-audit.md](cleanup-audit.md) and [file-inventory.md](file-inventory.md). |
 | Git binary hygiene | Root `.gitattributes` marks legacy runtime/resource/media/archive/save formats as binary. | `git check-attr --all -- Shandalar.exe Program/Magic.exe Cards.dat Statwin/statscrn.tmp README.md`. |
 | Distribution caution | The docs distinguish a cleaned maintenance branch from public redistribution permission. | [distribution.md](distribution.md). |
+| Release scope | Current branch sharing is scoped as controlled maintenance, not public redistribution. | [release-scope.md](release-scope.md). |
 | Completion audit | The original cleanup/share goal is mapped to current proof and final gates. | [completion-audit.md](completion-audit.md). |
 | Automated non-gameplay checks | Repo share-readiness checks are repeatable without launching the game, including ignored-local-clutter checks, protected cleanup false positives, runtime-manifest hash checks, tracked save/local-state inventory, security-scan target inventory, maintained-text ASCII, docs index coverage, and local Markdown link validation. | `tools/verify-share-readiness.sh`. |
 | Local helper scope | CrossOver helper scripts are separated from runtime files. | [../local/README.md](../local/README.md). |
@@ -34,6 +35,7 @@ conservative.
 | Tracked save files are ready for public release. | [save-state.md](save-state.md) documents save slots and screen-name state that should be reviewed after save/load testing. |
 | All generated/local clutter has been archived. | `CardArtNew/Thumbs.db` and save-state/export files remain tracked in place pending explicit approval and testing; see [cleanup-move-plan.md](cleanup-move-plan.md). |
 | Public redistribution is approved. | [distribution.md](distribution.md) records that no repository-level license file was found and bundled rightsholder/trademark notices are present. |
+| A patch/docs-only public package exists. | [release-scope.md](release-scope.md) records this as a future path, but no package format or restoration test has been prepared. |
 | Binaries are malware-scanned. | [security-scan.md](security-scan.md) records that ClamAV is not available on this machine and `spctl` did not produce a useful Windows PE safety result; no named malware scanner result is recorded. |
 | `src/` rebuilds the shipped binaries. | `make -n` still hits missing/generated build inputs and toolchain assumptions. |
 
