@@ -80,6 +80,10 @@ git rev-parse --verify "$base" >/dev/null || fail "unknown base ref: $base"
 short_sha="$(git rev-parse --short "$branch")"
 safe_branch="$(printf '%s' "$branch" | tr '/: ' '---')"
 dest="${dest:-/private/tmp/${safe_branch}-${short_sha}.bundle}"
+dest_dir="$(dirname "$dest")"
+dest_name="$(basename "$dest")"
+checksum_dest="${dest}.sha256"
+checksum_name="$(basename "$checksum_dest")"
 if [[ "$branch" == refs/heads/* ]]; then
   source_ref="$branch"
   local_branch="${branch#refs/heads/}"
@@ -101,6 +105,13 @@ if [ -e "$dest" ]; then
     fail "destination already exists: $dest"
   fi
 fi
+if [ -e "$checksum_dest" ]; then
+  if [ "$dry_run" = "1" ]; then
+    printf 'warning: checksum sidecar already exists, but dry-run will not overwrite it: %s\n' "$checksum_dest" >&2
+  else
+    fail "checksum sidecar already exists: $checksum_dest"
+  fi
+fi
 
 if [ "$skip_verify" != "1" ]; then
   tools/verify-share-readiness.sh
@@ -115,6 +126,7 @@ else
 fi
 
 printf 'Bundle destination: %s\n' "$dest"
+printf 'Checksum sidecar: %s\n' "$checksum_dest"
 printf 'Bundle branch: %s\n' "$branch"
 if [ "$full_bundle" = "1" ]; then
   printf 'Bundle mode: full, includes base ref %s\n' "$base"
@@ -126,6 +138,8 @@ if [ "$dry_run" = "1" ]; then
   printf 'Dry run only; would run: git bundle create %q' "$dest"
   printf ' %q' "${bundle_args[@]}"
   printf '\n'
+  printf 'Dry run only; would write checksum from bundle directory: shasum -a 256 %q > %q\n' "$dest_name" "$checksum_name"
+  printf 'Receiver checksum command from bundle directory: shasum -a 256 -c %q\n' "$checksum_name"
   printf 'Receiver verify command: git bundle verify %q\n' "$dest"
   printf 'Receiver fetch command: git fetch %q %q\n' "$dest" "$source_ref:$dest_ref"
   exit 0
@@ -133,6 +147,12 @@ fi
 
 git bundle create "$dest" "${bundle_args[@]}"
 git bundle verify "$dest"
+(
+  cd "$dest_dir"
+  shasum -a 256 "$dest_name" > "$checksum_name"
+)
 printf 'Created git handoff bundle: %s\n' "$dest"
+printf 'Created checksum sidecar: %s\n' "$checksum_dest"
+printf 'Receiver checksum command from bundle directory: shasum -a 256 -c %q\n' "$checksum_name"
 printf 'Receiver verify command: git bundle verify %q\n' "$dest"
 printf 'Receiver fetch command: git fetch %q %q\n' "$dest" "$source_ref:$dest_ref"

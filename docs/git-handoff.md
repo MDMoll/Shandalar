@@ -45,23 +45,27 @@ tools/create-git-handoff-bundle.sh --dry-run
 tools/create-git-handoff-bundle.sh
 ```
 
-The default bundle path is `/private/tmp/<branch>-<sha>.bundle`. By default the
-bundle is incremental against `master`, so the receiver should already have the
-repo's `master` branch. Use `--full` for a larger bundle that also includes the
-base ref. This fallback does not replace pushing the branch to GitHub; it is a
+The default bundle path is `/private/tmp/<branch>-<sha>.bundle`, and the helper
+also writes `/private/tmp/<branch>-<sha>.bundle.sha256`. By default the bundle is
+incremental against `master`, so the receiver should already have the repo's
+`master` branch. Use `--full` for a larger bundle that also includes the base
+ref. This fallback does not replace pushing the branch to GitHub; it is a
 handoff path when credentials are the only blocker.
 
 To import the incremental bundle into a clone that already has `master`, run
 the receiver commands printed by the helper. The command shape is:
 
 ```sh
+cd /path/to/directory-containing-bundle
+shasum -a 256 -c codex-shandalar-crossover-updates-<sha>.bundle.sha256
 git bundle verify /path/to/codex-shandalar-crossover-updates-<sha>.bundle
 git fetch /path/to/codex-shandalar-crossover-updates-<sha>.bundle refs/heads/codex/shandalar-crossover-updates:refs/heads/codex/shandalar-crossover-updates
 git switch codex/shandalar-crossover-updates
 ```
 
 This flow was verified locally in a disposable `master`-only clone with an
-incremental bundle produced by `tools/create-git-handoff-bundle.sh`.
+incremental bundle and checksum sidecar produced by
+`tools/create-git-handoff-bundle.sh`.
 To repeat that verification for the current commit, run:
 
 ```sh

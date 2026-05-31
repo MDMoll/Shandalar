@@ -81,6 +81,7 @@ pass "cleanup test copy dry-run passed"
 
 bundle_dest="/private/tmp/shandalar-handoff-dryrun-${short_sha}-$$.bundle"
 bundle_dry_run="$(tools/create-git-handoff-bundle.sh --dry-run --skip-verify --dest "$bundle_dest")"
+printf '%s\n' "$bundle_dry_run" | grep -q "Receiver checksum command" || fail "bundle dry-run missing receiver checksum command"
 printf '%s\n' "$bundle_dry_run" | grep -q "Receiver verify command:" || fail "bundle dry-run missing receiver verify command"
 printf '%s\n' "$bundle_dry_run" | grep -q "Receiver fetch command:" || fail "bundle dry-run missing receiver fetch command"
 pass "Git bundle dry-run passed"
@@ -91,6 +92,11 @@ if [ "$verify_bundle_import" = "1" ]; then
   temp_repo="$temp_root/repo"
 
   tools/create-git-handoff-bundle.sh --skip-verify --dest "$real_bundle" >/dev/null
+  [ -s "${real_bundle}.sha256" ] || fail "bundle checksum sidecar was not created: ${real_bundle}.sha256"
+  (
+    cd "$(dirname "$real_bundle")"
+    shasum -a 256 -c "$(basename "${real_bundle}.sha256")" >/dev/null
+  )
   git clone --single-branch --branch master --no-checkout "$repo_root" "$temp_repo" >/dev/null
   git -C "$temp_repo" bundle verify "$real_bundle" >/dev/null
   git -C "$temp_repo" fetch "$real_bundle" "refs/heads/codex/shandalar-crossover-updates:refs/heads/codex/shandalar-crossover-updates" >/dev/null

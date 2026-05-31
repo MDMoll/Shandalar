@@ -15,7 +15,7 @@ moving runtime-like assets without explicit approval and launch-copy testing.
 | Cleanup evidence | Save-state files, generated caches, duplicate assets, stale references, and risky cleanup candidates are mapped with evidence and confidence. | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), [duplicate-audit.md](duplicate-audit.md), [save-state.md](save-state.md) |
 | Share hygiene | Root `.gitattributes`, controlled-maintenance release scope, distribution caution, security-scan notes, docs index, local helper scope, and generated-evidence scope are now documented. | [share-readiness.md](share-readiness.md), [release-scope.md](release-scope.md), [distribution.md](distribution.md), [security-scan.md](security-scan.md), [README.md](README.md) |
 | Automated checks | A verifier checks clean tree state, ignored local clutter, tracked ignored files, binary attributes, protected cleanup false positives, runtime-manifest hashes, representative patch bytes, tracked save/local-state inventory, security-scan target inventory, core docs, ASCII maintained text, docs index coverage, and local Markdown links. | [../tools/verify-share-readiness.sh](../tools/verify-share-readiness.sh) |
-| Handoff helpers | Read-only helpers print gameplay/security evidence baselines, dry-run cleanup copies, and create a Git bundle fallback when GitHub auth is unavailable. | [../tools/README.md](../tools/README.md), [manual-gameplay-verification.md](manual-gameplay-verification.md), [security-scan.md](security-scan.md), [git-handoff.md](git-handoff.md) |
+| Handoff helpers | Read-only helpers print gameplay/security evidence baselines, dry-run cleanup copies, and create a Git bundle plus checksum fallback when GitHub auth is unavailable. | [../tools/README.md](../tools/README.md), [manual-gameplay-verification.md](manual-gameplay-verification.md), [security-scan.md](security-scan.md), [git-handoff.md](git-handoff.md) |
 
 ## Ready To Say
 
@@ -25,7 +25,7 @@ moving runtime-like assets without explicit approval and launch-copy testing.
 | The high-confidence non-runtime clutter from the limited plan is archived, not deleted. | [reorganization.md](reorganization.md). |
 | The major runtime files and patches are documented with repeatable checks. | [verified-on-this-machine.md](verified-on-this-machine.md) and `tools/verify-share-readiness.sh`. |
 | Remaining cleanup candidates are intentionally deferred instead of silently removed. | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), [completion-audit.md](completion-audit.md), and [gaps.md](gaps.md). |
-| The branch push handoff is explicit, with a bundle fallback for credential-blocked environments. | [git-handoff.md](git-handoff.md) and `tools/create-git-handoff-bundle.sh`. |
+| The branch push handoff is explicit, with a bundle plus checksum fallback for credential-blocked environments. | [git-handoff.md](git-handoff.md) and `tools/create-git-handoff-bundle.sh`. |
 
 ## Do Not Claim Yet
 
@@ -55,5 +55,5 @@ git push -u origin codex/shandalar-crossover-updates
 If the push fails with an HTTPS credential error, run the same push command
 from an authenticated local terminal. If credentials are still unavailable, use
 `tools/create-git-handoff-bundle.sh` to create a Git-history handoff bundle.
-The helper now prints receiver-side `git bundle verify` and `git fetch`
-commands; see [git-handoff.md](git-handoff.md).
+The helper now prints receiver-side checksum, `git bundle verify`, and
+`git fetch` commands; see [git-handoff.md](git-handoff.md).
