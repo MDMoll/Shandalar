@@ -81,7 +81,9 @@ tools/verify-handoff-readiness.sh --verify-bundle-import
 After creating the default bundle and patch artifacts for the current commit,
 run `tools/verify-handoff-artifacts.sh`. It checks both checksum sidecars,
 imports the bundle into a disposable `master` clone, and applies the patch to a
-base index to confirm the resulting Git tree matches the branch tip.
+base index to confirm the resulting Git tree matches the branch tip. If you pass
+an explicit branch, use the same ref spelling you used when creating the
+artifacts, because the default artifact path includes the branch/ref text.
 
 ## Current Push Failure In This Environment
 

@@ -83,6 +83,14 @@ patch_path="/private/tmp/${safe_branch}-${short_sha}.patch"
 patch_checksum_path="${patch_path}.sha256"
 expected_tree="$(git rev-parse "$branch^{tree}")"
 base_commit="$(git rev-parse "$base^{commit}")"
+if [[ "$branch" == refs/heads/* ]]; then
+  source_ref="$branch"
+  local_branch="${branch#refs/heads/}"
+else
+  source_ref="refs/heads/$branch"
+  local_branch="$branch"
+fi
+dest_ref="refs/heads/$local_branch"
 
 verify_checksum "$bundle_path" "$bundle_checksum_path"
 pass "bundle checksum verified: $bundle_path"
@@ -93,8 +101,8 @@ pass "bundle verifies: $bundle_path"
 bundle_temp_root="$(mktemp -d "/private/tmp/shandalar-artifact-bundle-${short_sha}.XXXXXX")"
 bundle_temp_repo="$bundle_temp_root/repo"
 git clone --single-branch --branch "$base" --no-checkout "$repo_root" "$bundle_temp_repo" >/dev/null
-git -C "$bundle_temp_repo" fetch "$bundle_path" "refs/heads/${branch}:refs/heads/${branch}" >/dev/null
-imported_sha="$(git -C "$bundle_temp_repo" rev-parse --short "$branch")"
+git -C "$bundle_temp_repo" fetch "$bundle_path" "$source_ref:$dest_ref" >/dev/null
+imported_sha="$(git -C "$bundle_temp_repo" rev-parse --short "$dest_ref")"
 [ "$imported_sha" = "$short_sha" ] || fail "bundle import resolved $imported_sha, expected $short_sha"
 pass "bundle imports current branch tip in $bundle_temp_repo"
 
