@@ -93,6 +93,7 @@ for path in \
   AGENTS.md \
   docs/share-readiness.md \
   docs/distribution.md \
+  docs/verified-on-this-machine.md \
   docs/cleanup-audit.md \
   docs/duplicate-audit.md \
   docs/cleanup-move-plan.md \
