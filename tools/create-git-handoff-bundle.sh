@@ -80,13 +80,27 @@ git rev-parse --verify "$base" >/dev/null || fail "unknown base ref: $base"
 short_sha="$(git rev-parse --short "$branch")"
 safe_branch="$(printf '%s' "$branch" | tr '/: ' '---')"
 dest="${dest:-/private/tmp/${safe_branch}-${short_sha}.bundle}"
+if [[ "$branch" == refs/heads/* ]]; then
+  source_ref="$branch"
+  local_branch="${branch#refs/heads/}"
+else
+  source_ref="refs/heads/$branch"
+  local_branch="$branch"
+fi
+dest_ref="refs/heads/$local_branch"
 
 case "$dest" in
   /*) ;;
   *) fail "destination must be an absolute path: $dest" ;;
 esac
 
-[ ! -e "$dest" ] || fail "destination already exists: $dest"
+if [ -e "$dest" ]; then
+  if [ "$dry_run" = "1" ]; then
+    printf 'warning: destination already exists, but dry-run will not overwrite it: %s\n' "$dest" >&2
+  else
+    fail "destination already exists: $dest"
+  fi
+fi
 
 if [ "$skip_verify" != "1" ]; then
   tools/verify-share-readiness.sh
@@ -112,9 +126,13 @@ if [ "$dry_run" = "1" ]; then
   printf 'Dry run only; would run: git bundle create %q' "$dest"
   printf ' %q' "${bundle_args[@]}"
   printf '\n'
+  printf 'Receiver verify command: git bundle verify %q\n' "$dest"
+  printf 'Receiver fetch command: git fetch %q %q\n' "$dest" "$source_ref:$dest_ref"
   exit 0
 fi
 
 git bundle create "$dest" "${bundle_args[@]}"
 git bundle verify "$dest"
 printf 'Created git handoff bundle: %s\n' "$dest"
+printf 'Receiver verify command: git bundle verify %q\n' "$dest"
+printf 'Receiver fetch command: git fetch %q %q\n' "$dest" "$source_ref:$dest_ref"

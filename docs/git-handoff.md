@@ -51,6 +51,18 @@ repo's `master` branch. Use `--full` for a larger bundle that also includes the
 base ref. This fallback does not replace pushing the branch to GitHub; it is a
 handoff path when credentials are the only blocker.
 
+To import the incremental bundle into a clone that already has `master`, run
+the receiver commands printed by the helper. The command shape is:
+
+```sh
+git bundle verify /path/to/codex-shandalar-crossover-updates-<sha>.bundle
+git fetch /path/to/codex-shandalar-crossover-updates-<sha>.bundle refs/heads/codex/shandalar-crossover-updates:refs/heads/codex/shandalar-crossover-updates
+git switch codex/shandalar-crossover-updates
+```
+
+This flow was verified locally in a disposable `master`-only clone with an
+incremental bundle produced by `tools/create-git-handoff-bundle.sh`.
+
 ## Current Push Failure In This Environment
 
 The repeated push failure from this Codex environment is:

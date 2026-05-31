@@ -54,4 +54,5 @@ git push -u origin codex/shandalar-crossover-updates
 If the push fails with an HTTPS credential error, run the same push command
 from an authenticated local terminal. If credentials are still unavailable, use
 `tools/create-git-handoff-bundle.sh` to create a Git-history handoff bundle.
-See [git-handoff.md](git-handoff.md).
+The helper now prints receiver-side `git bundle verify` and `git fetch`
+commands; see [git-handoff.md](git-handoff.md).
