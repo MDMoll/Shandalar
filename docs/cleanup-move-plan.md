@@ -12,7 +12,14 @@ cleaner without quietly breaking old runtime layouts.
 | `MAGIC5` | `archive/save-state/MAGIC5` | ASCII text derived from `MAGIC5.SVE`; begins with `; Importing Magic.exe.Cards.csv` and `; Loading MAGIC5.SVE data...`. | Approval for save-state cleanup. This one is safer than the binary save slots, but should stay grouped with save evidence. |
 | `MAGIC*.SVE`, `MAGIC*.map`, `MAGIC*.fce` | `archive/save-state/slots/` | Binary save slots and adjacent map/face state. | Save/load test in a launch copy that proves new game, load game, and save game still work without root save slots. |
 | `CSV/MAGIC3/` through `CSV/MAGIC6/` | `archive/save-state/csv-exports/` | Text exports from save inspection. | Decide whether these are public fixtures or just local evidence. |
-| `Savedescs`, `FaceMostRecent.txt`, `Screennames/` | `archive/save-state/local-player-state/` | Local save descriptions, FaceMaker state, and screen-name profiles with visible names. | Save/load and character creation retest after moving them in a copy. |
+| Root `Savedescs`, `FaceMostRecent.txt`, `Screennames/` | `archive/save-state/local-player-state/` | Local save descriptions, FaceMaker state, and screen-name profiles with visible names. | Save/load and character creation retest after moving them in a copy. |
+
+## Deferred Package-Tree State
+
+| Candidate | Evidence | Decision |
+| --- | --- | --- |
+| `Program/Savedescs` | Empty tracked file inside `Program/`. | Do not move separately from the `Program/` runtime tree. Revisit only during a launch-copy cleanup of program-local state. |
+| `Manalink3/Program/ScreenNames/` | Contains an active-name file and one screen-name profile inside the packaged `Manalink3/` tree. | Do not move separately from `Manalink3/`; treat as package-snapshot evidence until that tree has its own cleanup decision. |
 
 ## Suggested Commands After Approval
 
@@ -39,7 +46,7 @@ git mv Savedescs FaceMostRecent.txt Screennames archive/save-state/local-player-
 git status --short --untracked-files=all
 git diff --stat
 git ls-files -ci --exclude-standard
-rg -n "CardArtNew/Thumbs.db|MAGIC5|Savedescs|FaceMostRecent|Screennames" README.md AGENTS.md docs archive
+rg -n "CardArtNew/Thumbs.db|MAGIC5|Savedescs|FaceMostRecent|Screennames|ScreenNames" README.md AGENTS.md docs archive
 ```
 
 If a manual launch test is part of the move, record the exact launch path,

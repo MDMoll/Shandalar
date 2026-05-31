@@ -18,6 +18,12 @@ expect_file() {
   [ -e "$path" ] || fail "missing $path"
 }
 
+expect_tracked_file() {
+  local path="$1"
+  expect_file "$path"
+  git ls-files --error-unmatch "$path" >/dev/null || fail "$path is not tracked"
+}
+
 expect_hash() {
   local path="$1"
   local expected="$2"
@@ -87,6 +93,25 @@ expect_hex_prefix Program/Magic.exe 0x59bc8 13 f74608040000000f8512000000
 expect_hex_prefix ManalinkEh.dll 0x3bb035 16 f60590f14e00040f84ae000000e90100
 expect_hex_prefix Program/ManalinkEh.dll 0x381a25 16 f60590f14e00040f84ae000000e90100
 pass "representative binary patch bytes match docs"
+
+save_slot_count="$(git ls-files | awk '/^MAGIC[0-9a-d]\.(SVE|map|fce)$/ {count++} END {print count+0}')"
+[ "$save_slot_count" = "33" ] || fail "expected 33 tracked root save slot/map/face files, found $save_slot_count"
+save_export_count="$(git ls-files | awk '/^CSV\/MAGIC[3-6]\// {count++} END {print count+0}')"
+[ "$save_export_count" = "32" ] || fail "expected 32 tracked CSV save exports, found $save_export_count"
+for path in \
+  MAGIC5 \
+  Savedescs \
+  Program/Savedescs \
+  FaceMostRecent.txt \
+  Screennames/Activename.dat \
+  Screennames/CirothUngol.scn \
+  Screennames/Player.scn \
+  Manalink3/Program/ScreenNames/ActiveName.dat \
+  Manalink3/Program/ScreenNames/CirothUngol.scn
+do
+  expect_tracked_file "$path"
+done
+pass "tracked save/local-state inventory matches docs"
 
 for path in \
   README.md \
