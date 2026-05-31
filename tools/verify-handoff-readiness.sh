@@ -12,9 +12,11 @@ temp_paths=()
 
 cleanup_temp_paths() {
   local path
+  set +u
   for path in "${temp_paths[@]}"; do
     [ -n "$path" ] && rm -rf "$path"
   done
+  set -u
 }
 trap cleanup_temp_paths EXIT
 
