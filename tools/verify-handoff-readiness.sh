@@ -70,9 +70,10 @@ printf '%s\n' "$manual_baseline" | grep -q "| Primary target | C:\\\\Shandalar\\
 pass "manual gameplay baseline is current"
 
 security_baseline="$(tools/print-security-scan-baseline.sh)"
+security_target_count="$(tools/list-security-scan-targets.sh | awk 'NR > 1 {count++} END {print count+0}')"
 printf '%s\n' "$security_baseline" | grep -q "| Git commit | $short_sha |" || fail "security scan baseline does not report commit $short_sha"
 printf '%s\n' "$security_baseline" | grep -q "| Git status | clean |" || fail "security scan baseline does not report clean status"
-printf '%s\n' "$security_baseline" | grep -q "| Tracked scan targets | 231 |" || fail "security scan baseline does not report 231 targets"
+printf '%s\n' "$security_baseline" | grep -q "| Tracked scan targets | $security_target_count |" || fail "security scan baseline does not report $security_target_count targets"
 pass "security scan baseline is current"
 
 cleanup_dest="/private/tmp/shandalar-cleanup-test-dryrun-${short_sha}-$$"
