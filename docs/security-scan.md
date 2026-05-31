@@ -21,6 +21,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` on 2026-05-31.
 | `command -v xprotect` | `/usr/bin/xprotect` | macOS XProtect tooling exists locally, but the available commands do not produce a per-file malware scan report for this Windows PE inventory. |
 | `xprotect version` | `Version: 5346 Installed: 2026-05-28 08:53:39 +0000` | Records local XProtect metadata only; this is not a scan result for repo files. |
 | `xprotect status` | `XProtect launch scans: disabled`; `XProtect background scans: disabled` | No XProtect launch/background scan evidence can be used as the required named scanner result here. |
+| `tools/check-security-scanner-availability.sh` | Reports `clamscan`, `freshclam`, `mdatp`, and `yara` missing; reports `/usr/bin/xprotect` and `/usr/sbin/spctl` present but not enough for this gate. | No locally usable scanner command was found on this Mac. Run the scan on another trusted machine or install a scanner outside this repo. |
 | `file Shandalar.exe Program/Magic.exe ManalinkEh.dll Program/ManalinkEh.dll` | PE32 Windows executable/DLL files. | Confirms the active targets are Windows PE files, so use a scanner that supports that format. |
 | `shasum -a 256 Shandalar.exe Program/Shandalar.exe Magic.exe Program/Magic.exe FaceMaker.exe Program/FaceMaker.exe ManalinkEh.dll Program/ManalinkEh.dll` | Hashes recorded in [runtime-manifest.md](runtime-manifest.md), [running.md](running.md), and [magic-exe.md](magic-exe.md). | Hashes identify exactly which patched binaries still need scan results. |
 
@@ -48,11 +49,14 @@ Before or after a real scanner pass, print a Markdown-ready evidence baseline
 with the current branch, target counts, priority hashes, and commands:
 
 ```sh
+tools/check-security-scanner-availability.sh
 tools/print-security-scan-baseline.sh
 ```
 
-This helper does not run a scanner. Use it only to reduce transcription errors
-when filling the reporting table below.
+These helpers do not run a scanner. The availability helper only reports which
+scanner-related commands are visible locally and which macOS tools are not
+enough for this Windows PE security gate. Use them only to reduce transcription
+errors when filling the reporting table below.
 
 To validate a local TSV of scanner results against the current inventory and
 hashes, use:
@@ -90,6 +94,7 @@ scanner installers into this repo.
 
 | Environment | Example command |
 | --- | --- |
+| Local availability check | `tools/check-security-scanner-availability.sh` |
 | macOS with ClamAV installed | `clamscan -r Program src Mods archive` |
 | Windows Defender PowerShell | `Start-MpScan -ScanPath "C:\path\to\Shandalar"` |
 | Windows Defender command line | `"%ProgramFiles%\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File "C:\path\to\Shandalar"` |

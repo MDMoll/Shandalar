@@ -201,6 +201,7 @@ handoff mistakes when a human is ready to test:
 
 ```sh
 tools/print-manual-gameplay-baseline.sh
+tools/check-security-scanner-availability.sh
 tools/print-security-scan-baseline.sh
 tools/print-share-status.sh
 tools/verify-manual-gameplay-results.sh --allow-incomplete --show-missing
