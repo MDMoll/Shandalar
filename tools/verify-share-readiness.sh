@@ -69,6 +69,16 @@ tracked_ignored="$(git ls-files -ci --exclude-standard)"
 pass "tracked ignored file inventory is expected"
 
 for path in \
+  scan-targets.tsv \
+  security-scan-results.tsv \
+  clamscan-report.txt \
+  windows-defender-report.txt
+do
+  git check-ignore -q "$path" || fail "$path is not ignored"
+done
+pass "local scan-output files are ignored"
+
+for path in \
   Shandalar.exe \
   Program/Magic.exe \
   Cards.dat \

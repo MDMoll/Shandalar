@@ -53,6 +53,10 @@ scanner installers into this repo.
 | Windows Defender command line | `"%ProgramFiles%\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File "C:\path\to\Shandalar"` |
 | Hash target inventory before external review | `tools/list-security-scan-targets.sh > scan-targets.tsv` |
 
+`scan-targets.tsv`, `security-scan-results.tsv`, `clamscan-report.txt`, and
+`windows-defender-report.txt` are ignored local handoff files. Record durable
+scanner conclusions in this doc instead of committing raw local report files.
+
 If an online multi-scanner is used, record that files may be uploaded to a third
 party. Do not upload files unless that is acceptable for the repo/user context.
 

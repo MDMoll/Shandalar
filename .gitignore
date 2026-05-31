@@ -1,3 +1,9 @@
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Local security-scan handoff/report outputs.
+scan-targets.tsv
+security-scan-results.tsv
+clamscan-report.txt
+windows-defender-report.txt
