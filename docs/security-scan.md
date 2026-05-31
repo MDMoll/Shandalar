@@ -18,6 +18,9 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` on 2026-05-31.
 | `command -v clamscan` | No path printed. | ClamAV is not installed or not on `PATH` here, so no ClamAV scan was run. |
 | `command -v spctl` | `/usr/sbin/spctl` | macOS Gatekeeper assessment tooling exists, but it is not an antivirus scanner for Windows PE files. |
 | `spctl --assess --type execute --verbose=4 Shandalar.exe` | `Shandalar.exe: internal error in Code Signing subsystem` | No useful safety result for the Windows executable. Do not treat this as a pass or fail. |
+| `command -v xprotect` | `/usr/bin/xprotect` | macOS XProtect tooling exists locally, but the available commands do not produce a per-file malware scan report for this Windows PE inventory. |
+| `xprotect version` | `Version: 5346 Installed: 2026-05-28 08:53:39 +0000` | Records local XProtect metadata only; this is not a scan result for repo files. |
+| `xprotect status` | `XProtect launch scans: disabled`; `XProtect background scans: disabled` | No XProtect launch/background scan evidence can be used as the required named scanner result here. |
 | `file Shandalar.exe Program/Magic.exe ManalinkEh.dll Program/ManalinkEh.dll` | PE32 Windows executable/DLL files. | Confirms the active targets are Windows PE files, so use a scanner that supports that format. |
 | `shasum -a 256 Shandalar.exe Program/Shandalar.exe Magic.exe Program/Magic.exe FaceMaker.exe Program/FaceMaker.exe ManalinkEh.dll Program/ManalinkEh.dll` | Hashes recorded in [runtime-manifest.md](runtime-manifest.md), [running.md](running.md), and [magic-exe.md](magic-exe.md). | Hashes identify exactly which patched binaries still need scan results. |
 

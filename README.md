@@ -203,6 +203,7 @@ handoff mistakes when a human is ready to test:
 tools/print-manual-gameplay-baseline.sh
 tools/print-security-scan-baseline.sh
 tools/print-share-status.sh
+tools/record-manual-gameplay-result.sh --test D2 --result "Fail: froze at post-combat Done; screenshot /path/to/screenshot.png"
 tools/create-security-scan-results-template.sh --output security-scan-results.tsv
 tools/verify-final-share-gates.sh
 tools/verify-handoff-readiness.sh --verify-bundle-import --verify-artifacts

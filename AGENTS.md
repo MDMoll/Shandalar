@@ -82,6 +82,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` unless noted.
 | Dry-run a binary patch package for patch-only planning | `tools/create-patch-package.sh --dry-run` |
 | Recreate and apply-verify the current binary patch package | `tools/create-patch-package.sh --replace --verify-apply` |
 | Print the manual gameplay evidence baseline | `tools/print-manual-gameplay-baseline.sh` |
+| Record one manual gameplay field or result | `tools/record-manual-gameplay-result.sh --test D2 --result "Fail: froze at post-combat Done; screenshot /path/to/screenshot.png"` |
 | Print the security scan evidence baseline | `tools/print-security-scan-baseline.sh` |
 | List branch delta for review or patch-only planning | `tools/list-branch-delta.sh` |
 | Run the non-gameplay handoff verifier | `tools/verify-handoff-readiness.sh` |

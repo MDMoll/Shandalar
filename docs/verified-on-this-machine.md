@@ -47,6 +47,8 @@ Local checkout path: `/Users/mdmoll/Shandalar/Shandalar`
 | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --version` | CrossOver 26.1.0 is installed locally. |
 | `tools/verify-crossover-mtg-state.sh` | Optional local verifier passes for bottle `MTG`: copied runtime hashes match the docs, FaceMaker support files are present, both copied Shandalar ini files use `Window = 2`, app-default `win7` and `Shandalar1440=1440x1080` are present, and the paging-file registry setting is present. |
 | `command -v wine` | No standalone `wine` was found in `PATH`. |
+| `xprotect version` | macOS XProtect reports `Version: 5346 Installed: 2026-05-28 08:53:39 +0000`. This is metadata only, not a repo file scan. |
+| `xprotect status` | `XProtect launch scans: disabled`; `XProtect background scans: disabled`. No XProtect result is available for the required security-scan gate. |
 | Earlier timed CrossOver launch attempts from `Program/` in bottle `MTG` | `Shandalar.exe --help`, `Shandalar.exe`, and `Magic.exe` exited with code 53 and no capturable stdout/stderr. This is not a gameplay verification. |
 | `make -n` in `src/` | Dry run reached many compile commands, then stopped because `src/card_id.h` is missing and `functions/utility.obj` had no usable rule. |
 

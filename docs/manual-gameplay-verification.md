@@ -17,6 +17,16 @@ tools/print-manual-gameplay-baseline.sh
 
 Paste that output into the result notes or use it to fill the environment table
 below, then replace `Needs testing` cells with concrete pass/fail evidence.
+For one-row updates without hand-editing Markdown tables, use:
+
+```sh
+tools/record-manual-gameplay-result.sh --field "Bottle Windows version" --value win7
+tools/record-manual-gameplay-result.sh --test D2 --result "Fail: froze at post-combat Done; screenshot /path/to/screenshot.png"
+```
+
+The recorder only writes evidence text into this file. It does not launch the
+game, infer pass/fail, or make incomplete evidence acceptable.
+
 To summarize current gaps without launching the game, run:
 
 ```sh
