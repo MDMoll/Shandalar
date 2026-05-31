@@ -46,6 +46,7 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | [file-inventory.md](file-inventory.md) | File counts, large directories, generated/local-state observations. |
 | [cleanup-audit.md](cleanup-audit.md) | Cleanup candidates with evidence and confidence. |
 | [cleanup-move-plan.md](cleanup-move-plan.md) | Pending cleanup moves that need approval or launch-copy testing. |
+| [cleanup-launch-copy-test.md](cleanup-launch-copy-test.md) | Disposable-copy test plan before moving risky cleanup candidates. |
 | [duplicate-audit.md](duplicate-audit.md) | Full non-git exact duplicate hash summary. |
 | [save-state.md](save-state.md) | Tracked save slots, screen names, and cleanup plan. |
 | [reorganization.md](reorganization.md) | Limited archive reorg decision log. |

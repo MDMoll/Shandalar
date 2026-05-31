@@ -4,6 +4,9 @@ This is the queue for cleanup moves that look reasonable but still need either
 explicit approval, launch-copy testing, or both. The goal is to make the repo
 cleaner without quietly breaking old runtime layouts.
 
+Use [cleanup-launch-copy-test.md](cleanup-launch-copy-test.md) before applying
+any of these moves in the real checkout.
+
 ## Move Candidates
 
 | Candidate | Proposed archive path | Evidence | Required before move |
@@ -31,7 +34,8 @@ git mv CardArtNew/Thumbs.db archive/generated-local/CardArtNew-Thumbs.db
 git mv MAGIC5 archive/save-state/MAGIC5
 ```
 
-For the larger save-state move, use a launch copy first:
+For the larger save-state move, use [cleanup-launch-copy-test.md](cleanup-launch-copy-test.md)
+first:
 
 ```sh
 mkdir -p archive/save-state/slots archive/save-state/csv-exports archive/save-state/local-player-state

@@ -32,6 +32,7 @@ should keep the working tree safe and evidence-driven.
 | `archive/` is preserved evidence/history, not a deletion staging area. | Archived files may still explain old packaging, debugging, or local behavior. |
 | It is acceptable to add clearly non-runtime evidence to `archive/` with documentation. | This keeps the root navigable without losing context. |
 | Do not move runtime-like assets into `archive/` without explicit approval and a launch-copy test plan. | Many root files mirror or differ from `Program/` files in ways that are not fully understood. |
+| Use [docs/cleanup-launch-copy-test.md](docs/cleanup-launch-copy-test.md) before proposing additional risky cleanup moves. | Candidate removals should be proven in a disposable copy before the real checkout changes. |
 | When moving a tracked file, use `git mv` and update [docs/reorganization.md](docs/reorganization.md). | History and path evidence need to remain inspectable. |
 
 ## Default Launch Context

@@ -193,6 +193,7 @@ for path in \
   docs/runtime-manifest.md \
   docs/manual-gameplay-verification.md \
   docs/cleanup-audit.md \
+  docs/cleanup-launch-copy-test.md \
   docs/duplicate-audit.md \
   docs/cleanup-move-plan.md \
   docs/save-state.md \

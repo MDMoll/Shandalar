@@ -70,6 +70,9 @@ but current evidence says they should stay in place.
 
 ## Quarantine Plan for a Future Approved Pass
 
+Use [cleanup-launch-copy-test.md](cleanup-launch-copy-test.md) for the detailed
+test checklist. Short version:
+
 1. Create a copy of the repo outside the working tree.
 2. Run a baseline launch test for `Program/Shandalar.exe` and `Program/Magic.exe`.
 3. Move only high-confidence candidates into `unused-candidates/` in the copy.
