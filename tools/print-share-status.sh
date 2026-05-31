@@ -16,7 +16,7 @@ if [ -n "$status" ]; then
   status_value="dirty (${status_lines} status entries)"
 fi
 
-ignored_local="$(git status --ignored --short --untracked-files=all | awk '/^!! / {count++} END {print count+0}')"
+ignored_local="$(git status --ignored --short --untracked-files=all | awk '/^!! / {print substr($0, 4)}' | awk '$0 !~ /^\.codex\// {count++} END {print count+0}')"
 tracked_ignored="$(git ls-files -ci --exclude-standard | tr '\n' ' ')"
 tracked_ignored="${tracked_ignored% }"
 [ -n "$tracked_ignored" ] || tracked_ignored="none"
