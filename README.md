@@ -90,6 +90,7 @@ path, because root and `Program/` copies differ by hash. See
 | `PlayDeckAnalyser/` | Separate deck analysis utility and configuration. |
 | `docs/generated/` | Preserved command output and evidence snapshots for investigations; start with the concise docs first. |
 | `local/` | Local CrossOver/Wine helper scripts used for smoke testing, not runtime assets. |
+| `tools/` | Repo-maintenance helpers, including automated share-readiness checks. |
 | `archive/` | Preserved generated/local/debug/historical files moved out of the root during the limited reorganization pass. Not a trash folder. |
 
 ## Verified on this machine
@@ -191,3 +192,15 @@ Local checkout path: `/Users/mdmoll/Shandalar/Shandalar`
 | [docs/gaps.md](docs/gaps.md) | Remaining launch, command-line, duplicate, and build gaps. |
 | [docs/adventure-map-movement.md](docs/adventure-map-movement.md) | Static notes and verification commands for the same-arrow adventure-map stop patch. |
 | [docs/generated/README.md](docs/generated/README.md) | Map for generated evidence snapshots. |
+
+## Automated Checks
+
+Run the non-gameplay share-readiness checks with:
+
+```sh
+tools/verify-share-readiness.sh
+```
+
+This verifies the clean tree, expected tracked ignored file, Git binary
+attributes, patched runtime hashes, representative patch bytes, and core docs.
+It does not replace the manual gameplay checklist.

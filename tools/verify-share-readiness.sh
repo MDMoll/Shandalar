@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+fail() {
+  printf 'FAIL: %s\n' "$*" >&2
+  exit 1
+}
+
+pass() {
+  printf 'ok: %s\n' "$*"
+}
+
+expect_file() {
+  local path="$1"
+  [ -e "$path" ] || fail "missing $path"
+}
+
+expect_hash() {
+  local path="$1"
+  local expected="$2"
+  expect_file "$path"
+  local actual
+  actual="$(shasum -a 256 "$path" | awk '{print $1}')"
+  [ "$actual" = "$expected" ] || fail "$path sha256 $actual != $expected"
+}
+
+expect_hex_prefix() {
+  local path="$1"
+  local offset="$2"
+  local length="$3"
+  local expected="$4"
+  expect_file "$path"
+  local actual
+  actual="$(xxd -p -l "$length" -s "$offset" "$path" | tr -d '\n')"
+  [ "$actual" = "$expected" ] || fail "$path hex at $offset $actual != $expected"
+}
+
+if [ "${ALLOW_DIRTY:-0}" != "1" ]; then
+  status="$(git status --short --untracked-files=all)"
+  [ -z "$status" ] || fail "working tree is not clean; set ALLOW_DIRTY=1 for an in-progress local check"
+  pass "working tree is clean"
+else
+  pass "working tree cleanliness skipped because ALLOW_DIRTY=1"
+fi
+
+tracked_ignored="$(git ls-files -ci --exclude-standard)"
+[ "$tracked_ignored" = "CardArtNew/Thumbs.db" ] || fail "unexpected tracked ignored files: ${tracked_ignored:-<none>}"
+pass "tracked ignored file inventory is expected"
+
+for path in \
+  Shandalar.exe \
+  Program/Magic.exe \
+  Cards.dat \
+  Statwin/statscrn.tmp \
+  MAGIC5.SVE \
+  MAGIC5.map \
+  MAGIC5.fce \
+  CardArtNew/Thumbs.db \
+  archive/generated-local/Duel.GID \
+  Duel.hlp
+do
+  git check-attr binary -- "$path" | grep -q ': binary: set' || fail "$path is not marked binary"
+done
+pass "representative binary attributes are set"
+
+expect_hash Shandalar.exe ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b
+expect_hash Program/Shandalar.exe ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b
+expect_hash FaceMaker.exe 41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246
+expect_hash Program/FaceMaker.exe 41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246
+expect_hash Magic.exe 5bf518d66342d79562efb1106449413ada06814a6c14818a1e3101fd470c82d1
+expect_hash Program/Magic.exe 0fb8b87fe35c8be037ae3419a9b9cd70a27df840ae6af6c7488c2685046a74fa
+expect_hash ManalinkEh.dll 6a5fd8057d456d691fb87810eee8dbe1680b18d1c4c79530cbe036cb443df1eb
+expect_hash Program/ManalinkEh.dll 7fc7ad86b5a3eaaa8879c76814dc454917f2e4b58acf15530e42fdcc78da2517
+pass "patched runtime hashes match docs"
+
+expect_hex_prefix Shandalar.exe 0x1785b0 11 6a0057508b4d1051ff7504
+expect_hex_prefix Program/Shandalar.exe 0x1785b0 11 6a0057508b4d1051ff7504
+expect_hex_prefix FaceMaker.exe 0x5f40 11 6a0057508b4d1051ff7504
+expect_hex_prefix Program/FaceMaker.exe 0x5f40 11 6a0057508b4d1051ff7504
+expect_hex_prefix Magic.exe 0x3c303 13 e9c0d801009090909090909090
+expect_hex_prefix Program/Magic.exe 0x3c303 13 e9c0d801009090909090909090
+expect_hex_prefix Magic.exe 0x59bc8 13 f74608040000000f8512000000
+expect_hex_prefix Program/Magic.exe 0x59bc8 13 f74608040000000f8512000000
+expect_hex_prefix ManalinkEh.dll 0x3bb035 16 f60590f14e00040f84ae000000e90100
+expect_hex_prefix Program/ManalinkEh.dll 0x381a25 16 f60590f14e00040f84ae000000e90100
+pass "representative binary patch bytes match docs"
+
+for path in \
+  README.md \
+  AGENTS.md \
+  docs/share-readiness.md \
+  docs/distribution.md \
+  docs/cleanup-audit.md \
+  docs/duplicate-audit.md \
+  docs/cleanup-move-plan.md \
+  docs/save-state.md \
+  docs/runtime-dependencies.md \
+  docs/security-scan.md
+do
+  expect_file "$path"
+done
+pass "core docs exist"
+
+printf 'Share-readiness automated checks passed.\n'

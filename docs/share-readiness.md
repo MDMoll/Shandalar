@@ -16,6 +16,7 @@ conservative.
 | Cleanup evidence | Remaining candidates are inventoried with confidence instead of being deleted. | [cleanup-audit.md](cleanup-audit.md) and [file-inventory.md](file-inventory.md). |
 | Git binary hygiene | Root `.gitattributes` marks legacy runtime/resource/media/archive/save formats as binary. | `git check-attr --all -- Shandalar.exe Program/Magic.exe Cards.dat Statwin/statscrn.tmp README.md`. |
 | Distribution caution | The docs distinguish a cleaned maintenance branch from public redistribution permission. | [distribution.md](distribution.md). |
+| Automated non-gameplay checks | Repo share-readiness checks are repeatable without launching the game. | `tools/verify-share-readiness.sh`. |
 | Local helper scope | CrossOver helper scripts are separated from runtime files. | [../local/README.md](../local/README.md). |
 | Generated evidence scope | Long command-output snapshots are mapped as evidence, not primary docs. | [generated/README.md](generated/README.md). |
 
@@ -40,6 +41,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar`:
 ```sh
 git status --short --untracked-files=all
 git log --oneline -10
+tools/verify-share-readiness.sh
 git push -u origin codex/shandalar-crossover-updates
 ```
 
