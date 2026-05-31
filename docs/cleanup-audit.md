@@ -18,9 +18,8 @@ and art stayed in place.
 | `Magicsaves.7z` | Archive | Could contain useful save files. | `file` reports 7-Zip archive. | Low | Keep unless user asks to extract/audit saves. |
 | `AllMagicFonts.zip` | Archive | Fonts also exist as `.ttf`/`.otf` files. | `file` reports Zip archive; many font files are present. | Low | Keep or document contents later. |
 | `CardArtNew/Thumbs.db` | Generated local-state file inside runtime-like art folder | Windows Explorer thumbnail cache, not card art. | `file CardArtNew/Thumbs.db` reports `Composite Document File V2 Document`; SHA-256 is `d613ed811f078af12887dfb5d056373606c29d036574ee31315c427bf5f101ea`. | High for being generated, medium for moving because it lives inside an art folder | Keep in place until explicit approval to move it with `git mv` into `archive/generated-local/`. |
-| `Mods/Art/*.7z` vs `Manalink3/Mods/Art/*.7z` | Likely duplicate archives | Some sampled archives have identical SHA-256. | `Default Sonic 2014.7z` matched across both trees. | Medium for sampled files, low for full tree. | Build a full hash report before quarantine. |
-| `Mods/Rogues/*.7z` vs `Manalink3/Mods/Rogues/*.7z` | Likely duplicate archives | Sampled archive matched SHA-256. | `Modern Sarlack MtG.7z` matched across both trees. | Medium for sampled files, low for full tree. | Build a full hash report before quarantine. |
-| `Decks - Original`, `Decks_original`, `Decks - Harder`, `Decks_alt`, `decks - rawky`, etc. | Likely duplicate or variant deck sets | Many repeated `.dck` filenames across deck folders. | Duplicate filename counts show many deck names repeated 10 times. | Low | Keep; compare content and runtime references first. |
+| `Mods/Art/*.7z` and `Mods/Rogues/*.7z` vs `Manalink3/Mods/...` | Exact duplicate archive pairs | Targeted hash audit over `*.7z`, `*.zip`, and `*.rar` under `Mods/` and `Manalink3/Mods/` found 15 duplicate hashes covering all 30 archive files in that query. | `find Mods Manalink3/Mods ... | shasum -a 256` found pairs such as `Default Sonic 2014.7z`, `Modern Sarlack MtG.7z`, `CardFrames Sonic 2014.7z`, and `Classic Microprose Default.7z`. | High duplicate confidence, medium cleanup confidence | Keep for now; these live in mod/distribution trees, so move only after an approved launch-copy/mod audit. |
+| `Decks - Original`, `Decks_original`, `Decks - Harder`, `Decks_alt`, `decks - rawky`, etc. | Exact duplicate deck files plus variant deck sets | Targeted hash audit over the main deck-family folders found 163 duplicate hashes covering 327 of 492 `.dck` files. | Examples include `Decks - Original/0263.dck` matching `Decks_original/0263.dck`, `decks - rawky/0399.dck` matching `decks/0399.dck`, and `Decks - Tim/0056.dck` matching `Decks - revision/0056.dck`. | High duplicate-file confidence, low cleanup confidence | Keep; content duplicates do not prove folder-level redundancy or current runtime references. |
 | `SVEtool.ini` | Local/default config | Hard-coded `C:\Program Files\Magic\` paths. | `SVEtool.ini:6`, `SVEtool.ini:10`. | Medium | Keep as tool config; document stale defaults. |
 | `archive/local-helpers/shandalar_homedoom.bat` | Local helper | Hard-coded `e:\Program Files\Magic` and resolution command. | Original `shandalar_homedoom.bat:1-5`. | Medium | Archived in limited reorg; not main launch guidance. |
 | `src/deploy.bat` | Historical deployment script | Hard-coded `c:\magic2k` and `c:\mingw` paths. | `src/deploy.bat:1-44`. | Medium | Keep as build-history evidence; do not run directly. |
@@ -35,7 +34,7 @@ and art stayed in place.
 | Requested category | Covered by |
 | --- | --- |
 | Definitely generated/recreatable | `archive/generated-local/Duel.GID`, generated/log/debug files, and `CardArtNew/Thumbs.db` pending explicit move approval. |
-| Likely duplicate | Sampled `Mods/` vs `Manalink3/Mods/` archives, root `Shandalar.exe`. |
+| Likely duplicate | Targeted duplicate hash audit for `Mods/` vs `Manalink3/Mods/` archives, targeted deck-family duplicate hash audit, root `Shandalar.exe`. |
 | Likely stale historical backup | `archive/backups/Rogues_Org_BAK.csv`, archived old readme files, archived local helper script. |
 | Likely unused by current launch path | Root duplicate candidates and some packaged snapshots, marked low/medium confidence only. |
 | Suspicious/needs manual inspection | Root `Magic.exe`, root-vs-Program DLL differences, local machine helper scripts. |
@@ -67,6 +66,17 @@ and art stayed in place.
 | Compare two files | `shasum -a 256 path1 path2` |
 | Find likely generated files | `find . -type f \( -name '*.GID' -o -name '*.log' -o -name '*BAK*' -o -name '*.tmp' \) -print` |
 | Full duplicate hash report | `find . -type f -exec shasum -a 256 {} + | sort` |
+
+## Targeted Duplicate Hash Audit
+
+These checks were run against the current checkout on 2026-05-31. They are
+cleanup evidence only; they do not prove that the duplicate-looking folders are
+safe to remove.
+
+| Scope | Command shape | Result |
+| --- | --- | --- |
+| `Mods/` plus `Manalink3/Mods/` archives | `find Mods Manalink3/Mods -type f \( -name '*.7z' -o -name '*.zip' -o -name '*.rar' \) -print0 | xargs -0 shasum -a 256` | 30 archive files, 15 duplicate hashes, 30 files covered by duplicate pairs. |
+| Main deck-family folders | `find 'Decks - Original' Decks_original 'Decks - Harder' Decks_alt 'decks - rawky' decks 'decks - new original' 'Decks - Tim' 'Decks - revision' -type f -name '*.dck' -print0 | xargs -0 shasum -a 256` | 492 `.dck` files, 163 duplicate hashes, 327 files covered by duplicate groups. |
 
 ## Archived in Limited Reorg
 

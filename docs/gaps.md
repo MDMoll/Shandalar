@@ -26,7 +26,7 @@ of failure, only work that still needs direct testing or evidence.
 
 | Gap | Current evidence | Next action |
 | --- | --- | --- |
-| Full duplicate hash audit | Only sampled duplicate archives and known root/Program comparisons were checked. | Generate a full hash report outside normal docs if cleanup is requested. |
+| Full duplicate hash audit | Targeted duplicate checks now cover `Mods/` vs `Manalink3/Mods/` archives and the main deck-family folders; root/Program launch-target comparisons are also documented. This is still not a full-repo duplicate graph. | Generate a full hash report outside normal docs if cleanup is requested, then test removals only in a copy. |
 | `src/` rebuild | `make -n` reached compile commands, then stopped on missing `src/card_id.h` and `functions/utility.obj` rule trouble. | Restore/generate missing build inputs and install the expected 32-bit MinGW/yasm toolchain in a build-focused pass. |
 | `Program/src/` vs `src/` relationship | The snapshots are similar but not identical. | Compare trees before deduping or choosing a canonical source tree. |
 | Old URL reachability | Stale-reference docs classify links from local evidence only. | Test network reachability only if the user asks for live-link validation. |

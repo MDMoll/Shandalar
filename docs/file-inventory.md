@@ -131,8 +131,8 @@ and the name-seed-plus-movement value `155a668c72867bd1274410eb05ca05fbb7bd9bed8
 | `Program/FaceData.txt`, `Program/FaceButtons.txt`, and `Program/FaceArt/` match `Manalink3/Program/` after the fix. | `cmp` for text files and `diff -qr` for art directory. | Keep as runtime support for `Program/FaceMaker.exe`. |
 | `Program/Magic.exe` and root `Magic.exe` differ. | Different SHA-256 values. | Do not dedupe without launch comparison. |
 | `Program/zlib.dll` is absent while root `zlib.dll` is present. | Direct logged `MTG` launch of `C:\Shandalar\Program\Shandalar.exe` fails because `Program\zlib.dll` is missing. | Treat `Program/Shandalar.exe` as a deferred alternate CrossOver path until tested in a fixed copy. |
-| Some `Mods/` and `Manalink3/Mods/` archives are identical. | `Default Sonic 2014.7z` and `Modern Sarlack MtG.7z` matched SHA-256 in both trees. | Medium for future archive dedupe. |
-| Deck files repeat across many deck folders. | Duplicate filename counts show many `.dck` names appearing 10 times. | Low; content and folder context may matter. |
+| `Mods/` and `Manalink3/Mods/` contain exact duplicate archives. | A targeted SHA-256 audit over `*.7z`, `*.zip`, and `*.rar` in both trees found 15 duplicate hashes covering all 30 archive files in that query. | High duplicate confidence, medium cleanup confidence because mod/distribution layout may matter. |
+| Deck files repeat across many deck folders. | A targeted SHA-256 audit over 492 `.dck` files in the main deck-family folders found 163 duplicate hashes covering 327 files. | High duplicate-file confidence, low cleanup confidence because content duplicates do not prove folder redundancy. |
 | `src/` and `Program/src/` are similar but not identical. | `src/Makefile` and `Program/src/Makefile` have different SHA-256 and content. | Do not dedupe casually. |
 
 ## Archive After Limited Reorg
