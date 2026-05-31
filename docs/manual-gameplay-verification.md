@@ -17,6 +17,18 @@ tools/print-manual-gameplay-baseline.sh
 
 Paste that output into the result notes or use it to fill the environment table
 below, then replace `Needs testing` cells with concrete pass/fail evidence.
+To summarize current gaps without launching the game, run:
+
+```sh
+tools/verify-manual-gameplay-results.sh --allow-incomplete
+```
+
+Before claiming the game works end to end, this command must pass without
+`--allow-incomplete`:
+
+```sh
+tools/verify-manual-gameplay-results.sh
+```
 
 ## Test Environment Record
 

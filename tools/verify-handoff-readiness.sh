@@ -108,6 +108,9 @@ printf '%s\n' "$share_status" | grep -q "Default Handoff Artifact Hashes" || fai
 printf '%s\n' "$share_status" | grep -q "Security Scan Results" || fail "share status missing security scan results section"
 printf '%s\n' "$share_status" | grep -q "| Results file | \`security-scan-results.tsv\` |" || fail "share status missing security scan results file"
 printf '%s\n' "$share_status" | grep -q "verify-security-scan-results.sh --results security-scan-results.tsv --require-all" || fail "share status missing security scan validation command"
+printf '%s\n' "$share_status" | grep -q "Manual Gameplay Results" || fail "share status missing manual gameplay results section"
+printf '%s\n' "$share_status" | grep -q "| Results doc | \`docs/manual-gameplay-verification.md\` |" || fail "share status missing manual gameplay doc"
+printf '%s\n' "$share_status" | grep -q "verify-manual-gameplay-results.sh --doc docs/manual-gameplay-verification.md" || fail "share status missing manual gameplay validation command"
 if [ -f "$default_bundle_path" ]; then
   bundle_sha="$(shasum -a 256 "$default_bundle_path" | awk '{print $1}')"
   printf '%s\n' "$share_status" | grep -q "| Git bundle | \`$bundle_sha\` |" || fail "share status does not report current bundle hash $bundle_sha"

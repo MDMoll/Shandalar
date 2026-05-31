@@ -30,6 +30,7 @@ bundle_checksum_path="${bundle_path}.sha256"
 patch_path="/private/tmp/${safe_branch}-${commit_short}.patch"
 patch_checksum_path="${patch_path}.sha256"
 scan_results_path="security-scan-results.tsv"
+manual_gameplay_doc="docs/manual-gameplay-verification.md"
 
 artifact_status() {
   local artifact="$1"
@@ -83,6 +84,10 @@ security_scan_results_status() {
   fi
 }
 
+manual_gameplay_status() {
+  tools/verify-manual-gameplay-results.sh --doc "$manual_gameplay_doc" --allow-incomplete | sed 's/^ok: //'
+}
+
 printf '# Share Status\n\n'
 printf 'This is a current-state report for handoff. It does not push to GitHub, run a malware scanner, or prove gameplay.\n\n'
 
@@ -134,11 +139,18 @@ printf '| Results file | `%s` |\n' "$scan_results_path"
 printf '| Validation | %s |\n' "$(security_scan_results_status)"
 printf '| Full-coverage command | `tools/verify-security-scan-results.sh --results %s --require-all` |\n' "$scan_results_path"
 
+printf '\n## Manual Gameplay Results\n\n'
+printf '| Field | Value |\n'
+printf '| --- | --- |\n'
+printf '| Results doc | `%s` |\n' "$manual_gameplay_doc"
+printf '| Validation | %s |\n' "$(manual_gameplay_status)"
+printf '| Completion command | `tools/verify-manual-gameplay-results.sh --doc %s` |\n' "$manual_gameplay_doc"
+
 printf '\n## Final Gates\n\n'
 printf '| Gate | Current status |\n'
 printf '| --- | --- |\n'
 printf '| GitHub push | Needs authenticated `git push -u origin %s` from an environment that can answer GitHub credentials; see `docs/push-auth.md`. |\n' "$branch"
-printf '| Manual gameplay | Needs visible pass/fail evidence in `docs/manual-gameplay-verification.md`. |\n'
+printf '| Manual gameplay | Needs visible pass/fail evidence in `docs/manual-gameplay-verification.md`; validate it with `tools/verify-manual-gameplay-results.sh`. |\n'
 printf '| Security scan | Needs a named scanner/version/result in `docs/security-scan.md`; validate local TSV evidence with `tools/verify-security-scan-results.sh --require-all`. |\n'
 printf '| Public distribution | Not approved by current evidence; see `docs/release-scope.md` and `docs/distribution.md`. |\n'
 printf '| Additional cleanup moves | Deferred unless explicitly approved and launch-copy tested. |\n'
