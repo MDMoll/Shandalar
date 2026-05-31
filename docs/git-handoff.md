@@ -78,6 +78,13 @@ To repeat that verification for the current commit, run:
 tools/verify-handoff-readiness.sh --verify-bundle-import
 ```
 
+If the default bundle and patch artifacts already exist for the current commit,
+include them in the same handoff pass:
+
+```sh
+tools/verify-handoff-readiness.sh --verify-bundle-import --verify-artifacts
+```
+
 After creating the default bundle and patch artifacts for the current commit,
 run `tools/verify-handoff-artifacts.sh`. It checks both checksum sidecars,
 imports the bundle into a disposable `master` clone, and applies the patch to a
