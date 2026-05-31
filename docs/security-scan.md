@@ -1,8 +1,9 @@
 # Security and Antivirus Notes
 
-No antivirus or malware scan has been recorded for this branch. Nothing in
-these docs should be read as a safety claim about any `.exe`, `.dll`, or archive
-in this repository.
+A ClamAV scan has been recorded for the current tracked security-target
+inventory. This is useful evidence, but it is not a broad safety guarantee for
+old Windows game binaries, fan-maintained DLLs, archives, or any future file
+changes.
 
 Old Windows game binaries, no-CD patches, packed executables, and fan-maintained
 DLLs can produce false positives. A false positive is possible, but it is not
@@ -15,13 +16,17 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` on 2026-05-31.
 
 | Check | Result | Meaning |
 | --- | --- | --- |
-| `command -v clamscan` | No path printed. | ClamAV is not installed or not on `PATH` here, so no ClamAV scan was run. |
+| `brew install clamav` | Installed ClamAV 1.5.2 and dependencies outside the repo. | This made a real local scanner available without downloading installers into the repository. |
+| `command -v clamscan` | `/opt/homebrew/bin/clamscan`. | ClamAV is available locally. |
+| `clamscan --version` | `ClamAV 1.5.2/28017/Sun May 31 02:27:13 2026`. | Scanner and daily database version recorded for the scan. |
+| `freshclam` | Downloaded and tested `daily.cvd` version 28017, `main.cvd` version 63, and `bytecode.cvd` version 339; output included repeated `ERROR: NULL X509 store` warnings but exited 0 after database tests passed. | Virus definitions were present before scanning; keep the warning with the evidence rather than hiding it. |
+| `clamscan --fail-if-cvd-older-than=7 --file-list=/private/tmp/shandalar-security-scan-target-paths-690f18b7.txt --log=/private/tmp/shandalar-clamscan-690f18b7.log` | `Scanned files: 241`; `Infected files: 0`; `Known viruses: 3627865`; start `2026:05:31 19:04:36`, end `2026:05:31 19:05:36`. | ClamAV reported no infected files for the exact tracked security-target inventory. See [generated/security-scan/clamav-2026-05-31.md](generated/security-scan/clamav-2026-05-31.md). |
 | `command -v spctl` | `/usr/sbin/spctl` | macOS Gatekeeper assessment tooling exists, but it is not an antivirus scanner for Windows PE files. |
 | `spctl --assess --type execute --verbose=4 Shandalar.exe` | `Shandalar.exe: internal error in Code Signing subsystem` | No useful safety result for the Windows executable. Do not treat this as a pass or fail. |
 | `command -v xprotect` | `/usr/bin/xprotect` | macOS XProtect tooling exists locally, but the available commands do not produce a per-file malware scan report for this Windows PE inventory. |
 | `xprotect version` | `Version: 5346 Installed: 2026-05-28 08:53:39 +0000` | Records local XProtect metadata only; this is not a scan result for repo files. |
 | `xprotect status` | `XProtect launch scans: disabled`; `XProtect background scans: disabled` | No XProtect launch/background scan evidence can be used as the required named scanner result here. |
-| `tools/check-security-scanner-availability.sh` | Reports `clamscan`, `freshclam`, `mdatp`, and `yara` missing; reports `/usr/bin/xprotect` and `/usr/sbin/spctl` present but not enough for this gate. | No locally usable scanner command was found on this Mac. Run the scan on another trusted machine or install a scanner outside this repo. |
+| `tools/check-security-scanner-availability.sh --strict` | Reports `/opt/homebrew/bin/clamscan` usable after a real scan and `/opt/homebrew/bin/yara` conditional only; reports `mdatp` missing; reports `/usr/bin/xprotect` and `/usr/sbin/spctl` present but not enough for this gate. | Local scanner availability is now sufficient for ClamAV-based evidence, but YARA would still need a named ruleset if used. |
 | `file Shandalar.exe Program/Magic.exe ManalinkEh.dll Program/ManalinkEh.dll` | PE32 Windows executable/DLL files. | Confirms the active targets are Windows PE files, so use a scanner that supports that format. |
 | `shasum -a 256 Shandalar.exe Program/Shandalar.exe Magic.exe Program/Magic.exe FaceMaker.exe Program/FaceMaker.exe ManalinkEh.dll Program/ManalinkEh.dll` | Hashes recorded in [runtime-manifest.md](runtime-manifest.md), [running.md](running.md), and [magic-exe.md](magic-exe.md). | Hashes identify exactly which patched binaries still need scan results. |
 
@@ -82,7 +87,9 @@ The required TSV header is:
 path	sha256	scanner	version	date	result	notes
 ```
 
-`--require-all` must pass before treating the security-scan gate as complete.
+`--require-all` passed locally for `security-scan-results.tsv` after the ClamAV
+run. The TSV is an ignored local evidence file; the durable summary is recorded
+below and in [generated/security-scan/clamav-2026-05-31.md](generated/security-scan/clamav-2026-05-31.md).
 This validator does not run a scanner and does not interpret whether a scanner
 finding is safe; it only proves the rows refer to current tracked targets with
 matching SHA-256 values and non-placeholder scanner metadata.
@@ -117,4 +124,4 @@ party. Do not upload files unless that is acceptable for the repo/user context.
 
 | Date | Scanner/version | Path | SHA-256 | Result | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Needs testing | Needs testing | Needs testing | Needs testing | Needs testing | No antivirus or malware scanner result is recorded for this branch. |
+| 2026-05-31 | ClamAV `1.5.2/28017/Sun May 31 02:27:13 2026` | 241 tracked security-scan targets from `tools/list-security-scan-targets.sh` | Validated locally by `tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all` | Clean | `clamscan --fail-if-cvd-older-than=7 --file-list=/private/tmp/shandalar-security-scan-target-paths-690f18b7.txt --log=/private/tmp/shandalar-clamscan-690f18b7.log` reported `Scanned files: 241` and `Infected files: 0`. |

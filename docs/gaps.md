@@ -33,5 +33,4 @@ of failure, only work that still needs direct testing or evidence.
 | `Program/src/` vs `src/` relationship | The snapshots are similar but not identical. | Compare trees before deduping or choosing a canonical source tree. |
 | Old URL reachability | Stale-reference docs classify links from local evidence only. | Test network reachability only if the user asks for live-link validation. |
 | Archive removability | Limited reorg moved files but did not delete them. | Keep archived files until a separate removal audit is approved. |
-| Antivirus/security scan | [security-scan.md](security-scan.md) records that `clamscan` is not available on this machine and `spctl` did not produce a useful Windows PE safety result. | Run a scanner that supports Windows PE files, then record scanner/version/hash/results. |
 | Share-readiness closure | [share-readiness.md](share-readiness.md) now separates shareable branch hygiene from unproven gameplay/security/build claims. | Use it as the final checklist before declaring the repo ready for broader sharing. |

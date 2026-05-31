@@ -119,7 +119,7 @@ the detailed command/result table.
 | Declared attacker mistakes are hard to undo. | Root and `Program/` `Magic.exe` now have a conservative attacker-selection undo patch, and the local `MTG` bottle copies were updated with backups. Before pressing Done, clicking an already-declared attacker should clear `STATE_ATTACKING`; unusual attack costs, attack triggers, and banding still need visible testing. See [docs/bugs/declared-attacker-undo.md](docs/bugs/declared-attacker-undo.md). |
 | Start-color `WM_CREATE CreateDIBSection` assertion, name-entry glitch, and map movement stop | FaceMaker/no-resolution and bottle-setting fixes did not solve the original issue. Root and `Program/` `Shandalar.exe` include a narrow `CreateDIBSection` compatibility patch, a default-name seed plus name-editor bypass/fallback, and a same-arrow movement-stop patch; the active FaceMaker copies have the same `hSection = NULL` patch at their own DIB wrapper. Direct patched FaceMaker startup is verified; full Shandalar-spawned character creation and movement control still need a visible manual retest. See [docs/troubleshooting.md](docs/troubleshooting.md), [docs/bugs/create-dibsection-after-color.md](docs/bugs/create-dibsection-after-color.md), and [docs/adventure-map-movement.md](docs/adventure-map-movement.md). |
 | Runtime advice is mixed in old docs. | Use [docs/runtime-dependencies.md](docs/runtime-dependencies.md), which separates import evidence from historical notes. |
-| Antivirus/security state is unknown. | No malware scanner result is recorded for this branch. See [docs/security-scan.md](docs/security-scan.md) before making safety claims. |
+| Security scan scope is narrow. | ClamAV reported no infected files for the 241 tracked security-scan targets, but that is not a broad safety or redistribution claim. See [docs/security-scan.md](docs/security-scan.md). |
 | There are many duplicates and historical files. | Use [docs/cleanup-audit.md](docs/cleanup-audit.md). Nothing should be deleted without a manual test plan. |
 | Obvious non-runtime historical/local clutter was moved under `archive/`. | Use [archive/README.md](archive/README.md) and [docs/reorganization.md](docs/reorganization.md). Runtime root and `Program/` files were not archived. |
 
@@ -132,7 +132,7 @@ the detailed command/result table.
 | Declared attacker undo | In a duel, declare one or more ordinary attackers, click a declared attacker again before Done, and confirm it leaves the attack selection without becoming tapped or marked as having attacked. |
 | Command-line help | Capture `Shandalar.exe --help` text, dialog, or log output. |
 | Root vs `Program/` `Magic.exe` | Test both exact paths because their hashes differ. |
-| Security scan | Run a named scanner and record hashes/results; use `tools/print-security-scan-baseline.sh` to prepare the evidence table. |
+| Additional scanner review | ClamAV evidence is recorded; use `tools/print-security-scan-baseline.sh` if another trusted scanner is run later. |
 
 ## More Docs
 

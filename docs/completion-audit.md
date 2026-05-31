@@ -13,7 +13,7 @@ proof.
 | Local maintenance branch | Ready locally | The tree is clean and `tools/verify-share-readiness.sh` passes. |
 | GitHub branch push | Proven current | `git push -u origin codex/shandalar-crossover-updates` succeeded, and `git rev-parse HEAD @{u}` printed the same SHA for local `HEAD` and `origin/codex/shandalar-crossover-updates`; see [git-handoff.md](git-handoff.md). |
 | Release scope | Controlled maintenance only | [release-scope.md](release-scope.md) records the current branch sharing decision; [patch-package-plan.md](patch-package-plan.md) prepares branch-delta inventory for a possible patch/docs-only path; public full-bundle and patch/docs-only releases remain unprepared. |
-| Clean public release | Not proven | Distribution rights, malware scan, and full gameplay verification are still missing. |
+| Clean public release | Not proven | Distribution rights and full gameplay verification are still missing. A ClamAV scan is recorded, but that is not a rights review or broad safety guarantee. |
 | More file moves | Deferred | Remaining candidates are runtime-like, save-state, art-folder, or package-tree files that need explicit approval and launch-copy testing. |
 
 ## Requirement Audit
@@ -30,7 +30,7 @@ proof.
 | Cleanup candidates are listed with evidence and confidence, nothing deleted. | Proven for current audit scope | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), [duplicate-audit.md](duplicate-audit.md), and [save-state.md](save-state.md). | Approved launch-copy tests before moving save-state, art-folder, package-tree, or duplicate runtime-like files. |
 | Stale references are identified with path/line evidence where possible. | Proven locally | [stale-references.md](stale-references.md). | Live URL reachability only if requested. |
 | Generated docs distinguish verified facts from inferences. | Proven locally | Root README evidence-language note plus `Verified on this machine` and `Needs testing` sections across docs. | Keep using that convention for new investigations. |
-| Branch can be shared in git. | Proven for controlled maintenance | Clean tree, pushed branch `codex/shandalar-crossover-updates`, [release-scope.md](release-scope.md), [git-handoff.md](git-handoff.md), `tools/create-git-handoff-bundle.sh`, `tools/create-patch-package.sh`, `tools/verify-handoff-artifacts.sh`, checksum sidecars, and verifier pass. | Remaining manual gameplay rows and security scan evidence are still required before claiming the game works end to end or making broader release claims. |
+| Branch can be shared in git. | Proven for controlled maintenance | Clean tree, pushed branch `codex/shandalar-crossover-updates`, [release-scope.md](release-scope.md), [git-handoff.md](git-handoff.md), `tools/create-git-handoff-bundle.sh`, `tools/create-patch-package.sh`, `tools/verify-handoff-artifacts.sh`, checksum sidecars, ClamAV scan evidence in [security-scan.md](security-scan.md), and verifier pass. | Remaining manual gameplay rows are still required before claiming the game works end to end or making broader release claims. |
 | Something that works. | Partially proven | Static binary hashes/patch bytes pass; CrossOver smoke evidence passed earlier crash points; S1 in [manual-gameplay-verification.md](manual-gameplay-verification.md) records root `C:\Shandalar\Shandalar.exe` reaching the main menu; `tools/print-manual-gameplay-baseline.sh` captures the exact branch, bottle settings, launch commands, and runtime hashes before retesting. | Manual gameplay rows S2-S8, D1-D5, and R1-R5 plus a real tester name are still required before claiming the game works end to end. |
 
 ## Do Not Move Yet
@@ -54,6 +54,6 @@ below have real evidence.
 | --- | --- |
 | Push | Satisfied for current `HEAD`: `git push -u origin codex/shandalar-crossover-updates` succeeded and local `HEAD` matches `@{u}`. |
 | Gameplay | S1 launch-to-main-menu is recorded as passed. A visible Windows or CrossOver run still needs to fill the remaining pass/fail rows in [manual-gameplay-verification.md](manual-gameplay-verification.md): real tester name, character creation, all starting colors, same-arrow map stop, save/load, several duel turns, damage-prevention prompt, and declared-attacker undo. |
-| Security | A named scanner/version records results for patched executables, DLLs, and archives. Use `tools/print-security-scan-baseline.sh` to prepare the target summary and hash evidence, but do not treat it as a scan. |
+| Security | Satisfied locally by ClamAV `1.5.2/28017/Sun May 31 02:27:13 2026`: 241 tracked security targets scanned, `Infected files: 0`, and `tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all` validated 241 rows. |
 | Distribution | Current branch scope is controlled maintenance only. Before any public release, use [patch-package-plan.md](patch-package-plan.md) to prepare and verify a patch/docs-only package or prepare a rights-verified full bundle. |
 | Cleanup moves | Any additional file moves have explicit approval, `git mv` history, docs updates, and launch-copy verification. |

@@ -113,6 +113,11 @@ branch_delta_count="$(printf '%s\n' "$branch_delta" | awk 'NR > 1 {count++} END 
 branch_delta_other_count="$(printf '%s\n' "$branch_delta" | awk -F '\t' 'NR > 1 && $4 == "other" {count++} END {print count+0}')"
 expect_share_status "| Commit | \`$short_sha\`" "share status does not report commit $short_sha"
 expect_share_status "| Git status | clean |" "share status does not report clean status"
+if [ -f security-scan-results.tsv ]; then
+  expect_share_status "| Ignored local scan evidence | present as ignored local evidence |" "share status does not report local scan evidence"
+else
+  expect_share_status "| Ignored local scan evidence | absent |" "share status does not report absent local scan evidence"
+fi
 if git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
   upstream="$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}')"
   expect_share_status "| Upstream | \`$upstream\` |" "share status does not report upstream $upstream"

@@ -16,7 +16,11 @@ if [ -n "$status" ]; then
   status_value="dirty (${status_lines} status entries)"
 fi
 
-ignored_local="$(git status --ignored --short --untracked-files=all | awk '/^!! / {print substr($0, 4)}' | awk '$0 !~ /^\.codex\// {count++} END {print count+0}')"
+ignored_local="$(git status --ignored --short --untracked-files=all | awk '/^!! / {print substr($0, 4)}' | awk '$0 !~ /^\.codex\// && $0 != "security-scan-results.tsv" {count++} END {print count+0}')"
+scan_evidence_status="absent"
+if [ -f security-scan-results.tsv ]; then
+  scan_evidence_status="present as ignored local evidence"
+fi
 tracked_ignored="$(git ls-files -ci --exclude-standard | tr '\n' ' ')"
 tracked_ignored="${tracked_ignored% }"
 [ -n "$tracked_ignored" ] || tracked_ignored="none"
@@ -114,6 +118,7 @@ printf '| Branch | `%s` |\n' "$branch"
 printf '| Commit | `%s` (`%s`) |\n' "$commit_short" "$commit_full"
 printf '| Git status | %s |\n' "$status_value"
 printf '| Ignored local files | %s |\n' "$ignored_local"
+printf '| Ignored local scan evidence | %s |\n' "$scan_evidence_status"
 printf '| Tracked ignored files | `%s` |\n' "$tracked_ignored"
 printf '| Remote | `%s` |\n' "$remote"
 printf '| Upstream | `%s` |\n' "${upstream:-none}"
