@@ -122,9 +122,12 @@ def table_rows(section: str):
 
 def placeholder(value: str) -> bool:
     stripped = value.strip()
+    lower = stripped.lower()
     return (
         not stripped
         or "Needs testing" in stripped
+        or "automated baseline only" in lower
+        or "visible gameplay not run" in lower
         or stripped in {"Windows / CrossOver / Wine"}
     )
 
