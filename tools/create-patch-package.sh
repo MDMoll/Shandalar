@@ -76,6 +76,7 @@ done
 git rev-parse --verify "$branch^{commit}" >/dev/null || fail "unknown branch/ref: $branch"
 git rev-parse --verify "$base^{commit}" >/dev/null || fail "unknown base ref: $base"
 git merge-base "$base" "$branch" >/dev/null || fail "no merge base between $base and $branch"
+base_commit="$(git rev-parse "$base^{commit}")"
 
 short_sha="$(git rev-parse --short "$branch")"
 safe_branch="$(printf '%s' "$branch" | tr '/: ' '---')"
@@ -124,8 +125,8 @@ if [ "$dry_run" = "1" ]; then
     printf 'Dry run only; would apply patch in a disposable clone and compare tree to %q.\n' "$branch"
   fi
   printf 'Receiver checksum command from patch directory: shasum -a 256 -c %q\n' "$checksum_name"
-  printf 'Receiver check command from base checkout: git apply --check --binary %q\n' "$dest"
-  printf 'Receiver apply command from base checkout: git apply --index --binary %q\n' "$dest"
+  printf 'Receiver check command from base index: git apply --check --cached --binary --whitespace=nowarn %q\n' "$dest"
+  printf 'Receiver apply command from base index: git apply --cached --binary --whitespace=nowarn %q\n' "$dest"
   exit 0
 fi
 
@@ -144,13 +145,13 @@ if [ "$verify_apply" = "1" ]; then
   expected_tree="$(git rev-parse "$branch^{tree}")"
 
   git clone --no-checkout "$repo_root" "$temp_repo" >/dev/null
-  git -C "$temp_repo" checkout --detach "$base" >/dev/null
-  git -C "$temp_repo" apply --index --binary "$dest"
+  git -C "$temp_repo" read-tree "$base_commit"
+  git -C "$temp_repo" apply --cached --binary --whitespace=nowarn "$dest"
   actual_tree="$(git -C "$temp_repo" write-tree)"
   [ "$actual_tree" = "$expected_tree" ] || fail "patch apply tree $actual_tree does not match $branch tree $expected_tree"
   printf 'Patch apply verified in %s; resulting tree matches %s.\n' "$temp_repo" "$branch"
 fi
 
 printf 'Receiver checksum command from patch directory: shasum -a 256 -c %q\n' "$checksum_name"
-printf 'Receiver check command from base checkout: git apply --check --binary %q\n' "$dest"
-printf 'Receiver apply command from base checkout: git apply --index --binary %q\n' "$dest"
+printf 'Receiver check command from base index: git apply --check --cached --binary --whitespace=nowarn %q\n' "$dest"
+printf 'Receiver apply command from base index: git apply --cached --binary --whitespace=nowarn %q\n' "$dest"

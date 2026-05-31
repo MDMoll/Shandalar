@@ -54,6 +54,10 @@ That patch may contain binary deltas for patched executables, DLLs, and added
 FaceMaker support assets. It is a technical transfer artifact, not proof of
 permission to redistribute those bytes.
 
+The helper verifies patch restoration against the Git index, not a checked-out
+working tree. That avoids platform-specific working-tree trouble from the
+case-only `readme.md` to `README.md` rename on case-insensitive filesystems.
+
 ## Required Restoration Test
 
 Before describing a patch/docs-only package as ready:
@@ -61,7 +65,7 @@ Before describing a patch/docs-only package as ready:
 | Step | Required proof |
 | --- | --- |
 | Clean base | Start from a clean checkout at the expected base commit or tag. |
-| Apply patch | Apply the candidate patch without rejects. `tools/create-patch-package.sh --verify-apply` proves the tree result in a disposable clone. |
+| Apply patch | Apply the candidate patch without rejects. `tools/create-patch-package.sh --verify-apply` proves the Git tree result in a disposable clone. |
 | Verify repo | Run `tools/verify-share-readiness.sh` and `tools/verify-handoff-readiness.sh`. |
 | Verify runtime | Run the manual gameplay checklist in [manual-gameplay-verification.md](manual-gameplay-verification.md). |
 | Verify security | Record a named scanner/version/result in [security-scan.md](security-scan.md). |
