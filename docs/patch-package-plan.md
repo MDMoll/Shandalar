@@ -35,7 +35,7 @@ The TSV columns are:
 | `status` | Git change status, including rename scores such as `R100`. |
 | `path` | Current path on this branch. |
 | `old_path` | Previous path for renames/copies, otherwise `-`. |
-| `kind` | Coarse review category such as `documentation`, `shell-tool`, `pe-executable`, or `art-resource`. |
+| `kind` | Coarse review category such as `documentation`, `repo-metadata`, `archive-evidence`, `shell-tool`, `source`, `pe-executable`, or `art-resource`. |
 | `bytes` | Current blob size on this branch, or `-` for deletes. |
 | `sha256` | SHA-256 of the current branch blob, or `-` for deletes. |
 

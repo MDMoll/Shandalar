@@ -29,11 +29,20 @@ fail() {
 
 kind_for_path() {
   case "$1" in
-    README.md|AGENTS.md|docs/*|archive/README.md|local/README.md|tools/README.md)
+    .gitattributes|.gitignore)
+      printf 'repo-metadata'
+      ;;
+    README.md|readme.md|AGENTS.md|docs/*|archive/README.md|local/README.md|tools/README.md)
       printf 'documentation'
+      ;;
+    archive/*)
+      printf 'archive-evidence'
       ;;
     tools/*.sh|local/*.sh|local/*/*.sh)
       printf 'shell-tool'
+      ;;
+    src/*|Program/src/*)
+      printf 'source'
       ;;
     *.exe|*.EXE)
       printf 'pe-executable'
@@ -41,7 +50,7 @@ kind_for_path() {
     *.dll|*.DLL)
       printf 'pe-dll'
       ;;
-    *.pcx|*.PCX|*.pic|*.PIC|*.spr|*.SPR|*.res|*.RES)
+    Program/FaceArt/*|*.pcx|*.PCX|*.pic|*.PIC|*.spr|*.SPR|*.res|*.RES)
       printf 'art-resource'
       ;;
     *.dat|*.DAT|*.csv|*.CSV|*.txt|*.TXT|*.ini|*.INI)
@@ -49,9 +58,6 @@ kind_for_path() {
       ;;
     *.bat|*.BAT|*.cmd|*.CMD|*.vbs|*.VBS|*.pl|*.PL)
       printf 'script'
-      ;;
-    archive/*)
-      printf 'archive-evidence'
       ;;
     *)
       printf 'other'
