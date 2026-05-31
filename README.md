@@ -130,7 +130,7 @@ the detailed command/result table.
 | Declared attacker undo | In a duel, declare one or more ordinary attackers, click a declared attacker again before Done, and confirm it leaves the attack selection without becoming tapped or marked as having attacked. |
 | Command-line help | Capture `Shandalar.exe --help` text, dialog, or log output. |
 | Root vs `Program/` `Magic.exe` | Test both exact paths because their hashes differ. |
-| Security scan | Run a named scanner and record hashes/results. |
+| Security scan | Run a named scanner and record hashes/results; use `tools/print-security-scan-baseline.sh` to prepare the evidence table. |
 
 ## More Docs
 
@@ -187,3 +187,15 @@ positives, patched runtime hashes, runtime-manifest hashes, representative patch
 bytes, tracked save/local-state inventory, security-scan target inventory, core
 docs, maintained-text ASCII, docs index coverage, and local Markdown links. It
 does not replace the manual gameplay checklist.
+
+## Evidence Helpers
+
+These helpers do not prove gameplay or security by themselves, but they reduce
+handoff mistakes when a human is ready to test:
+
+```sh
+tools/print-manual-gameplay-baseline.sh
+tools/print-security-scan-baseline.sh
+tools/create-cleanup-test-copy.sh --dry-run
+tools/create-git-handoff-bundle.sh --dry-run
+```
