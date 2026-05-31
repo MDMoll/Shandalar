@@ -175,6 +175,47 @@ PY
 
 python3 - <<'PY'
 from pathlib import Path
+import sys
+
+index_paths = [
+    Path("README.md"),
+    Path("docs/README.md"),
+    Path("docs/share-readiness.md"),
+    Path("docs/branch-summary.md"),
+]
+index_text = "\n".join(path.read_text(encoding="utf-8") for path in index_paths)
+
+docs = [
+    Path("AGENTS.md"),
+    Path("archive/README.md"),
+    Path("local/README.md"),
+    Path("tools/README.md"),
+]
+
+for path in sorted(Path("docs").rglob("*.md")):
+    if path.parts[:2] == ("docs", "generated") and path != Path("docs/generated/README.md"):
+        continue
+    docs.append(path)
+
+missing = []
+for path in docs:
+    aliases = {path.as_posix()}
+    if path.parts[0] == "docs":
+        aliases.add(path.relative_to("docs").as_posix())
+
+    if not any(alias in index_text for alias in aliases):
+        missing.append(path.as_posix())
+
+if missing:
+    for path in missing:
+        print(f"doc is not indexed: {path}", file=sys.stderr)
+    sys.exit(1)
+
+print(f"ok: maintained docs are indexed ({len(docs)} checked)")
+PY
+
+python3 - <<'PY'
+from pathlib import Path
 import re
 import sys
 import urllib.parse

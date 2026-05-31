@@ -164,6 +164,8 @@ the detailed command/result table.
 | [docs/gaps.md](docs/gaps.md) | Remaining launch, command-line, duplicate, and build gaps. |
 | [docs/adventure-map-movement.md](docs/adventure-map-movement.md) | Static notes and verification commands for the same-arrow adventure-map stop patch. |
 | [docs/generated/README.md](docs/generated/README.md) | Map for generated evidence snapshots. |
+| [local/README.md](local/README.md) | Local-only CrossOver/Wine helper scripts and scope notes. |
+| [tools/README.md](tools/README.md) | Repo-maintenance helper scripts and verifier usage. |
 
 ## Automated Checks
 
@@ -176,4 +178,5 @@ tools/verify-share-readiness.sh
 This verifies the clean tree, ignored local clutter, expected tracked ignored
 file, Git binary attributes, patched runtime hashes, representative patch
 bytes, tracked save/local-state inventory, core docs, maintained-text ASCII,
-and local Markdown links. It does not replace the manual gameplay checklist.
+docs index coverage, and local Markdown links. It does not replace the manual
+gameplay checklist.
