@@ -25,6 +25,7 @@ conservative.
 | Native Windows behavior is verified. | No native Windows launch pass has been recorded in this checkout. |
 | `Shandalar.exe --help` is documented from actual output. | Local attempts did not capture help text or dialog output. |
 | The repository is free of duplicate assets. | Targeted duplicate audits found exact duplicates, but no full-repo duplicate graph or launch-copy removal test has been completed. |
+| Tracked save files are ready for public release. | [save-state.md](save-state.md) documents save slots and screen-name state that should be reviewed after save/load testing. |
 | Binaries are malware-scanned. | [security-scan.md](security-scan.md) is a reporting template; no named scanner result is recorded. |
 | `src/` rebuilds the shipped binaries. | `make -n` still hits missing/generated build inputs and toolchain assumptions. |
 

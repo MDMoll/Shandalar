@@ -21,6 +21,7 @@ of failure, only work that still needs direct testing or evidence.
 | Root vs `Program/` `Magic.exe` behavior | Same PE timestamp/import set but different SHA-256; root `Shandalar.exe` opens root `Magic.exe` in the logged `MTG` startup. | Test each exact path separately and record hashes/results. |
 | `Program/Shandalar.exe` CrossOver dependency gap | Direct `C:\Shandalar\Program\Shandalar.exe` launch in `MTG` fails because `Program\zlib.dll` is missing. | Fix only in a copy or with explicit approval; do not treat this as the current start-color retest path. |
 | Minimal runtime file set | Import tables and folder layout identify likely requirements only. | Use a copy of the repo and remove candidates there, not in-place. |
+| Save-state cleanup | Root save slots and local player/screen-name files are now inventoried in [save-state.md](save-state.md), but save/load behavior is not visibly verified after the patches. | Decide whether these are public fixtures or local state after a manual save/load test; move only with matching `.SVE`/`.map`/`.fce` sets. |
 
 ## Repository and Build Gaps
 
