@@ -33,7 +33,7 @@ tools/print-security-scan-baseline.sh
 tools/print-share-status.sh
 tools/verify-handoff-artifacts.sh
 tools/verify-handoff-readiness.sh
-tools/verify-handoff-readiness.sh --verify-artifacts
+tools/verify-handoff-readiness.sh --verify-bundle-import --verify-artifacts
 tools/verify-share-readiness.sh
 ```
 

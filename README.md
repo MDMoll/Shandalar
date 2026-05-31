@@ -201,8 +201,7 @@ handoff mistakes when a human is ready to test:
 tools/print-manual-gameplay-baseline.sh
 tools/print-security-scan-baseline.sh
 tools/print-share-status.sh
-tools/verify-handoff-artifacts.sh
-tools/verify-handoff-readiness.sh
+tools/verify-handoff-readiness.sh --verify-bundle-import --verify-artifacts
 tools/create-patch-package.sh --dry-run
 tools/list-branch-delta.sh
 tools/list-branch-delta.sh --summary

@@ -84,6 +84,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` unless noted.
 | List branch delta for review or patch-only planning | `tools/list-branch-delta.sh` |
 | Run the non-gameplay handoff verifier | `tools/verify-handoff-readiness.sh` |
 | Verify bundle import in a disposable clone | `tools/verify-handoff-readiness.sh --verify-bundle-import` |
+| Verify default handoff artifacts too | `tools/verify-handoff-readiness.sh --verify-bundle-import --verify-artifacts` |
 | Run automated share-readiness checks | `tools/verify-share-readiness.sh` |
 | Build dry run | `cd src && make -n` |
 

@@ -78,10 +78,9 @@ printf '\n## Handoff Commands\n\n'
 printf '```sh\n'
 printf 'git status --short --untracked-files=all\n'
 printf 'tools/verify-share-readiness.sh\n'
-printf 'tools/verify-handoff-readiness.sh --verify-bundle-import\n'
 printf 'tools/create-git-handoff-bundle.sh\n'
 printf 'tools/create-patch-package.sh --verify-apply\n'
-printf 'tools/verify-handoff-artifacts.sh\n'
+printf 'tools/verify-handoff-readiness.sh --verify-bundle-import --verify-artifacts\n'
 printf 'git push -u origin %q\n' "$branch"
 printf '```\n'
 
