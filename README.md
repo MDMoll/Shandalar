@@ -9,6 +9,11 @@ The safest first step is to treat the repository as a bundled game directory,
 not as a clean source tree. Many large files and old-looking folders are art,
 deck, sound, card database, or runtime assets.
 
+Distribution status is not verified. The checkout includes third-party game
+binaries, art, card data, decks, and trademark/rightsholder notices, and no
+repository-level license file was found. See
+[docs/distribution.md](docs/distribution.md) before publishing broadly.
+
 Evidence language in these docs is intentional: "verified" means a command was
 run on this checkout, "inferred" means the conclusion comes from local strings,
 imports, scripts, or filenames, and "needs testing" means it was not proven.
@@ -172,6 +177,7 @@ Local checkout path: `/Users/mdmoll/Shandalar/Shandalar`
 | [docs/magic-vs-shandalar-runtime.md](docs/magic-vs-shandalar-runtime.md) | Runtime comparison notes for `Magic.exe` and `Shandalar.exe`. |
 | [docs/runtime-dependencies.md](docs/runtime-dependencies.md) | PE inspection and runtime dependency matrix. |
 | [docs/security-scan.md](docs/security-scan.md) | Antivirus/security scan guidance and reporting template. |
+| [docs/distribution.md](docs/distribution.md) | Distribution/licensing caution for sharing this bundled game tree. |
 | [docs/command-line.md](docs/command-line.md) | `--help`, `--e`, `--p`, and command-line evidence. |
 | [docs/save-state.md](docs/save-state.md) | Tracked save slots, screen names, and cleanup plan. |
 | [docs/cleanup-move-plan.md](docs/cleanup-move-plan.md) | Exact pending cleanup moves that need explicit approval or launch-copy testing. |

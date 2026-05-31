@@ -15,6 +15,7 @@ should keep the working tree safe and evidence-driven.
 | Prefer docs and audit reports over cleanup. | The current repo needs mapping more than destructive pruning. |
 | Record every launch/build command and its working directory. | Working directory is likely significant for both executables. |
 | Do not download redistributable installers into the repo. | Runtime packages should be installed into Windows/CrossOver bottles by the user. |
+| Do not claim the repo is safe for public redistribution unless [docs/distribution.md](docs/distribution.md) has been updated with evidence. | The checkout contains bundled game binaries, art, data, decks, and rightsholder/trademark notices, and no repository-level license file was found. |
 | Do not declare binaries safe unless a named scanner was actually run and recorded. | Old game binaries can trigger false positives, but that is not proof of safety. |
 | Put scan guidance/results in [docs/security-scan.md](docs/security-scan.md). | Safety claims need scanner name, version, path, hash, date, and result. |
 | Preserve the root `.gitattributes` binary rules and do not run broad `git add --renormalize` without a separate review. | Legacy resource formats, saves, media, archives, and executables should not be rewritten by text filters or line-ending cleanup. |
