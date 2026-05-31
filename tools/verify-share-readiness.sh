@@ -182,6 +182,7 @@ for path in \
   tools/print-manual-gameplay-baseline.sh \
   tools/print-security-scan-baseline.sh \
   tools/print-share-status.sh \
+  tools/verify-final-share-gates.sh \
   tools/verify-handoff-artifacts.sh \
   tools/verify-handoff-readiness.sh \
   tools/verify-share-readiness.sh \
@@ -216,6 +217,7 @@ for expected in \
   $'tools/create-patch-package.sh\tshell-tool' \
   $'tools/list-branch-delta.sh\tshell-tool' \
   $'tools/print-share-status.sh\tshell-tool' \
+  $'tools/verify-final-share-gates.sh\tshell-tool' \
   $'tools/verify-handoff-artifacts.sh\tshell-tool'
 do
   path="${expected%$'\t'*}"

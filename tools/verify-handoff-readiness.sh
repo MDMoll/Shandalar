@@ -151,6 +151,7 @@ else
   expect_share_status "| Binary patch | \`missing\` |" "share status does not report missing patch hash"
 fi
 expect_share_status "Manual gameplay" "share status missing manual gameplay gate"
+expect_share_status "tools/verify-final-share-gates.sh" "share status missing strict final verifier gate"
 pass "share status report is current"
 
 cleanup_dest="/private/tmp/shandalar-cleanup-test-dryrun-${short_sha}-$$"

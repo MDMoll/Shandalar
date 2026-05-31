@@ -154,3 +154,4 @@ printf '| Manual gameplay | Needs visible pass/fail evidence in `docs/manual-gam
 printf '| Security scan | Needs a named scanner/version/result in `docs/security-scan.md`; validate local TSV evidence with `tools/verify-security-scan-results.sh --require-all`. |\n'
 printf '| Public distribution | Not approved by current evidence; see `docs/release-scope.md` and `docs/distribution.md`. |\n'
 printf '| Additional cleanup moves | Deferred unless explicitly approved and launch-copy tested. |\n'
+printf '| Strict final verifier | `tools/verify-final-share-gates.sh` should fail until push, manual gameplay, and security scan evidence are complete. |\n'

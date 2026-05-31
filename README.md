@@ -187,12 +187,12 @@ tools/verify-share-readiness.sh
 ```
 
 This verifies the clean tree, ignored local clutter, generated report/handoff
-ignore rules,
-expected tracked ignored file, Git binary attributes, protected cleanup false
-positives, patched runtime hashes, runtime-manifest hashes, representative patch
-bytes, tracked save/local-state inventory, security-scan target inventory, core
-docs, branch-delta inventory shape, maintained-text ASCII, docs index coverage,
-and local Markdown links. It does not replace the manual gameplay checklist.
+ignore rules, expected tracked ignored file, Git binary attributes, protected
+cleanup false positives, patched runtime hashes, runtime-manifest hashes,
+representative patch bytes, tracked save/local-state inventory, security-scan
+target inventory, core docs, branch-delta inventory shape, current top-level
+CrossOver guidance, maintained-text ASCII, docs index coverage, and local
+Markdown links. It does not replace the manual gameplay checklist.
 
 ## Evidence Helpers
 
@@ -203,6 +203,7 @@ handoff mistakes when a human is ready to test:
 tools/print-manual-gameplay-baseline.sh
 tools/print-security-scan-baseline.sh
 tools/print-share-status.sh
+tools/verify-final-share-gates.sh
 tools/verify-handoff-readiness.sh --verify-bundle-import --verify-artifacts
 tools/create-git-handoff-bundle.sh --replace
 tools/create-patch-package.sh --replace --verify-apply
@@ -212,3 +213,7 @@ tools/list-branch-delta.sh --summary
 tools/create-cleanup-test-copy.sh --dry-run
 tools/create-git-handoff-bundle.sh --dry-run
 ```
+
+`tools/verify-final-share-gates.sh` is intentionally strict. It should fail
+until the branch is pushed, manual gameplay rows are complete, and a named
+security scan covers all tracked scan targets.

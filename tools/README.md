@@ -14,6 +14,7 @@ files.
 | `print-security-scan-baseline.sh` | Prints a Markdown scanner-report baseline with current branch, target counts, priority hashes, and commands to run with a real scanner. |
 | `print-share-status.sh` | Prints a current Markdown status report with branch facts, inventory counts, handoff artifact paths, artifact hashes, local scanner-result validation status, and remaining gates; it does not push, scan, or launch the game. |
 | `verify-crossover-mtg-state.sh` | Optional local check for this machine's `MTG` CrossOver bottle: copied runtime hashes, `Window = 2`, app-default `win7`, `Shandalar1440=1440x1080`, and paging-file registry state. |
+| `verify-final-share-gates.sh` | Strict completion gate for controlled-maintenance sharing; it runs local share-readiness, requires complete manual gameplay evidence, requires full scanner-result coverage, and confirms `origin/<branch>` matches the local branch tip. It is expected to fail until external evidence exists. |
 | `verify-handoff-artifacts.sh` | Verifies the default `/private/tmp` bundle and patch artifacts for the current branch tip, including checksum sidecars, bundle import, and patch tree restoration. |
 | `verify-handoff-readiness.sh` | Runs the non-gameplay handoff stack: share-readiness, gameplay/security baseline sanity checks, share-status inventory/status/hash drift checks, cleanup-copy dry-runs for default no-`.git` and `--include-git` modes, bundle/patch dry-runs, optional bundle-import verification, optional default artifact verification, and optional CrossOver bottle-state verification. |
 | `verify-manual-gameplay-results.sh` | Validates the manual gameplay checklist and fails until required environment fields are filled and all required visible tests pass. |
@@ -36,6 +37,7 @@ tools/list-security-scan-targets.sh
 tools/print-manual-gameplay-baseline.sh
 tools/print-security-scan-baseline.sh
 tools/print-share-status.sh
+tools/verify-final-share-gates.sh
 tools/verify-handoff-artifacts.sh
 tools/verify-handoff-readiness.sh
 tools/verify-handoff-readiness.sh --verify-bundle-import --verify-artifacts

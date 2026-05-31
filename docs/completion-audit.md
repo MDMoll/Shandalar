@@ -46,6 +46,10 @@ proof.
 
 ## Final Gates Before Marking Complete
 
+Run `tools/verify-final-share-gates.sh` as the strict controlled-maintenance
+completion check. It should fail until the push, gameplay, and security rows
+below have real evidence.
+
 | Gate | Evidence needed |
 | --- | --- |
 | Push | `git push -u origin codex/shandalar-crossover-updates` succeeds. |
