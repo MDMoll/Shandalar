@@ -104,4 +104,44 @@ do
 done
 pass "core docs exist"
 
+python3 - <<'PY'
+from pathlib import Path
+import re
+import sys
+import urllib.parse
+
+root = Path(".")
+link_re = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
+missing = []
+checked = 0
+
+for md in sorted(path for path in root.rglob("*.md") if ".git" not in path.parts):
+    text = md.read_text(encoding="utf-8", errors="replace")
+    for match in link_re.finditer(text):
+        raw = match.group(1).strip()
+        if not raw or raw.startswith(("#", "http://", "https://", "mailto:", "file:", "vscode:")):
+            continue
+        target = raw.split("#", 1)[0]
+        if not target:
+            continue
+        if target.startswith("<") and target.endswith(">"):
+            target = target[1:-1]
+        target = urllib.parse.unquote(target)
+        if re.match(r"^[A-Za-z]:[\\/]", target):
+            continue
+
+        checked += 1
+        resolved = (md.parent / target).resolve()
+        if not resolved.exists():
+            line = text[:match.start()].count("\n") + 1
+            missing.append((md, line, raw))
+
+if missing:
+    for md, line, raw in missing:
+        print(f"missing markdown link: {md}:{line}: {raw}", file=sys.stderr)
+    sys.exit(1)
+
+print(f"ok: local Markdown links resolve ({checked} checked)")
+PY
+
 printf 'Share-readiness automated checks passed.\n'

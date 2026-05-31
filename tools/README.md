@@ -5,7 +5,7 @@ files.
 
 | Tool | Purpose |
 | --- | --- |
-| `verify-share-readiness.sh` | Runs automated checks for clean-tree status, expected tracked ignored files, Git binary attributes, patched runtime hashes, representative patch bytes, and core docs. |
+| `verify-share-readiness.sh` | Runs automated checks for clean-tree status, expected tracked ignored files, Git binary attributes, patched runtime hashes, representative patch bytes, core docs, and local Markdown links. |
 
 Run from the repository root:
 
