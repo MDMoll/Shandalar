@@ -78,7 +78,7 @@ path, because root and `Program/` copies differ by hash. See
 | `src/` | C/C++/ASM source and patch tooling for Manalink/CardArt/DrawCard/Deck DLL work. It does not currently prove that the shipped game can be rebuilt end to end. |
 | `CardArtManalink/`, `CardArtNew/`, `Cardart/`, `Dbart/`, `Duelart/`, `Exp1art/`, `Shellart/`, `Statwin/` | Art and proprietary game resource stores. Do not delete casually. |
 | `decks*`, `Decks*`, `Playdeck/`, `Mods/PlayDeck/` | Player/opponent deck collections and mod deck packs. |
-| `MAGIC*.SVE`, `MAGIC*.map`, `MAGIC*.fce`, `Savedescs`, `Screennames/` | Tracked save/local player state. Useful for testing, but review before public release. |
+| `MAGIC*.SVE`, `MAGIC*.map`, `MAGIC*.fce`, extensionless `MAGIC5`, `Savedescs`, `Screennames/` | Tracked save/local player state and one derived save/deck export. Useful for testing, but review before public release. |
 | `Mods/` | Mod archives and mod staging folders used by the launcher. |
 | `Manalink3/` | A packaged Manalink 3 style distribution snapshot with its own `Program/`, `Mods/`, and docs. |
 | `magic_updater/` | Perl/CSV card data updater tooling. |
@@ -174,6 +174,7 @@ Local checkout path: `/Users/mdmoll/Shandalar/Shandalar`
 | [docs/security-scan.md](docs/security-scan.md) | Antivirus/security scan guidance and reporting template. |
 | [docs/command-line.md](docs/command-line.md) | `--help`, `--e`, `--p`, and command-line evidence. |
 | [docs/save-state.md](docs/save-state.md) | Tracked save slots, screen names, and cleanup plan. |
+| [docs/cleanup-move-plan.md](docs/cleanup-move-plan.md) | Exact pending cleanup moves that need explicit approval or launch-copy testing. |
 | [docs/architecture.md](docs/architecture.md) | High-level repo organization. |
 | [docs/building.md](docs/building.md) | What appears buildable and current blockers. |
 | [docs/file-inventory.md](docs/file-inventory.md) | Counts, large files, duplicate observations, and runtime-critical file types. |

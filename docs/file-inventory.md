@@ -119,7 +119,7 @@ and the name-seed-plus-movement value `155a668c72867bd1274410eb05ca05fbb7bd9bed8
 | `archive/generated-local/shandalar_dll.log` | Filename and `file` output identify a CSV-style log. | Medium |
 | `archive/debug-evidence/ML_Debug.txt` | Contains old `D:\Newmagic\...` source/debug paths. | Medium |
 | `archive/debug-evidence/assertFile.txt` | Contains one old assertion source path. | Medium |
-| `MAGIC*.SVE`, `MAGIC*.map`, `MAGIC*.fce`, `Savedescs`, `FaceMostRecent.txt`, `Screennames/` | Tracked save slots and local player/screen-name state. `Savedescs` is plain text and `Screennames/*` contains visible names in hex dumps. See [save-state.md](save-state.md). | Medium cleanup confidence |
+| `MAGIC*.SVE`, `MAGIC*.map`, `MAGIC*.fce`, extensionless `MAGIC5`, `Savedescs`, `FaceMostRecent.txt`, `Screennames/` | Tracked save slots, one derived ASCII save/deck export, and local player/screen-name state. `Savedescs` is plain text and `Screennames/*` contains visible names in hex dumps. See [save-state.md](save-state.md). | Medium cleanup confidence |
 | `CardArtNew/Thumbs.db` | Windows Explorer thumbnail cache; `file` reports `Composite Document File V2 Document`. It remains in place because `CardArtNew/` is a runtime-like art folder and moving anything out of it needs explicit approval. | High generated / medium move confidence |
 | `Statwin/*.tmp` and `Program/statwin/*.tmp` | These look suspicious by extension, but most report as Windows bitmap mask files and live in UI resource folders. Root and Program mask hashes match, while `statscrn.tmp` differs across the two trees. | High keep confidence |
 | `Mods/Art/_undo` | Launcher script defines `_undo` folders for mod rollback staging. | Medium |
