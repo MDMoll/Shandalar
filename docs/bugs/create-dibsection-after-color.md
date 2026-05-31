@@ -340,22 +340,31 @@ copies, but the adventure-map feel still needs a visible/manual gameplay pass.
 
 ## Current Active CrossOver State
 
-The failed `MTG` state is still useful comparison evidence:
+The failed `MTG` state is still useful comparison evidence. These values are
+historical and have been superseded by the later `win7`/`Shandalar1440` retest
+state.
 
-| Setting | Current value | Evidence |
+| Setting | Historical failed value | Evidence |
 | --- | --- | --- |
 | Repo `Shandalar.ini` | `Window = 2` | `rg -n "^Window\\s*=" Shandalar.ini Program/Shandalar.ini`. |
 | Repo `Program/Shandalar.ini` | `Window = 2` | Same command. |
 | Bottle `C:\Shandalar\Shandalar.ini` | `Window = 2` | `rg -n "^Window\\s*=" "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Shandalar.ini" "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Program/Shandalar.ini"`. |
 | Bottle `C:\Shandalar\Program\Shandalar.ini` | `Window = 2` | Same command; hashes now match the repo ini files. |
 | CrossOver bottle `MTG` paging file | `C:\pagefile.sys 512 1024` | `rg -n "PagingFiles" "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/system.reg"`. |
-| CrossOver bottle `MTG` app-default desktop | `Shandalar`, `1024x768` | `sed -n '760,815p' "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/user.reg"`. |
-| CrossOver bottle `MTG` app-default Windows version | `win8` for `FaceMaker.exe`, `Magic.exe`, and `Shandalar.exe` | Same `user.reg` check. |
+| CrossOver bottle `MTG` app-default desktop | `Shandalar`, `1024x768` | Recorded by the app-default virtual desktop commands below; superseded by `Shandalar1440=1440x1080`. |
+| CrossOver bottle `MTG` app-default Windows version | `win8` for `FaceMaker.exe`, `Magic.exe`, and `Shandalar.exe` | Recorded by the app-default Windows-version commands below; superseded by app-default `win7`. |
 
 User retest: this config-only state still reproduced the issue. Do not mark
 the CrossOver settings alone as a fix.
 
-The new test state is:
+The current `MTG` retest state is:
+
+| Setting | Current value | Evidence |
+| --- | --- | --- |
+| App-default Windows version | `win7` for `FaceMaker.exe`, `Magic.exe`, and `Shandalar.exe` | `sed -n '790,825p;965,970p' "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/user.reg"`. |
+| App-default virtual desktop | `Shandalar1440=1440x1080` | Same `user.reg` check. |
+
+The separate Win8 comparison state is:
 
 | Setting | Current value | Evidence |
 | --- | --- | --- |
@@ -648,7 +657,7 @@ Minimum useful CrossOver evidence:
 | Use a 32-bit XP or Windows 7 CrossOver bottle. | Medium | The crash came from a Wine Windows 7 environment; XP comparison is useful. |
 | Set `Window = 2` in both Shandalar ini files. | Medium | The shipped comments say mode 2 keeps Adventure Mode, Deckbuilder, and Facemaker in the windowed path and generally works better. |
 | Increase the CrossOver/Wine paging file. | Medium | The forum thread identifies paging-file absence as a trigger; local `MTG` was changed to `C:\pagefile.sys 512 1024`. |
-| Disable high-DPI/Retina and use Wine virtual desktop. | Medium | Reduces old-GDI scaling surprises; `MTG` now has app-default desktop `Shandalar=1024x768` for `Shandalar.exe`, `Magic.exe`, and `FaceMaker.exe`. |
+| Disable high-DPI/Retina and use Wine virtual desktop. | Medium | Reduces old-GDI scaling surprises; the current `MTG` retest uses app-default `Version=win7` with desktop `Shandalar1440=1440x1080` for `Shandalar.exe`, `Magic.exe`, and `FaceMaker.exe`. |
 | Try a real 32-bit Windows 8 bottle with a bottle-local `C:\Shandalar` install. | Medium | The linked forum thread reports the same install working on Windows 8 after failing on Windows 7; app-default Win8 inside `MTG` was not sufficient in user testing, so `Shandalar-Win8-Test` was created and given a C-drive install copy. |
 | Try app-default Windows 8 compatibility for the launch chain. | Low | Already applied to `MTG` and user retesting still reproduced the issue. Keep only as comparison evidence. |
 | Try 640x480, 800x600, and 1024x768 virtual desktops. | Medium | Register values include `800`; old game screens may assume fixed dimensions. |

@@ -9,9 +9,11 @@ a copy of the already tracked `Program/FaceMaker-nores.exe`, plus FaceMaker
 support files from `Manalink3/Program/`. A later CrossOver pass established
 that bottle `MTG` launches root `C:\Shandalar\Shandalar.exe` by default; direct
 `C:\Shandalar\Program\Shandalar.exe` fails there because `Program\zlib.dll` is
-absent. A follow-up CrossOver pass set app-default desktop/`Version=win8` for
-`Shandalar.exe`, `Magic.exe`, and `FaceMaker.exe`, and verified Shandalar main
-menu plus direct FaceMaker startup. A later binary patch to root and
+absent. A historical CrossOver pass tried app-default desktop/`Version=win8`
+for `Shandalar.exe`, `Magic.exe`, and `FaceMaker.exe`, and verified Shandalar
+main menu plus direct FaceMaker startup, but did not prove a durable fix. The
+current `MTG` retest setting is app-default `Version=win7` with virtual desktop
+`Shandalar1440=1440x1080`. A later binary patch to root and
 `Program/Shandalar.exe` passed the reported start-color crash point in
 CrossOver smoke testing from the repo path, the fresh bottle-local
 `C:\Shandalar` path, and the older `MTG` shortcut path. A later follow-up

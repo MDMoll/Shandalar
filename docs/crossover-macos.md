@@ -238,7 +238,7 @@ Verified commands:
 Verified registry evidence:
 
 ```sh
-sed -n '795,825p' "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/user.reg"
+sed -n '790,825p;965,970p' "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/user.reg"
 ```
 
 Expected entries:
@@ -273,7 +273,7 @@ Expected entries:
 | Immediate silent exit | Re-run from CrossOver Run Command with logging enabled. Record missing DLL dialogs or exit code. For bottle `MTG`, use root `C:\Shandalar\Shandalar.exe` first. |
 | Duel prompts stop accepting `Done`, `Trigger`, or `Decline` | Use the current `MTG` Win7/`Shandalar1440` setting above, fully quit any old CrossOver Shandalar/Magic windows, then relaunch root `C:\Shandalar\Shandalar.exe` from working directory `C:\Shandalar`. The local copied DLLs are already patched; if it still freezes, capture the exact card/phase and a live process sample while frozen. |
 | Fullscreen/palette weirdness | Try a virtual desktop in `winecfg`, start with 800x600 or 1024x768. |
-| Assertion after choosing a start color | Use the patched `Shandalar.exe` and patched active `FaceMaker.exe`; verify FaceMaker support files, set `Window = 2`, enlarge the bottle paging file, use virtual desktop, set app-default `Version=win8` for comparison, and keep high-resolution/Retina disabled. |
+| Assertion after choosing a start color | Use the patched `Shandalar.exe` and patched active `FaceMaker.exe`; verify FaceMaker support files, set `Window = 2`, enlarge the bottle paging file, and use a Wine virtual desktop. For the active `MTG` path, keep app-default `Version=win7` and `Shandalar1440=1440x1080`; use `Shandalar-Win8-Test` only as a comparison bottle. |
 | Window opens offscreen | Enable virtual desktop, then relaunch from the same folder that contains the executable and DLLs. |
 | Desktop resolution changes | Disable high-resolution/Retina mode and use virtual desktop. |
 | Sound/video failure after UI opens | The binaries import `WINMM.dll` and `MSVFW32.dll`; capture the exact dialog/log before installing codecs or runtimes. |
