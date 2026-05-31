@@ -1,0 +1,43 @@
+# Preserve legacy runtime/resource files as binary in Git.
+# Do not run broad renormalization without a separate review.
+
+*.[Ee][Xx][Ee] binary
+*.[Dd][Ll][Ll] binary
+*.[Dd][Aa][Tt] binary
+*.[Rr][Ee][Ss] binary
+*.[Cc][Aa][Tt] binary
+*.[Vv][Xx][Dd] binary
+*.[Dd][Bb] binary
+*.[Gg][Ii][Dd] binary
+*.[Hh][Ll][Pp] binary
+*.[Cc][Vv] binary
+*.[Pp][Ll][Oo][Gg][Pp][Aa][Ll] binary
+
+*.[Pp][Ii][Cc] binary
+*.[Ss][Pp][Rr] binary
+*.[Bb][Mm][Pp] binary
+*.[Pp][Cc][Xx] binary
+*.[Ii][Cc][Oo] binary
+*.[Jj][Pp][Gg] binary
+*.[Jj][Pp][Ee][Gg] binary
+*.[Pp][Nn][Gg] binary
+
+*.[Ww][Aa][Vv] binary
+*.[Oo][Gg][Gg] binary
+*.[Aa][Vv][Ii] binary
+
+*.[Tt][Tt][Ff] binary
+*.[Oo][Tt][Ff] binary
+
+*.[Zz][Ii][Pp] binary
+*.7[Zz] binary
+*.[Rr][Aa][Rr] binary
+*.[Jj][Aa][Rr] binary
+
+*.[Ss][Vv][Ee] binary
+*.[Ff][Cc][Ee] binary
+*.[Mm][Aa][Pp] binary
+*.[Tt][Rr] binary
+
+Statwin/*.[Tt][Mm][Pp] binary
+Program/statwin/*.[Tt][Mm][Pp] binary
