@@ -199,6 +199,7 @@ handoff mistakes when a human is ready to test:
 tools/print-manual-gameplay-baseline.sh
 tools/print-security-scan-baseline.sh
 tools/verify-handoff-readiness.sh
+tools/create-patch-package.sh --dry-run
 tools/list-branch-delta.sh
 tools/list-branch-delta.sh --summary
 tools/create-cleanup-test-copy.sh --dry-run

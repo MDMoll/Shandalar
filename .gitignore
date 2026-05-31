@@ -11,3 +11,5 @@ windows-defender-report.txt
 # Local git handoff bundles/checksums.
 *.bundle
 *.bundle.sha256
+*.patch
+*.patch.sha256

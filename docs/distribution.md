@@ -25,7 +25,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` on 2026-05-31.
 | --- | --- |
 | Public redistribution | Not verified. Do not claim that this repo can be published publicly as-is. |
 | Private maintenance branch | Current branch scope; use only when the recipient already has the same rights context and understands the bundled-game nature of the tree. |
-| Patches and documentation | These are easier to share than bundled proprietary assets. [patch-package-plan.md](patch-package-plan.md) now records the inventory/restoration-test path, but no patch-only package has been prepared yet. |
+| Patches and documentation | These are easier to share than bundled proprietary assets. [patch-package-plan.md](patch-package-plan.md) now records inventory and temporary patch-artifact helpers, but no patch-only package has been release-approved yet. |
 | Runtime redistributables | Do not download or commit third-party runtime installers into this repo. Install them into Windows/CrossOver bottles instead. |
 | Security claims | Separate issue. See [security-scan.md](security-scan.md); no malware scanner result is recorded yet. |
 

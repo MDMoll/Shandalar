@@ -74,7 +74,9 @@ for path in \
   clamscan-report.txt \
   windows-defender-report.txt \
   codex-shandalar-crossover-updates-test.bundle \
-  codex-shandalar-crossover-updates-test.bundle.sha256
+  codex-shandalar-crossover-updates-test.bundle.sha256 \
+  codex-shandalar-crossover-updates-test.patch \
+  codex-shandalar-crossover-updates-test.patch.sha256
 do
   git check-ignore -q "$path" || fail "$path is not ignored"
 done
@@ -175,6 +177,7 @@ for path in \
   "Shandalar help.bat" \
   tools/create-cleanup-test-copy.sh \
   tools/create-git-handoff-bundle.sh \
+  tools/create-patch-package.sh \
   tools/list-branch-delta.sh \
   tools/print-manual-gameplay-baseline.sh \
   tools/print-security-scan-baseline.sh \
@@ -206,6 +209,7 @@ for expected in \
   $'Program/FaceArt/fb1\tart-resource' \
   $'archive/backups/Rogues_Org_BAK.csv\tarchive-evidence' \
   $'src/cards/unlimited.c\tsource' \
+  $'tools/create-patch-package.sh\tshell-tool' \
   $'tools/list-branch-delta.sh\tshell-tool'
 do
   path="${expected%$'\t'*}"
@@ -213,6 +217,12 @@ do
   printf '%s\n' "$branch_delta" | awk -F '\t' -v p="$path" -v k="$kind" 'NR > 1 && $2 == p && $4 == k {found=1} END {exit found ? 0 : 1}' || fail "branch-delta inventory is missing $path as $kind"
 done
 pass "branch-delta inventory is reviewable ($branch_delta_count checked)"
+
+patch_dry_run="$(tools/create-patch-package.sh --dry-run --skip-verify --dest /private/tmp/shandalar-patch-package-dryrun.patch)"
+printf '%s\n' "$patch_dry_run" | grep -q "Receiver checksum command" || fail "patch dry-run missing receiver checksum command"
+printf '%s\n' "$patch_dry_run" | grep -q "Receiver check command" || fail "patch dry-run missing receiver check command"
+printf '%s\n' "$patch_dry_run" | grep -q "Receiver apply command" || fail "patch dry-run missing receiver apply command"
+pass "patch package dry-run passed"
 
 for path in \
   README.md \

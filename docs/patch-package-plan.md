@@ -9,8 +9,9 @@ but it still needs a restoration test before anyone should call it ready.
 | Item | Status | Evidence |
 | --- | --- | --- |
 | Branch delta inventory | Prepared | `tools/list-branch-delta.sh` lists current branch changes relative to `master` as TSV. |
-| Patch package file | Not prepared | No `.patch`, installer, or release archive is committed. |
-| Restoration test | Not tested | No clean-install apply-and-launch pass has been recorded. |
+| Patch package helper | Prepared | `tools/create-patch-package.sh` creates a binary patch plus `.sha256` sidecar in a temp path. |
+| Patch package file | Not committed | No `.patch`, installer, or release archive is committed. Generate temp artifacts only until a release format is chosen. |
+| Restoration test | Partially automatable | `tools/create-patch-package.sh --verify-apply` can prove the patch applies to the base tree, but visible runtime testing is still separate. |
 | Public redistribution | Not approved | See [distribution.md](distribution.md) and [release-scope.md](release-scope.md). |
 
 ## Inventory Command
@@ -19,6 +20,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar`:
 
 ```sh
 tools/list-branch-delta.sh > /private/tmp/shandalar-branch-delta.tsv
+tools/list-branch-delta.sh --summary
 ```
 
 Useful review summaries:
@@ -44,8 +46,8 @@ The TSV columns are:
 Use a temp path, not the repository, until the format is chosen:
 
 ```sh
-git diff --binary master...HEAD > /private/tmp/shandalar-crossover-updates.patch
-shasum -a 256 /private/tmp/shandalar-crossover-updates.patch
+tools/create-patch-package.sh --dry-run
+tools/create-patch-package.sh --verify-apply
 ```
 
 That patch may contain binary deltas for patched executables, DLLs, and added
@@ -59,7 +61,7 @@ Before describing a patch/docs-only package as ready:
 | Step | Required proof |
 | --- | --- |
 | Clean base | Start from a clean checkout at the expected base commit or tag. |
-| Apply patch | Apply the candidate patch without rejects. |
+| Apply patch | Apply the candidate patch without rejects. `tools/create-patch-package.sh --verify-apply` proves the tree result in a disposable clone. |
 | Verify repo | Run `tools/verify-share-readiness.sh` and `tools/verify-handoff-readiness.sh`. |
 | Verify runtime | Run the manual gameplay checklist in [manual-gameplay-verification.md](manual-gameplay-verification.md). |
 | Verify security | Record a named scanner/version/result in [security-scan.md](security-scan.md). |

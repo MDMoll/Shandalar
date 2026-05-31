@@ -87,6 +87,13 @@ printf '%s\n' "$bundle_dry_run" | grep -q "Receiver verify command:" || fail "bu
 printf '%s\n' "$bundle_dry_run" | grep -q "Receiver fetch command:" || fail "bundle dry-run missing receiver fetch command"
 pass "Git bundle dry-run passed"
 
+patch_dest="/private/tmp/shandalar-patch-dryrun-${short_sha}-$$.patch"
+patch_dry_run="$(tools/create-patch-package.sh --dry-run --skip-verify --dest "$patch_dest")"
+printf '%s\n' "$patch_dry_run" | grep -q "Receiver checksum command" || fail "patch dry-run missing receiver checksum command"
+printf '%s\n' "$patch_dry_run" | grep -q "Receiver check command" || fail "patch dry-run missing receiver check command"
+printf '%s\n' "$patch_dry_run" | grep -q "Receiver apply command" || fail "patch dry-run missing receiver apply command"
+pass "Git patch dry-run passed"
+
 if [ "$verify_bundle_import" = "1" ]; then
   real_bundle="/private/tmp/shandalar-handoff-import-${short_sha}-$$.bundle"
   temp_root="$(mktemp -d "/private/tmp/shandalar-bundle-import-${short_sha}.XXXXXX")"

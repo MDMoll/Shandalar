@@ -9,7 +9,7 @@ This file records the current sharing decision for
 | --- | --- | --- |
 | Controlled maintenance branch | Current branch scope | Share only with recipients who already understand the bundled game/runtime nature of this checkout and the same rights context. |
 | Public full bundle | Not approved | Do not publish this repository as a public asset/game bundle from the current evidence. |
-| Patch/docs-only package | Planning aid prepared, package not prepared | [patch-package-plan.md](patch-package-plan.md) and `tools/list-branch-delta.sh` provide a branch-delta inventory path, but no patch artifact or restoration test is complete. |
+| Patch/docs-only package | Planning aid prepared, package not approved | [patch-package-plan.md](patch-package-plan.md), `tools/list-branch-delta.sh`, and `tools/create-patch-package.sh` provide inventory and temporary patch artifact paths, but no committed release artifact or visible runtime restoration test is complete. |
 | Rights-verified public bundle | Not proven | No repository-level license was found, and bundled rightsholder/trademark notices are present. |
 
 This is a practical repo-maintenance decision, not legal advice.
