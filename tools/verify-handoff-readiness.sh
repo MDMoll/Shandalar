@@ -106,8 +106,12 @@ printf '%s\n' "$share_status" | grep -q "Manual gameplay" || fail "share status 
 pass "share status report is current"
 
 cleanup_dest="/private/tmp/shandalar-cleanup-test-dryrun-${short_sha}-$$"
-tools/create-cleanup-test-copy.sh --dry-run --skip-verify "$cleanup_dest" >/dev/null
-pass "cleanup test copy dry-run passed"
+cleanup_dry_run="$(tools/create-cleanup-test-copy.sh --dry-run --skip-verify "$cleanup_dest" 2>&1)"
+printf '%s\n' "$cleanup_dry_run" | grep -q "without .git: $cleanup_dest" || fail "cleanup copy dry-run does not report default no-.git copy"
+cleanup_with_git_dest="/private/tmp/shandalar-cleanup-test-with-git-dryrun-${short_sha}-$$"
+cleanup_with_git_dry_run="$(tools/create-cleanup-test-copy.sh --dry-run --include-git --skip-verify "$cleanup_with_git_dest" 2>&1)"
+printf '%s\n' "$cleanup_with_git_dry_run" | grep -q "including .git: $cleanup_with_git_dest" || fail "cleanup copy dry-run does not report --include-git copy"
+pass "cleanup test copy dry-runs passed"
 
 bundle_dest="/private/tmp/shandalar-handoff-dryrun-${short_sha}-$$.bundle"
 bundle_dry_run="$(tools/create-git-handoff-bundle.sh --dry-run --skip-verify --dest "$bundle_dest")"
