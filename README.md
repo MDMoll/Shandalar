@@ -187,8 +187,8 @@ ignore rules,
 expected tracked ignored file, Git binary attributes, protected cleanup false
 positives, patched runtime hashes, runtime-manifest hashes, representative patch
 bytes, tracked save/local-state inventory, security-scan target inventory, core
-docs, maintained-text ASCII, docs index coverage, and local Markdown links. It
-does not replace the manual gameplay checklist.
+docs, branch-delta inventory shape, maintained-text ASCII, docs index coverage,
+and local Markdown links. It does not replace the manual gameplay checklist.
 
 ## Evidence Helpers
 

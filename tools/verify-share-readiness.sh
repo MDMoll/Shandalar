@@ -187,6 +187,30 @@ do
 done
 pass "security scan target inventory is generated ($security_target_count checked)"
 
+expect_file tools/list-branch-delta.sh
+[ -x tools/list-branch-delta.sh ] || fail "tools/list-branch-delta.sh is not executable"
+branch_delta="$(tools/list-branch-delta.sh)"
+branch_delta_header="$(printf '%s\n' "$branch_delta" | sed -n '1p')"
+[ "$branch_delta_header" = $'status\tpath\told_path\tkind\tbytes\tsha256' ] || fail "unexpected branch-delta header: $branch_delta_header"
+branch_delta_count="$(printf '%s\n' "$branch_delta" | awk 'NR > 1 {count++} END {print count+0}')"
+[ "$branch_delta_count" -ge "100" ] || fail "expected at least 100 branch-delta rows, found $branch_delta_count"
+branch_delta_other_count="$(printf '%s\n' "$branch_delta" | awk -F '\t' 'NR > 1 && $4 == "other" {count++} END {print count+0}')"
+[ "$branch_delta_other_count" = "0" ] || fail "branch-delta inventory has $branch_delta_other_count rows classified as other"
+for expected in \
+  $'README.md\tdocumentation' \
+  $'.gitattributes\trepo-metadata' \
+  $'Magic.exe\tpe-executable' \
+  $'Program/FaceArt/fb1\tart-resource' \
+  $'archive/backups/Rogues_Org_BAK.csv\tarchive-evidence' \
+  $'src/cards/unlimited.c\tsource' \
+  $'tools/list-branch-delta.sh\tshell-tool'
+do
+  path="${expected%$'\t'*}"
+  kind="${expected#*$'\t'}"
+  printf '%s\n' "$branch_delta" | awk -F '\t' -v p="$path" -v k="$kind" 'NR > 1 && $2 == p && $4 == k {found=1} END {exit found ? 0 : 1}' || fail "branch-delta inventory is missing $path as $kind"
+done
+pass "branch-delta inventory is reviewable ($branch_delta_count checked)"
+
 for path in \
   README.md \
   AGENTS.md \
