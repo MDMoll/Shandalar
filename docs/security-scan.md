@@ -29,6 +29,17 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` on 2026-05-31.
 | Root `*.exe`, root `*.dll` | Some root copies match `Program/`; others differ and need separate results. |
 | `Mods/**/*.7z`, `*.zip`, `*.7z` | Archives can contain executables or scripts. |
 | Checked-in build tools such as `src/*.exe` | Toolchain binaries are executable code. |
+| Checked-in scripts such as `*.bat`, `*.cmd`, `*.vbs`, `*.pl`, and `*.sh` | Launch helpers and patch/build scripts are executable instructions and should be reviewed/scanned as code. |
+
+For an exact tracked-file inventory, run:
+
+```sh
+tools/list-security-scan-targets.sh
+```
+
+Current maintained target kinds include PE executables, PE DLLs, archives,
+Windows scripts, Java archives, Perl scripts, and shell scripts. The output is
+tab-separated: path, kind, byte count, and SHA-256.
 
 ## Local Scan Commands
 
@@ -40,7 +51,7 @@ scanner installers into this repo.
 | macOS with ClamAV installed | `clamscan -r Program src Mods archive` |
 | Windows Defender PowerShell | `Start-MpScan -ScanPath "C:\path\to\Shandalar"` |
 | Windows Defender command line | `"%ProgramFiles%\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File "C:\path\to\Shandalar"` |
-| Hash before external review | `shasum -a 256 Program/Shandalar.exe Program/Magic.exe` |
+| Hash target inventory before external review | `tools/list-security-scan-targets.sh > scan-targets.tsv` |
 
 If an online multi-scanner is used, record that files may be uploaded to a third
 party. Do not upload files unless that is acceptable for the repo/user context.

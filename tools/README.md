@@ -5,11 +5,13 @@ files.
 
 | Tool | Purpose |
 | --- | --- |
+| `list-security-scan-targets.sh` | Lists tracked executable, DLL, archive, and script files with kind, byte count, and SHA-256 so a scanner pass has an exact target inventory. |
 | `verify-share-readiness.sh` | Runs automated checks for clean-tree status, ignored local clutter, expected tracked ignored files, Git binary attributes, protected cleanup false positives, runtime-manifest hashes, representative patch bytes, tracked save/local-state inventory, core docs, maintained-text ASCII, docs index coverage, and local Markdown links. |
 
 Run from the repository root:
 
 ```sh
+tools/list-security-scan-targets.sh
 tools/verify-share-readiness.sh
 ```
 

@@ -146,6 +146,28 @@ do
 done
 pass "tracked save/local-state inventory matches docs"
 
+expect_file tools/list-security-scan-targets.sh
+[ -x tools/list-security-scan-targets.sh ] || fail "tools/list-security-scan-targets.sh is not executable"
+security_targets="$(tools/list-security-scan-targets.sh)"
+security_header="$(printf '%s\n' "$security_targets" | sed -n '1p')"
+[ "$security_header" = $'path\tkind\tbytes\tsha256' ] || fail "unexpected security target header: $security_header"
+security_target_count="$(printf '%s\n' "$security_targets" | awk 'NR > 1 {count++} END {print count+0}')"
+[ "$security_target_count" = "224" ] || fail "expected 224 tracked security scan targets, found $security_target_count"
+for path in \
+  Shandalar.exe \
+  Program/Magic.exe \
+  ManalinkEh.dll \
+  Program/ManalinkEh.dll \
+  Mods/Util/7za.exe \
+  DeckInjector.jar \
+  "Shandalar help.bat" \
+  tools/verify-share-readiness.sh \
+  tools/list-security-scan-targets.sh
+do
+  printf '%s\n' "$security_targets" | awk -F '\t' -v p="$path" 'NR > 1 && $1 == p {found=1} END {exit found ? 0 : 1}' || fail "security scan target inventory is missing $path"
+done
+pass "security scan target inventory is generated ($security_target_count checked)"
+
 for path in \
   README.md \
   AGENTS.md \
