@@ -101,29 +101,56 @@ printf '%s\n' "$security_baseline" | grep -q "| Tracked scan targets | $security
 pass "security scan baseline is current"
 
 share_status="$(tools/print-share-status.sh)"
-printf '%s\n' "$share_status" | grep -q "| Commit | \`$short_sha\`" || fail "share status does not report commit $short_sha"
-printf '%s\n' "$share_status" | grep -q "| Git status | clean |" || fail "share status does not report clean status"
-printf '%s\n' "$share_status" | grep -q "$default_bundle_path" || fail "share status missing current bundle path"
-printf '%s\n' "$share_status" | grep -q "Default Handoff Artifact Hashes" || fail "share status missing artifact hash section"
-printf '%s\n' "$share_status" | grep -q "Security Scan Results" || fail "share status missing security scan results section"
-printf '%s\n' "$share_status" | grep -q "| Results file | \`security-scan-results.tsv\` |" || fail "share status missing security scan results file"
-printf '%s\n' "$share_status" | grep -q "verify-security-scan-results.sh --results security-scan-results.tsv --require-all" || fail "share status missing security scan validation command"
-printf '%s\n' "$share_status" | grep -q "Manual Gameplay Results" || fail "share status missing manual gameplay results section"
-printf '%s\n' "$share_status" | grep -q "| Results doc | \`docs/manual-gameplay-verification.md\` |" || fail "share status missing manual gameplay doc"
-printf '%s\n' "$share_status" | grep -q "verify-manual-gameplay-results.sh --doc docs/manual-gameplay-verification.md" || fail "share status missing manual gameplay validation command"
+expect_share_status() {
+  local needle="$1"
+  local message="$2"
+
+  printf '%s\n' "$share_status" | grep -F -q "$needle" || fail "$message"
+}
+
+branch_delta="$(tools/list-branch-delta.sh)"
+branch_delta_count="$(printf '%s\n' "$branch_delta" | awk 'NR > 1 {count++} END {print count+0}')"
+branch_delta_other_count="$(printf '%s\n' "$branch_delta" | awk -F '\t' 'NR > 1 && $4 == "other" {count++} END {print count+0}')"
+expect_share_status "| Commit | \`$short_sha\`" "share status does not report commit $short_sha"
+expect_share_status "| Git status | clean |" "share status does not report clean status"
+expect_share_status "| Branch delta rows | $branch_delta_count | \`tools/list-branch-delta.sh\`; rows classified as \`other\`: $branch_delta_other_count |" "share status does not report current branch-delta count"
+expect_share_status "| Security scan targets | $security_target_count | \`tools/list-security-scan-targets.sh\`; scanner still needs to be run separately |" "share status does not report current security-target count"
+expect_share_status "$default_bundle_path" "share status missing current bundle path"
+expect_share_status "Default Handoff Artifact Hashes" "share status missing artifact hash section"
+expect_share_status "Security Scan Results" "share status missing security scan results section"
+expect_share_status "| Results file | \`security-scan-results.tsv\` |" "share status missing security scan results file"
+expect_share_status "verify-security-scan-results.sh --results security-scan-results.tsv --require-all" "share status missing security scan validation command"
+expect_share_status "Manual Gameplay Results" "share status missing manual gameplay results section"
+expect_share_status "| Results doc | \`docs/manual-gameplay-verification.md\` |" "share status missing manual gameplay doc"
+expect_share_status "verify-manual-gameplay-results.sh --doc docs/manual-gameplay-verification.md" "share status missing manual gameplay validation command"
+if [ ! -f security-scan-results.tsv ]; then
+  security_results_status="missing; no scanner results recorded"
+elif tools/verify-security-scan-results.sh --results security-scan-results.tsv >/dev/null 2>&1; then
+  if tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all >/dev/null 2>&1; then
+    security_results_status="present; all $security_target_count tracked target rows validate"
+  else
+    security_results_count="$(awk -F '\t' 'NR > 1 && NF > 0 {count++} END {print count+0}' security-scan-results.tsv)"
+    security_results_status="present; $security_results_count recorded row(s) validate, but full coverage is incomplete"
+  fi
+else
+  security_results_status="present; validation FAILED"
+fi
+manual_gameplay_status="$(tools/verify-manual-gameplay-results.sh --doc docs/manual-gameplay-verification.md --allow-incomplete | sed 's/^ok: //')"
+expect_share_status "| Validation | $security_results_status |" "share status does not report current security scan result validation status"
+expect_share_status "| Validation | $manual_gameplay_status |" "share status does not report current manual gameplay validation status"
 if [ -f "$default_bundle_path" ]; then
   bundle_sha="$(shasum -a 256 "$default_bundle_path" | awk '{print $1}')"
-  printf '%s\n' "$share_status" | grep -q "| Git bundle | \`$bundle_sha\` |" || fail "share status does not report current bundle hash $bundle_sha"
+  expect_share_status "| Git bundle | \`$bundle_sha\` |" "share status does not report current bundle hash $bundle_sha"
 else
-  printf '%s\n' "$share_status" | grep -q "| Git bundle | \`missing\` |" || fail "share status does not report missing bundle hash"
+  expect_share_status "| Git bundle | \`missing\` |" "share status does not report missing bundle hash"
 fi
 if [ -f "$default_patch_path" ]; then
   patch_sha="$(shasum -a 256 "$default_patch_path" | awk '{print $1}')"
-  printf '%s\n' "$share_status" | grep -q "| Binary patch | \`$patch_sha\` |" || fail "share status does not report current patch hash $patch_sha"
+  expect_share_status "| Binary patch | \`$patch_sha\` |" "share status does not report current patch hash $patch_sha"
 else
-  printf '%s\n' "$share_status" | grep -q "| Binary patch | \`missing\` |" || fail "share status does not report missing patch hash"
+  expect_share_status "| Binary patch | \`missing\` |" "share status does not report missing patch hash"
 fi
-printf '%s\n' "$share_status" | grep -q "Manual gameplay" || fail "share status missing manual gameplay gate"
+expect_share_status "Manual gameplay" "share status missing manual gameplay gate"
 pass "share status report is current"
 
 cleanup_dest="/private/tmp/shandalar-cleanup-test-dryrun-${short_sha}-$$"
