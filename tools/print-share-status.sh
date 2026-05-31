@@ -101,6 +101,14 @@ security_gate_status() {
   fi
 }
 
+strict_final_status() {
+  if [ -f "$scan_results_path" ] && tools/verify-security-scan-results.sh --results "$scan_results_path" --require-all >/dev/null 2>&1; then
+    printf '`tools/verify-final-share-gates.sh` should still fail until manual gameplay evidence is complete.'
+  else
+    printf '`tools/verify-final-share-gates.sh` should still fail until manual gameplay and security scan evidence are complete.'
+  fi
+}
+
 manual_gameplay_status() {
   tools/verify-manual-gameplay-results.sh --doc "$manual_gameplay_doc" --allow-incomplete | sed 's/^ok: //'
 }
@@ -188,4 +196,4 @@ printf '| Manual gameplay | Needs visible pass/fail evidence in `docs/manual-gam
 printf '| Security scan | %s |\n' "$(security_gate_status)"
 printf '| Public distribution | Not approved by current evidence; see `docs/release-scope.md` and `docs/distribution.md`. |\n'
 printf '| Additional cleanup moves | Deferred unless explicitly approved and launch-copy tested. |\n'
-printf '| Strict final verifier | `tools/verify-final-share-gates.sh` should still fail until manual gameplay and security scan evidence are complete. |\n'
+printf '| Strict final verifier | %s |\n' "$(strict_final_status)"

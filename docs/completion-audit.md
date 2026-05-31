@@ -47,8 +47,7 @@ proof.
 ## Final Gates Before Marking Complete
 
 Run `tools/verify-final-share-gates.sh` as the strict controlled-maintenance
-completion check. It should fail until the push, gameplay, and security rows
-below have real evidence.
+completion check. It should fail until every row below has real evidence.
 
 | Gate | Evidence needed |
 | --- | --- |

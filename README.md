@@ -220,6 +220,5 @@ tools/create-git-handoff-bundle.sh --dry-run
 ```
 
 `tools/verify-final-share-gates.sh` is intentionally strict. It should fail
-until manual gameplay rows are complete and a named security scan covers all
-tracked scan targets; it also verifies the pushed branch still matches local
-`HEAD`.
+until manual gameplay rows are complete; it also verifies named security-scan
+coverage and the pushed branch when the evidence gates are otherwise ready.

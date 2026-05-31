@@ -57,7 +57,7 @@ if [ "$failed" -eq 0 ]; then
     record_failure "could not query origin for refs/heads/$branch"
   fi
 else
-  info "origin branch query deferred until manual gameplay and security scan evidence gates pass"
+  info "origin branch query deferred until evidence gates pass"
 fi
 
 if [ "$failed" -ne 0 ]; then
