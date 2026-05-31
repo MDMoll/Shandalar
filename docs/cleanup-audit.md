@@ -19,6 +19,7 @@ and art stayed in place.
 | `AllMagicFonts.zip` | Archive | Fonts also exist as `.ttf`/`.otf` files. | `file` reports Zip archive; many font files are present. | Low | Keep or document contents later. |
 | `CardArtNew/Thumbs.db` | Generated local-state file inside runtime-like art folder | Windows Explorer thumbnail cache, not card art. | `file CardArtNew/Thumbs.db` reports `Composite Document File V2 Document`; SHA-256 is `d613ed811f078af12887dfb5d056373606c29d036574ee31315c427bf5f101ea`. | High for being generated, medium for moving because it lives inside an art folder | Keep in place until explicit approval to move it with `git mv` into `archive/generated-local/`. |
 | `Mods/Art/*.7z` and `Mods/Rogues/*.7z` vs `Manalink3/Mods/...` | Exact duplicate archive pairs | Targeted hash audit over `*.7z`, `*.zip`, and `*.rar` under `Mods/` and `Manalink3/Mods/` found 15 duplicate hashes covering all 30 archive files in that query. | `find Mods Manalink3/Mods ... | shasum -a 256` found pairs such as `Default Sonic 2014.7z`, `Modern Sarlack MtG.7z`, `CardFrames Sonic 2014.7z`, and `Classic Microprose Default.7z`. | High duplicate confidence, medium cleanup confidence | Keep for now; these live in mod/distribution trees, so move only after an approved launch-copy/mod audit. |
+| Full non-git duplicate graph | Exact duplicate files across the whole checkout | A Python SHA-256 audit over every non-`.git` file found 10,852 duplicate hash groups, 26,189 files in duplicate groups, and about 435.1 MiB of theoretical duplicate bytes if one copy per hash could be kept. | See [duplicate-audit.md](duplicate-audit.md). | High duplicate confidence, low cleanup confidence | Use for future cleanup planning only; do not remove runtime-like duplicates without launch-copy tests. |
 | `Decks - Original`, `Decks_original`, `Decks - Harder`, `Decks_alt`, `decks - rawky`, etc. | Exact duplicate deck files plus variant deck sets | Targeted hash audit over the main deck-family folders found 163 duplicate hashes covering 327 of 492 `.dck` files. | Examples include `Decks - Original/0263.dck` matching `Decks_original/0263.dck`, `decks - rawky/0399.dck` matching `decks/0399.dck`, and `Decks - Tim/0056.dck` matching `Decks - revision/0056.dck`. | High duplicate-file confidence, low cleanup confidence | Keep; content duplicates do not prove folder-level redundancy or current runtime references. |
 | `MAGIC*.SVE`, `MAGIC*.map`, `MAGIC*.fce`, extensionless `MAGIC5`, `Savedescs`, `FaceMostRecent.txt`, `Screennames/` | Save/local player state candidate | Save slots and adjacent map/face/screen-name state are tracked in the root. `MAGIC5` is an ASCII export derived from `MAGIC5.SVE`; `Savedescs` and `Screennames/*` contain human-readable names. | See [save-state.md](save-state.md). | Medium cleanup confidence | Keep for now; archive only after a save/load test decides whether they are fixtures or local state. |
 | `SVEtool.ini` | Local/default config | Hard-coded `C:\Program Files\Magic\` paths. | `SVEtool.ini:6`, `SVEtool.ini:10`. | Medium | Keep as tool config; document stale defaults. |
@@ -36,7 +37,7 @@ and art stayed in place.
 | Requested category | Covered by |
 | --- | --- |
 | Definitely generated/recreatable | `archive/generated-local/Duel.GID`, generated/log/debug files, extensionless `MAGIC5`, and `CardArtNew/Thumbs.db` pending explicit move approval. |
-| Likely duplicate | Targeted duplicate hash audit for `Mods/` vs `Manalink3/Mods/` archives, targeted deck-family duplicate hash audit, root `Shandalar.exe`. |
+| Likely duplicate | Full non-git duplicate hash audit, targeted duplicate hash audit for `Mods/` vs `Manalink3/Mods/` archives, targeted deck-family duplicate hash audit, root `Shandalar.exe`. |
 | Likely stale historical backup | `archive/backups/Rogues_Org_BAK.csv`, archived old readme files, archived local helper script. |
 | Likely unused by current launch path | Root duplicate candidates and some packaged snapshots, marked low/medium confidence only. |
 | Suspicious/needs manual inspection | Root `Magic.exe`, root-vs-Program DLL differences, local machine helper scripts, and `.tmp` files in runtime resource folders. |
@@ -70,7 +71,7 @@ and art stayed in place.
 | Full duplicate hash report | `find . -type f -exec shasum -a 256 {} + | sort` |
 | Check whether `.tmp` files are actual temp files | `file Statwin/*.tmp Program/statwin/*.tmp && shasum -a 256 Statwin/*.tmp Program/statwin/*.tmp` |
 
-## Targeted Duplicate Hash Audit
+## Duplicate Hash Audits
 
 These checks were run against the current checkout on 2026-05-31. They are
 cleanup evidence only; they do not prove that the duplicate-looking folders are
@@ -78,6 +79,7 @@ safe to remove.
 
 | Scope | Command shape | Result |
 | --- | --- | --- |
+| Full non-git checkout | Python SHA-256 scan over files outside `.git`, hashing only same-size candidate groups | 52,045 files scanned; 10,852 duplicate hashes; 26,189 files covered by duplicate groups; about 435.1 MiB theoretical duplicate bytes. |
 | `Mods/` plus `Manalink3/Mods/` archives | `find Mods Manalink3/Mods -type f \( -name '*.7z' -o -name '*.zip' -o -name '*.rar' \) -print0 | xargs -0 shasum -a 256` | 30 archive files, 15 duplicate hashes, 30 files covered by duplicate pairs. |
 | Main deck-family folders | `find 'Decks - Original' Decks_original 'Decks - Harder' Decks_alt 'decks - rawky' decks 'decks - new original' 'Decks - Tim' 'Decks - revision' -type f -name '*.dck' -print0 | xargs -0 shasum -a 256` | 492 `.dck` files, 163 duplicate hashes, 327 files covered by duplicate groups. |
 

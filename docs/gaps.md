@@ -27,7 +27,7 @@ of failure, only work that still needs direct testing or evidence.
 
 | Gap | Current evidence | Next action |
 | --- | --- | --- |
-| Full duplicate hash audit | Targeted duplicate checks now cover `Mods/` vs `Manalink3/Mods/` archives and the main deck-family folders; root/Program launch-target comparisons are also documented. This is still not a full-repo duplicate graph. | Generate a full hash report outside normal docs if cleanup is requested, then test removals only in a copy. |
+| Duplicate cleanup decision | [duplicate-audit.md](duplicate-audit.md) now records a full non-git SHA-256 duplicate summary: 52,045 files scanned, 10,852 duplicate hash groups, 26,189 files in duplicate groups, and about 435.1 MiB of theoretical duplicate bytes. | Decide canonical package/runtime/mod trees only after launch-copy tests; the hash graph is evidence, not removal approval. |
 | `src/` rebuild | `make -n` reached compile commands, then stopped on missing `src/card_id.h` and `functions/utility.obj` rule trouble. | Restore/generate missing build inputs and install the expected 32-bit MinGW/yasm toolchain in a build-focused pass. |
 | `Program/src/` vs `src/` relationship | The snapshots are similar but not identical. | Compare trees before deduping or choosing a canonical source tree. |
 | Old URL reachability | Stale-reference docs classify links from local evidence only. | Test network reachability only if the user asks for live-link validation. |

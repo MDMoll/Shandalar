@@ -178,6 +178,7 @@ Local checkout path: `/Users/mdmoll/Shandalar/Shandalar`
 | [docs/architecture.md](docs/architecture.md) | High-level repo organization. |
 | [docs/building.md](docs/building.md) | What appears buildable and current blockers. |
 | [docs/file-inventory.md](docs/file-inventory.md) | Counts, large files, duplicate observations, and runtime-critical file types. |
+| [docs/duplicate-audit.md](docs/duplicate-audit.md) | Full non-git SHA-256 duplicate summary and cleanup confidence. |
 | [docs/cleanup-audit.md](docs/cleanup-audit.md) | Cleanup candidates with confidence and evidence. |
 | [docs/stale-references.md](docs/stale-references.md) | Old URLs, hard-coded paths, and historical references. |
 | [docs/reorganization.md](docs/reorganization.md) | Exact limited-reorg moves, rationale, commands, and verification. |

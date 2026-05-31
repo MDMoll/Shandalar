@@ -24,7 +24,7 @@ conservative.
 | The game is fully gameplay-verified on CrossOver. | Visible manual testing still needs to confirm character creation, same-arrow map stop, save/load, duel stability, and all five starting colors. |
 | Native Windows behavior is verified. | No native Windows launch pass has been recorded in this checkout. |
 | `Shandalar.exe --help` is documented from actual output. | Local attempts did not capture help text or dialog output. |
-| The repository is free of duplicate assets. | Targeted duplicate audits found exact duplicates, but no full-repo duplicate graph or launch-copy removal test has been completed. |
+| Duplicate assets are safe to remove. | [duplicate-audit.md](duplicate-audit.md) now measures the full non-git duplicate graph, but no launch-copy removal test has chosen canonical runtime/package paths. |
 | Tracked save files are ready for public release. | [save-state.md](save-state.md) documents save slots and screen-name state that should be reviewed after save/load testing. |
 | All generated/local clutter has been archived. | `CardArtNew/Thumbs.db` and save-state/export files remain tracked in place pending explicit approval and testing; see [cleanup-move-plan.md](cleanup-move-plan.md). |
 | Binaries are malware-scanned. | [security-scan.md](security-scan.md) is a reporting template; no named scanner result is recorded. |
