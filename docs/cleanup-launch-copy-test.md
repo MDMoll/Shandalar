@@ -20,8 +20,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar`:
 ```sh
 git status --short --untracked-files=all
 tools/verify-share-readiness.sh
-test ! -e /private/tmp/shandalar-cleanup-test
-ditto . /private/tmp/shandalar-cleanup-test
+tools/create-cleanup-test-copy.sh /private/tmp/shandalar-cleanup-test
 ```
 
 If the copy is for CrossOver, copy `/private/tmp/shandalar-cleanup-test` into a
@@ -31,6 +30,11 @@ passes.
 
 If `/private/tmp/shandalar-cleanup-test` already exists, choose a fresh path
 instead of deleting an old test copy blindly.
+
+The helper refuses to overwrite an existing destination and runs
+`tools/verify-share-readiness.sh` first. For exploratory local copies only, it
+also supports `--allow-dirty`, `--allow-ignored-local`, and `--skip-verify`;
+record those flags in the result table if you use them.
 
 ## Candidate Families
 
