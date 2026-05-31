@@ -1,5 +1,44 @@
 # Troubleshooting
 
+## Duel freeze after Femeref/Samite damage prevention
+
+### Symptoms
+
+| Symptom | Notes |
+| --- | --- |
+| Duel stops accepting clicks after a few turns. | User reports `Done`, `Trigger`, and `Decline` can become unresponsive. |
+| The freeze can occur without a visible `Done` button. | One repro involved an opponent activated ability during combat. |
+| Femeref Healer was involved in the clearest repro. | The opponent used "Prevent the next 1 damage..." after blockers were declared. |
+
+### Current Fix
+
+| Item | Evidence |
+| --- | --- |
+| Femeref Healer shares the `card_samite_healer()` handler. | `magic_updater/ct_all.csv:12576` and `Program/magic_updater/ct_all.csv:12576` point Femeref Healer at `0x200c10e`; Samite Healer and Kithkin Healer use the same pointer. |
+| The handler targeted internal damage cards. | `src/cards/unlimited.c:4090` and `Program/src/cards/unlimited.c:4033` build a target definition with `td.extra = damage_card` and `GAA_DAMAGE_PREVENTION`. |
+| Spell damage-prevention code already had a window guard. | `src/functions/functions.c:12768` and `Program/src/functions/functions.c:12546` return early for `GS_DAMAGE_PREVENTION` unless `LCBP_DAMAGE_PREVENTION` is set. |
+| The activated healer path now has the same style of guard. | `src/cards/unlimited.c` and `Program/src/cards/unlimited.c` return `0` from `card_samite_healer()` unless `land_can_be_played & LCBP_DAMAGE_PREVENTION` is true. |
+| Runtime DLLs are patched too. | Root `ManalinkEh.dll` is patched at file offset `0x3bb035`; `Program/ManalinkEh.dll` is patched at `0x381a25`. |
+
+The patched bytes are:
+
+```text
+f6 05 90 f1 4e 00 04 0f 84 ae 00 00 00 e9 01 00
+```
+
+This disassembles as a test of `land_can_be_played` bit `0x04`, a jump to the
+handler's existing return-zero path when the damage-prevention window is not
+active, and then a jump back to the normal handler body when it is active.
+
+### Needs Testing
+
+| Test | Why |
+| --- | --- |
+| Fully quit existing CrossOver Shandalar/Magic windows before retesting root `C:\Shandalar\Shandalar.exe`. | The local `MTG` copied install now has matching patched `ManalinkEh.dll` files and backups, but already-running processes can still hold older DLLs. |
+| Retest a duel where Femeref Healer can activate after blockers are declared. | This matches the clearest reported freeze. |
+| Retest Samite Healer and Kithkin Healer if available. | They share the same handler pointer and should be affected by the same patch. |
+| If another damage-prevention card still freezes, capture the card name and phase. | Other `GAA_DAMAGE_PREVENTION` handlers exist and may need the same narrower treatment. |
+
 ## Assertion after choosing start color: `WM_CREATE CreateDIBSection`
 
 ### Symptoms
@@ -39,7 +78,7 @@ unless file tracing proves the game is trying to load runtime files there.
 | Confirm `Window = 2` in both `Shandalar.ini` and `Program/Shandalar.ini`. | The shipped comments say mode 2 keeps Adventure Mode, Deckbuilder, and Facemaker in the windowed path and generally works better. |
 | Avoid installing under `C:\Program Files`; use a writable folder such as `C:\Games\Shandalar`. | The forum thread flags permissions as a common trigger for this issue. |
 | Keep a Windows paging file enabled and non-tiny. | The forum thread says this old graphics path can require swap space even on systems with plenty of RAM; the local `MTG` bottle was changed to `C:\pagefile.sys 512 1024`. |
-| If duel prompts stop accepting `Done`, `Trigger`, or `Decline` in CrossOver bottle `MTG`, test app-default `Version=win7` with desktop `Shandalar1440` for `Shandalar.exe`, `Magic.exe`, and `FaceMaker.exe`. | This keeps the user's preferred Win7 compatibility setting and tests a larger 4:3 virtual desktop after fullscreen was undesirable. Needs visible gameplay retest. |
+| If duel prompts stop accepting `Done`, `Trigger`, or `Decline` in CrossOver bottle `MTG`, test app-default `Version=win7` with desktop `Shandalar1440` and the patched `ManalinkEh.dll` files. | This keeps the user's preferred Win7 compatibility setting, uses the larger 4:3 virtual desktop after fullscreen was undesirable, and includes the Femeref/Samite/Kithkin damage-prevention guard. The local `MTG` copied install has been updated; visible gameplay retest is still needed. |
 | In CrossOver, test the fresh 32-bit `Shandalar-Win8-Test` bottle from `C:\Shandalar\Shandalar.exe`. | The existing `MTG` bottle is still Windows 7 at the system-registry level even with app-default `win8`; the fresh bottle reports Microsoft Windows 8 / `CurrentVersion=6.2` and now has a bottle-local `C:\Shandalar` copy. |
 | Keep the existing `MTG` bottle as a comparison, not as the presumed fix. | User testing says FaceMaker/no-resolution plus `MTG` app-default `win8`, virtual desktop, pagefile, `Window = 2`, and the first Shandalar-only patch still reproduced the issue. Later active FaceMaker and Shandalar name-bypass patches have not yet had a successful full Shandalar-spawned visible retest. |
 | In CrossOver, use a 32-bit XP bottle and a 32-bit Windows 7 bottle. | Compare old-Windows compatibility behavior if the fresh Win8 bottle also fails. |

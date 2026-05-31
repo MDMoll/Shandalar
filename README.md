@@ -34,9 +34,9 @@ for `Magic.exe`.
 | Executable | Purpose | Status from this pass |
 | --- | --- | --- |
 | `Shandalar.exe` | Shandalar adventure shell and duel path. | Same SHA-256 as `Program/Shandalar.exe`; patched for the start-color `CreateDIBSection` crash, default-name bypass/fallback, and same-arrow adventure-map stop behavior. |
-| `Magic.exe` | Duel executable opened by root `Shandalar.exe`. | Different SHA-256 from `Program/Magic.exe`; current CrossOver root launch opens this copy. |
+| `Magic.exe` | Duel executable opened by root `Shandalar.exe`. | Different SHA-256 from `Program/Magic.exe`; current CrossOver root launch opens this copy. Patched at `0x43c303`/`0x459bc8` so clicking an already-declared attacker before Done clears it from attack selection. Root `ManalinkEh.dll` is patched for the Samite/Femeref/Kithkin damage-prevention activation freeze. |
 | `Program/Shandalar.exe` | Alternate Shandalar copy. | Same SHA-256 as root `Shandalar.exe`; direct `MTG` launch currently fails because `Program/zlib.dll` is absent. |
-| `Program/Magic.exe` | Manalink / launcher duel executable. Treat as first-class, not optional. | Present, PE32 i386 GUI executable; launcher scripts enter `Program/` before running it. |
+| `Program/Magic.exe` | Manalink / launcher duel executable. Treat as first-class, not optional. | Present, PE32 i386 GUI executable; launcher scripts enter `Program/` before running it. Has the same declared-attacker undo patch as root `Magic.exe`; `Program/ManalinkEh.dll` has the same Samite/Femeref/Kithkin handler patch at its own offset. |
 | `FaceMaker.exe` / `Program/FaceMaker.exe` | Character portrait/name helper launched during new-game setup. | Both active copies are based on the no-resolution/Korath helper, then patched at `0x5f40` so their `CreateDIBSection` wrapper also passes `hSection = NULL`. The reference `*-nores.exe` copies remain unpatched. |
 | `Manalink_Launcher.cmd` | Batch launcher/mod helper that enters `Program/` and starts `Magic.exe`. | Inspected, Windows-only batch file. |
 | `Shandalar help.bat` | Existing command-line wrapper: `shandalar --e 0442 --p 0442`. | Inspected, semantics still need testing. |
@@ -102,7 +102,10 @@ Local checkout path: `/Users/mdmoll/Shandalar/Shandalar`
 | `xxd -g1 -l 40 -s $((0xa1a42)) Shandalar.exe` and `Program/Shandalar.exe` | Both dumps seed `mPlayer` at `0x591228`, avoiding a Wine-fragile pixel-copy read from the name picker surface before the existing code strips the leading gender byte. |
 | `xxd -g1 -l 32 -s $((0xa1acd)) Shandalar.exe` and `Program/Shandalar.exe` | Both dumps begin `31 c0 89 85 a8 fe ff ff`, bypassing the fragile name editor and continuing with the seeded default name. |
 | `xxd -g1 -l 64 -s $((0x64570)) Shandalar.exe` and `Program/Shandalar.exe` | Both dumps contain a fallback guard that writes `Player` if the accepted name buffer at `0x591228` is empty before copying it to `0x7a0770`. |
-| `shasum -a 256 Magic.exe Program/Magic.exe` | Root and `Program/` `Magic.exe` differ. |
+| `shasum -a 256 Magic.exe Program/Magic.exe` | Root and `Program/` `Magic.exe` differ after the declared-attacker undo patch: `5bf518d66342d79562efb1106449413ada06814a6c14818a1e3101fd470c82d1` and `0fb8b87fe35c8be037ae3419a9b9cd70a27df840ae6af6c7488c2685046a74fa`. |
+| Separate `xxd` checks at `0x43c303` and `0x459bc8` for `Magic.exe` and `Program/Magic.exe` | Both `Magic.exe` copies have the declared-attacker undo hook. The hook begins `e9 c0 d8 01 00 90 90 90 90 90 90 90 90`; the cave begins `f7 46 08 04 00 00 00 0f 85 12 00 00 00`. |
+| `shasum -a 256 ManalinkEh.dll Program/ManalinkEh.dll` | Root patched hash is `6a5fd8057d456d691fb87810eee8dbe1680b18d1c4c79530cbe036cb443df1eb`; `Program/` patched hash is `7fc7ad86b5a3eaaa8879c76814dc454917f2e4b58acf15530e42fdcc78da2517`. |
+| `xxd -g1 -l 32 -s $((0x3bb035)) ManalinkEh.dll` and `xxd -g1 -l 32 -s $((0x381a25)) Program/ManalinkEh.dll` | Both patched dumps begin `f6 05 90 f1 4e 00 04 0f 84 ae 00 00 00 e9 01 00`, gating the Samite/Femeref/Kithkin healer handler on the engine's damage-prevention window. |
 | CrossOver `MTG` shortcut inspection | The visible shortcut targets `C:\Shandalar\Shandalar.exe`, not `C:\Shandalar\Program\Shandalar.exe`. |
 | Direct `MTG` launch of `C:\Shandalar\Program\Shandalar.exe` with logging | Fails before gameplay because `Program\zlib.dll` is missing. |
 | `rg -n "^Window\\s*=" Shandalar.ini Program/Shandalar.ini` | Both repo configs are set to `Window = 2` for the next start-color test. |
@@ -132,7 +135,8 @@ Local checkout path: `/Users/mdmoll/Shandalar/Shandalar`
 | --- | --- |
 | `Shandalar.exe --help` output was not captured locally. | See [docs/command-line.md](docs/command-line.md); test in a visible Windows/CrossOver session. |
 | `Program/` CrossOver launch attempts exited code 53 in the existing `MTG` bottle. | Do not use direct `C:\Shandalar\Program\Shandalar.exe` as the primary `MTG` retest until `Program\zlib.dll` and related DLL layout are resolved. |
-| Duel prompts stop accepting `Done`, `Trigger`, or `Decline` in CrossOver. | Current `MTG` retest setting keeps app-default `Version=win7` and uses a larger named virtual desktop, `Shandalar1440=1440x1080`, after fullscreen was undesirable. Fully quit old CrossOver Shandalar windows before retesting. |
+| Duel prompts stop accepting `Done`, `Trigger`, or `Decline` in CrossOver. | Root and `Program/` `ManalinkEh.dll` are patched for the Samite/Femeref/Kithkin damage-prevention handler that can be reached by Femeref Healer during combat. The local `MTG` bottle copies were updated with backups; visible gameplay retesting still needs to confirm the Femeref Healer blocker scenario. |
+| Declared attacker mistakes are hard to undo. | Root and `Program/` `Magic.exe` now have a conservative attacker-selection undo patch, and the local `MTG` bottle copies were updated with backups. Before pressing Done, clicking an already-declared attacker should clear `STATE_ATTACKING`; unusual attack costs, attack triggers, and banding still need visible testing. See [docs/bugs/declared-attacker-undo.md](docs/bugs/declared-attacker-undo.md). |
 | Start-color `WM_CREATE CreateDIBSection` assertion, name-entry glitch, and map movement stop | FaceMaker/no-resolution and bottle-setting fixes did not solve the original issue. Root and `Program/` `Shandalar.exe` include a narrow `CreateDIBSection` compatibility patch, a default-name seed plus name-editor bypass/fallback, and a same-arrow movement-stop patch; the active FaceMaker copies have the same `hSection = NULL` patch at their own DIB wrapper. Direct patched FaceMaker startup is verified; full Shandalar-spawned character creation and movement control still need a visible manual retest. See [docs/troubleshooting.md](docs/troubleshooting.md), [docs/bugs/create-dibsection-after-color.md](docs/bugs/create-dibsection-after-color.md), and [docs/adventure-map-movement.md](docs/adventure-map-movement.md). |
 | Runtime advice is mixed in old docs. | Use [docs/runtime-dependencies.md](docs/runtime-dependencies.md), which separates import evidence from historical notes. |
 | Antivirus/security state is unknown. | No scanner was run in this pass. See [docs/security-scan.md](docs/security-scan.md) before making safety claims. |
@@ -145,6 +149,7 @@ Local checkout path: `/Users/mdmoll/Shandalar/Shandalar`
 | --- | --- |
 | Native Windows launch | Run root `Shandalar.exe`, root `Magic.exe`, and `Program/Magic.exe` from their own folders and record visible behavior. |
 | CrossOver gameplay retest | Run the patched `Shandalar.exe` visibly, then verify character creation reaches the map with default `Player`, same-arrow map stop, save/load, a duel, and all five starting colors. |
+| Declared attacker undo | In a duel, declare one or more ordinary attackers, click a declared attacker again before Done, and confirm it leaves the attack selection without becoming tapped or marked as having attacked. |
 | Command-line help | Capture `Shandalar.exe --help` text, dialog, or log output. |
 | Root vs `Program/` `Magic.exe` | Test both exact paths because their hashes differ. |
 | Security scan | Run a named scanner and record hashes/results. |
@@ -158,6 +163,8 @@ Local checkout path: `/Users/mdmoll/Shandalar/Shandalar`
 | [docs/magic-exe.md](docs/magic-exe.md) | Dedicated `Magic.exe` notes, imports, hypotheses, and tests. |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Practical troubleshooting entries, including the start-color DIB assertion. |
 | [docs/bugs/create-dibsection-after-color.md](docs/bugs/create-dibsection-after-color.md) | Focused investigation of the `WM_CREATE CreateDIBSection` assertion after choosing a start color. |
+| [docs/bugs/duel-freeze-damage-prevention.md](docs/bugs/duel-freeze-damage-prevention.md) | Focused investigation of the Femeref/Samite/Kithkin damage-prevention activation freeze. |
+| [docs/bugs/declared-attacker-undo.md](docs/bugs/declared-attacker-undo.md) | Focused notes for the `Magic.exe` attacker-selection undo patch. |
 | [docs/magic-vs-shandalar-runtime.md](docs/magic-vs-shandalar-runtime.md) | Runtime comparison notes for `Magic.exe` and `Shandalar.exe`. |
 | [docs/runtime-dependencies.md](docs/runtime-dependencies.md) | PE inspection and runtime dependency matrix. |
 | [docs/security-scan.md](docs/security-scan.md) | Antivirus/security scan guidance and reporting template. |

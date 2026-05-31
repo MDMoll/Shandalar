@@ -21,6 +21,12 @@ helper for `Shandalar.exe`.
 | Root `Magic.exe` | PE32 GUI Intel 80386, same PE timestamp/import set as `Program/Magic.exe`, different SHA-256; opened by root Shandalar startup in bottle `MTG`. |
 | `Program/Magic.exe` imports | `user32.dll`, `advapi32.dll`, `comctl32.dll`, `deckdll.dll`, `drawcardlib.dll`, `gdi32.dll`, `kernel32.dll`, `msvcrt.dll`, `msvfw32.dll`, `version.dll`, `winmm.dll`, `comdlg32.dll`, `manalinkeh.dll`, `manalinkex.dll`. |
 
+## Current Runtime Patches
+
+| Patch | Root `Magic.exe` | `Program/Magic.exe` | Notes |
+| --- | --- | --- | --- |
+| Declared-attacker undo | Hook `0x43c303`, cave `0x459bc8`, SHA-256 `5bf518d66342d79562efb1106449413ada06814a6c14818a1e3101fd470c82d1`. | Hook `0x43c303`, cave `0x459bc8`, SHA-256 `0fb8b87fe35c8be037ae3419a9b9cd70a27df840ae6af6c7488c2685046a74fa`. | Lets the human player click an already-declared attacker before Done to clear `STATE_ATTACKING`. See [bugs/declared-attacker-undo.md](bugs/declared-attacker-undo.md). |
+
 ## Required Nearby Files
 
 | File/folder | Why |

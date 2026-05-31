@@ -4091,6 +4091,10 @@ int card_samite_healer(int player, int card, event_t event){
 	if (!IS_GAA_EVENT(event))
 		return 0;
 
+	if (!(land_can_be_played & LCBP_DAMAGE_PREVENTION)){
+		return 0;
+	}
+
 	target_definition_t td;
 	default_target_definition(player, card, &td, TYPE_ANY);
 	td.extra = damage_card;

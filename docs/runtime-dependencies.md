@@ -55,7 +55,7 @@ root `zlib.dll` and the root DLL set are present.
 | `Program/Drawcardlib.dll` | `Cardartlib.dll`, `image.dll`, `GDI32.dll`, `GDIPLUS.DLL`, `KERNEL32.dll`, `msvcrt.dll`, `MSIMG32.DLL`, `SHLWAPI.DLL`, `USER32.dll` | Card rendering helper. |
 | `Program/CdTools.dll` | `KERNEL32.dll`, `USER32.dll`, `ADVAPI32.dll` | CD/autoplay helper imported by `Shandalar.exe`. |
 | `Program/Statwin.dll` | `KERNEL32.dll`, `USER32.dll`, `GDI32.dll`, `MSVFW32.dll`, `MSVCRT.dll` | UI/video-adjacent helper. |
-| `Program/ManalinkEh.dll` | `kernel32.dll`, `KERNEL32.dll`, `msvcrt.dll`, `USER32.dll` | Manalink extension DLL imported by `Magic.exe`. |
+| `Program/ManalinkEh.dll` | `kernel32.dll`, `KERNEL32.dll`, `msvcrt.dll`, `USER32.dll` | Manalink extension DLL imported by `Magic.exe`; patched for the Samite/Femeref/Kithkin damage-prevention activation freeze. |
 | `Program/ManalinkEx.dll` | `kernel32.dll`, `user32.dll`, `advapi32.dll` | Manalink extension DLL imported by `Magic.exe`. |
 | `Program/Deckdll.dll`, `Program/Image.dll` | No `DLL Name:` lines were emitted by local `objdump -p`. | Keep nearby anyway because they are direct imports or supporting DLLs. |
 
@@ -91,6 +91,6 @@ Do not commit redistributable installers to this repo.
 | --- | --- |
 | Root `Shandalar.exe`, root `Magic.exe`, root DLLs including `zlib.dll` | Current copied CrossOver `MTG` launch path and adjacent dependencies. |
 | `Program/Deckdll.dll`, `Program/Drawcardlib.dll`, `Program/CardArtLib.dll`, `Program/CdTools.dll` | Direct imports of `Program/Shandalar.exe`. |
-| `Program/ManalinkEh.dll`, `Program/ManalinkEx.dll` | Direct imports of `Program/Magic.exe`. |
+| Root and `Program/ManalinkEh.dll`, `Program/ManalinkEx.dll` | Direct imports of root/Program `Magic.exe`. Preserve the patched `ManalinkEh.dll` copies; root and `Program/` have different patch offsets and hashes. |
 | `Program/Shandalar.dll` | Loaded by strings evidence in `Shandalar.exe`; likely part of patched Shandalar behavior. |
 | `Program/Cards.dat`, `Program/DBInfo.dat`, `Program/Rarity.dat`, `Program/Text.res`, art/sound/deck folders | Runtime data and assets referenced by strings and folder layout. |

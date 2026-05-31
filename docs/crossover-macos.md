@@ -25,6 +25,7 @@ Result on this machine: CrossOver 26.1.0.39808.
 | 8 | Set `Window = 2` in both `Shandalar.ini` and `Program/Shandalar.ini` before the start-color retest. |
 | 9 | Give the bottle a non-tiny paging file, such as `C:\pagefile.sys 512 1024`, because the forum thread identifies paging-file absence as a trigger. |
 | 10 | Use the patched `Shandalar.exe` for the start-color assertion. The local `MTG` and `Shandalar-Win8-Test` copied installs were patched in this pass, with original backups saved beside each executable. |
+| 11 | For the Femeref Healer duel freeze, use the patched `ManalinkEh.dll` too. The local `MTG` copied install has already been updated with backups; repeat that backup/copy pattern for any other copied CrossOver install before retesting there. |
 
 ## Run Command Values
 
@@ -35,8 +36,8 @@ shows that root `Shandalar.exe` opens root `Magic.exe`.
 | Target | Command | Working directory | Status |
 | --- | --- | --- |
 | Shandalar in copied `MTG` bottle | `C:\Shandalar\Shandalar.exe` | `C:\Shandalar` | Bottle-local copy is now patched; config-only fixes did not solve user retesting before this patch. |
-| Root Magic in copied `MTG` bottle | `C:\Shandalar\Magic.exe` | `C:\Shandalar` | Opened by root `Shandalar.exe`; test separately. |
-| Program Magic in copied `MTG` bottle | `C:\Shandalar\Program\Magic.exe` | `C:\Shandalar\Program` | Manalink launcher path; needs visible test. |
+| Root Magic in copied `MTG` bottle | `C:\Shandalar\Magic.exe` | `C:\Shandalar` | Opened by root `Shandalar.exe`; root `ManalinkEh.dll` must be the patched copy for the Femeref/Samite/Kithkin healer freeze retest. |
+| Program Magic in copied `MTG` bottle | `C:\Shandalar\Program\Magic.exe` | `C:\Shandalar\Program` | Manalink launcher path; `Program\ManalinkEh.dll` must be the patched copy for equivalent healer testing. |
 | Program Shandalar in copied `MTG` bottle | `C:\Shandalar\Program\Shandalar.exe` | `C:\Shandalar\Program` | Currently fails in this bottle because `Program\zlib.dll` is missing. |
 | Shandalar in fresh Win8 test bottle | `C:\Shandalar\Shandalar.exe` | `C:\Shandalar` | Bottle-local copy is now patched and passed the crash-point smoke test. |
 | Patched fresh Win8 repo-mapped launch | `Y:\Shandalar\Shandalar\Shandalar.exe` | `Y:\Shandalar\Shandalar` | Start-color crash point verified with Wine `wscript` SendKeys after the repo binary patch. |
@@ -270,7 +271,7 @@ Expected entries:
 | Symptom | Try |
 | --- | --- |
 | Immediate silent exit | Re-run from CrossOver Run Command with logging enabled. Record missing DLL dialogs or exit code. For bottle `MTG`, use root `C:\Shandalar\Shandalar.exe` first. |
-| Duel prompts stop accepting `Done`, `Trigger`, or `Decline` | Use the current `MTG` Win7/`Shandalar1440` setting above, fully quit any old CrossOver Shandalar windows, then relaunch root `C:\Shandalar\Shandalar.exe` from working directory `C:\Shandalar`. If it still freezes, capture a live process sample while frozen before changing binaries. |
+| Duel prompts stop accepting `Done`, `Trigger`, or `Decline` | Use the current `MTG` Win7/`Shandalar1440` setting above, fully quit any old CrossOver Shandalar/Magic windows, then relaunch root `C:\Shandalar\Shandalar.exe` from working directory `C:\Shandalar`. The local copied DLLs are already patched; if it still freezes, capture the exact card/phase and a live process sample while frozen. |
 | Fullscreen/palette weirdness | Try a virtual desktop in `winecfg`, start with 800x600 or 1024x768. |
 | Assertion after choosing a start color | Use the patched `Shandalar.exe` and patched active `FaceMaker.exe`; verify FaceMaker support files, set `Window = 2`, enlarge the bottle paging file, use virtual desktop, set app-default `Version=win8` for comparison, and keep high-resolution/Retina disabled. |
 | Window opens offscreen | Enable virtual desktop, then relaunch from the same folder that contains the executable and DLLs. |
@@ -308,11 +309,14 @@ Expected entries:
 
 | 2026-05-31 | 26.1.0.39808 | `MTG` | App-default `win7` | Registry only | Set `Shandalar.exe`, `Magic.exe`, and `FaceMaker.exe` to desktop `root` instead of virtual desktop `Shandalar` | None | `HKCU\Software\Wine\AppDefaults\*.exe` | Superseded by the later `Shandalar1440` setting after fullscreen/root-desktop testing was undesirable; visible gameplay retest was not completed for this row. |
 | 2026-05-31 | 26.1.0.39808 | `MTG` | App-default `win7` | Registry only | Set `Shandalar.exe`, `Magic.exe`, and `FaceMaker.exe` to desktop `Shandalar1440=1440x1080` | None | `HKCU\Software\Wine\Explorer\Desktops` and `HKCU\Software\Wine\AppDefaults\*.exe` | This is the current 4:3 size-up test after fullscreen was undesirable; visible gameplay retest still needed. |
+| 2026-05-31 | 26.1.0.39808 | Repo | N/A | `ManalinkEh.dll` and `Program/ManalinkEh.dll` | Patched for Femeref/Samite/Kithkin healer damage-prevention activation freeze | None from static verification | Binary DLL patch plus matching source guards | `xxd` and `objdump` verify the new `LCBP_DAMAGE_PREVENTION` gate. |
+| 2026-05-31 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\ManalinkEh.dll` and `C:\Shandalar\Program\ManalinkEh.dll` | Copied patched healer DLLs into the active copied install | None from copy/hash verification | Backups preserved as `*.before-femeref-healer-patch.dll` | Active bottle hashes match the patched repo DLL hashes; visible gameplay retest still needed. |
 
 ## Needs testing
 
-Run a full visible gameplay pass with the patched `Shandalar.exe` next. The
-automated SendKeys tests reached the post-color resource load point, but they
-did not prove default-name character creation, same-arrow map stop, save/load,
-duels, or every starting color. For copied CrossOver installs, test the exact
+Run a full visible gameplay pass with the patched `Shandalar.exe` and patched
+`ManalinkEh.dll` next. The automated SendKeys tests reached the post-color
+resource load point, but they did not prove default-name character creation,
+same-arrow map stop, save/load, duels, every starting color, or the
+Femeref-Healer-in-combat freeze. For copied CrossOver installs, test the exact
 root-vs-Program path explicitly; do not assume they behave the same.
