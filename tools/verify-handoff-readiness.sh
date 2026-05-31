@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+include_crossover=0
+crossover_bottle="MTG"
+
+usage() {
+  cat <<'EOF'
+Usage: tools/verify-handoff-readiness.sh [options]
+
+Runs the non-gameplay handoff checks that should pass before sharing this
+branch or handing it off as a Git bundle. It does not launch the game, run a
+malware scanner, or prove gameplay.
+
+Options:
+  --include-crossover     Also run the local MTG CrossOver bottle-state check.
+  --crossover-bottle NAME Bottle name for --include-crossover. Defaults to MTG.
+  -h, --help              Show this help.
+EOF
+}
+
+fail() {
+  printf 'FAIL: %s\n' "$*" >&2
+  exit 1
+}
+
+pass() {
+  printf 'ok: %s\n' "$*"
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --include-crossover)
+      include_crossover=1
+      ;;
+    --crossover-bottle)
+      shift
+      [ "$#" -gt 0 ] || fail "--crossover-bottle requires a value"
+      crossover_bottle="$1"
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "unknown option: $1"
+      ;;
+  esac
+  shift
+done
+
+short_sha="$(git rev-parse --short HEAD)"
+
+tools/verify-share-readiness.sh
+pass "base share-readiness verifier passed"
+
+manual_baseline="$(tools/print-manual-gameplay-baseline.sh)"
+printf '%s\n' "$manual_baseline" | grep -q "| Git commit | $short_sha |" || fail "manual gameplay baseline does not report commit $short_sha"
+printf '%s\n' "$manual_baseline" | grep -q "| Git status | clean |" || fail "manual gameplay baseline does not report clean status"
+printf '%s\n' "$manual_baseline" | grep -q "| Primary target | C:\\\\Shandalar\\\\Shandalar.exe |" || fail "manual gameplay baseline missing primary target"
+pass "manual gameplay baseline is current"
+
+security_baseline="$(tools/print-security-scan-baseline.sh)"
+printf '%s\n' "$security_baseline" | grep -q "| Git commit | $short_sha |" || fail "security scan baseline does not report commit $short_sha"
+printf '%s\n' "$security_baseline" | grep -q "| Git status | clean |" || fail "security scan baseline does not report clean status"
+printf '%s\n' "$security_baseline" | grep -q "| Tracked scan targets | 230 |" || fail "security scan baseline does not report 230 targets"
+pass "security scan baseline is current"
+
+cleanup_dest="/private/tmp/shandalar-cleanup-test-dryrun-${short_sha}-$$"
+tools/create-cleanup-test-copy.sh --dry-run --skip-verify "$cleanup_dest" >/dev/null
+pass "cleanup test copy dry-run passed"
+
+bundle_dest="/private/tmp/shandalar-handoff-dryrun-${short_sha}-$$.bundle"
+bundle_dry_run="$(tools/create-git-handoff-bundle.sh --dry-run --skip-verify --dest "$bundle_dest")"
+printf '%s\n' "$bundle_dry_run" | grep -q "Receiver verify command:" || fail "bundle dry-run missing receiver verify command"
+printf '%s\n' "$bundle_dry_run" | grep -q "Receiver fetch command:" || fail "bundle dry-run missing receiver fetch command"
+pass "Git bundle dry-run passed"
+
+if [ "$include_crossover" = "1" ]; then
+  tools/verify-crossover-mtg-state.sh "$crossover_bottle"
+  pass "CrossOver bottle-state verifier passed for $crossover_bottle"
+else
+  pass "CrossOver bottle-state verifier skipped; pass --include-crossover on this Mac"
+fi
+
+printf 'Handoff readiness checks passed for %s.\n' "$short_sha"

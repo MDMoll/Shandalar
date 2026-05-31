@@ -196,6 +196,7 @@ handoff mistakes when a human is ready to test:
 ```sh
 tools/print-manual-gameplay-baseline.sh
 tools/print-security-scan-baseline.sh
+tools/verify-handoff-readiness.sh
 tools/create-cleanup-test-copy.sh --dry-run
 tools/create-git-handoff-bundle.sh --dry-run
 ```

@@ -80,6 +80,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` unless noted.
 | Dry-run a Git handoff bundle if push auth is unavailable | `tools/create-git-handoff-bundle.sh --dry-run` |
 | Print the manual gameplay evidence baseline | `tools/print-manual-gameplay-baseline.sh` |
 | Print the security scan evidence baseline | `tools/print-security-scan-baseline.sh` |
+| Run the non-gameplay handoff verifier | `tools/verify-handoff-readiness.sh` |
 | Run automated share-readiness checks | `tools/verify-share-readiness.sh` |
 | Build dry run | `cd src && make -n` |
 

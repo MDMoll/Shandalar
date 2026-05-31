@@ -45,6 +45,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar`:
 ```sh
 git status --short --untracked-files=all
 tools/verify-share-readiness.sh
+tools/verify-handoff-readiness.sh
 tools/print-manual-gameplay-baseline.sh
 tools/print-security-scan-baseline.sh
 git log --oneline -10

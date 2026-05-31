@@ -162,7 +162,7 @@ security_targets="$(tools/list-security-scan-targets.sh)"
 security_header="$(printf '%s\n' "$security_targets" | sed -n '1p')"
 [ "$security_header" = $'path\tkind\tbytes\tsha256' ] || fail "unexpected security target header: $security_header"
 security_target_count="$(printf '%s\n' "$security_targets" | awk 'NR > 1 {count++} END {print count+0}')"
-[ "$security_target_count" = "229" ] || fail "expected 229 tracked security scan targets, found $security_target_count"
+[ "$security_target_count" = "230" ] || fail "expected 230 tracked security scan targets, found $security_target_count"
 for path in \
   Shandalar.exe \
   Program/Magic.exe \
@@ -175,6 +175,7 @@ for path in \
   tools/create-git-handoff-bundle.sh \
   tools/print-manual-gameplay-baseline.sh \
   tools/print-security-scan-baseline.sh \
+  tools/verify-handoff-readiness.sh \
   tools/verify-share-readiness.sh \
   tools/verify-crossover-mtg-state.sh \
   tools/list-security-scan-targets.sh
