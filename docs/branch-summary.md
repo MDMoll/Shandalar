@@ -25,7 +25,7 @@ moving runtime-like assets without explicit approval and launch-copy testing.
 | The high-confidence non-runtime clutter from the limited plan is archived, not deleted. | [reorganization.md](reorganization.md). |
 | The major runtime files and patches are documented with repeatable checks. | [verified-on-this-machine.md](verified-on-this-machine.md) and `tools/verify-share-readiness.sh`. |
 | Remaining cleanup candidates are intentionally deferred instead of silently removed. | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), [completion-audit.md](completion-audit.md), and [gaps.md](gaps.md). |
-| The branch push handoff is explicit, with owner-side auth paths and a bundle plus checksum fallback for credential-blocked environments. | [git-handoff.md](git-handoff.md), [push-auth.md](push-auth.md), and `tools/create-git-handoff-bundle.sh`. |
+| The branch push handoff is explicit, with owner-side auth paths, bundle/patch artifacts, checksum sidecars, and verifier coverage for credential-blocked environments. | [git-handoff.md](git-handoff.md), [push-auth.md](push-auth.md), `tools/create-git-handoff-bundle.sh`, `tools/create-patch-package.sh`, and `tools/verify-handoff-artifacts.sh`. |
 
 ## Do Not Claim Yet
 
@@ -57,5 +57,6 @@ If the push fails with an HTTPS credential error, run the same push command
 from an authenticated local terminal. See [push-auth.md](push-auth.md) for
 HTTPS token, GitHub CLI, and SSH options. If credentials are still unavailable,
 use `tools/create-git-handoff-bundle.sh` to create a Git-history handoff bundle.
-The helper now prints receiver-side checksum, `git bundle verify`, and
-`git fetch` commands; see [git-handoff.md](git-handoff.md).
+The helpers now print receiver-side checksum, `git bundle verify`, `git fetch`,
+and patch-apply commands; `tools/verify-handoff-artifacts.sh` checks the
+default artifacts for the current commit. See [git-handoff.md](git-handoff.md).
