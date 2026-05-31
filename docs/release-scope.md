@@ -19,7 +19,7 @@ This is a practical repo-maintenance decision, not legal advice.
 | Claim | Status |
 | --- | --- |
 | The branch is cleaner and better documented for local maintenance. | Supported by [share-readiness.md](share-readiness.md) and [completion-audit.md](completion-audit.md). |
-| The branch can be pushed to git once authentication works. | Supported locally by a clean tree and `tools/verify-share-readiness.sh`; remote push is still blocked by local GitHub auth. |
+| The branch can be pushed to git once authentication works. | Supported locally by a clean tree, `tools/verify-share-readiness.sh`, [git-handoff.md](git-handoff.md), and [push-auth.md](push-auth.md); remote push is still blocked by local GitHub auth. |
 | A branch-delta inventory exists for patch-only planning. | Supported by [patch-package-plan.md](patch-package-plan.md) and `tools/list-branch-delta.sh`. |
 | The branch is a public release. | Do not claim. |
 | The binaries are malware-scanned. | Do not claim until [security-scan.md](security-scan.md) has named scanner/version/hash results. |

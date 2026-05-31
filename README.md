@@ -142,6 +142,7 @@ the detailed command/result table.
 | [docs/share-readiness.md](docs/share-readiness.md) | What is ready to share and what still needs proof. |
 | [docs/completion-audit.md](docs/completion-audit.md) | Requirement-by-requirement status for the cleanup/share goal. |
 | [docs/git-handoff.md](docs/git-handoff.md) | Exact branch, remote, pre-push checks, and push-auth status. |
+| [docs/push-auth.md](docs/push-auth.md) | Owner-side GitHub authentication options for pushing this branch. |
 | [docs/release-scope.md](docs/release-scope.md) | Current branch sharing scope and public-release boundaries. |
 | [docs/patch-package-plan.md](docs/patch-package-plan.md) | Branch-delta inventory and restoration-test plan for any future patch/docs-only package. |
 | [docs/manual-gameplay-verification.md](docs/manual-gameplay-verification.md) | Manual test plan required before claiming the game works end to end. |

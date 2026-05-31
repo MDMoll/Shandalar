@@ -11,7 +11,7 @@ proof.
 | Area | Status | Meaning |
 | --- | --- | --- |
 | Local maintenance branch | Ready locally | The tree is clean and `tools/verify-share-readiness.sh` passes. |
-| GitHub branch push | Blocked outside repo | Local pushes fail because this environment has no GitHub HTTPS credentials and no accepted SSH key; see [git-handoff.md](git-handoff.md). |
+| GitHub branch push | Blocked outside repo | Local pushes fail because this environment has no GitHub HTTPS credentials and no accepted SSH key; see [git-handoff.md](git-handoff.md) and [push-auth.md](push-auth.md). |
 | Release scope | Controlled maintenance only | [release-scope.md](release-scope.md) records the current branch sharing decision; [patch-package-plan.md](patch-package-plan.md) prepares branch-delta inventory for a possible patch/docs-only path; public full-bundle and patch/docs-only releases remain unprepared. |
 | Clean public release | Not proven | Distribution rights, malware scan, and full gameplay verification are still missing. |
 | More file moves | Deferred | Remaining candidates are runtime-like, save-state, art-folder, or package-tree files that need explicit approval and launch-copy testing. |
@@ -30,7 +30,7 @@ proof.
 | Cleanup candidates are listed with evidence and confidence, nothing deleted. | Proven for current audit scope | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), [duplicate-audit.md](duplicate-audit.md), and [save-state.md](save-state.md). | Approved launch-copy tests before moving save-state, art-folder, package-tree, or duplicate runtime-like files. |
 | Stale references are identified with path/line evidence where possible. | Proven locally | [stale-references.md](stale-references.md). | Live URL reachability only if requested. |
 | Generated docs distinguish verified facts from inferences. | Proven locally | Root README evidence-language note plus `Verified on this machine` and `Needs testing` sections across docs. | Keep using that convention for new investigations. |
-| Branch can be shared in git. | Ready locally, push blocked | Clean tree, local commits on `codex/shandalar-crossover-updates`, [release-scope.md](release-scope.md), [git-handoff.md](git-handoff.md), `tools/create-git-handoff-bundle.sh` with checksum sidecar, and verifier pass. | Push from an authenticated GitHub environment; use the bundle helper only as a credential-blocked handoff fallback. |
+| Branch can be shared in git. | Ready locally, push blocked | Clean tree, local commits on `codex/shandalar-crossover-updates`, [release-scope.md](release-scope.md), [git-handoff.md](git-handoff.md), [push-auth.md](push-auth.md), `tools/create-git-handoff-bundle.sh` with checksum sidecar, and verifier pass. | Push from an authenticated GitHub environment; use the bundle helper only as a credential-blocked handoff fallback. |
 | Something that works. | Partially proven | Static binary hashes/patch bytes pass; CrossOver smoke evidence passed earlier crash points; `tools/print-manual-gameplay-baseline.sh` captures the exact branch, bottle settings, launch commands, and runtime hashes before a visible retest. | Manual gameplay retest in [manual-gameplay-verification.md](manual-gameplay-verification.md) is still required before claiming the game works end to end. |
 
 ## Do Not Move Yet

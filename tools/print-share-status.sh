@@ -67,7 +67,7 @@ printf '| Binary patch checksum | `/private/tmp/%s-%s.patch.sha256` |\n' "$safe_
 printf '\n## Final Gates\n\n'
 printf '| Gate | Current status |\n'
 printf '| --- | --- |\n'
-printf '| GitHub push | Needs authenticated `git push -u origin %s` from an environment that can answer GitHub credentials. |\n' "$branch"
+printf '| GitHub push | Needs authenticated `git push -u origin %s` from an environment that can answer GitHub credentials; see `docs/push-auth.md`. |\n' "$branch"
 printf '| Manual gameplay | Needs visible pass/fail evidence in `docs/manual-gameplay-verification.md`. |\n'
 printf '| Security scan | Needs a named scanner/version/result in `docs/security-scan.md`. |\n'
 printf '| Public distribution | Not approved by current evidence; see `docs/release-scope.md` and `docs/distribution.md`. |\n'

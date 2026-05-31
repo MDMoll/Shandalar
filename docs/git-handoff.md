@@ -35,6 +35,10 @@ git push -u origin codex/shandalar-crossover-updates
 
 Do not push directly to `master` for this cleanup/runtime branch.
 
+If credentials are not already configured, use [push-auth.md](push-auth.md) for
+HTTPS token, GitHub CLI, and SSH setup paths. Do not commit tokens, private
+keys, or credential-helper output.
+
 ## Bundle Fallback
 
 If authenticated push is still unavailable but you need to move the branch as
@@ -82,6 +86,7 @@ fatal: could not read Username for 'https://github.com': Device not configured
 
 An SSH push attempt also failed earlier with public-key authentication. Treat
 this as an environment authentication problem, not a branch readiness failure.
+See [push-auth.md](push-auth.md) for the owner-side remediation paths.
 
 ## After Pushing
 

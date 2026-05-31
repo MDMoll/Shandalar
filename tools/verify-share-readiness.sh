@@ -233,6 +233,7 @@ for path in \
   docs/branch-summary.md \
   docs/completion-audit.md \
   docs/git-handoff.md \
+  docs/push-auth.md \
   docs/release-scope.md \
   docs/share-readiness.md \
   docs/distribution.md \

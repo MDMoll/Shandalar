@@ -11,6 +11,7 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | [share-readiness.md](share-readiness.md) | Current branch checklist, push checklist, and remaining unproven claims. |
 | [completion-audit.md](completion-audit.md) | Requirement-by-requirement status for the cleanup/share goal. |
 | [git-handoff.md](git-handoff.md) | Exact branch, remote, pre-push checks, and push-auth status. |
+| [push-auth.md](push-auth.md) | Owner-side HTTPS token, GitHub CLI, and SSH options for pushing the branch. |
 | [release-scope.md](release-scope.md) | Current branch sharing scope and public-release boundaries. |
 | [patch-package-plan.md](patch-package-plan.md) | Branch-delta inventory and restoration-test plan for any future patch/docs-only package. |
 | [verified-on-this-machine.md](verified-on-this-machine.md) | Detailed local command/result evidence. |
@@ -58,6 +59,7 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | [security-scan.md](security-scan.md) | Malware scanner guidance and current scanner availability evidence. |
 | [gaps.md](gaps.md) | Remaining runtime, cleanup, build, and distribution gaps. |
 | [git-handoff.md](git-handoff.md) | Exact branch, remote, pre-push checks, and push-auth status. |
+| [push-auth.md](push-auth.md) | Owner-side HTTPS token, GitHub CLI, and SSH options for pushing the branch. |
 
 For a current generated handoff summary, run
 `tools/print-share-status.sh` from the repository root.
