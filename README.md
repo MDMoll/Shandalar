@@ -23,7 +23,7 @@ imports, scripts, or filenames, and "needs testing" means it was not proven.
 | User | Start here | Command |
 | --- | --- | --- |
 | Windows | Open the full checkout and launch directly. | `Shandalar.exe`; use `Program\Magic.exe` for Manalink testing |
-| CrossOver on macOS | Use the patched `Shandalar.exe`; the repo copy passed the start-color crash point in `Shandalar-Win8-Test`. | See [docs/crossover-macos.md](docs/crossover-macos.md) |
+| CrossOver on macOS | Use the patched copied install in bottle `MTG`: root `C:\Shandalar\Shandalar.exe`, app-default `win7`, desktop `Shandalar1440=1440x1080`. | See [docs/crossover-macos.md](docs/crossover-macos.md) |
 | Wine | Use the folder that contains the executable and nearby DLLs/assets. | `wine Shandalar.exe` from repo root, or `cd Program` then `wine Magic.exe` |
 | Developer/agent | Read the guardrails first. | [AGENTS.md](AGENTS.md) |
 
@@ -32,7 +32,9 @@ CrossOver evidence points at the root copy for Shandalar in bottle `MTG`:
 `C:\Shandalar\Shandalar.exe` opens root `C:\Shandalar\Magic.exe`, while direct
 `C:\Shandalar\Program\Shandalar.exe` currently fails in that bottle because
 `Program\zlib.dll` is missing. The Manalink launcher still enters `Program/`
-for `Magic.exe`.
+for `Magic.exe`. The current `MTG` retest setting is app-default `win7` with a
+Wine virtual desktop named `Shandalar1440` at `1440x1080`; the separate
+`Shandalar-Win8-Test` bottle is comparison evidence, not the primary path.
 
 ## Launch Targets
 
@@ -101,7 +103,7 @@ Local checkout path: `/Users/mdmoll/Shandalar/Shandalar`
 | --- | --- |
 | Runtime inspection | Launch targets are PE32 Windows binaries; import tables and runtime dependencies were inspected. |
 | Patched binaries | Active `Shandalar.exe`, `FaceMaker.exe`, `Magic.exe`, and `ManalinkEh.dll` hashes and representative patch bytes match the docs. |
-| CrossOver evidence | Root `C:\Shandalar\Shandalar.exe` reached the main menu and patched smoke paths passed the original crash point, but full gameplay still needs visible manual testing. |
+| CrossOver evidence | Root `C:\Shandalar\Shandalar.exe` reached the main menu, the current `MTG` bottle state validates as app-default `win7` with `Shandalar1440=1440x1080`, and patched smoke paths passed the original crash point, but full gameplay still needs visible manual testing. |
 | Repo hygiene | `tools/verify-share-readiness.sh` passes clean-tree, binary attribute, patched hash, patch-byte, core-doc, and local-link checks. |
 
 See [docs/verified-on-this-machine.md](docs/verified-on-this-machine.md) for

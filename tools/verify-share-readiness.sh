@@ -257,6 +257,10 @@ do
 done
 pass "core docs exist"
 
+grep -F -q 'app-default `win7`, desktop `Shandalar1440=1440x1080`' README.md || fail "README is missing the current MTG CrossOver win7/Shandalar1440 guidance"
+grep -F -q '`Shandalar-Win8-Test` bottle is comparison evidence, not the primary path.' README.md || fail "README does not identify Shandalar-Win8-Test as comparison evidence"
+pass "top-level CrossOver guidance is current"
+
 python3 - <<'PY'
 from pathlib import Path
 import hashlib
