@@ -161,6 +161,7 @@ Local checkout path: `/Users/mdmoll/Shandalar/Shandalar`
 | Doc | Use it for |
 | --- | --- |
 | [docs/running.md](docs/running.md) | Windows, CrossOver, Wine launch commands and test matrix. |
+| [docs/share-readiness.md](docs/share-readiness.md) | What is ready to share and what still needs proof. |
 | [docs/crossover-macos.md](docs/crossover-macos.md) | Practical CrossOver bottle setup and troubleshooting. |
 | [docs/magic-exe.md](docs/magic-exe.md) | Dedicated `Magic.exe` notes, imports, hypotheses, and tests. |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Practical troubleshooting entries, including the start-color DIB assertion. |

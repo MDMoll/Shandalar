@@ -32,3 +32,4 @@ of failure, only work that still needs direct testing or evidence.
 | Old URL reachability | Stale-reference docs classify links from local evidence only. | Test network reachability only if the user asks for live-link validation. |
 | Archive removability | Limited reorg moved files but did not delete them. | Keep archived files until a separate removal audit is approved. |
 | Antivirus/security scan | No named scanner was run in this pass. | Use [docs/security-scan.md](security-scan.md) and record scanner/version/hash/results. |
+| Share-readiness closure | [share-readiness.md](share-readiness.md) now separates shareable branch hygiene from unproven gameplay/security/build claims. | Use it as the final checklist before declaring the repo ready for broader sharing. |
