@@ -1,0 +1,12 @@
+./Manalink3/Program/PlayDeck/Serendibity.dck
+./Manalink3/Mods/PlayDeck/Mono Set/Shandalar/Themed and combo/Serendibity.dck
+./Manalink3/Mods/PlayDeck/PlayDeck_Brewin/Serendibity.dck
+./Playdeck/Serendibity.dck
+./docs/generated/create-dibsection-investigation
+./docs/generated/create-dibsection-investigation/dib-related-files.txt
+./Mods/PlayDeck/Mono Set/Shandalar/Themed and combo/Serendibity.dck
+./Mods/PlayDeck/PlayDeck_Brewin/Serendibity.dck
+./CardArtManalink/Serendib Efreet.jpg
+./CardArtManalink/Serendib Sorcerer.jpg
+./CardArtManalink/Serendib Efreet (1).jpg
+./CardArtManalink/Serendib Djinn.jpg

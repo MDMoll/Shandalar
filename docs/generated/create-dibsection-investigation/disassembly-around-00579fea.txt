@@ -1,0 +1,131 @@
+
+Program/Shandalar.exe:	file format coff-i386
+
+Disassembly of section .text:
+
+00557b9b <SetCardInDeck>:
+  579f40: e8 7f 73 00 8b               	call	0x8b5812c4
+  579f45: 54                           	push	esp
+  579f46: 24 24                        	and	al, 0x24
+  579f48: 85 c0                        	test	eax, eax
+  579f4a: 8b 1c 85 50 69 98 00         	mov	ebx, dword ptr [4*eax + 0x986950]
+  579f51: 89 51 04                     	mov	dword ptr [ecx + 0x4], edx
+  579f54: 75 71                        	jne	0x579fc7 <SetCardInDeck+0x2242c>
+  579f56: a1 80 69 98 00               	mov	eax, dword ptr [0x986980]
+  579f5b: 83 f8 08                     	cmp	eax, 0x8
+  579f5e: 74 28                        	je	0x579f88 <SetCardInDeck+0x223ed>
+  579f60: a1 10 16 5a 00               	mov	eax, dword ptr [0x5a1610]
+  579f65: 85 c0                        	test	eax, eax
+  579f67: 74 1f                        	je	0x579f88 <SetCardInDeck+0x223ed>
+  579f69: be 90 69 98 00               	mov	esi, 0x986990
+  579f6e: 8b 3d e8 7f 73 00            	mov	edi, dword ptr [0x737fe8]
+  579f74: 83 c7 28                     	add	edi, 0x28
+  579f77: b9 00 01 00 00               	mov	ecx, 0x100
+  579f7c: f3 a5                        	rep		movsd	dword ptr es:[edi], dword ptr [esi]
+  579f7e: c7 05 10 16 5a 00 00 00 00 00	mov	dword ptr [0x5a1610], 0x0
+  579f88: 33 c0                        	xor	eax, eax
+  579f8a: 8b 0d 80 69 98 00            	mov	ecx, dword ptr [0x986980]
+  579f90: 8b 2d e8 7f 73 00            	mov	ebp, dword ptr [0x737fe8]
+  579f96: 8b 74 24 14                  	mov	esi, dword ptr [esp + 0x14]
+  579f9a: 83 f9 08                     	cmp	ecx, 0x8
+  579f9d: 0f 94 c0                     	sete	al
+  579fa0: 50                           	push	eax
+  579fa1: 55                           	push	ebp
+  579fa2: 56                           	push	esi
+  579fa3: 6a 01                        	push	0x1
+  579fa5: 8b 44 24 30                  	mov	eax, dword ptr [esp + 0x30]
+  579fa9: 6a 00                        	push	0x0
+  579fab: 8b 4c 24 30                  	mov	ecx, dword ptr [esp + 0x30]
+  579faf: 6a 00                        	push	0x0
+  579fb1: 6a 00                        	push	0x0
+  579fb3: 6a 01                        	push	0x1
+  579fb5: 52                           	push	edx
+  579fb6: 50                           	push	eax
+  579fb7: 51                           	push	ecx
+  579fb8: 8b 53 04                     	mov	edx, dword ptr [ebx + 0x4]
+  579fbb: 52                           	push	edx
+  579fbc: ff 15 04 78 98 00            	call	dword ptr [0x987804]
+  579fc2: 5d                           	pop	ebp
+  579fc3: 5f                           	pop	edi
+  579fc4: 5e                           	pop	esi
+  579fc5: 5b                           	pop	ebx
+  579fc6: c3                           	ret
+  579fc7: 8b 4b 20                     	mov	ecx, dword ptr [ebx + 0x20]
+  579fca: 8b 43 2c                     	mov	eax, dword ptr [ebx + 0x2c]
+  579fcd: 03 c8                        	add	ecx, eax
+  579fcf: 8b 6c 24 20                  	mov	ebp, dword ptr [esp + 0x20]
+  579fd3: 8b 73 18                     	mov	esi, dword ptr [ebx + 0x18]
+  579fd6: 8b 7c 24 1c                  	mov	edi, dword ptr [esp + 0x1c]
+  579fda: 0f af cd                     	imul	ecx, ebp
+  579fdd: 03 ce                        	add	ecx, esi
+  579fdf: 8b 74 24 14                  	mov	esi, dword ptr [esp + 0x14]
+  579fe3: 03 f9                        	add	edi, ecx
+  579fe5: 8b ca                        	mov	ecx, edx
+  579fe7: c1 e9 02                     	shr	ecx, 0x2
+  579fea: f3 a5                        	rep		movsd	dword ptr es:[edi], dword ptr [esi]
+  579fec: 8b ca                        	mov	ecx, edx
+  579fee: 5d                           	pop	ebp
+  579fef: 83 e1 03                     	and	ecx, 0x3
+  579ff2: f3 a4                        	rep		movsb	byte ptr es:[edi], byte ptr [esi]
+  579ff4: 5f                           	pop	edi
+  579ff5: 5e                           	pop	esi
+  579ff6: 5b                           	pop	ebx
+  579ff7: c3                           	ret
+  579ff8: cc                           	int3
+  579ff9: cc                           	int3
+  579ffa: cc                           	int3
+  579ffb: cc                           	int3
+  579ffc: cc                           	int3
+  579ffd: cc                           	int3
+  579ffe: cc                           	int3
+  579fff: cc                           	int3
+  57a000: 53                           	push	ebx
+  57a001: 56                           	push	esi
+  57a002: 8b 74 24 10                  	mov	esi, dword ptr [esp + 0x10]
+  57a006: 57                           	push	edi
+  57a007: 55                           	push	ebp
+  57a008: 83 fe 01                     	cmp	esi, 0x1
+  57a00b: 1b c0                        	sbb	eax, eax
+  57a00d: 68 e8 16 5a 00               	push	0x5a16e8
+  57a012: 68 03 05 00 00               	push	0x503
+  57a017: 40                           	inc	eax
+  57a018: 68 6c 16 5a 00               	push	0x5a166c
+  57a01d: 50                           	push	eax
+  57a01e: e8 fd 04 ef ff               	call	0x46a520 <.text+0x69520>
+  57a023: 8b 54 24 34                  	mov	edx, dword ptr [esp + 0x34]
+  57a027: 83 c4 10                     	add	esp, 0x10
+  57a02a: 8b 0c b5 50 69 98 00         	mov	ecx, dword ptr [4*esi + 0x986950]
+  57a031: 90                           	nop
+  57a032: 8b 7c 24 14                  	mov	edi, dword ptr [esp + 0x14]
+  57a036: 90                           	nop
+  57a037: 8b 41 20                     	mov	eax, dword ptr [ecx + 0x20]
+  57a03a: 8b 71 2c                     	mov	esi, dword ptr [ecx + 0x2c]
+  57a03d: 03 f0                        	add	esi, eax
+  57a03f: 8b 69 18                     	mov	ebp, dword ptr [ecx + 0x18]
+  57a042: 0f af 74 24 20               	imul	esi, dword ptr [esp + 0x20]
+  57a047: 03 f5                        	add	esi, ebp
+  57a049: 8b ca                        	mov	ecx, edx
+  57a04b: c1 e9 02                     	shr	ecx, 0x2
+  57a04e: 03 74 24 1c                  	add	esi, dword ptr [esp + 0x1c]
+  57a052: f3 a5                        	rep		movsd	dword ptr es:[edi], dword ptr [esi]
+  57a054: 8b ca                        	mov	ecx, edx
+  57a056: 5d                           	pop	ebp
+  57a057: 83 e1 03                     	and	ecx, 0x3
+  57a05a: f3 a4                        	rep		movsb	byte ptr es:[edi], byte ptr [esi]
+  57a05c: 5f                           	pop	edi
+  57a05d: 5e                           	pop	esi
+  57a05e: 5b                           	pop	ebx
+  57a05f: c3                           	ret
+  57a060: 8b 44 24 04                  	mov	eax, dword ptr [esp + 0x4]
+  57a064: 53                           	push	ebx
+  57a065: 66 8b 48 02                  	mov	cx, word ptr [eax + 0x2]
+  57a069: 56                           	push	esi
+  57a06a: 66 83 c1 02                  	add	cx, 0x2
+  57a06e: 57                           	push	edi
+  57a06f: 55                           	push	ebp
+  57a070: bf 30 62 98 00               	mov	edi, 0x986230
+  57a075: 0f bf d1                     	movsx	edx, cx
+  57a078: 8b f0                        	mov	esi, eax
+  57a07a: 8b ca                        	mov	ecx, edx
+  57a07c: c1 e9 02                     	shr	ecx, 0x2
+  57a07f: f3 a5                        	rep		movsd	dword ptr es:[edi], dword ptr [esi]

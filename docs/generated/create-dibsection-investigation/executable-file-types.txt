@@ -1,0 +1,14 @@
+Program/FaceMaker-nores.exe: PE32 executable (GUI) Intel 80386, for MS Windows
+Program/Magic.exe:           PE32 executable (GUI) Intel 80386, for MS Windows
+Program/Shandalar.exe:       PE32 executable (GUI) Intel 80386, for MS Windows
+Program/ct2exe.exe:          PE32 executable (console) Intel 80386, for MS Windows
+Program/CardArtLib.dll:      PE32 executable (DLL) (console) Intel 80386 (stripped to external PDB), for MS Windows
+Program/Deckdll.dll:         PE32 executable (DLL) (GUI) Intel 80386, for MS Windows
+Program/Drawcardlib.dll:     PE32 executable (DLL) (console) Intel 80386 (stripped to external PDB), for MS Windows
+Program/Image.dll:           PE32 executable (DLL) (GUI) Intel 80386, for MS Windows
+Program/ManalinkEh.dll:      PE32 executable (DLL) (console) Intel 80386 (stripped to external PDB), for MS Windows
+Program/ManalinkEx.dll:      PE32 executable (DLL) (GUI) Intel 80386, for MS Windows
+Program/Shandalar.dll:       PE32 executable (DLL) (console) Intel 80386 (stripped to external PDB), for MS Windows
+Program/Statwin.dll:         PE32 executable (DLL) (GUI) Intel 80386, for MS Windows
+Program/cdtools.dll:         PE32 executable (DLL) (GUI) Intel 80386, for MS Windows
+Program/magvid.dll:          PE32 executable (DLL) (GUI) Intel 80386, for MS Windows

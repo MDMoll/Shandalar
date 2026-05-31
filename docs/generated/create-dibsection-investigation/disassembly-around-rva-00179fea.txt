@@ -1,0 +1,2 @@
+
+Program/Shandalar.exe:	file format coff-i386

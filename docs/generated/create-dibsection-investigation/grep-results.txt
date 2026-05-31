@@ -1,0 +1,27 @@
+./archive/debug-evidence/ML_Debug.txt:3:D:\Newmagic\FamiliarWS\Familiar.c, line 3623
+./archive/debug-evidence/ML_Debug.txt:7:D:\Newmagic\FamiliarWS\Familiar.c, line 3631
+./archive/debug-evidence/ML_Debug.txt:11:D:\Newmagic\FamiliarWS\Familiar.c, line 3637
+./archive/debug-evidence/ML_Debug.txt:15:D:\Newmagic\FamiliarWS\Familiar.c, line 3845
+./archive/debug-evidence/ML_Debug.txt:19:D:\Newmagic\FamiliarWS\Familiar.c, line 1014
+./archive/debug-evidence/ML_Debug.txt:23:D:\Newmagic\FamiliarWS\Familiar.c, line 1167
+./archive/debug-evidence/ML_Debug.txt:27:D:\Newmagic\FamiliarWS\Familiar.c, line 3804
+./archive/debug-evidence/ML_Debug.txt:31:D:\Newmagic\FamiliarWS\Familiar.c, line 1451
+./archive/debug-evidence/ML_Debug.txt:35:D:\Newmagic\FamiliarWS\FamThreads.c, line 1520
+./archive/debug-evidence/assertFile.txt:2:File-> D:\NewMagic\sources\sidlib\lib.c, Line-> 315
+./archive/debug-evidence/assertFile.txt:3:WM_CREATE CreateDIBSection
+./archive/historical-docs/Readme13.txt:40:* The "AddCard" assertion errors in Shandalar have been fixed.
+./src/deck/deckdll.cpp:3354:      case WM_CREATE:
+./src/deck/deckdll.cpp:3455:      case WM_CREATE:
+./src/deck/deckdll.cpp:3543:      case WM_CREATE:
+./src/deck/deckdll.cpp:4244:      case WM_CREATE:
+./src/deck/deckdll.cpp:4743:      case WM_CREATE:
+./src/deck/deckdll.cpp:5310:      case WM_CREATE:
+./src/deck/deckdll.cpp:5856:      case WM_CREATE:
+./src/deck/deckdll.cpp:7399:      case WM_CREATE:
+./docs/cleanup-audit.md:14:| `archive/debug-evidence/ML_Debug.txt` | Generated debug log | Contains old `D:\Newmagic\...` debug paths. | Original `ML_Debug.txt:3`, `:7`, etc. | Medium | Archived in limited reorg; keep as evidence. |
+./docs/cleanup-audit.md:15:| `archive/debug-evidence/assertFile.txt` | Generated/debug evidence | Contains `D:\NewMagic\sources\sidlib\lib.c`. | Original `assertFile.txt:2`. | Medium | Archived in limited reorg; keep as evidence. |
+./docs/file-inventory.md:100:| `archive/debug-evidence/ML_Debug.txt` | Contains old `D:\Newmagic\...` source/debug paths. | Medium |
+./docs/stale-references.md:42:| `archive/debug-evidence/assertFile.txt:2` | `D:\NewMagic\sources\sidlib\lib.c` | Debug evidence | Old root path was `assertFile.txt`; archived as debug evidence. |
+./docs/stale-references.md:43:| `archive/debug-evidence/ML_Debug.txt:3-35` | `D:\Newmagic\FamiliarWS\...` | Debug evidence | Old root path was `ML_Debug.txt`; archived as debug evidence. |
+./Manalink3/Program/ReadMe.txt:319:* The "AddCard" assertion errors in Shandalar have been fixed.
+./Manalink3/Program/ReadMe.txt:858:    "Assertion error, cannot open sprite file." I am using 

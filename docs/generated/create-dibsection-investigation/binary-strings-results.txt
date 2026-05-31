@@ -1,0 +1,156 @@
+MATCH: ./Deck.exe
+D:\NEWMAGIC\sources\deckexe\Debug\deck.pdb
+MATCH: ./image.dll
+CreateDIBSection
+MATCH: ./Manalink3/Program/Deck.exe
+D:\NEWMAGIC\sources\deckexe\Debug\deck.pdb
+MATCH: ./Manalink3/Program/Image.dll
+CreateDIBSection
+MATCH: ./Manalink3/Program/Magic.exe
+D:\Newmagic\multiplayer\sidlib\Pcxw.c
+D:\Newmagic\multiplayer\sid\glue.c
+File-> %s, Line-> %d
+Assertion Error
+D:\Newmagic\multiplayer\sid\Ai.c
+CreateDIBSection
+MATCH: ./Manalink3/Program/FaceMaker.exe
+File-> %s, Line-> %d
+Assertion Error
+File-> %s, Line-> %d
+Assertion Error
+D:\NewMagic\Sources\1player\FaceMaker\code\test.c
+WM_CREATE CreateDIBSection
+D:\NewMagic\sources\sidlib\lib.c
+D:\NewMagic\sources\sidlib\text.c
+D:\NewMagic\sources\sidlib\sprite.c
+D:\NewMagic\sources\sidlib\Fileio.c
+D:\NewMagic\sources\sidlib\Pcxw.c
+CreateDIBSection
+MATCH: ./Magic.exe
+D:\Newmagic\multiplayer\sidlib\Pcxw.c
+D:\Newmagic\multiplayer\sid\glue.c
+File-> %s, Line-> %d
+Assertion Error
+D:\Newmagic\multiplayer\sid\Ai.c
+CreateDIBSection
+MATCH: ./FaceMaker.exe
+File-> %s, Line-> %d
+Assertion Error
+File-> %s, Line-> %d
+Assertion Error
+D:\NewMagic\Sources\1player\FaceMaker\code\test.c
+WM_CREATE CreateDIBSection
+D:\NewMagic\sources\sidlib\lib.c
+D:\NewMagic\sources\sidlib\text.c
+D:\NewMagic\sources\sidlib\sprite.c
+D:\NewMagic\sources\sidlib\Fileio.c
+D:\NewMagic\sources\sidlib\Pcxw.c
+CreateDIBSection
+MATCH: ./Program/Image.dll
+CreateDIBSection
+MATCH: ./Program/Magic.exe
+D:\Newmagic\multiplayer\sidlib\Pcxw.c
+D:\Newmagic\multiplayer\sid\glue.c
+File-> %s, Line-> %d
+Assertion Error
+D:\Newmagic\multiplayer\sid\Ai.c
+CreateDIBSection
+MATCH: ./Program/Shandalar.exe
+D:\Newmagic\multiplayer\NedCard\Catalog.c
+D:\Newmagic\multiplayer\NedCard\Catalog.c
+D:\Newmagic\multiplayer\NedCard\Palette.c
+File-> %s, Line-> %d
+Assertion Error
+File-> %s, Line-> %d
+Assertion Error
+D:\Newmagic\multiplayer\sid\Ai.c
+D:\Newmagic\multiplayer\sid\iniFile.c
+D:\Newmagic\multiplayer\sid\iniFile.c
+D:\Newmagic\multiplayer\sid\Test.c
+D:\Newmagic\multiplayer\sid\Test.c
+D:\Newmagic\multiplayer\sid\glue.c
+D:\Newmagic\multiplayer\sid\glue.c
+D:\Newmagic\multiplayer\NedCard\haar.c
+D:\Newmagic\multiplayer\NedCard\haar.c
+D:\Newmagic\multiplayer\NedCard\haar.c
+D:\Newmagic\multiplayer\sid\Minit.c
+WM_CREATE CreateDIBSection
+D:\NewMagic\sources\sidlib\lib.c
+D:\NewMagic\sources\sidlib\text.c
+D:\NewMagic\sources\sidlib\sprite.c
+D:\NewMagic\sources\sidlib\Fileio.c
+D:\NewMagic\sources\sidlib\Pcxw.c
+CreateDIBSection
+MATCH: ./Program/FaceMaker-nores.exe
+File-> %s, Line-> %d
+Assertion Error
+File-> %s, Line-> %d
+Assertion Error
+D:\NewMagic\Sources\1player\FaceMaker\code\test.c
+WM_CREATE CreateDIBSection
+D:\NewMagic\sources\sidlib\lib.c
+D:\NewMagic\sources\sidlib\text.c
+D:\NewMagic\sources\sidlib\sprite.c
+D:\NewMagic\sources\sidlib\Fileio.c
+D:\NewMagic\sources\sidlib\Pcxw.c
+CreateDIBSection
+MATCH: ./Facemaker/Facemaker.exe
+D:\NewMagic\1player\FaceMaker\code\Test.c
+D:\NewMagic\1player\FaceMaker\code\Test.c
+File-> %s, Line-> %d
+Assertion Error
+File-> %s, Line-> %d
+Assertion Error
+WM_CREATE CreateDIBSection
+D:\NewMagic\sources\sidlib\lib.c
+D:\NewMagic\sources\sidlib\text.c
+D:\NewMagic\sources\sidlib\sprite.c
+D:\NewMagic\sources\sidlib\Fileio.c
+D:\NewMagic\sources\sidlib\Pcxw.c
+CreateDIBSection
+D:\NewMagic\1player\FaceMaker\code\new___Wi\FaceMaker.pdb
+MATCH: ./Drawcardlib.dll
+CreateDIBSection
+_CreateDIBSection@24
+__imp__CreateDIBSection@24
+MATCH: ./Shandalar.exe
+D:\Newmagic\multiplayer\NedCard\Catalog.c
+D:\Newmagic\multiplayer\NedCard\Catalog.c
+D:\Newmagic\multiplayer\NedCard\Palette.c
+File-> %s, Line-> %d
+Assertion Error
+File-> %s, Line-> %d
+Assertion Error
+D:\Newmagic\multiplayer\sid\Ai.c
+D:\Newmagic\multiplayer\sid\iniFile.c
+D:\Newmagic\multiplayer\sid\iniFile.c
+D:\Newmagic\multiplayer\sid\Test.c
+D:\Newmagic\multiplayer\sid\Test.c
+D:\Newmagic\multiplayer\sid\glue.c
+D:\Newmagic\multiplayer\sid\glue.c
+D:\Newmagic\multiplayer\NedCard\haar.c
+D:\Newmagic\multiplayer\NedCard\haar.c
+D:\Newmagic\multiplayer\NedCard\haar.c
+D:\Newmagic\multiplayer\sid\Minit.c
+WM_CREATE CreateDIBSection
+D:\NewMagic\sources\sidlib\lib.c
+D:\NewMagic\sources\sidlib\text.c
+D:\NewMagic\sources\sidlib\sprite.c
+D:\NewMagic\sources\sidlib\Fileio.c
+D:\NewMagic\sources\sidlib\Pcxw.c
+CreateDIBSection
+MATCH: ./Editor/SkyMagicEditor.exe
+CreateDIBSection
+MATCH: ./FaceMaker-nores.exe
+File-> %s, Line-> %d
+Assertion Error
+File-> %s, Line-> %d
+Assertion Error
+D:\NewMagic\Sources\1player\FaceMaker\code\test.c
+WM_CREATE CreateDIBSection
+D:\NewMagic\sources\sidlib\lib.c
+D:\NewMagic\sources\sidlib\text.c
+D:\NewMagic\sources\sidlib\sprite.c
+D:\NewMagic\sources\sidlib\Fileio.c
+D:\NewMagic\sources\sidlib\Pcxw.c
+CreateDIBSection

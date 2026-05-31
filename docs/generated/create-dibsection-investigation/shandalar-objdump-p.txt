@@ -1,0 +1,507 @@
+
+Program/Shandalar.exe:	file format coff-i386
+Characteristics 0x10f
+	relocations stripped
+	executable
+	line numbers stripped
+	symbols stripped
+	32 bit words
+
+Time/Date               Tue Mar 24 11:38:05 1998
+Magic                   010b	(PE32)
+MajorLinkerVersion      4
+MinorLinkerVersion      20
+SizeOfCode              0017dc00
+SizeOfInitializedData   0040e800
+SizeOfUninitializedData 00000000
+AddressOfEntryPoint     0017e970
+BaseOfCode              00001000
+BaseOfData              0017f000
+ImageBase               00400000
+SectionAlignment        00001000
+FileAlignment           00000200
+MajorOSystemVersion     4
+MinorOSystemVersion     0
+MajorImageVersion       0
+MinorImageVersion       0
+MajorSubsystemVersion   4
+MinorSubsystemVersion   0
+Win32Version            00000000
+SizeOfImage             00591000
+SizeOfHeaders           00000400
+CheckSum                00000000
+Subsystem               00000002	(Windows GUI)
+DllCharacteristics      00000000
+SizeOfStackReserve      00100000
+SizeOfStackCommit       00001000
+SizeOfHeapReserve       00100000
+SizeOfHeapCommit        00001000
+LoaderFlags             00000000
+NumberOfRvaAndSizes     00000010
+
+The Data Directory
+Entry 0 0017f1d0 0000011a Export Directory [.edata (or where ever we found it)]
+Entry 1 00587000 0000012c Import Directory [parts of .idata]
+Entry 2 0058b000 000052a0 Resource Directory [.rsrc]
+Entry 3 00000000 00000000 Exception Directory [.pdata]
+Entry 4 00000000 00000000 Security Directory
+Entry 5 00000000 00000000 Base Relocation Directory [.reloc]
+Entry 6 00000000 00000000 Debug Directory
+Entry 7 00000000 00000000 Description Directory
+Entry 8 00000000 00000000 Special Directory
+Entry 9 00000000 00000000 Thread Storage Directory [.tls]
+Entry a 00000000 00000000 Load Configuration Directory
+Entry b 00000000 00000000 Bound Import Directory
+Entry c 0058770c 000005e0 Import Address Table Directory
+Entry d 00000000 00000000 Delay Import Directory
+Entry e 00000000 00000000 CLR Runtime Header
+Entry f 00000000 00000000 Reserved
+
+The Import Tables:
+  lookup 005872d0 time 00000000 fwd 00000000 name 0058802c addr 005878b0
+
+    DLL Name: KERNEL32.dll
+    Hint/Ord  Name
+         320  GetThreadPriority
+          79  DeviceIoControl
+         222  GetDriveTypeA
+         323  GetThreadTimes
+         572  SuspendThread
+         473  ReleaseMutex
+         230  GetExitCodeThread
+         151  FreeLibrary
+         478  ResumeThread
+         613  WaitForSingleObject
+         277  GetProcAddress
+         267  GetPrivateProfileIntA
+         324  GetTickCount
+         295  GetStartupInfoA
+         253  GetModuleHandleA
+         331  GetVersion
+         440  OutputDebugStringA
+         558  SetThreadPriority
+         212  GetCurrentThread
+          75  DeleteCriticalSection
+         376  InitializeCriticalSection
+          23  CloseHandle
+         466  ReadFile
+         236  GetFileSize
+          48  CreateFileA
+         397  LeaveCriticalSection
+          87  EnterCriticalSection
+         107  ExitThread
+         570  Sleep
+         251  GetModuleFileNameA
+         417  LockResource
+         403  LoadResource
+         136  FindResourceA
+         590  UnmapViewOfFile
+         418  MapViewOfFile
+          49  CreateFileMappingA
+         332  GetVersionExA
+         273  GetPrivateProfileStringA
+         146  FormatMessageA
+         668  lstrlenA
+         618  WinExec
+          66  CreateThread
+          84  DuplicateHandle
+         210  GetCurrentProcess
+         218  GetDiskFreeSpaceA
+         336  GetWindowsDirectoryA
+          36  CopyFileA
+         208  GetCurrentDirectoryA
+         398  LoadLibraryA
+
+  lookup 00587510 time 00000000 fwd 00000000 name 00588792 addr 00587af0
+
+    DLL Name: USER32.dll
+    Hint/Ord  Name
+         306  GetUpdateRect
+           9  BeginPaint
+         358  IsRectEmpty
+         201  EqualRect
+         206  FindWindowExA
+         459  ReleaseCapture
+         176  EnableMenuItem
+          48  CheckMenuItem
+         493  SetCursorPos
+          23  ChangeDisplaySettingsA
+         307  GetUpdateRgn
+         435  PostQuitMessage
+          18  CallWindowProcA
+         331  InflateRect
+         411  ModifyMenuA
+         461  RemoveMenu
+         610  wsprintfA
+         178  EnableWindow
+          50  CheckRadioButton
+         242  GetDlgCtrlID
+         520  SetRectEmpty
+         522  SetScrollPos
+         294  GetScrollRange
+         293  GetScrollPos
+         523  SetScrollRange
+         496  SetDlgItemInt
+         244  GetDlgItemInt
+         210  FrameRect
+         583  UnionRect
+         356  IsIconic
+         482  SetCapture
+         180  EndDialog
+         204  FillRect
+         142  DialogBoxParamA
+         243  GetDlgItem
+         471  SendDlgItemMessageA
+         556  ShowWindow
+         473  SendMessageA
+         500  SetFocus
+         354  IsDlgButtonChecked
+         544  SetWindowTextA
+          47  CheckDlgButton
+         538  SetWindowLongA
+         433  PostMessageA
+         215  GetAsyncKeyState
+         404  MessageBeep
+         131  DeleteMenu
+          84  CreatePopupMenu
+         137  DestroyMenu
+         216  GetCapture
+         269  GetMenuItemCount
+           4  AppendMenuA
+          54  ClientToScreen
+         573  TrackPopupMenu
+         519  SetRect
+         247  GetDoubleClickTime
+         314  GetWindowLongA
+         431  PeekMessageA
+         405  MessageBoxA
+         604  WinHelpA
+          10  BringWindowToTop
+          85  CreateWindowExA
+         277  GetMessageA
+         366  LoadAcceleratorsA
+         579  TranslateMessage
+         300  GetSystemMetrics
+         144  DispatchMessageA
+         576  TranslateAcceleratorA
+         362  IsWindowVisible
+         136  DestroyIcon
+         237  GetCursorPos
+         541  SetWindowPos
+         317  GetWindowRect
+         413  MoveWindow
+         365  KillTimer
+         533  SetTimer
+         421  OffsetRect
+         591  UpdateWindow
+         607  WindowFromPoint
+         368  LoadBitmapA
+         442  PtInRect
+         460  ReleaseDC
+         313  GetWindowDC
+         170  DrawTextA
+         400  MapWindowPoints
+         285  GetParent
+         469  ScrollWindow
+          64  CopyRect
+           1  AdjustWindowRect
+         138  DestroyWindow
+         466  ScreenToClient
+         491  SetCursor
+         481  SetActiveWindow
+         238  GetDC
+         542  SetWindowRgn
+         161  DrawFocusRect
+         245  GetDlgItemTextA
+         485  SetClassLongA
+         280  GetMessageTime
+         248  GetFocus
+         390  LockWindowUpdate
+         501  SetForegroundWindow
+         205  FindWindowA
+         497  SetDlgItemTextA
+         323  GetWindowThreadProcessId
+         311  GetWindow
+         225  GetClassNameA
+         552  ShowCursor
+         319  GetWindowTextA
+         228  GetClientRect
+         182  EndPaint
+         338  InvalidateRect
+         128  DefWindowProcA
+         374  LoadIconA
+         370  LoadCursorA
+         445  RegisterClassA
+         257  GetKeyState
+         184  EnumChildWindows
+
+  lookup 005871b0 time 00000000 fwd 00000000 name 00588bc0 addr 00587790
+
+    DLL Name: GDI32.dll
+    Hint/Ord  Name
+         312  RealizePalette
+         279  LPtoDP
+         200  GetDeviceCaps
+         371  SetTextColor
+         368  SetSystemPaletteUse
+         369  SetTextAlign
+          70  DeleteObject
+         338  SetBkMode
+          44  CreateFontIndirectA
+         251  GetStockObject
+          64  CreateSolidBrush
+         388  TextOutA
+          65  DPtoLP
+         322  RestoreDC
+          56  CreatePenIndirect
+         360  SetPixel
+          25  CreateBitmap
+           6  AnimatePalette
+         362  SetPixelV
+         242  GetPixel
+          27  CreateBrushIndirect
+          43  CreateFontA
+          58  CreatePolygonRgn
+         178  GetCharABCWidthsA
+         184  GetCharWidthA
+         364  SetROP2
+         337  SetBkColor
+         316  RemoveFontResourceA
+           2  AddFontResourceA
+         345  SetDIBitsToDevice
+         144  GdiGetBatchLimit
+         164  GdiSetBatchLimit
+          75  Ellipse
+          60  CreateRectRgnIndirect
+         329  SelectClipRgn
+          48  CreateHatchBrush
+         288  OffsetViewportOrgEx
+          59  CreateRectRgn
+         313  RectInRegion
+         315  Rectangle
+          98  ExtTextOutA
+         343  SetDIBColorTable
+         332  SelectPalette
+         264  GetTextExtentPointA
+          10  BitBlt
+         392  UnrealizeObject
+         262  GetTextExtentPoint32A
+          32  CreateDCA
+         268  GetTextMetricsA
+          53  CreatePalette
+         359  SetPaletteEntries
+         344  SetDIBits
+         383  StretchBlt
+          31  CreateCompatibleDC
+          36  CreateDIBSection
+          67  DeleteDC
+         373  SetViewportExtEx
+         331  SelectObject
+         367  SetStretchBltMode
+         277  IntersectClipRect
+         284  MoveToEx
+         281  LineTo
+          55  CreatePen
+         240  GetPaletteEntries
+         143  GdiFlush
+         235  GetObjectA
+         378  SetWindowOrgEx
+         374  SetViewportOrgEx
+         324  SaveDC
+         354  SetMapMode
+         377  SetWindowExtEx
+
+  lookup 00587700 time 00000000 fwd 00000000 name 00588bee addr 00587ce0
+
+    DLL Name: comdlg32.dll
+    Hint/Ord  Name
+           7  GetFileTitleA
+          11  GetSaveFileNameA
+
+  lookup 0058712c time 00000000 fwd 00000000 name 00588c7e addr 0058770c
+
+    DLL Name: ADVAPI32.dll
+    Hint/Ord  Name
+         279  RegCloseKey
+         310  RegQueryValueExA
+         321  RegSetValueExA
+         282  RegCreateKeyA
+         301  RegOpenKeyA
+         283  RegCreateKeyExA
+         296  RegFlushKey
+         302  RegOpenKeyExA
+
+  lookup 00587508 time 00000000 fwd 00000000 name 00588c9e addr 00587ae8
+
+    DLL Name: SHELL32.dll
+    Hint/Ord  Name
+          49  SHAppBarMessage
+
+  lookup 005876ec time 00000000 fwd 00000000 name 00588cec addr 00587ccc
+
+    DLL Name: WINMM.dll
+    Hint/Ord  Name
+         152  timeKillEvent
+         148  timeEndPeriod
+         147  timeBeginPeriod
+         153  timeSetEvent
+
+  lookup 00587150 time 00000000 fwd 00000000 name 00588cf6 addr 00587730
+
+    DLL Name: COMCTL32.dll
+    Hint/Ord  Name
+          17
+
+  lookup 00587500 time 00000000 fwd 00000000 name 00588d14 addr 00587ae0
+
+    DLL Name: MSVFW32.dll
+    Hint/Ord  Name
+          42  MCIWndCreateA
+
+  lookup 00587190 time 00000000 fwd 00000000 name 00588da6 addr 00587770
+
+    DLL Name: DrawCardLib.dll
+    Hint/Ord  Name
+           4  DrawManaText
+           0  CalcDrawManaText
+           2  DrawCardBack
+           3  DrawFullCard
+           1  DestroyAllCardBackgrounds
+           5  DrawSmallCard
+           6  DrawSmallCardTitle
+
+  lookup 00587188 time 00000000 fwd 00000000 name 00588dc8 addr 00587768
+
+    DLL Name: DECKDLL.dll
+    Hint/Ord  Name
+           0  DeckBuilderMain
+
+  lookup 00587170 time 00000000 fwd 00000000 name 00588e24 addr 00587750
+
+    DLL Name: CdTools.dll
+    Hint/Ord  Name
+           5  IsCDDrive
+           2  CheckDoPCD
+           1  Autoplay_ShutDown
+           4  CheckSotaCD
+           0  Autoplay_Restore
+
+  lookup 00587158 time 00000000 fwd 00000000 name 00588e92 addr 00587738
+
+    DLL Name: CardArtLib.dll
+    Hint/Ord  Name
+           1  DestroyAllSmallArts
+           0  DestroyAllBigArts
+           5  DrawSmallArt
+           4  DrawBigArt
+          11  ReloadBigArtIfWrongSize
+
+  lookup 00587398 time 00000000 fwd 00000000 name 00589132 addr 00587978
+
+    DLL Name: MSVCRT.dll
+    Hint/Ord  Name
+         428  _spawnl
+         198  _except_handler3
+         179  _controlfp
+         110  __p__fmode
+         105  __p__commode
+         127  __set_app_type
+         129  __setusermatherr
+          88  __getmainargs
+         154  _adjust_fdiv
+         103  __p__acmdln
+          72  _XcptFilter
+         267  _initterm
+         385  _onexit
+          85  __dllonexit
+         207  _exit
+         320  _lseek
+         587  fgetc
+         458  _tell
+         383  _msize
+         609  fwrite
+         656  memchr
+         530  _write
+         419  _setjmp3
+         208  _expand
+         162  _beginthread
+         671  qsort
+         192  _endthread
+         163  _beginthreadex
+         381  _mkdir
+         692  strcoll
+         196  _errno
+         574  clock
+         718  tolower
+         687  srand
+          98  __p___argv
+         651  longjmp
+         175  _close
+         386  _open
+         403  _read
+         476  _vsnprintf
+         715  time
+         157  _assert
+         580  exit
+         237  _ftol
+         577  ctime
+         702  strrchr
+         657  memcmp
+         699  strncmp
+         700  strncpy
+         694  strcspn
+         673  rand
+         436  _splitpath
+         570  bsearch
+         703  strspn
+         652  malloc
+         600  fread
+         601  free
+         660  memset
+         659  memmove
+         560  abs
+         273  _isctype
+         114  __p__pctype
+         100  __p___mb_cur_max
+         688  sscanf
+         690  strchr
+         698  strncat
+         595  fprintf
+         607  ftell
+         218  _fileno
+         216  _filelength
+         245  _getcwd
+         605  fseek
+         589  fgets
+         594  fopen
+         604  fscanf
+         568  atoi
+         691  strcmp
+         583  fclose
+         697  strlen
+         658  memcpy
+         689  strcat
+         448  _strnicmp
+         169  _chdir
+         444  _stricmp
+         440  _strcmpi
+         446  _strlwr
+         693  strcpy
+         685  sprintf
+         304  _itoa
+
+Export Table:
+ DLL name: shandalar.exe
+ Ordinal base: 1
+ Ordinal      RVA  Name
+       1 0x157b2d  CardIDFromType
+       2 0x157b6a  CardInDeck
+       3 0x157aa9  CardTypeFromID
+       4 0x1863a4  Gold
+       5 0x1863c0  Scards
+       6  0xf1bcc  SellPrice
+       7 0x157b9b  SetCardInDeck
+       8 0x57f1a4  _OpponFace
+       9 0x57f1ac  _PlayerFace
+      10 0x3490e8  _currentDeck
+      11 0x57f1c0  deck

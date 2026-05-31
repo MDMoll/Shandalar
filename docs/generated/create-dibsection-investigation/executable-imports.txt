@@ -1,0 +1,34 @@
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:    DLL Name: user32.dll
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:    DLL Name: advapi32.dll
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:    DLL Name: comctl32.dll
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:    DLL Name: deckdll.dll
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:    DLL Name: drawcardlib.dll
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:    DLL Name: gdi32.dll
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:          51  CreateDIBSection
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:          19  BitBlt
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:    DLL Name: kernel32.dll
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:    DLL Name: msvcrt.dll
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:    DLL Name: msvfw32.dll
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:    DLL Name: version.dll
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:    DLL Name: winmm.dll
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:    DLL Name: comdlg32.dll
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:    DLL Name: manalinkeh.dll
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt:    DLL Name: manalinkex.dll
+docs/generated/create-dibsection-investigation/magic-objdump-p.txt: DLL name: Magic.exe
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:    DLL Name: KERNEL32.dll
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:    DLL Name: USER32.dll
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:    DLL Name: GDI32.dll
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:          10  BitBlt
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:          36  CreateDIBSection
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:    DLL Name: comdlg32.dll
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:    DLL Name: ADVAPI32.dll
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:    DLL Name: SHELL32.dll
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:    DLL Name: WINMM.dll
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:    DLL Name: COMCTL32.dll
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:    DLL Name: MSVFW32.dll
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:    DLL Name: DrawCardLib.dll
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:    DLL Name: DECKDLL.dll
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:    DLL Name: CdTools.dll
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:    DLL Name: CardArtLib.dll
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:    DLL Name: MSVCRT.dll
+docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt: DLL name: shandalar.exe

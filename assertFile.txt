@@ -1,3 +1,0 @@
-Fri Sep 30 11:58:05 2016
-File-> D:\NewMagic\sources\sidlib\lib.c, Line-> 315
-WM_CREATE CreateDIBSection

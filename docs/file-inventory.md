@@ -1,0 +1,169 @@
+# File Inventory
+
+Generated from local inspection on 2026-05-30. Counts include tracked and
+working tree files visible in the checkout at the time of the inventory pass.
+The later limited reorganization moved selected root files into `archive/` and
+added a few docs without changing runtime launch targets or asset folders. A
+follow-up start-color assertion investigation added `Program/FaceMaker.exe` as
+a copy of the already tracked `Program/FaceMaker-nores.exe`, plus FaceMaker
+support files from `Manalink3/Program/`. A later CrossOver pass established
+that bottle `MTG` launches root `C:\Shandalar\Shandalar.exe` by default; direct
+`C:\Shandalar\Program\Shandalar.exe` fails there because `Program\zlib.dll` is
+absent. A follow-up CrossOver pass set app-default desktop/`Version=win8` for
+`Shandalar.exe`, `Magic.exe`, and `FaceMaker.exe`, and verified Shandalar main
+menu plus direct FaceMaker startup. A later binary patch to root and
+`Program/Shandalar.exe` passed the reported start-color crash point in
+CrossOver smoke testing from the repo path, the fresh bottle-local
+`C:\Shandalar` path, and the older `MTG` shortcut path. A later follow-up
+patched the active root and `Program` FaceMaker helpers at their own
+`CreateDIBSection` wrapper; the `*-nores.exe` files remain preserved as
+unpatched Korath/no-resolution references. Later Shandalar follow-ups patched
+the name-entry default buffer, name-editor bypass/fallback, and same-arrow adventure-map stop behavior,
+changing the active Shandalar hash from the hSection-only
+`73aa1400ddc452462f4e714e349ff06d4564c133408cf2ab10e576ae65d441b9` through the
+name-entry-only `bd784cc248d08455270a6bfae5004ead8f9723d8017f8db152add113e8d3a9db`
+and the name-seed-plus-movement value `155a668c72867bd1274410eb05ca05fbb7bd9bed843b42d1583ea536805a4aaf` to the current combined-patch
+`ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b`.
+
+## Summary
+
+| Metric | Value |
+| --- | --- |
+| Total files from `find . -type f` | 52,000 |
+| Largest top-level directory by size | `.git` at about 1.1G |
+| Largest non-git content directories | `CardArtManalink` about 565M, `Program` about 338M, `Mods` about 219M, `Manalink3` about 217M |
+| Dominant file types | `.dck`, `.jpg`, `.pic`, `.png`, `.spr`, `.ogg`, `.bmp`, `.wav`, `.c` |
+
+## Top Directories by File Count
+
+| Directory | File count |
+| --- | ---: |
+| `CardArtManalink` | 19,363 |
+| `Manalink3` | 11,934 |
+| `Mods` | 8,087 |
+| `Playdeck` | 4,283 |
+| `CardArtNew` | 3,628 |
+| `Program` | 1,546 |
+| `Cardart` | 382 |
+| `src` | 320 |
+| `Exp1art` | 287 |
+| `Duelsounds` | 159 |
+| `Duelart` | 157 |
+| `Playface` | 154 |
+| `Statwin` | 120 |
+| `Sound` | 111 |
+
+## Top Directories by Size
+
+| Directory | Approx size |
+| --- | ---: |
+| `.git` | 1.1G |
+| `CardArtManalink` | 565M |
+| `Program` | 338M |
+| `Mods` | 219M |
+| `Manalink3` | 217M |
+| `Statwin` | 113M |
+| `CardArtNew` | 104M |
+| `Sound` | 92M |
+| `Cardart` | 81M |
+| `Duelart` | 39M |
+| `Exp1art` | 29M |
+| `Duelsounds` | 23M |
+| `magic_updater` | 18M |
+| `src` | 16M |
+| `archive` | Small; preserved generated/local/debug/historical files from the limited reorg. |
+
+## Extension Counts
+
+| Extension | Count | Likely role |
+| --- | ---: | --- |
+| `.dck` | 23,991 | Deck files. |
+| `.jpg` | 23,045 | Card/mod art. |
+| `.pic` | 1,109 | Legacy game image/resource files. |
+| `.png` | 718 | Card frames/icons/modern art resources. |
+| `.spr` | 679 | Legacy sprite resources. |
+| `.ogg` | 485 | Mod sound assets. |
+| `.bmp` | 378 | UI/art resources. |
+| `.wav` | 305 | Game sound assets. |
+| `.c` | 300 | Source. |
+| `.avi` | 143 | Video resources. |
+| `.pl` | 107 | Perl patch/updater scripts. |
+| `.txt` | 81 | Docs/config/string tables. |
+| `.csv` | 51 | Card/deck/rules data. |
+| `.dat` | 48 | Runtime data. |
+| `.asm` | 45 | Assembly source/patch code. |
+| `.dll` | 35 | Runtime or helper DLLs. |
+| `.exe` | 32 | Game/tool executables. |
+
+## Large Files
+
+| Path | Size | Notes |
+| --- | ---: | --- |
+| `.git/objects/pack/pack-*.pack` | 1.1G | Git object pack, not runtime content. |
+| `Mods/Art/Default Sonic 2014.7z` | 33M | Mod archive. Identical hash to `Manalink3/Mods/Art/Default Sonic 2014.7z`. |
+| `Cardart/Medart.cat` | 30M | Card art catalog, likely runtime-critical for some paths. |
+| `Shandalar.dll` | 17M | Root runtime DLL. |
+| `Program/Shandalar.dll` | 14M | Program runtime DLL. |
+| `magic_updater/Manalink.csv` | 13M | Updater/card data. |
+| `Program/magic_updater/Manalink.csv` | 13M | Nested updater/card data. |
+| `Cards.dat` | 7.6M | Root runtime card data. |
+| `Program/Cards.dat` | 7.0M | Program runtime card data. |
+| `ManalinkEh.dll` | 6.3M | Root Manalink DLL. |
+| `Program/ManalinkEh.dll` | 5.9M | Program Manalink DLL. |
+
+## Likely Generated or Local-State Files
+
+| Path | Evidence | Confidence |
+| --- | --- | --- |
+| `archive/generated-local/Duel.GID` | `file` reported `MS Windows help Bookmark`; `Duel.hlp` is the actual help file. | High |
+| `archive/generated-local/shandalar_dll.log` | Filename and `file` output identify a CSV-style log. | Medium |
+| `archive/debug-evidence/ML_Debug.txt` | Contains old `D:\Newmagic\...` source/debug paths. | Medium |
+| `archive/debug-evidence/assertFile.txt` | Contains one old assertion source path. | Medium |
+| `Mods/Art/_undo` | Launcher script defines `_undo` folders for mod rollback staging. | Medium |
+
+## Duplicate Observations
+
+| Observation | Evidence | Cleanup confidence |
+| --- | --- | --- |
+| `Program/Shandalar.exe` and root `Shandalar.exe` are identical. | Same active SHA-256: `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b`; hSection-only interim hash was `73aa1400ddc452462f4e714e349ff06d4564c133408cf2ab10e576ae65d441b9`; name-entry-only interim hash was `bd784cc248d08455270a6bfae5004ead8f9723d8017f8db152add113e8d3a9db`; name-seed-plus-movement hash was `155a668c72867bd1274410eb05ca05fbb7bd9bed843b42d1583ea536805a4aaf`; original pre-patch hash was `82c9b659dd131097b29931f0ed266c91d560103bc864d7eb6b806691d0dc9739`. | Medium for dedupe planning, not deletion; adjacent DLL/assets still differ, and copied CrossOver bottle installs may still have older unpatched copies. |
+| Active `Program/FaceMaker.exe` and root `FaceMaker.exe` are identical to each other but no longer identical to the no-resolution reference copies. | Active SHA-256: `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246`; reference no-resolution/Korath SHA-256: `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b`. The difference is the 11-byte `CreateDIBSection hSection = NULL` patch at file offset `0x5f40`. | Keep active and reference helpers until full character-creation testing chooses a canonical helper. |
+| `Program/FaceData.txt`, `Program/FaceButtons.txt`, and `Program/FaceArt/` match `Manalink3/Program/` after the fix. | `cmp` for text files and `diff -qr` for art directory. | Keep as runtime support for `Program/FaceMaker.exe`. |
+| `Program/Magic.exe` and root `Magic.exe` differ. | Different SHA-256 values. | Do not dedupe without launch comparison. |
+| `Program/zlib.dll` is absent while root `zlib.dll` is present. | Direct logged `MTG` launch of `C:\Shandalar\Program\Shandalar.exe` fails because `Program\zlib.dll` is missing. | Treat `Program/Shandalar.exe` as a deferred alternate CrossOver path until tested in a fixed copy. |
+| Some `Mods/` and `Manalink3/Mods/` archives are identical. | `Default Sonic 2014.7z` and `Modern Sarlack MtG.7z` matched SHA-256 in both trees. | Medium for future archive dedupe. |
+| Deck files repeat across many deck folders. | Duplicate filename counts show many `.dck` names appearing 10 times. | Low; content and folder context may matter. |
+| `src/` and `Program/src/` are similar but not identical. | `src/Makefile` and `Program/src/Makefile` have different SHA-256 and content. | Do not dedupe casually. |
+
+## Archive After Limited Reorg
+
+| Archive folder | Preserved files |
+| --- | --- |
+| `archive/generated-local/` | `Duel.GID`, `shandalar_dll.log` |
+| `archive/debug-evidence/` | `ML_Debug.txt`, `assertFile.txt` |
+| `archive/historical-docs/` | `README (2).txt`, `Readme13.txt`, `Readme132.txt`, `Readme201.txt` |
+| `archive/historical-links/` | `Gatheringnet.url`, `Microprose.url` |
+| `archive/local-helpers/` | `shandalar_homedoom.bat` |
+| `archive/backups/` | `Rogues_Org_BAK.csv` |
+
+## Likely Runtime-Critical Families
+
+Do not remove without a launch-copy test:
+
+| Family | Examples |
+| --- | --- |
+| Executables/DLLs | root `Shandalar.exe`, root `Magic.exe`, root DLLs, `Program/Shandalar.exe`, `Program/Magic.exe`, `Program/FaceMaker.exe`, `Program/*.dll` |
+| Runtime data | `Program/Cards.dat`, `Program/DBInfo.dat`, `Program/Rarity.dat`, `Program/Text.res` |
+| Art/resources | `Program/CardArt`, `Program/DuelArt`, `Program/Exp1Art`, `Program/ShellArt`, `Program/SPR*`, `Program/Statwin` |
+| Sound/video | `Program/Sound`, `Program/DuelSounds`, `.avi`, `.wav`, `.ogg` |
+| Decks/faces | `Program/decks`, `Playdeck`, `Decks*`, `Faces`, `PlayFace` |
+| Config/string tables | `Shandalar.ini`, `config.txt`, `Menus.txt`, `ManaLink.txt`, `UIStrings.txt`, `prompts*.txt`, `Program/FaceData.txt`, `Program/FaceButtons.txt` |
+
+## Likely Documentation, Source, and Tool Families
+
+| Family | Examples | Notes |
+| --- | --- | --- |
+| Current docs | `README.md`, `AGENTS.md`, `docs/`, `archive/README.md` | Maintained entry points for this cleanup/documentation pass. |
+| Historical docs | `archive/historical-docs/`, `ManaLink.txt`, `Program/ManaLink.txt`, `Manalink3/Program/ReadMe.txt` | Useful evidence, but not current launch guidance by default. |
+| Source and patch tooling | `src/`, `Program/src/`, `src/patches/` | Similar but not proven identical; do not dedupe casually. |
+| Updater tooling | `magic_updater/`, `Program/magic_updater/` | Perl/CSV updater snapshots. |
+| Utility tools | `PlayDeckAnalyser/`, `Editor/`, `Facemaker/`, root helper executables | Tool role varies; inspect before moving. |

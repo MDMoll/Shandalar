@@ -1,0 +1,33 @@
+# Gaps
+
+This file tracks unresolved work after the documentation and limited
+reorganization passes. It is intentionally conservative: entries are not proof
+of failure, only work that still needs direct testing or evidence.
+
+## Runtime and Launch Gaps
+
+| Gap | Current evidence | Next action |
+| --- | --- | --- |
+| Visible Windows launch test | Root `Shandalar.exe`, root `Magic.exe`, and `Program/Magic.exe` are present and PE32 GUI binaries. | Run each exact path from its own folder on native Windows and record UI result. |
+| Visible CrossOver launch test | Earlier CLI attempts from `Program/` in bottle `MTG` exited 53 with no stdout/stderr. Root `C:\Shandalar\Shandalar.exe` in `MTG` reached the main menu, but user retesting says the start-color/name issue persisted after the app-default Win8/desktop/pagefile changes and the first Shandalar-only patch. Active FaceMaker copies are patched too, direct patched FaceMaker startup rendered successfully, and Shandalar now has follow-up default-name seed, name-editor bypass/fallback, and same-arrow movement-stop patches. Local AppleScript, Wine SendKeys, and Swift/CoreGraphics attempts still could not drive the main menu from this machine. | Manually launch the patched `Shandalar.exe`, then confirm character creation, default-name acceptance, same-arrow map stop, save/load, and a duel. |
+| CrossOver duel-prompt freeze | User reports `Done`, `Trigger`, and `Decline` can stop accepting input after two or three turns. Current `MTG` test state keeps app-default `Version=win7` and uses desktop `Shandalar1440=1440x1080` after fullscreen was undesirable; this reintroduces a named virtual desktop and still needs a prompt-freeze retest. | Fully quit old CrossOver Shandalar windows, relaunch root `C:\Shandalar\Shandalar.exe` from `C:\Shandalar`, and play through several duel turns. If it still freezes, capture a live process sample while frozen before binary changes. |
+| Full start-color/gameplay verification | FaceMaker/no-resolution did not fix user testing. Both repo and `MTG` bottle-copy Shandalar ini files now use `Window = 2`; the local `MTG` bottle has `C:\pagefile.sys 512 1024`; `MTG` app-default `Version=win8` still was not enough. Root, `Program`, and local bottle-copy `Shandalar.exe` files are patched at offsets `0x1785b0`, `0xa1a42`, `0xa1acd`, and `0xa1af2`, plus movement hooks at `0x44398c`, `0x444a2b`, and `0x444aa7`; active root/Program `FaceMaker.exe` files are patched at offset `0x5f40`. Direct patched FaceMaker startup is verified, but Shandalar-spawned character creation/name bypass and adventure-map control are not visibly verified. | Test all five colors manually in the same bottle/settings; record whether character creation reaches the map with default `Player`, same-arrow stopping, and gameplay remain stable. |
+| Latest Wine log attachment | The current attachment set still only exposes the earlier CreateDIBSection investigation prompt/log plus unrelated text; no new Wine log dump was found under `/Users/mdmoll/.codex/attachments`. | If the issue persists after the combined Shandalar patch, attach or save the new log inside the repo or provide its exact path. |
+| `Facemaker-Korath.exe` comparison | No file by that name, nor any `*facemaker*korath*` file, was found under `/Users/mdmoll/Shandalar`. The known downloaded thread copy at `/private/tmp/FaceMaker-Korath-thread.exe` matches `FaceMaker-nores.exe` exactly. | If a new `Facemaker-Korath.exe` was intended, place it in the repo and rerun `shasum -a 256` plus `cmp`. |
+| Adventure map manual stop behavior | Static disassembly located the map movement loop around `0x444183` and the loop-exit path at `0x444a96`. A same-arrow stop patch is now installed: hooks at `0x44398c`, `0x444a2b`, and `0x444aa7` use code cave `0x46502d` and flag `0x583a2c`. | Visibly test arrow-key movement on the adventure map: after movement starts and at least one step completes, pressing the same direction key should stop movement instead of continuing to collision. |
+| `/SHANDSAVE` direct-load behavior | Explicit `C:\Shandalar\MAGIC3.SVE` argument was preserved in the CrossOver command line, but the log did not prove the save was opened or loaded directly. | Treat `/SHANDSAVE` as unverified; do not rely on it as a start-color bypass until a visible/manual load test proves it. |
+| `Shandalar.exe --help` capture | CLI help attempt produced no captured output in the local `MTG` bottle. | Capture visible UI/log output on Windows or CrossOver. |
+| Root vs `Program/` `Magic.exe` behavior | Same PE timestamp/import set but different SHA-256; root `Shandalar.exe` opens root `Magic.exe` in the logged `MTG` startup. | Test each exact path separately and record hashes/results. |
+| `Program/Shandalar.exe` CrossOver dependency gap | Direct `C:\Shandalar\Program\Shandalar.exe` launch in `MTG` fails because `Program\zlib.dll` is missing. | Fix only in a copy or with explicit approval; do not treat this as the current start-color retest path. |
+| Minimal runtime file set | Import tables and folder layout identify likely requirements only. | Use a copy of the repo and remove candidates there, not in-place. |
+
+## Repository and Build Gaps
+
+| Gap | Current evidence | Next action |
+| --- | --- | --- |
+| Full duplicate hash audit | Only sampled duplicate archives and known root/Program comparisons were checked. | Generate a full hash report outside normal docs if cleanup is requested. |
+| `src/` rebuild | `make -n` reached compile commands, then stopped on missing `src/card_id.h` and `functions/utility.obj` rule trouble. | Restore/generate missing build inputs and install the expected 32-bit MinGW/yasm toolchain in a build-focused pass. |
+| `Program/src/` vs `src/` relationship | The snapshots are similar but not identical. | Compare trees before deduping or choosing a canonical source tree. |
+| Old URL reachability | Stale-reference docs classify links from local evidence only. | Test network reachability only if the user asks for live-link validation. |
+| Archive removability | Limited reorg moved files but did not delete them. | Keep archived files until a separate removal audit is approved. |
+| Antivirus/security scan | No named scanner was run in this pass. | Use [docs/security-scan.md](security-scan.md) and record scanner/version/hash/results. |
