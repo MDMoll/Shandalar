@@ -13,12 +13,22 @@ and [cleanup-removed-files.md](cleanup-removed-files.md).
 | Recomputed after cleanup | 52,009 tracked files scanned; duplicate group and theoretical duplicate-byte counts unchanged. |
 | Updated docs and verifier | Runtime manifest, cleanup docs, inventory notes, generated evidence map, and `tools/verify-share-readiness.sh` now reflect that there are no tracked ignored files expected. |
 
+## Verified Duplicate Cleanup Follow-Up
+
+| Action | Result |
+| --- | --- |
+| Regenerated tracked duplicate groups with path-purpose classifications | 52,025 tracked files before removal; 10,798 duplicate SHA-256 groups; 436.0 MiB theoretical duplicate bytes. |
+| Removed an exact duplicate generated report | `docs/generated/safe-cleanup/post-cleanup-largest-duplicate-groups.tsv`, 2,344,775 bytes, kept `docs/generated/safe-cleanup/largest-duplicate-groups.tsv`. |
+| Recomputed after removal | 52,024 tracked files; 10,797 duplicate SHA-256 groups; 454,817,805 theoretical duplicate bytes. |
+| Quarantine-tested before removal | Disposable worktree `/private/tmp/shandalar-duplicate-cleanup-test-verified` moved the candidate into `_QUARANTINE_DUPLICATES/` while the kept report remained present. |
+| Rechecked archive duplicates | 15 `Mods/` vs `Manalink3/Mods/` archive pairs remain protected package-layout duplicates, not safe removals. |
+
 ## Why Large Duplicate Archives Stayed
 
 | Family | Decision | Evidence |
 | --- | --- | --- |
-| `Mods/Art/*.7z` vs `Manalink3/Mods/Art/*.7z` | `needs-human-decision` | Exact duplicate archives, but both root and `Manalink3` launchers enumerate their local `Mods/Art` archives. Removing either side could make that package layout incomplete. |
-| `Mods/Rogues/*.7z` vs `Manalink3/Mods/Rogues/*.7z` | `needs-human-decision` | Same package-layout issue as art archives. |
+| `Mods/Art/*.7z` vs `Manalink3/Mods/Art/*.7z` | `protected-package-layout` | Exact duplicate archives, but both root and `Manalink3` launchers enumerate their local `Mods/Art` archives. Removing either side could make that package layout incomplete. |
+| `Mods/Rogues/*.7z` vs `Manalink3/Mods/Rogues/*.7z` | `protected-package-layout` | Same package-layout issue as art archives. |
 | `Mods/Art/_undo` | `needs-human-decision` | Existing launcher logic defines `_undo` folders for rollback staging. |
 | `Program/` vs root or `Statwin/` assets | `needs-smoke-test` or `do-not-remove-runtime` | Both root and `Program/` launch surfaces are relevant, and UI/video/resource files are runtime-looking. |
 | Card art duplicate stores | `do-not-remove-runtime` | Art lookup trees may be alternate runtime layouts; exact hash matches do not prove either tree is unused. |

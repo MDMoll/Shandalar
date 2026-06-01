@@ -38,6 +38,30 @@ The duplicate numbers did not change because `CardArtNew/Thumbs.db` was not
 part of a duplicate hash group. See [cleanup-removed-files.md](cleanup-removed-files.md)
 and generated evidence under [generated/safe-cleanup/](generated/safe-cleanup/).
 
+## Verified Duplicate Cleanup Pass
+
+A later tracked duplicate cleanup pass on branch
+`codex/verified-duplicate-cleanup` classified every tracked duplicate group in
+[generated/duplicate-cleanup/duplicate-groups.tsv](generated/duplicate-cleanup/duplicate-groups.tsv)
+and removed one verified duplicate generated report:
+`docs/generated/safe-cleanup/post-cleanup-largest-duplicate-groups.tsv`.
+
+| Metric | Before | After | Delta |
+| --- | ---: | ---: | ---: |
+| Tracked files scanned | 52,025 | 52,024 | -1 |
+| Duplicate SHA-256 groups | 10,798 | 10,797 | -1 |
+| Files inside duplicate groups | 26,073 | 26,071 | -2 |
+| Redundant files if one copy per hash were kept | 15,275 | 15,274 | -1 |
+| Theoretical duplicate bytes if one copy per hash were kept | 457,162,580 | 454,817,805 | -2,344,775 |
+| Files removed | 0 | 1 | +1 |
+| Bytes removed | 0 | 2,344,775 | +2,344,775 |
+
+The removed file was a generated TSV exactly matching
+`docs/generated/safe-cleanup/largest-duplicate-groups.tsv` by SHA-256. No
+runtime assets, package archives, art, decks, DLLs, or executables were removed.
+See [duplicate-cleanup-verification.md](duplicate-cleanup-verification.md) and
+generated evidence under [generated/duplicate-cleanup/](generated/duplicate-cleanup/).
+
 ## Largest Duplicate Families
 
 These are grouped by the top-level directories that participate in each exact
@@ -45,7 +69,7 @@ duplicate hash group.
 
 | Top-level directories | Duplicate groups | Files in groups | Theoretical duplicate bytes | Cleanup confidence |
 | --- | ---: | ---: | ---: | --- |
-| `Manalink3`, `Mods` | 6,134 | 14,657 | 126.0 MiB | Medium: packaged mod archives and mod trees may intentionally mirror each other. |
+| `Manalink3`, `Mods` | 6,134 | 14,657 | 126.0 MiB | Protected package-layout duplicates: packaged mod archives and mod trees intentionally support a self-contained `Manalink3/` layout unless policy changes. |
 | `Program`, `Statwin` | 119 | 238 | 111.5 MiB | Low: `Statwin` files are runtime-looking UI/video assets and need launch-copy testing. |
 | `Mods`, `Program` | 252 | 578 | 60.3 MiB | Low: duplicates cross mod staging and runtime bundle paths. |
 | `CardArtManalink`, `CardArtNew` | 1,320 | 2,651 | 35.9 MiB | Low: card art stores may be alternate lookup trees. |

@@ -1,0 +1,2 @@
+removed_path	kept_path	sha256	size_bytes	evidence	confidence
+docs/generated/safe-cleanup/post-cleanup-largest-duplicate-groups.tsv	docs/generated/safe-cleanup/largest-duplicate-groups.tsv	c765aca06fa871fa2b0799a8d8283f93037af49a3a388e2a2326a29063b68b48	2344775	Removed with git rm after exact SHA-256 match, no maintained references outside generated evidence, and successful disposable worktree quarantine test. Kept report hash reverified after removal.	high

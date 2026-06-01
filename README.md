@@ -173,6 +173,7 @@ the detailed command/result table.
 | [docs/building.md](docs/building.md) | What appears buildable and current blockers. |
 | [docs/file-inventory.md](docs/file-inventory.md) | Counts, large files, duplicate observations, and runtime-critical file types. |
 | [docs/duplicate-audit.md](docs/duplicate-audit.md) | Full non-git SHA-256 duplicate summary and cleanup confidence. |
+| [docs/duplicate-cleanup-verification.md](docs/duplicate-cleanup-verification.md) | Verified duplicate removal evidence, protected families, archive policy, and quarantine result. |
 | [docs/cleanup-audit.md](docs/cleanup-audit.md) | Cleanup candidates with confidence and evidence. |
 | [docs/cleanup-removed-files.md](docs/cleanup-removed-files.md) | Exact safe cleanup removals and rollback notes. |
 | [docs/repo-cleanup-plan.md](docs/repo-cleanup-plan.md) | Current cleanup decision log and next cleanup batches. |
