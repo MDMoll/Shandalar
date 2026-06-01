@@ -25,18 +25,21 @@ a runtime package is actually needed.
 
 | Binary | Imported DLLs from `objdump -p` | Local adjacent DLLs | Dependency notes |
 | --- | --- | --- | --- |
-| `Program/Shandalar.exe` | `KERNEL32.dll`, `USER32.dll`, `GDI32.dll`, `comdlg32.dll`, `ADVAPI32.dll`, `SHELL32.dll`, `WINMM.dll`, `COMCTL32.dll`, `MSVFW32.dll`, `DrawCardLib.dll`, `DECKDLL.dll`, `CdTools.dll`, `CardArtLib.dll`, `MSVCRT.dll` | `Drawcardlib.dll`, `Deckdll.dll`, `CdTools.dll`, `CardArtLib.dll` | Uses classic Win32 UI, multimedia, Video for Windows, and MSVCRT. |
+| `Program/Shandalar.exe` | `KERNEL32.dll`, `USER32.dll`, `GDI32.dll`, `comdlg32.dll`, `ADVAPI32.dll`, `SHELL32.dll`, `WINMM.dll`, `COMCTL32.dll`, `MSVFW32.dll`, `DrawCardLib.dll`, `DECKDLL.dll`, `CdTools.dll`, `CardArtLib.dll`, `MSVCRT.dll` | `Drawcardlib.dll`, `Deckdll.dll`, `CdTools.dll`, `CardArtLib.dll`, `Image.dll`, `zlib.dll` | Uses classic Win32 UI, multimedia, Video for Windows, MSVCRT, and the card/image rendering dependency chain. |
 | `Program/Magic.exe` | `user32.dll`, `advapi32.dll`, `comctl32.dll`, `deckdll.dll`, `drawcardlib.dll`, `gdi32.dll`, `kernel32.dll`, `msvcrt.dll`, `msvfw32.dll`, `version.dll`, `winmm.dll`, `comdlg32.dll`, `manalinkeh.dll`, `manalinkex.dll` | `Deckdll.dll`, `Drawcardlib.dll`, `ManalinkEh.dll`, `ManalinkEx.dll` | Requires Manalink DLLs next to the executable. |
 | `Program/Shandalar.dll` | `Cardartlib.dll`, `Deckdll.dll`, `Drawcardlib.dll`, `GDI32.dll`, `KERNEL32.dll`, `msvcrt.dll`, `MSIMG32.DLL`, `USER32.dll`, `WINMM.DLL` | `CardArtLib.dll`, `Deckdll.dll`, `Drawcardlib.dll` | Uses `MSIMG32.DLL`; Windows/Wine usually provide it. |
 | `Program/ManalinkEh.dll` | `kernel32.dll`, `KERNEL32.dll`, `msvcrt.dll`, `USER32.dll` | none beyond system DLLs | Root `ManalinkEh.dll` imports more DLLs than the Program copy. |
 | `Program/ManalinkEx.dll` | `kernel32.dll`, `user32.dll`, `advapi32.dll` | none beyond system DLLs | Loaded by `Magic.exe`; root copy has a different import table. |
-| `Program/Drawcardlib.dll` | `Cardartlib.dll`, `image.dll`, `GDI32.dll`, `GDIPLUS.DLL`, `KERNEL32.dll`, `msvcrt.dll`, `MSIMG32.DLL`, `SHLWAPI.DLL`, `USER32.dll` | `CardArtLib.dll`, `Image.dll` | Card rendering helper. Root copy showed a different import set. |
+| `Program/Drawcardlib.dll` | `Cardartlib.dll`, `image.dll`, `GDI32.dll`, `GDIPLUS.DLL`, `KERNEL32.dll`, `msvcrt.dll`, `MSIMG32.DLL`, `SHLWAPI.DLL`, `USER32.dll` | `CardArtLib.dll`, `Image.dll`, `zlib.dll` | Card rendering helper. Root copy showed a different import set. |
 
-CrossOver `MTG` note: direct logged launch of
-`C:\Shandalar\Program\Shandalar.exe` fails before gameplay because
-`Program\zlib.dll` is missing and `Program\Image.dll` depends on it. Root
-`C:\Shandalar\Shandalar.exe` is the current copied-bottle Shandalar path because
-root `zlib.dll` and the root DLL set are present.
+CrossOver `MTG` note: the earlier direct logged launch of
+`C:\Shandalar\Program\Shandalar.exe` failed before gameplay because
+`Program\zlib.dll` was missing and `Program\Image.dll` depends on it. On
+2026-06-01, root `zlib.dll` was copied to `Program/zlib.dll` and to the local
+`MTG` copied install; all copies hash to
+`9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90`. Root
+`C:\Shandalar\Shandalar.exe` remains the primary copied-bottle Shandalar path
+until direct `Program/Shandalar.exe` launch and gameplay are visibly proven.
 
 ## Dependency Matrix Summary
 
@@ -45,7 +48,7 @@ root `zlib.dll` and the root DLL set are present.
 | `Program/Shandalar.exe` | PE32 GUI Intel 80386 | Win32 UI/system DLLs, `WINMM.dll`, `MSVFW32.dll`, `MSVCRT.dll`, local `DrawCardLib.dll`, `DECKDLL.dll`, `CdTools.dll`, `CardArtLib.dll` | No direct `VCRUNTIME`, `MSVCP`, `MFC`, `DDRAW`, or `D3D` imports found. | Use x86 runtimes only if a missing-DLL dialog/log points to them. |
 | `Program/Magic.exe` | PE32 GUI Intel 80386 | Win32 UI/system DLLs, `MSVFW32.dll`, `WINMM.dll`, local `deckdll.dll`, `drawcardlib.dll`, `manalinkeh.dll`, `manalinkex.dll` | No direct `VCRUNTIME`, `MSVCP`, `MFC`, `DDRAW`, or `D3D` imports found. | `ManalinkEh.dll` and `ManalinkEx.dll` must be available from the working directory/load path. |
 | `Program/Shandalar.dll` | PE32 DLL Intel 80386 | Local card/deck/rendering DLLs, `MSIMG32.DLL`, `WINMM.DLL`, `msvcrt.dll` | No direct `VCRUNTIME`, `MSVCP`, `MFC`, `DDRAW`, or `D3D` imports found. | Likely part of patched Shandalar runtime behavior. |
-| `Program/Drawcardlib.dll` | PE32 DLL Intel 80386 | `Cardartlib.dll`, `image.dll`, GDI/GDI+, `MSIMG32.DLL`, `SHLWAPI.DLL`, `msvcrt.dll` | GDI+ support may matter in older bottles if `GDIPLUS.DLL` is absent or incomplete. | Preserve `CardArtLib.dll` and `Image.dll` nearby. |
+| `Program/Drawcardlib.dll` | PE32 DLL Intel 80386 | `Cardartlib.dll`, `image.dll`, GDI/GDI+, `MSIMG32.DLL`, `SHLWAPI.DLL`, `msvcrt.dll` | GDI+ support may matter in older bottles if `GDIPLUS.DLL` is absent or incomplete. | Preserve `CardArtLib.dll`, `Image.dll`, and `zlib.dll` nearby. |
 
 ## Supporting DLL Imports
 
@@ -57,7 +60,8 @@ root `zlib.dll` and the root DLL set are present.
 | `Program/Statwin.dll` | `KERNEL32.dll`, `USER32.dll`, `GDI32.dll`, `MSVFW32.dll`, `MSVCRT.dll` | UI/video-adjacent helper. |
 | `Program/ManalinkEh.dll` | `kernel32.dll`, `KERNEL32.dll`, `msvcrt.dll`, `USER32.dll` | Manalink extension DLL imported by `Magic.exe`; patched for the Samite/Femeref/Kithkin damage-prevention activation freeze. |
 | `Program/ManalinkEx.dll` | `kernel32.dll`, `user32.dll`, `advapi32.dll` | Manalink extension DLL imported by `Magic.exe`. |
-| `Program/Deckdll.dll`, `Program/Image.dll` | No `DLL Name:` lines were emitted by local `objdump -p`. | Keep nearby anyway because they are direct imports or supporting DLLs. |
+| `Program/Deckdll.dll` | No `DLL Name:` lines were emitted by local `objdump -p`. | Keep nearby anyway because it is a direct import/supporting DLL. |
+| `Program/Image.dll` | Local load evidence showed a dependency on `zlib.dll`, even though local `objdump -p` did not emit useful `DLL Name:` lines for this file. | Keep `Image.dll` and adjacent `Program/zlib.dll` together. |
 
 ## What Was Not Found
 
@@ -90,6 +94,7 @@ Do not commit redistributable installers to this repo.
 | File | Why |
 | --- | --- |
 | Root `Shandalar.exe`, root `Magic.exe`, root DLLs including `zlib.dll` | Current copied CrossOver `MTG` launch path and adjacent dependencies. |
+| `Program/zlib.dll` | Byte-identical copy of root `zlib.dll` required by the `Program/Image.dll` dependency path; added to repo and local `MTG` copied install on 2026-06-01. |
 | `Program/Deckdll.dll`, `Program/Drawcardlib.dll`, `Program/CardArtLib.dll`, `Program/CdTools.dll` | Direct imports of `Program/Shandalar.exe`. |
 | Root and `Program/ManalinkEh.dll`, `Program/ManalinkEx.dll` | Direct imports of root/Program `Magic.exe`. Preserve the patched `ManalinkEh.dll` copies; root and `Program/` have different patch offsets and hashes. |
 | `Program/Shandalar.dll` | Loaded by strings evidence in `Shandalar.exe`; likely part of patched Shandalar behavior. |

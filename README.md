@@ -32,11 +32,13 @@ automation become the main work loop. See
 
 The repo root and `Program/` both contain runtime-looking files. Current
 CrossOver evidence points at the root copy for Shandalar in bottle `MTG`:
-`C:\Shandalar\Shandalar.exe` opens root `C:\Shandalar\Magic.exe`, while direct
-`C:\Shandalar\Program\Shandalar.exe` currently fails in that bottle because
-`Program\zlib.dll` is missing. The Manalink launcher still enters `Program/`
-for `Magic.exe`. The current `MTG` retest setting is app-default `win7` with a
-Wine virtual desktop named `Shandalar1440` at `1440x1080`; the separate
+`C:\Shandalar\Shandalar.exe` opens root `C:\Shandalar\Magic.exe`. The previous
+direct `C:\Shandalar\Program\Shandalar.exe` loader failure was traced to missing
+`Program\zlib.dll`; the repo and local `MTG` copied install now include a
+byte-identical copy of root `zlib.dll`, but full visible `Program/Shandalar.exe`
+gameplay is still unproven. The Manalink launcher still enters `Program/` for
+`Magic.exe`. The current `MTG` retest setting is app-default `win7` with a Wine
+virtual desktop named `Shandalar1440` at `1440x1080`; the separate
 `Shandalar-Win8-Test` bottle is comparison evidence, not the primary path.
 
 ## Launch Targets
@@ -45,7 +47,7 @@ Wine virtual desktop named `Shandalar1440` at `1440x1080`; the separate
 | --- | --- | --- |
 | `Shandalar.exe` | Shandalar adventure shell and duel path. | Same SHA-256 as `Program/Shandalar.exe`; patched for the start-color `CreateDIBSection` crash, default-name bypass/fallback, and same-arrow adventure-map stop behavior. |
 | `Magic.exe` | Duel executable opened by root `Shandalar.exe`. | Different SHA-256 from `Program/Magic.exe`; current CrossOver root launch opens this copy. Patched at `0x43c303`/`0x459bc8` so clicking an already-declared attacker before Done clears it from attack selection. Root `ManalinkEh.dll` is patched for the Samite/Femeref/Kithkin damage-prevention activation freeze. |
-| `Program/Shandalar.exe` | Alternate Shandalar copy. | Same SHA-256 as root `Shandalar.exe`; direct `MTG` launch currently fails because `Program/zlib.dll` is absent. |
+| `Program/Shandalar.exe` | Alternate Shandalar copy. | Same SHA-256 as root `Shandalar.exe`; `Program/zlib.dll` is now present and byte-identical to root `zlib.dll`. A bounded `MTG` direct launch stayed alive until alarm with no captured loader error, so the old missing-zlib cascade was not reproduced. Visible gameplay proof is still pending. |
 | `Program/Magic.exe` | Manalink / launcher duel executable. Treat as first-class, not optional. | Present, PE32 i386 GUI executable; launcher scripts enter `Program/` before running it. Has the same declared-attacker undo patch as root `Magic.exe`; `Program/ManalinkEh.dll` has the same Samite/Femeref/Kithkin handler patch at its own offset. |
 | `FaceMaker.exe` / `Program/FaceMaker.exe` | Character portrait/name helper launched during new-game setup. | Both active copies are based on the no-resolution/Korath helper, then patched at `0x5f40` so their `CreateDIBSection` wrapper also passes `hSection = NULL`. The reference `*-nores.exe` copies remain unpatched. |
 | `Manalink_Launcher.cmd` | Batch launcher/mod helper that enters `Program/` and starts `Magic.exe`. | Inspected, Windows-only batch file. |
@@ -62,7 +64,8 @@ Shandalar.exe
 ```
 
 Use `Program\Shandalar.exe` only when you are deliberately testing the
-alternate layout and have verified its adjacent DLLs.
+alternate layout and have verified its adjacent DLLs, including
+`Program\zlib.dll`.
 
 For command-line modes, see [docs/command-line.md](docs/command-line.md).
 
@@ -117,12 +120,12 @@ the detailed command/result table.
 | Issue | What to do |
 | --- | --- |
 | `Shandalar.exe --help` output was not captured locally. | See [docs/command-line.md](docs/command-line.md); test in a visible Windows/CrossOver session. |
-| `Program/` CrossOver launch attempts exited code 53 in the existing `MTG` bottle. | Do not use direct `C:\Shandalar\Program\Shandalar.exe` as the primary `MTG` retest until `Program\zlib.dll` and related DLL layout are resolved. |
+| Earlier `Program/` CrossOver launch attempts hit a missing-zlib loader cascade in `MTG`. | `Program\zlib.dll` has now been added to the repo and local `MTG` copied install, and a bounded direct launch no longer reproduced the immediate loader cascade. Keep root `C:\Shandalar\Shandalar.exe` as the primary gameplay path until visible Program-path rows prove otherwise. |
 | Duel prompts stop accepting `Done`, `Trigger`, or `Decline` in CrossOver. | Root and `Program/` `ManalinkEh.dll` are patched for the Samite/Femeref/Kithkin damage-prevention handler that can be reached by Femeref Healer during combat. The local `MTG` bottle copies were updated with backups; visible gameplay retesting still needs to confirm the Femeref Healer blocker scenario. |
 | Declared attacker mistakes are hard to undo. | Root and `Program/` `Magic.exe` now have a conservative attacker-selection undo patch, and the local `MTG` bottle copies were updated with backups. Before pressing Done, clicking an already-declared attacker should clear `STATE_ATTACKING`; unusual attack costs, attack triggers, and banding still need visible testing. See [docs/bugs/declared-attacker-undo.md](docs/bugs/declared-attacker-undo.md). |
 | Start-color `WM_CREATE CreateDIBSection` assertion, name-entry glitch, and map movement stop | FaceMaker/no-resolution and bottle-setting fixes did not solve the original issue. Root and `Program/` `Shandalar.exe` include a narrow `CreateDIBSection` compatibility patch, a default-name seed plus name-editor bypass/fallback, and a same-arrow movement-stop patch; the active FaceMaker copies have the same `hSection = NULL` patch at their own DIB wrapper. Direct patched FaceMaker startup is verified, and one visible default/first start-color path reached the adventure map. Remaining colors, save/load, and movement control still need visible retesting. See [docs/troubleshooting.md](docs/troubleshooting.md), [docs/bugs/create-dibsection-after-color.md](docs/bugs/create-dibsection-after-color.md), and [docs/adventure-map-movement.md](docs/adventure-map-movement.md). |
 | Runtime advice is mixed in old docs. | Use [docs/runtime-dependencies.md](docs/runtime-dependencies.md), which separates import evidence from historical notes. |
-| Security scan scope is narrow. | ClamAV reported no infected files for the 241 tracked security-scan targets, but that is not a broad safety or redistribution claim. See [docs/security-scan.md](docs/security-scan.md). |
+| Security scan scope is narrow. | ClamAV reported no infected files for the 228 tracked security-scan targets after adding `Program/zlib.dll`, but that is not a broad safety or redistribution claim. See [docs/security-scan.md](docs/security-scan.md). |
 | There are many duplicates and historical files. | Use [docs/cleanup-audit.md](docs/cleanup-audit.md). Nothing should be deleted without a manual test plan. |
 | Obvious non-runtime historical/local clutter was moved under `archive/`. | Use [archive/README.md](archive/README.md) and [docs/reorganization.md](docs/reorganization.md). Runtime root and `Program/` files were not archived. |
 

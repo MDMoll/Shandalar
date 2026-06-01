@@ -25,6 +25,7 @@ WINE = Path("/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wi
 EXPECTED_HASHES = {
     "Shandalar.exe": "ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b",
     "Program/Shandalar.exe": "ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b",
+    "Program/zlib.dll": "9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90",
     "Magic.exe": "5bf518d66342d79562efb1106449413ada06814a6c14818a1e3101fd470c82d1",
     "Program/Magic.exe": "0fb8b87fe35c8be037ae3419a9b9cd70a27df840ae6af6c7488c2685046a74fa",
     "FaceMaker.exe": "41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246",

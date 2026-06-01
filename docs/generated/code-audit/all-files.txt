@@ -24116,6 +24116,7 @@ docs/generated/safe-cleanup/tracked-files.txt
 docs/generated/safe-cleanup/tracked-large-files.tsv
 docs/generated/safe-cleanup/tracked-os-junk-candidates.txt
 docs/generated/security-scan/clamav-2026-05-31.md
+docs/generated/security-scan/clamav-2026-06-01.md
 docs/git-handoff.md
 docs/install-roots.md
 docs/magic-exe.md
@@ -51112,6 +51113,7 @@ Program/WINGAME.PIC
 Program/wiseman3.pic
 Program/WORLBAK1.PIC
 Program/WORLDS.SPR
+Program/zlib.dll
 prompts.txt
 promptsX1.txt
 promptsX2.txt

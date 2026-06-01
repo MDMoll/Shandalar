@@ -1,6 +1,7 @@
 # Codebase Health Audit
 
-Audit branch: `codex/deep-codebase-health-audit`.
+Audit branch: `codex/deep-codebase-health-audit`; B012 follow-up branch:
+`codex/fix-runtime-path-zlib`.
 
 This was a static/source/tooling pass. It did not launch Shandalar, did not run
 Wine/CrossOver, did not rebuild binaries, and did not modify runtime assets.
@@ -15,7 +16,7 @@ Generated evidence lives under
 
 | Doc | Relevant Claim | Verified? | Notes |
 | --- | --- | --- | --- |
-| `README.md` | Root plus `Program/` is the practical launch surface; `Program/Shandalar.exe` is risky in `MTG` due missing `zlib.dll`. | verified | Confirmed by existing docs and runtime string/path evidence. |
+| `README.md` | Root plus `Program/` is the practical launch surface; the former `Program/Shandalar.exe` missing-`zlib.dll` blocker in `MTG` is now fixed at the dependency-layout level. | verified | Confirmed by existing docs, runtime string/path evidence, and the 2026-06-01 `Program/zlib.dll` copy. |
 | `AGENTS.md` | Patched binaries must not be casually replaced. | verified | Patch sites are documented and included in the patch risk register. |
 | `docs/architecture.md` | `src/` is source/patch tooling, not an end-to-end rebuild proof. | verified | Build dry-runs support this. |
 | `docs/runtime-testing-policy.md` | GUI testing should stay bounded. | verified | This audit did no GUI testing. |
@@ -33,7 +34,7 @@ Generated evidence lives under
 | B003 | `src` and `Program/src` diverge. | verified | There is no single obvious source of truth. |
 | B006 | `CardArtLib` loader has unchecked file/read/allocation paths. | source-level suspicion only | Plausible crash path if data is missing or malformed. |
 | B010 | Draft parser uses unbounded `fscanf`. | source-level suspicion only | Plausible data-driven crash/corruption path. |
-| B012 | Direct `Program/Shandalar.exe` path lacks adjacent `zlib.dll` in `MTG`. | verified | User can hit loader failures by choosing the wrong path. |
+| B012 | Direct `Program/Shandalar.exe` path lacked adjacent `zlib.dll` in `MTG`; dependency layout is now fixed. | resolved for dependency layout and bounded loader-cascade check; gameplay still needs proof | The old loader cascade was not reproduced in the bounded launch, but alternate-path gameplay still needs visible evidence. |
 | B015 | Attacker undo patch may not reverse attack costs/triggers. | needs manual test | Feature needs gameplay boundaries before broader claims. |
 | B016 | Healer fix may not cover all damage-prevention handlers. | needs manual test | Related freeze class may have more cards. |
 
@@ -71,7 +72,7 @@ Generated evidence lives under
 | --- | --- | --- | --- | --- |
 | `codex/fix-build-blockers` | Make build status reproducible. | Header generation/copy plan, make rule fixes, output isolation. | `make -n`; isolated build if toolchain available. | moderate |
 | `codex/fix-tooling-safety` | Make historical scripts harder to misuse. | Add dry-run/output flags to `src/build.pl`; docs for `deploy.bat`. | Perl syntax tests; dry-run test. | moderate |
-| `codex/fix-path-handling` | Reduce launch/path confusion. | Program `zlib.dll` copy-test plan, exact launch matrix docs. | disposable-copy launches. | moderate |
+| `codex/fix-runtime-path-zlib` | Reduce launch/path confusion. | Add `Program/zlib.dll`, sync the same DLL into local `MTG`, update verifiers/docs. | hash/cmp checks, `verify-crossover-mtg-state`, one bounded exact Program launch. | moderate |
 | `codex/fix-gdi-error-reporting` | Improve graphics failure diagnostics. | Source-level checks around image/DIB/config loading. | build proof plus manual launch tests. | risky |
 | `codex/investigate-damage-prevention-handlers` | Find remaining freeze candidates. | Inventory `GAA_DAMAGE_PREVENTION` handlers. | source audit plus gameplay repros. | risky |
 | `codex/add-static-analysis-ci` | Add optional analyzers once build scope is stable. | cppcheck/semgrep configs. | analyzer reports without runtime changes. | safe |

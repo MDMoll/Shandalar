@@ -7,9 +7,11 @@ added a few docs without changing runtime launch targets or asset folders. A
 follow-up start-color assertion investigation added `Program/FaceMaker.exe` as
 a copy of the already tracked `Program/FaceMaker-nores.exe`, plus FaceMaker
 support files from `Manalink3/Program/`. A later CrossOver pass established
-that bottle `MTG` launches root `C:\Shandalar\Shandalar.exe` by default; direct
-`C:\Shandalar\Program\Shandalar.exe` fails there because `Program\zlib.dll` is
-absent. A historical CrossOver pass tried app-default desktop/`Version=win8`
+that bottle `MTG` launches root `C:\Shandalar\Shandalar.exe` by default. The
+earlier direct `C:\Shandalar\Program\Shandalar.exe` failure was traced to
+missing `Program\zlib.dll`; `Program/zlib.dll` is now present in the repo and
+local `MTG` copied install, but direct Program launch/gameplay still needs
+fresh proof. A historical CrossOver pass tried app-default desktop/`Version=win8`
 for `Shandalar.exe`, `Magic.exe`, and `FaceMaker.exe`, and verified Shandalar
 main menu plus direct FaceMaker startup, but did not prove a durable fix. The
 current `MTG` retest setting is app-default `Version=win7` with virtual desktop
@@ -148,7 +150,7 @@ describe Git history/storage, not game files.
 | Active `Program/FaceMaker.exe` and root `FaceMaker.exe` are identical to each other but no longer identical to the no-resolution helper copies. | Active SHA-256: `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246`; no-resolution/Korath SHA-256: `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b`. The difference is the 11-byte `CreateDIBSection hSection = NULL` patch at file offset `0x5f40`; a visible S2 run still observed `FaceMaker-nores.exe /S`. | Keep active and no-resolution helpers until full character-creation testing chooses a canonical helper. |
 | `Program/FaceData.txt`, `Program/FaceButtons.txt`, and `Program/FaceArt/` match `Manalink3/Program/` after the fix. | `cmp` for text files and `diff -qr` for art directory. | Keep as runtime support for `Program/FaceMaker.exe`. |
 | `Program/Magic.exe` and root `Magic.exe` differ. | Different SHA-256 values. | Do not dedupe without launch comparison. |
-| `Program/zlib.dll` is absent while root `zlib.dll` is present. | Direct logged `MTG` launch of `C:\Shandalar\Program\Shandalar.exe` fails because `Program\zlib.dll` is missing. | Treat `Program/Shandalar.exe` as a deferred alternate CrossOver path until tested in a fixed copy. |
+| `Program/zlib.dll` was absent while root `zlib.dll` was present. | Earlier direct logged `MTG` launch of `C:\Shandalar\Program\Shandalar.exe` failed because `Program\zlib.dll` was missing. `Program/zlib.dll` now matches root `zlib.dll` with SHA-256 `9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90`. | Dependency layout is fixed; treat `Program/Shandalar.exe` as a deferred alternate CrossOver path until bounded launch and visible gameplay are tested. |
 | `Statwin/*.tmp` and `Program/statwin/*.tmp` are mostly exact pairs, despite the temp-looking extension. | SHA-256 hashes match for the bitmap mask files; `statscrn.tmp` differs between root and Program. | Do not dedupe or archive by extension. |
 | `Mods/` and `Manalink3/Mods/` contained exact duplicate archives. | A targeted SHA-256 audit over `*.7z`, `*.zip`, and `*.rar` in both trees found 15 duplicate hashes covering all 30 archive files in that query; [install-roots.md](install-roots.md) made top-level `Mods/` canonical and those 15 `Manalink3/Mods/` archive copies were removed. | Resolved for duplicate archives; remaining package/runtime files are still protected. |
 | Deck files repeat across many deck folders. | A targeted SHA-256 audit over 492 `.dck` files in the main deck-family folders found 163 duplicate hashes covering 327 files. | High duplicate-file confidence, low cleanup confidence because content duplicates do not prove folder redundancy. |

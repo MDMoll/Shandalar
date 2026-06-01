@@ -16,7 +16,7 @@ and
 | Repo root plus top-level `Program/` | verified canonical active layout | README, AGENTS, install-root docs, launcher path behavior |
 | Top-level `Mods/` | verified canonical mod archive/staging root | `Manalink_Launcher.cmd` uses `%~dp0Mods` |
 | `Manalink3/` | verified historical/unsupported active root | install-root cleanup decision |
-| Direct `Program/Shandalar.exe` in CrossOver `MTG` | verified problematic | docs record missing `Program\zlib.dll` load failure |
+| Direct `Program/Shandalar.exe` in CrossOver `MTG` | dependency layout fixed, bounded launch passed loader-cascade check | earlier docs recorded missing `Program\zlib.dll`; 2026-06-01 added byte-identical `Program/zlib.dll` in repo and copied `MTG` install; bounded direct launch stayed alive until alarm with empty log |
 
 ## Runtime String Findings
 
@@ -35,7 +35,7 @@ and
 | --- | --- | --- | --- |
 | Wrong working directory for `Cards.dat`/art/sound | verified risk | basename and relative strings | launch exact paths from their intended folders only |
 | Root vs `Program` `Magic.exe` confusion | verified risk | different SHA-256 and launch paths | keep separate test rows and patch verification |
-| `Program/zlib.dll` absence | verified risk in `MTG` | existing logged failure | test fixed layout only in disposable copy |
+| `Program/zlib.dll` absence | resolved for dependency layout and bounded loader-cascade check | earlier logged failure; repo and local `MTG` copied install now include byte-identical `Program/zlib.dll`; 2026-06-01 direct launch stayed alive until alarm | leave full visible gameplay to manual rows before promoting the alternate path |
 | Launcher mutates local `Program/` and `Mods/` | verified | `Manalink_Launcher.cmd` uses `%~dp0` and deletes/copies local files | use cleanup test copies |
 | Hardcoded historical `c:\magic2k` scripts | verified | `src/build.pl`, `src/deploy.bat` | mark historical until dry-run guards exist |
 
@@ -43,7 +43,7 @@ and
 
 | Question | Evidence Needed |
 | --- | --- |
-| Can `Program/Shandalar.exe` be made a supported active path? | Add/copy missing adjacent DLLs in a disposable copy and run exact-path launch tests. |
+| Can `Program/Shandalar.exe` be made a supported active path? | The missing `Program/zlib.dll` dependency is now present and the bounded launch no longer reproduces the old loader cascade; visible gameplay rows are still required before promoting it. |
 | Which `Magic.exe` should be canonical? | Visible root and Program launch comparison with hashes recorded. |
 | Are any remaining `Manalink3/` files required by active root? | File tracing or launcher/source references from root layout. |
 | Which FaceMaker helper name is actually spawned in all new-game paths? | Manual character-creation test plus process/log evidence. |

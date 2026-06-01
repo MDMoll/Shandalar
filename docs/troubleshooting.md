@@ -60,7 +60,7 @@ active, and then a jump back to the normal handler body when it is active.
 | Display mode, bit depth, palette, or scaling mismatch. | Plausible; needs testing. |
 | Bad row/stride/buffer copy into a graphics surface. | Plausible from disassembly/registers. |
 | Missing or malformed resource loaded after color selection. | Possible; needs file trace. |
-| Wrong working directory or adjacent DLL layout. | Possible; current `MTG` evidence favors root `C:\Shandalar\Shandalar.exe`, while direct `C:\Shandalar\Program\Shandalar.exe` fails because `Program\zlib.dll` is missing. |
+| Wrong working directory or adjacent DLL layout. | Possible; current `MTG` evidence favors root `C:\Shandalar\Shandalar.exe`. The previous direct `C:\Shandalar\Program\Shandalar.exe` missing-`Program\zlib.dll` loader failure was fixed at the dependency-layout level on 2026-06-01, but visible direct-Program gameplay is still unproven. |
 | Missing `D:\NewMagic\sources...` path. | Unproven and unlikely without runtime trace evidence. |
 
 The `D:\NewMagic\sources...` part is probably a compile-time source path
@@ -72,6 +72,7 @@ unless file tracing proves the game is trying to load runtime files there.
 | Try | Why |
 | --- | --- |
 | In CrossOver bottle `MTG`, launch `C:\Shandalar\Shandalar.exe` from `C:\Shandalar`. | This is the installed shortcut target and the logged path that opens root `Magic.exe`; it also has the root DLLs present. |
+| For a bounded alternate-path test, launch `C:\Shandalar\Program\Shandalar.exe` from `C:\Shandalar\Program` after verifying `Program\zlib.dll`. | This specifically checks that the earlier `image.dll`/`DrawCardLib.dll`/`DECKDLL.dll` loader cascade is gone; it does not replace root-path gameplay testing. |
 | On Windows or fresh Wine/CrossOver, record whether you launch from repo root or `Program/`. | Both layouts exist and differ in adjacent DLLs/assets; path matters. |
 | Confirm `FaceMaker.exe` exists next to the active Shandalar launch path and has the documented `0x5f40` DIB patch. | This checkout now has active root and `Program` FaceMaker copies under the name Shandalar references; they are no-resolution/Korath-derived but no longer byte-identical to the reference `*-nores.exe` files. |
 | Confirm `FaceData.txt`, `FaceButtons.txt`, and face art exist next to the active FaceMaker path. | FaceMaker uses these local support files during character creation. |
@@ -131,7 +132,7 @@ unless file tracing proves the game is trying to load runtime files there.
 | Timed logged direct launch of `C:\Shandalar\FaceMaker.exe` in bottle `MTG` | Stayed alive until the alarm; startup log showed `wined3d`, `explorer.exe /desktop`, 1024x768 8bpp DIB sections, and no startup page fault. |
 | Direct logged launch of patched `C:\Shandalar\FaceMaker.exe` in bottle `MTG` | Rendered FaceMaker UI; `/tmp/facemaker-direct-after-patch-cx.log` had no `Unhandled exception`, page fault, or `WM_CREATE CreateDIBSection` assertion. |
 | Visual smoke launch of `C:\Shandalar\Shandalar.exe` in bottle `MTG` | Reached the `Magic: Shandalar` main menu. AppleScript, Wine SendKeys, and Swift/CoreGraphics attempts could focus or see the window but did not deliver a usable Start New Game click from this machine, so Start New Game still needs manual visual testing. |
-| Direct logged launch of `C:\Shandalar\Program\Shandalar.exe` in bottle `MTG` | Fails before gameplay due missing `Program\zlib.dll`, causing `image.dll`, `DrawCardLib.dll`, and `DECKDLL.dll` load failures. |
+| Earlier direct logged launch of `C:\Shandalar\Program\Shandalar.exe` in bottle `MTG` | Historical failure before gameplay due missing `Program\zlib.dll`, causing `image.dll`, `DrawCardLib.dll`, and `DECKDLL.dll` load failures. The repo and local `MTG` copied install now include `Program\zlib.dll`; re-test once with a bounded launch. |
 | Created CrossOver bottle `Shandalar-Win8-Test` | `cxbottle --bottle Shandalar-Win8-Test --create --template win8`; config reports `Template=win8`, `WineArch=win32`, registry reports `ProductName=Microsoft Windows 8`, `CurrentVersion=6.2`, and `CurrentBuild=9200`. |
 | Timed logged launch of `Y:\Shandalar\Shandalar\Shandalar.exe` in `Shandalar-Win8-Test` | Stayed alive until manual cleanup after the timed smoke; `/tmp/shandalar-win8test-startup-cx.log` showed `wined3d` and many successful `NtGdiCreateDIBSection` calls, with no startup page fault. |
 | Copied checkout into `Shandalar-Win8-Test` | Bottle-local path exists at `/Users/mdmoll/Library/Application Support/CrossOver/Bottles/Shandalar-Win8-Test/drive_c/Shandalar`, exposed as `C:\Shandalar`. |

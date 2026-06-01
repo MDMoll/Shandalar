@@ -52,6 +52,6 @@ completion check. It should fail until every row below has real evidence.
 | --- | --- |
 | Push | Satisfied for current `HEAD`: `git push -u origin codex/shandalar-crossover-updates` succeeded and local `HEAD` matches `@{u}`. |
 | Gameplay | S1 launch-to-main-menu and S2 default/first start-color-to-map are recorded as passed. A visible Windows or CrossOver run still needs to fill the remaining pass/fail rows in [manual-gameplay-verification.md](manual-gameplay-verification.md): the remaining starting colors, same-arrow map stop, save/load, several duel turns, damage-prevention prompt, and declared-attacker undo. |
-| Security | Satisfied locally by ClamAV `1.5.2/28017/Sun May 31 02:27:13 2026`: 241 tracked security targets scanned, `Infected files: 0`, and `tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all` validated 241 rows. |
+| Security | Satisfied locally by ClamAV `1.5.2/28017/Sun May 31 02:27:13 2026`: 228 tracked security targets scanned after adding `Program/zlib.dll`, `Infected files: 0`, and `tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all` validated 228 rows. |
 | Distribution | Current branch scope is controlled maintenance only. Before any public release, use [patch-package-plan.md](patch-package-plan.md) to prepare and verify a patch/docs-only package or prepare a rights-verified full bundle. |
 | Cleanup moves | Any additional file moves have explicit approval, `git mv` history, docs updates, and launch-copy verification. |

@@ -12,7 +12,7 @@ attempt is useful evidence; repeated GUI focus or SendKeys retries are not.
 | --- | --- | --- | --- | --- | --- |
 | `Shandalar.exe` | Shandalar adventure shell and duel entry path. | repo root or `C:\Shandalar` in copied bottle | Root DLLs, `Shandalar.ini`, `Cards.dat`, `DBInfo.dat`, `Rarity.dat`, art/sound/resource folders, root `Magic.exe`. | Present, PE32 i386, and patched for the start-color `CreateDIBSection` crash plus default-name seed/bypass/fallback. In `Shandalar-Win8-Test`, the hSection patch passed the reported crash point; the later name-bypass patch still needs visible manual verification. | Same SHA-256 as `Program/Shandalar.exe`; local copied bottle installs were patched with backups. |
 | `Magic.exe` | Duel executable opened by root `Shandalar.exe`. | repo root or `C:\Shandalar` in copied bottle | Root Manalink DLLs, card/art/deck/sound folders. | Present and PE32 i386. Opened by logged root Shandalar startup. Patched for declared-attacker undo; root `ManalinkEh.dll` is patched for the Samite/Femeref/Kithkin damage-prevention activation freeze. | Different SHA-256 from `Program/Magic.exe`; test separately. |
-| `Program/Shandalar.exe` | Alternate Shandalar copy. | `Program/` | `Shandalar.dll`, `Shandalar.ini`, `Cards.dat`, `DBInfo.dat`, `Rarity.dat`, art/sound/resource folders, imported DLLs. | Present, PE32 i386, and patched the same way as root `Shandalar.exe`. Direct `MTG` launch fails before gameplay because `Program/zlib.dll` is absent. | Same SHA-256 as root `Shandalar.exe`, but the folder's adjacent DLL layout differs. |
+| `Program/Shandalar.exe` | Alternate Shandalar copy. | `Program/` | `Shandalar.dll`, `Shandalar.ini`, `Cards.dat`, `DBInfo.dat`, `Rarity.dat`, art/sound/resource folders, imported DLLs including `zlib.dll`. | Present, PE32 i386, and patched the same way as root `Shandalar.exe`. The previous direct `MTG` launch failed before gameplay because `Program/zlib.dll` was absent; that DLL is now present in repo and local `MTG`. A bounded 2026-06-01 direct launch stayed alive until alarm with no captured loader error, but visible gameplay proof is still pending. | Same SHA-256 as root `Shandalar.exe`, but the folder's adjacent DLL layout still differs. |
 | `Program/Magic.exe` | Manalink / launcher duel executable. | `Program/` | `ManalinkEh.dll`, `ManalinkEx.dll`, `Deckdll.dll`, `Drawcardlib.dll`, `CardArtLib.dll`, art/deck/sound folders. | Present and PE32 i386. Patched for declared-attacker undo; `Program/ManalinkEh.dll` has the same healer patch at its own offset. Earlier CrossOver run from `Program/` exited 53 with no visible result. | Treat as a first-class target. |
 | `FaceMaker.exe` / `FaceMaker-nores.exe` | Character portrait/name helper family used by Shandalar new-game setup. | Same folder as the active Shandalar launch | `FaceData.txt`, `FaceButtons.txt`, `FaceArt/` or `Faceart/`, `PlayFace/`, `Faces/` | Present. Active `FaceMaker.exe` copies are patched from the no-resolution/Korath helper; direct patched root FaceMaker launch in bottle `MTG` rendered without the DIB assertion. A later visible S2 run logged `FaceMaker-nores.exe /S`. | Preserve both active and no-resolution helper names until character creation is fully understood. |
 | `Manalink_Launcher.cmd` | Windows batch menu for Manalink/mods. | repo root | `Program/`, `Mods/`, `PlayDeckAnalyser/` | Inspected only. | Lines 7-10 set `mlDir=Program`; lines 100-102 run `Magic.exe`. |
@@ -65,9 +65,10 @@ passed the reported start-color crash point.
 
 The existing local `MTG` bottle has a copied install at `C:\Shandalar`. Its
 shortcut targets root `C:\Shandalar\Shandalar.exe`. That copied executable was
-patched in this pass, with a backup saved beside it. Direct
-`C:\Shandalar\Program\Shandalar.exe` currently fails before gameplay in this
-bottle because `Program\zlib.dll` is missing.
+patched in an earlier pass, with a backup saved beside it. The previous direct
+`C:\Shandalar\Program\Shandalar.exe` loader failure was caused by missing
+`Program\zlib.dll`; the local copied install now has the same byte-identical
+`Program\zlib.dll` as the repo.
 
 Backup note: bottle-local originals were saved as
 `Shandalar.before-hsection-null-patch.exe` and
@@ -112,6 +113,7 @@ Command-line equivalent if CrossOver's `wine` helper is available:
 ```sh
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\Shandalar.exe"
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\Magic.exe"
+/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar\Program" "C:\Shandalar\Program\Shandalar.exe"
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar\Program" "C:\Shandalar\Program\Magic.exe"
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle Shandalar-Win8-Test --workdir "C:\Shandalar" "C:\Shandalar\Shandalar.exe"
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle Shandalar-Win8-Test --workdir "Y:\Shandalar\Shandalar" "Y:\Shandalar\Shandalar\Shandalar.exe"
@@ -149,6 +151,8 @@ wine Magic.exe
 | `cmp -s Program/FaceData.txt Manalink3/Program/FaceData.txt` | repo root | Match; FaceMaker data is present in `Program/`. |
 | `rg -n "^Window\\s*=" Shandalar.ini Program/Shandalar.ini` | repo root | Both active configs should show `Window = 2` for the current CrossOver start-color test. |
 | `diff -qr Program/FaceArt Manalink3/Program/FaceArt` | repo root | No differences. |
+| `cmp -s zlib.dll Program/zlib.dll` | repo root | Match; `Program/zlib.dll` is byte-identical to root `zlib.dll`. |
+| `shasum -a 256 zlib.dll Program/zlib.dll "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Program/zlib.dll"` | repo root | All three paths hash to `9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90`. |
 | `shasum -a 256 Shandalar.exe Program/Shandalar.exe` | repo root | Match; root and `Program/` Shandalar binaries hash to `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b`. |
 | `xxd -g1 -l 32 -s $((0x1785b0)) Shandalar.exe` and `Program/Shandalar.exe` | repo root | Both patched dumps begin `6a 00 57 50 8b 4d 10 51 ff 75 04`, forcing `CreateDIBSection` to receive `hSection = NULL`. |
 | `xxd -g1 -l 40 -s $((0xa1a42)) Shandalar.exe` and `Program/Shandalar.exe` | repo root | Both patched dumps begin `c7 05 28 12 59 00 6d 50 6c 61`, seeding the name buffer with `mPlayer` before the existing gender/name handling code runs. |
@@ -172,7 +176,8 @@ wine Magic.exe
 | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" --cx-log /tmp/shandalar-mtg-cdrive-patched-sendkeys-cx.log --debugmsg +seh,+bitmap,+process,+file "C:\Shandalar\Shandalar.exe"` plus the same `wscript` helper | repo root | Passed the reported crash point from the older practical `MTG` shortcut path; log showed the same post-color resource loads with no original page fault/assertion. |
 | Visual smoke launch of `C:\Shandalar\Shandalar.exe` in bottle `MTG` | repo root | Reached the `Magic: Shandalar` main menu; macOS denied synthetic keypresses, so Start New Game was not tested. |
 | Visible SendKeys run of `C:\Shandalar\Shandalar.exe` in bottle `MTG` | repo root | Reached the adventure map for the default/first start-color path; see [manual-gameplay-verification.md](manual-gameplay-verification.md) S2 and [generated/manual-gameplay/s2-map-2026-05-31.md](generated/manual-gameplay/s2-map-2026-05-31.md). Raw local log `/tmp/shandalar-visible-s2-attempt-cx.log` observed `FaceMaker-nores.exe /S`. |
-| Direct logged launch of `C:\Shandalar\Program\Shandalar.exe` in bottle `MTG` | repo root | Loader failure before gameplay because `Program\zlib.dll` is missing, cascading through `image.dll`, `DrawCardLib.dll`, and `DECKDLL.dll`. |
+| Earlier direct logged launch of `C:\Shandalar\Program\Shandalar.exe` in bottle `MTG` | repo root | Historical loader failure before gameplay because `Program\zlib.dll` was missing, cascading through `image.dll`, `DrawCardLib.dll`, and `DECKDLL.dll`. Superseded by the 2026-06-01 bounded launch row below for the loader-cascade question only. |
+| `/usr/bin/perl -e 'alarm 25; exec @ARGV' /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar\Program" "C:\Shandalar\Program\Shandalar.exe"` | repo root | Stayed alive until alarm (`exit=142`); `/tmp/shandalar-program-zlib-mtg-direct.log` was empty. The old immediate missing-zlib loader cascade was not reproduced, but no visible gameplay result was captured. |
 | `/usr/bin/perl -e 'alarm 15; exec @ARGV' /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG Shandalar.exe --help` | `/Users/mdmoll/Shandalar/Shandalar/Program` | Exit code 53, no stdout/stderr captured. |
 | `/usr/bin/perl -e 'alarm 15; exec @ARGV' /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG Shandalar.exe` | `/Users/mdmoll/Shandalar/Shandalar/Program` | Exit code 53, no stdout/stderr captured. |
 | `/usr/bin/perl -e 'alarm 15; exec @ARGV' /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG Magic.exe` | `/Users/mdmoll/Shandalar/Shandalar/Program` | Exit code 53, no stdout/stderr captured. |
@@ -195,6 +200,7 @@ bottle. They do not prove that the game fails in all CrossOver bottles.
 | CrossOver `MTG` bottle | patched root `C:\Shandalar\ManalinkEh.dll` with `C:\Shandalar\Magic.exe` | Femeref/Samite/Kithkin healer damage prevention only appears during the engine damage-prevention window; duel no longer freezes after Femeref Healer responds to blockers. | Repo and copied `MTG` bottle DLLs are patched with backups preserved; visible retest still needed. |
 | CrossOver `MTG` bottle | patched root `C:\Shandalar\Magic.exe` | During declare attackers, clicking an already-declared ordinary attacker before Done removes it from the declared attackers selection. | Repo root and copied `MTG` bottle `Magic.exe` are patched; visible retest still needed. |
 | CrossOver `MTG` bottle | `C:\Shandalar\Program\Magic.exe` | Program Manalink executable opens. | Needs visible testing. |
+| CrossOver `MTG` bottle | `C:\Shandalar\Program\Shandalar.exe` | Alternate Shandalar path no longer hits the missing-`Program\zlib.dll` loader cascade. | Bounded 2026-06-01 launch stayed alive until alarm; full visible gameplay still needs manual testing. |
 | CrossOver XP bottle | root `Shandalar.exe` from copied install or repo root | UI opens, start-color flow works. | Needs testing. |
 | CrossOver XP bottle | `Program/Magic.exe` | UI opens from `Program/` working directory. | Needs testing. |
 | CrossOver Windows 7 bottle | both | Compare to XP. | Needs testing. |

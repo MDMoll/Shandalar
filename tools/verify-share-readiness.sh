@@ -85,6 +85,7 @@ pass "local generated report/handoff files are ignored"
 
 for path in \
   Shandalar.exe \
+  Program/zlib.dll \
   Program/Magic.exe \
   Cards.dat \
   Statwin/statscrn.tmp \
@@ -118,6 +119,8 @@ pass "protected cleanup false positives are present"
 
 expect_hash Shandalar.exe ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b
 expect_hash Program/Shandalar.exe ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b
+expect_hash zlib.dll 9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90
+expect_hash Program/zlib.dll 9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90
 expect_hash FaceMaker.exe 41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246
 expect_hash Program/FaceMaker.exe 41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246
 expect_hash FaceMaker-Original.exe 0471afcd0288a07422355ff2af224c40f8b29dc0a864eed90b3399e285f42c7e
@@ -169,6 +172,8 @@ security_target_count="$(printf '%s\n' "$security_targets" | awk 'NR > 1 {count+
 [ "$security_target_count" -ge "200" ] || fail "expected at least 200 tracked security scan targets, found $security_target_count"
 for path in \
   Shandalar.exe \
+  zlib.dll \
+  Program/zlib.dll \
   Program/Magic.exe \
   ManalinkEh.dll \
   Program/ManalinkEh.dll \

@@ -531,10 +531,10 @@ tools/print-security-scan-baseline.sh	shell	tooling	4198	134
 tools/print-share-status.sh	shell	tooling	9114	199
 tools/record-manual-gameplay-result.sh	shell	tooling	6106	223
 tools/record-security-scan-result.sh	shell	tooling	8938	279
-tools/verify-crossover-mtg-state.sh	shell	tooling	5022	149
+tools/verify-crossover-mtg-state.sh	shell	tooling	5114	150
 tools/verify-final-share-gates.sh	shell	tooling	2105	67
 tools/verify-handoff-artifacts.sh	shell	tooling	4166	134
 tools/verify-handoff-readiness.sh	shell	tooling	12512	234
 tools/verify-manual-gameplay-results.sh	shell	tooling	6883	236
 tools/verify-security-scan-results.sh	shell	tooling	4636	164
-tools/verify-share-readiness.sh	shell	tooling	16585	434
+tools/verify-share-readiness.sh	shell	tooling	16820	439

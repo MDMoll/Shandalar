@@ -12,7 +12,8 @@ and result before making any claim.
 
 ## Verified on this machine
 
-Run from `/Users/mdmoll/Shandalar/Shandalar` on 2026-05-31.
+Run from `/Users/mdmoll/Shandalar/Shandalar` on 2026-05-31 and refreshed on
+2026-06-01 after adding `Program/zlib.dll`.
 
 | Check | Result | Meaning |
 | --- | --- | --- |
@@ -21,6 +22,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` on 2026-05-31.
 | `clamscan --version` | `ClamAV 1.5.2/28017/Sun May 31 02:27:13 2026`. | Scanner and daily database version recorded for the scan. |
 | `freshclam` | Downloaded and tested `daily.cvd` version 28017, `main.cvd` version 63, and `bytecode.cvd` version 339; output included repeated `ERROR: NULL X509 store` warnings but exited 0 after database tests passed. | Virus definitions were present before scanning; keep the warning with the evidence rather than hiding it. |
 | `clamscan --fail-if-cvd-older-than=7 --file-list=/private/tmp/shandalar-security-scan-target-paths-install-root-cleanup-v3.txt --log=/private/tmp/shandalar-clamscan-install-root-cleanup-v3.log` | `Scanned files: 226`; `Infected files: 0`; `Known viruses: 3627865`; start `2026:05:31 22:59:04`, end `2026:05:31 23:00:03`. | ClamAV reported no infected files for the exact tracked security-target inventory after the install-root archive cleanup and branch-delta archive-kind patch. See [generated/security-scan/clamav-2026-05-31.md](generated/security-scan/clamav-2026-05-31.md). |
+| `clamscan --fail-if-cvd-older-than=7 --file-list=/private/tmp/shandalar-security-scan-target-paths-runtime-path-zlib.txt --log=/private/tmp/shandalar-clamscan-runtime-path-zlib.log` | `Scanned files: 228`; `Infected files: 0`; `Known viruses: 3627865`; start `2026:06:01 17:07:55`, end `2026:06:01 17:08:46`. | ClamAV reported no infected files for the refreshed tracked security-target inventory after `Program/zlib.dll` was added. See [generated/security-scan/clamav-2026-06-01.md](generated/security-scan/clamav-2026-06-01.md). |
 | `command -v spctl` | `/usr/sbin/spctl` | macOS Gatekeeper assessment tooling exists, but it is not an antivirus scanner for Windows PE files. |
 | `spctl --assess --type execute --verbose=4 Shandalar.exe` | `Shandalar.exe: internal error in Code Signing subsystem` | No useful safety result for the Windows executable. Do not treat this as a pass or fail. |
 | `command -v xprotect` | `/usr/bin/xprotect` | macOS XProtect tooling exists locally, but the available commands do not produce a per-file malware scan report for this Windows PE inventory. |
@@ -87,9 +89,10 @@ The required TSV header is:
 path	sha256	scanner	version	date	result	notes
 ```
 
-`--require-all` passed locally for `security-scan-results.tsv` after the ClamAV
-run. The TSV is an ignored local evidence file; the durable summary is recorded
-below and in [generated/security-scan/clamav-2026-05-31.md](generated/security-scan/clamav-2026-05-31.md).
+`--require-all` passed locally for `security-scan-results.tsv` after the
+2026-06-01 ClamAV refresh. The TSV is an ignored local evidence file; the
+durable summary is recorded below and in
+[generated/security-scan/clamav-2026-06-01.md](generated/security-scan/clamav-2026-06-01.md).
 This validator does not run a scanner and does not interpret whether a scanner
 finding is safe; it only proves the rows refer to current tracked targets with
 matching SHA-256 values and non-placeholder scanner metadata.
@@ -124,4 +127,5 @@ party. Do not upload files unless that is acceptable for the repo/user context.
 
 | Date | Scanner/version | Path | SHA-256 | Result | Notes |
 | --- | --- | --- | --- | --- | --- |
+| 2026-06-01 | ClamAV `1.5.2/28017/Sun May 31 02:27:13 2026` | 228 tracked security-scan targets from `tools/list-security-scan-targets.sh` | Validated locally by `tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all` | Clean | `clamscan --fail-if-cvd-older-than=7 --file-list=/private/tmp/shandalar-security-scan-target-paths-runtime-path-zlib.txt --log=/private/tmp/shandalar-clamscan-runtime-path-zlib.log` reported `Scanned files: 228` and `Infected files: 0`. |
 | 2026-05-31 | ClamAV `1.5.2/28017/Sun May 31 02:27:13 2026` | 226 tracked security-scan targets from `tools/list-security-scan-targets.sh` | Validated locally by `tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all` | Clean | `clamscan --fail-if-cvd-older-than=7 --file-list=/private/tmp/shandalar-security-scan-target-paths-install-root-cleanup-v3.txt --log=/private/tmp/shandalar-clamscan-install-root-cleanup-v3.log` reported `Scanned files: 226` and `Infected files: 0`. |

@@ -18,7 +18,7 @@ Result on this machine: CrossOver 26.1.0.39808.
 | 1 | Create separate 32-bit bottles for Windows XP, Windows 7, Windows 8, and Windows 10 tests. Use Windows 11 only for comparison. |
 | 2 | Start with no extra redistributables. The inspected launch targets import `msvcrt.dll`, not `vcruntime*.dll`, `msvcp*.dll`, or `mfc*.dll`. |
 | 3 | If a missing-runtime dialog appears, install x86 runtimes into the bottle, not the repo. Try Visual C++ 2010 x86 only after recording the exact missing DLL or old-doc rationale. |
-| 4 | For the current copied `MTG` install, use `C:\Shandalar\Shandalar.exe` with working directory `C:\Shandalar`. Direct `C:\Shandalar\Program\Shandalar.exe` currently fails because `Program\zlib.dll` is absent. |
+| 4 | For the current copied `MTG` install, use `C:\Shandalar\Shandalar.exe` with working directory `C:\Shandalar` as the primary gameplay path. Direct `C:\Shandalar\Program\Shandalar.exe` now has the missing `Program\zlib.dll` dependency restored and no longer reproduces the immediate loader cascade in a bounded launch, but still needs visible gameplay proof before it is promoted. |
 | 5 | Save separate launchers for root `Shandalar.exe`, root `Magic.exe`, and `Program\Magic.exe` only after each one works. |
 | 6 | Leave high-resolution or Retina mode off for first launch unless testing proves it helps; use Wine virtual desktop for the Shandalar start-color path. |
 | 7 | For the start-color assertion, make sure `FaceMaker.exe`, `FaceData.txt`, `FaceButtons.txt`, and face art are present next to the active Shandalar launch path, but do not treat FaceMaker alone as proven sufficient. |
@@ -38,7 +38,7 @@ shows that root `Shandalar.exe` opens root `Magic.exe`.
 | Shandalar in copied `MTG` bottle | `C:\Shandalar\Shandalar.exe` | `C:\Shandalar` | Bottle-local copy is now patched; config-only fixes did not solve user retesting before this patch. |
 | Root Magic in copied `MTG` bottle | `C:\Shandalar\Magic.exe` | `C:\Shandalar` | Opened by root `Shandalar.exe`; root `ManalinkEh.dll` must be the patched copy for the Femeref/Samite/Kithkin healer freeze retest. |
 | Program Magic in copied `MTG` bottle | `C:\Shandalar\Program\Magic.exe` | `C:\Shandalar\Program` | Manalink launcher path; `Program\ManalinkEh.dll` must be the patched copy for equivalent healer testing. |
-| Program Shandalar in copied `MTG` bottle | `C:\Shandalar\Program\Shandalar.exe` | `C:\Shandalar\Program` | Currently fails in this bottle because `Program\zlib.dll` is missing. |
+| Program Shandalar in copied `MTG` bottle | `C:\Shandalar\Program\Shandalar.exe` | `C:\Shandalar\Program` | Missing `Program\zlib.dll` dependency layout was fixed on 2026-06-01; bounded direct launch stayed alive until alarm with no captured loader error, but visible gameplay still needs testing. |
 | Shandalar in fresh Win8 test bottle | `C:\Shandalar\Shandalar.exe` | `C:\Shandalar` | Bottle-local copy is now patched and passed the crash-point smoke test. |
 | Patched fresh Win8 repo-mapped launch | `Y:\Shandalar\Shandalar\Shandalar.exe` | `Y:\Shandalar\Shandalar` | Start-color crash point verified with Wine `wscript` SendKeys after the repo binary patch. |
 
@@ -48,6 +48,7 @@ CLI form:
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\Shandalar.exe"
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\Magic.exe"
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\FaceMaker.exe"
+/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar\Program" "C:\Shandalar\Program\Shandalar.exe"
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar\Program" "C:\Shandalar\Program\Magic.exe"
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle Shandalar-Win8-Test --workdir "C:\Shandalar" "C:\Shandalar\Shandalar.exe"
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle Shandalar-Win8-Test --workdir "Y:\Shandalar\Shandalar" "Y:\Shandalar\Shandalar\Shandalar.exe"
@@ -297,7 +298,7 @@ Expected entries:
 | 2026-05-30 | 26.1.0.39808 | `MTG` | Not inspected | `Magic.exe` | Exit 53, no stdout/stderr | None captured | None | Timed CLI run from `Program/`. |
 | 2026-05-30 | 26.1.0.39808 | `MTG` | Windows 7 in registry | Registry only | Updated `PagingFiles` from `C:\pagefile.sys 27 77` to `C:\pagefile.sys 512 1024` | None | Paging-file registry changed with CrossOver `wine reg add` | Visible game retest still needed. |
 | 2026-05-30 | 26.1.0.39808 | `MTG` | Windows 7 in registry | Copied install config | Set both `C:\Shandalar\Shandalar.ini` and `C:\Shandalar\Program\Shandalar.ini` to `Window = 2` | None | Hashes now match the repo ini files | Visible game retest still needed. |
-| 2026-05-30 | 26.1.0.39808 | `MTG` | Windows 7 in registry | `C:\Shandalar\Program\Shandalar.exe` | Loader failure before gameplay | Missing `Program\zlib.dll` cascades into `image.dll`, `DrawCardLib.dll`, and `DECKDLL.dll` load failures | None | This is why direct `Program` Shandalar is not the current `MTG` retest path. |
+| 2026-05-30 | 26.1.0.39808 | `MTG` | Windows 7 in registry | `C:\Shandalar\Program\Shandalar.exe` | Loader failure before gameplay | Missing `Program\zlib.dll` cascades into `image.dll`, `DrawCardLib.dll`, and `DECKDLL.dll` load failures | None | Historical pre-zlib-sync failure; the fixed layout needs a bounded re-test before promoting direct `Program` Shandalar. |
 | 2026-05-30 | 26.1.0.39808 | `MTG` | App-default `win8` | Registry only | Set app-default virtual desktop for `Shandalar.exe`, `Magic.exe`, and `FaceMaker.exe`; set app-default Windows 8 for all three | None | `HKCU\Software\Wine\AppDefaults\*.exe` plus `HKCU\Software\Wine\Explorer\Desktops` | Persistent setting verified in `user.reg`. |
 | 2026-05-30 | 26.1.0.39808 | `MTG` | App-default `win8` | `C:\Shandalar\Shandalar.exe` | Stayed alive until timed alarm | None in startup log | Uses app-default virtual desktop `Shandalar` at `1024x768` | Log showed `wined3d`, `explorer.exe /desktop`, and 1024-wide 8bpp DIB sections. Visible start-color retest still needed. |
 | 2026-05-30 | 26.1.0.39808 | `MTG` | App-default `win8` | `C:\Shandalar\FaceMaker.exe` | Stayed alive until timed alarm | None in startup log | Uses app-default virtual desktop `Shandalar` at `1024x768` | Direct FaceMaker log showed 1024x768 8bpp DIB sections; this does not prove the Shandalar-spawned character-creation path. |

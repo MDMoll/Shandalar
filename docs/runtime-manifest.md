@@ -1,6 +1,6 @@
 # Runtime Manifest
 
-Generated from local inspection on 2026-05-31 in
+Generated from local inspection on 2026-05-31 and refreshed on 2026-06-01 in
 `/Users/mdmoll/Shandalar/Shandalar`.
 
 This manifest is for identity, review, and scan handoff. It is not a malware
@@ -11,13 +11,20 @@ scan, a license grant, or proof of gameplay stability.
 | Path | SHA-256 | File type | Notes |
 | --- | --- | --- | --- |
 | `Shandalar.exe` | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` | PE32 GUI Intel 80386 | Root CrossOver launch target; patched for DIB, name, and movement behavior. |
-| `Program/Shandalar.exe` | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` | PE32 GUI Intel 80386 | Same bytes as root; direct `MTG` launch is still deferred because `Program/zlib.dll` is absent. |
+| `Program/Shandalar.exe` | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` | PE32 GUI Intel 80386 | Same bytes as root; `Program/zlib.dll` is now present, but direct visible launch/gameplay still needs proof. |
 | `Magic.exe` | `5bf518d66342d79562efb1106449413ada06814a6c14818a1e3101fd470c82d1` | PE32 GUI Intel 80386 | Root duel executable; patched for declared-attacker undo. |
 | `Program/Magic.exe` | `0fb8b87fe35c8be037ae3419a9b9cd70a27df840ae6af6c7488c2685046a74fa` | PE32 GUI Intel 80386 | Manalink launcher target; patched for declared-attacker undo. |
 | `FaceMaker.exe` | `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246` | PE32 GUI Intel 80386 | Active patched FaceMaker helper. |
 | `Program/FaceMaker.exe` | `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246` | PE32 GUI Intel 80386 | Same bytes as root active FaceMaker helper. |
 | `ManalinkEh.dll` | `6a5fd8057d456d691fb87810eee8dbe1680b18d1c4c79530cbe036cb443df1eb` | PE32 DLL Intel 80386 | Root DLL patched for the damage-prevention activation freeze. |
 | `Program/ManalinkEh.dll` | `7fc7ad86b5a3eaaa8879c76814dc454917f2e4b58acf15530e42fdcc78da2517` | PE32 DLL Intel 80386 | Program DLL patched at its own offset for the same damage-prevention guard. |
+
+## Runtime Support DLLs
+
+| Path | SHA-256 | File type | Notes |
+| --- | --- | --- | --- |
+| `zlib.dll` | `9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90` | PE32 DLL Intel 80386 | Root adjacent dependency for the image/card rendering DLL path. |
+| `Program/zlib.dll` | `9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90` | PE32 DLL Intel 80386 | Byte-identical copy added for the `Program/Image.dll` dependency path; same file was synced into the local `MTG` copied install. |
 
 ## Preserved Reference Executables
 
@@ -53,8 +60,8 @@ scan, a license grant, or proof of gameplay stability.
 Run from `/Users/mdmoll/Shandalar/Shandalar`:
 
 ```sh
-shasum -a 256 Shandalar.exe Program/Shandalar.exe Magic.exe Program/Magic.exe FaceMaker.exe Program/FaceMaker.exe ManalinkEh.dll Program/ManalinkEh.dll FaceMaker-Original.exe FaceMaker-nores.exe Program/FaceMaker-nores.exe
-file Shandalar.exe Program/Shandalar.exe Magic.exe Program/Magic.exe FaceMaker.exe Program/FaceMaker.exe ManalinkEh.dll Program/ManalinkEh.dll FaceMaker-Original.exe FaceMaker-nores.exe Program/FaceMaker-nores.exe
+shasum -a 256 Shandalar.exe Program/Shandalar.exe zlib.dll Program/zlib.dll Magic.exe Program/Magic.exe FaceMaker.exe Program/FaceMaker.exe ManalinkEh.dll Program/ManalinkEh.dll FaceMaker-Original.exe FaceMaker-nores.exe Program/FaceMaker-nores.exe
+file Shandalar.exe Program/Shandalar.exe zlib.dll Program/zlib.dll Magic.exe Program/Magic.exe FaceMaker.exe Program/FaceMaker.exe ManalinkEh.dll Program/ManalinkEh.dll FaceMaker-Original.exe FaceMaker-nores.exe Program/FaceMaker-nores.exe
 tools/verify-share-readiness.sh
 ```
 
