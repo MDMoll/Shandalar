@@ -24,8 +24,8 @@ scan, a license grant, or proof of gameplay stability.
 | Path | SHA-256 | File type | Why preserved |
 | --- | --- | --- | --- |
 | `FaceMaker-Original.exe` | `0471afcd0288a07422355ff2af224c40f8b29dc0a864eed90b3399e285f42c7e` | PE32 GUI Intel 80386 | Original FaceMaker reference for patch lineage. |
-| `FaceMaker-nores.exe` | `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b` | PE32 GUI Intel 80386 | Korath/no-resolution reference helper. |
-| `Program/FaceMaker-nores.exe` | `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b` | PE32 GUI Intel 80386 | Program-tree copy of the same no-resolution reference. |
+| `FaceMaker-nores.exe` | `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b` | PE32 GUI Intel 80386 | Korath/no-resolution helper; also observed as `FaceMaker-nores.exe /S` in the 2026-05-31 visible S2 new-game path. |
+| `Program/FaceMaker-nores.exe` | `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b` | PE32 GUI Intel 80386 | Program-tree copy of the same no-resolution helper; preserve until all character-creation paths are understood. |
 
 ## Protected Cleanup False Positives
 

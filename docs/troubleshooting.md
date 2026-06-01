@@ -110,9 +110,9 @@ unless file tracing proves the game is trying to load runtime files there.
 
 | Check | Result |
 | --- | --- |
-| `cmp -s /private/tmp/FaceMaker-Korath-thread.exe FaceMaker-nores.exe` plus `find /Users/mdmoll/Shandalar -iname '*facemaker*korath*'` | The known downloaded thread helper matches the reference no-resolution copy. No repo file named `Facemaker-Korath.exe` was visible under `/Users/mdmoll/Shandalar` during this pass. |
-| `shasum -a 256 FaceMaker.exe Program/FaceMaker.exe FaceMaker-nores.exe Program/FaceMaker-nores.exe` | Active patched FaceMaker copies hash to `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246`; reference no-resolution/Korath copies hash to `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b`. |
-| `cmp -l FaceMaker-nores.exe FaceMaker.exe` | Active FaceMaker differs from the no-resolution/Korath reference at 11 byte positions, matching the `CreateDIBSection hSection = NULL` patch. |
+| `cmp -s /private/tmp/FaceMaker-Korath-thread.exe FaceMaker-nores.exe` plus `find /Users/mdmoll/Shandalar -iname '*facemaker*korath*'` | The known downloaded thread helper matches the no-resolution copy. No repo file named `Facemaker-Korath.exe` was visible under `/Users/mdmoll/Shandalar` during this pass. |
+| `shasum -a 256 FaceMaker.exe Program/FaceMaker.exe FaceMaker-nores.exe Program/FaceMaker-nores.exe` | Active patched FaceMaker copies hash to `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246`; no-resolution/Korath copies hash to `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b`. The visible S2 run later logged `FaceMaker-nores.exe /S`, so preserve the no-resolution helper too. |
+| `cmp -l FaceMaker-nores.exe FaceMaker.exe` | Active FaceMaker differs from the no-resolution/Korath helper at 11 byte positions, matching the `CreateDIBSection hSection = NULL` patch. |
 | `xxd -g1 -l 32 -s $((0x5f40)) FaceMaker.exe Program/FaceMaker.exe` | Both active helpers begin `6a 00 57 50 8b 4d 10 51 ff 75 04` at the patch site. |
 | `lldb` disassembly around `FaceMaker-Original.exe` / `FaceMaker-nores.exe` changed offsets | The Korath/no-resolution helper changes a resolution-argument branch, forces a 1024x768 fallback path, and stubs the `ChangeDisplaySettingsA` wrapper to return immediately. It does not remove `CreateDIBSection` or the GDI drawing path. |
 | `rg -n "^Window\\s*=" Shandalar.ini Program/Shandalar.ini` | Both repo files now use `Window = 2`. |

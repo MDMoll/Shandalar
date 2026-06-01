@@ -19,8 +19,10 @@ CrossOver smoke testing from the repo path, the fresh bottle-local
 `C:\Shandalar` path, and the older `MTG` shortcut path. A later follow-up
 patched the active root and `Program` FaceMaker helpers at their own
 `CreateDIBSection` wrapper; the `*-nores.exe` files remain preserved as
-unpatched Korath/no-resolution references. Later Shandalar follow-ups patched
-the name-entry default buffer, name-editor bypass/fallback, and same-arrow adventure-map stop behavior,
+no-resolution helpers, and a later visible S2 run logged
+`FaceMaker-nores.exe /S` while reaching the adventure map. Later Shandalar follow-ups patched
+the name-entry default buffer, name-editor bypass/fallback, and same-arrow
+adventure-map stop behavior,
 changing the active Shandalar hash from the hSection-only
 `73aa1400ddc452462f4e714e349ff06d4564c133408cf2ab10e576ae65d441b9` through the
 name-entry-only `bd784cc248d08455270a6bfae5004ead8f9723d8017f8db152add113e8d3a9db`
@@ -131,7 +133,7 @@ and the name-seed-plus-movement value `155a668c72867bd1274410eb05ca05fbb7bd9bed8
 | Path/pattern | Evidence | Cleanup confidence |
 | --- | --- | --- |
 | `MENUBAK.PIC`, `WINBAK*.PIC`, `WORLBAK1.PIC`, and matching `Program/` copies | `file` reports data; root and `Program/` copies match by SHA-256 pair; `.PIC` is a legacy runtime resource extension in this tree. | High keep confidence despite backup-looking names. |
-| `FaceMaker-Original.exe`, `FaceMaker-nores.exe`, `Program/FaceMaker-nores.exe` | Preserved reference executables for the FaceMaker patch history; hashes are recorded in [bugs/create-dibsection-after-color.md](bugs/create-dibsection-after-color.md). | High keep confidence until a character-creation verification pass chooses otherwise. |
+| `FaceMaker-Original.exe`, `FaceMaker-nores.exe`, `Program/FaceMaker-nores.exe` | Preserved executables for the FaceMaker patch history. The 2026-05-31 visible S2 run also logged `FaceMaker-nores.exe /S`, so the no-resolution helper is runtime-relevant evidence, not just a reference. Hashes are recorded in [bugs/create-dibsection-after-color.md](bugs/create-dibsection-after-color.md). | High keep confidence until a character-creation verification pass chooses otherwise. |
 
 ## Duplicate Observations
 
@@ -139,7 +141,7 @@ and the name-seed-plus-movement value `155a668c72867bd1274410eb05ca05fbb7bd9bed8
 | --- | --- | --- |
 | Full non-git duplicate audit found a large exact-duplicate surface. | [duplicate-audit.md](duplicate-audit.md) records 52,045 scanned files, 10,852 duplicate SHA-256 groups, 26,189 files inside duplicate groups, and about 435.1 MiB of theoretical duplicate bytes. | High duplicate confidence, low cleanup confidence until launch-copy tests choose canonical package/runtime paths. |
 | `Program/Shandalar.exe` and root `Shandalar.exe` are identical. | Same active SHA-256: `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b`; hSection-only interim hash was `73aa1400ddc452462f4e714e349ff06d4564c133408cf2ab10e576ae65d441b9`; name-entry-only interim hash was `bd784cc248d08455270a6bfae5004ead8f9723d8017f8db152add113e8d3a9db`; name-seed-plus-movement hash was `155a668c72867bd1274410eb05ca05fbb7bd9bed843b42d1583ea536805a4aaf`; original pre-patch hash was `82c9b659dd131097b29931f0ed266c91d560103bc864d7eb6b806691d0dc9739`. | Medium for dedupe planning, not deletion; adjacent DLL/assets still differ, and copied CrossOver bottle installs may still have older unpatched copies. |
-| Active `Program/FaceMaker.exe` and root `FaceMaker.exe` are identical to each other but no longer identical to the no-resolution reference copies. | Active SHA-256: `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246`; reference no-resolution/Korath SHA-256: `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b`. The difference is the 11-byte `CreateDIBSection hSection = NULL` patch at file offset `0x5f40`. | Keep active and reference helpers until full character-creation testing chooses a canonical helper. |
+| Active `Program/FaceMaker.exe` and root `FaceMaker.exe` are identical to each other but no longer identical to the no-resolution helper copies. | Active SHA-256: `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246`; no-resolution/Korath SHA-256: `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b`. The difference is the 11-byte `CreateDIBSection hSection = NULL` patch at file offset `0x5f40`; a visible S2 run still observed `FaceMaker-nores.exe /S`. | Keep active and no-resolution helpers until full character-creation testing chooses a canonical helper. |
 | `Program/FaceData.txt`, `Program/FaceButtons.txt`, and `Program/FaceArt/` match `Manalink3/Program/` after the fix. | `cmp` for text files and `diff -qr` for art directory. | Keep as runtime support for `Program/FaceMaker.exe`. |
 | `Program/Magic.exe` and root `Magic.exe` differ. | Different SHA-256 values. | Do not dedupe without launch comparison. |
 | `Program/zlib.dll` is absent while root `zlib.dll` is present. | Direct logged `MTG` launch of `C:\Shandalar\Program\Shandalar.exe` fails because `Program\zlib.dll` is missing. | Treat `Program/Shandalar.exe` as a deferred alternate CrossOver path until tested in a fixed copy. |

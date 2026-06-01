@@ -43,7 +43,7 @@ but current evidence says they should stay in place.
 | `MENUBAK.PIC`, `Program/MENUBAK.PIC` | `BAK` looks like backup. | Both are legacy `.PIC` data files with identical SHA-256 `34b3acb232d2a40c7e807b70cfcd3c9b95fe47a36e2061e41a6cc0d91c42b335`; `.PIC` files are runtime resources. | Keep in root and `Program/` until a launch-copy test proves otherwise. |
 | `WINBAK01.PIC`, `WINBAK02.PIC`, `WORLBAK1.PIC`, and matching `Program/` copies | `BAK` looks like backup. | Root and `Program/` copies match by SHA-256 pair; names fit window/world backdrop resources, and `.PIC` files are runtime resources. | Keep in root and `Program/`; do not archive by filename alone. |
 | `FaceMaker-Original.exe` | `Original` can look like a stale backup. | Hash `0471afcd0288a07422355ff2af224c40f8b29dc0a864eed90b3399e285f42c7e`; used as the original FaceMaker reference in [bugs/create-dibsection-after-color.md](bugs/create-dibsection-after-color.md). | Preserve as reference evidence. |
-| `FaceMaker-nores.exe`, `Program/FaceMaker-nores.exe` | Superseded by active patched `FaceMaker.exe` copies. | Both hash to `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b`; they match the Korath/no-resolution reference. | Preserve as reference evidence until character-creation testing chooses a canonical helper set. |
+| `FaceMaker-nores.exe`, `Program/FaceMaker-nores.exe` | May look superseded by active patched `FaceMaker.exe` copies. | Both hash to `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b`; they match the Korath/no-resolution helper, and the 2026-05-31 visible S2 run logged `FaceMaker-nores.exe /S`. | Preserve as runtime-relevant evidence until character-creation testing chooses a canonical helper set. |
 
 ## Category Coverage
 

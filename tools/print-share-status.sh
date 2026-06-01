@@ -105,7 +105,7 @@ strict_final_status() {
   if [ -f "$scan_results_path" ] && tools/verify-security-scan-results.sh --results "$scan_results_path" --require-all >/dev/null 2>&1; then
     printf '`tools/verify-final-share-gates.sh` should still fail until manual gameplay evidence is complete.'
   else
-    printf '`tools/verify-final-share-gates.sh` should still fail until manual gameplay and security scan evidence are complete.'
+    printf '`tools/verify-final-share-gates.sh` should still fail until manual gameplay evidence is complete, and also until security scan evidence is complete if local scanner rows do not validate.'
   fi
 }
 

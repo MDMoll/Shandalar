@@ -8,6 +8,7 @@ reverse-engineering and CrossOver/Wine investigations.
 | Path | Meaning |
 | --- | --- |
 | `create-dibsection-investigation/` | Evidence gathered while diagnosing the start-color `WM_CREATE CreateDIBSection` assertion and related runtime layout questions. |
+| `manual-gameplay/` | Cropped screenshots and notes from visible gameplay checks. These are narrow evidence snapshots, not full gameplay certification. |
 | `security-scan/` | Summaries of local scanner evidence; raw local scanner reports may remain outside the repo when they are machine-specific. |
 
 ## Policy

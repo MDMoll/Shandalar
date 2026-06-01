@@ -8,9 +8,9 @@
 | Forum lead | Checked the Slightly Magic thread at `https://slightlymagic.net/forum/viewtopic.php?f=76&t=17786`; it reports the same assertion and points to permissions, paging file, FaceMaker resolution changes, and a Windows 7 vs Windows 8 difference. |
 | Local file state | `Program/FaceMaker.exe` restored from `Program/FaceMaker-nores.exe`; FaceMaker support files copied from `Manalink3/Program/`. The known Korath/thread FaceMaker matches the no-resolution helper already in this checkout; active root and `Program` FaceMaker helpers are now patched beyond that no-resolution baseline. |
 | Current active fix | Root `Shandalar.exe` and `Program/Shandalar.exe` were patched at file offset `0x1785b0` to pass `hSection = NULL` to `CreateDIBSection` instead of the game's file-mapping handle. Active root and `Program` `FaceMaker.exe` were also patched at file offset `0x5f40` for the same `hSection = NULL` change. Later Shandalar patches seed `mPlayer` at `0xa1a42`, bypass the fragile manual name editor at `0xa1acd`, and add an empty-name fallback through code cave `0x465170`/file offset `0x64570`. |
-| Runtime testing | User testing reports the FaceMaker/no-resolution swap and the `MTG` app-default Win8/desktop/pagefile settings did not resolve the assertion, and the first Shandalar-only patch still reproduced for the user. After patching Shandalar locally, `Shandalar-Win8-Test` repo/C-drive paths and the older `MTG` C-drive path were launched; Wine `wscript` SendKeys drove Start New Game far enough to load post-color resources `advfac64.pic`, `magic3.map`, `magic4.map`, and `begin.spr` with no `Unhandled exception`, page fault, or `WM_CREATE CreateDIBSection` assertion in the logs. After the follow-up FaceMaker patch, direct `C:\Shandalar\FaceMaker.exe` in `MTG` rendered without that assertion. After the name-editor bypass/fallback patch, the repo and both local bottle Shandalar copies hash to the active combined-patch value, but local GUI automation still could not drive the main menu to a full visible Shandalar-spawned character-creation retest. |
+| Runtime testing | User testing reports the FaceMaker/no-resolution swap and the `MTG` app-default Win8/desktop/pagefile settings did not resolve the assertion, and the first Shandalar-only patch still reproduced for the user. After patching Shandalar locally, `Shandalar-Win8-Test` repo/C-drive paths and the older `MTG` C-drive path were launched; Wine `wscript` SendKeys drove Start New Game far enough to load post-color resources `advfac64.pic`, `magic3.map`, `magic4.map`, and `begin.spr` with no `Unhandled exception`, page fault, or `WM_CREATE CreateDIBSection` assertion in the logs. After the follow-up FaceMaker patch, direct `C:\Shandalar\FaceMaker.exe` in `MTG` rendered without that assertion. After the name-editor bypass/fallback patch, a visible 2026-05-31 `MTG` SendKeys run reached the adventure map for the default/first start-color path; the raw log also observed `FaceMaker-nores.exe /S`. |
 | Native Windows testing | Not performed in this pass. |
-| Wine/CrossOver testing | User-provided Wine/CrossOver crash log analyzed; the local `MTG` bottle registry was updated from `C:\pagefile.sys 27 77` to `C:\pagefile.sys 512 1024` and configured to launch `Shandalar.exe`/`Magic.exe`/`FaceMaker.exe` in a `1024x768` virtual desktop with app-specific Windows 8 compatibility, but user retesting still failed. Fresh `Shandalar-Win8-Test` then verified the patched repo `Shandalar.exe` past the reported crash point. Direct patched FaceMaker startup was also verified, but full Shandalar-spawned character creation is still unverified. |
+| Wine/CrossOver testing | User-provided Wine/CrossOver crash log analyzed; the local `MTG` bottle registry was updated from `C:\pagefile.sys 27 77` to `C:\pagefile.sys 512 1024` and configured to launch `Shandalar.exe`/`Magic.exe`/`FaceMaker.exe` in a `1024x768` virtual desktop with app-specific Windows 8 compatibility, but user retesting still failed. Fresh `Shandalar-Win8-Test` then verified the patched repo `Shandalar.exe` past the reported crash point. Direct patched FaceMaker startup was verified, and S2 now records one visible default/first start-color path reaching the map in `MTG`; the other colors remain unverified. |
 
 Primary evidence is preserved under
 `docs/generated/create-dibsection-investigation/`.
@@ -76,8 +76,8 @@ Because the current CrossOver `MTG` Shandalar path is root
 
 The user mentioned `Facemaker-Korath.exe`, but no file by that name was visible
 under `/Users/mdmoll/Shandalar` during this pass. The known downloaded thread helper at
-`/private/tmp/FaceMaker-Korath-thread.exe` matches the no-resolution reference
-copy already in the repo, so it is not a materially different third variant:
+`/private/tmp/FaceMaker-Korath-thread.exe` matches the no-resolution helper
+already in the repo, so it is not a materially different third variant:
 
 | Path | SHA-256 | Relationship |
 | --- | --- | --- |
@@ -651,8 +651,8 @@ Minimum useful CrossOver evidence:
 
 | Workaround | Confidence | Notes |
 | --- | --- | --- |
-| Use the combined-patch root `Shandalar.exe` / `Program/Shandalar.exe`. | High for the original Shandalar crash point, medium for the name-entry glitch | The `0x1785b0` hSection patch was verified past the post-color crash point in CrossOver `Shandalar-Win8-Test` using both a bottle-local patched test copy and the patched repo binary. The later `0xa1a42`, `0xa1acd`, and `0xa1af2` name-entry patches are statically verified and deployed to bottle copies, but still need visible confirmation. |
-| Use the patched active `FaceMaker.exe` / `Program/FaceMaker.exe` that passes `hSection = NULL` to its own `CreateDIBSection` wrapper. | Medium | Direct CrossOver helper startup rendered successfully. Full Shandalar-spawned character creation still needs visible/manual verification. |
+| Use the combined-patch root `Shandalar.exe` / `Program/Shandalar.exe`. | High for the original Shandalar crash point, medium for the name-entry glitch | The `0x1785b0` hSection patch was verified past the post-color crash point in CrossOver `Shandalar-Win8-Test` using both a bottle-local patched test copy and the patched repo binary. The later `0xa1a42`, `0xa1acd`, and `0xa1af2` name-entry patches are statically verified and deployed to bottle copies; S2 gives visible confirmation for the default/first start-color path only. |
+| Use the patched active `FaceMaker.exe` / `Program/FaceMaker.exe` that passes `hSection = NULL` to its own `CreateDIBSection` wrapper. | Medium | Direct CrossOver helper startup rendered successfully. The S2 run also observed `FaceMaker-nores.exe /S`, so preserve and test both helper names rather than assuming only `FaceMaker.exe` matters. |
 | Launch the current `MTG` copied install from root `C:\Shandalar\Shandalar.exe`. | Medium | This is the installed shortcut target and the logged path with root DLLs present. The local bottle copy now has the combined Shandalar patch. |
 | Use a 32-bit XP or Windows 7 CrossOver bottle. | Medium | The crash came from a Wine Windows 7 environment; XP comparison is useful. |
 | Set `Window = 2` in both Shandalar ini files. | Medium | The shipped comments say mode 2 keeps Adventure Mode, Deckbuilder, and Facemaker in the windowed path and generally works better. |
@@ -668,9 +668,8 @@ Minimum useful CrossOver evidence:
 
 ## Recommended Next Steps
 
-1. Manually launch the patched repo `Shandalar.exe` and patched active
-   `FaceMaker.exe` and confirm character creation, naming, map control,
-   save/load, and at least one duel.
+1. Manually launch the patched repo `Shandalar.exe` and confirm the remaining
+   start colors, naming, map control, save/load, and at least one duel.
 2. Copy or reinstall the patched `Shandalar.exe` into any other CrossOver
    `C:\Shandalar` bottle copy before retesting that bottle.
 3. Test all five start colors in the same bottle/settings.
@@ -692,4 +691,4 @@ Minimum useful CrossOver evidence:
 | Does the larger CrossOver paging file affect the crash? | Probably not the primary fix; user retesting says the config-only path still failed. Keep a reasonable pagefile anyway. |
 | Which resource loads immediately after choosing color? | Verified in patched CrossOver logs: `advfac64.pic`, `magic3.map`, `magic4.map`, and `begin.spr` appear after the DIB creation path. |
 | Does `Magic.exe` hit the same graphics path? | Unknown; it imports/contains related GDI/assertion strings but does not use the campaign new-game flow. |
-| Does the combined Shandalar plus active FaceMaker patch fix the user-visible character-creation repro? | Unknown. Direct FaceMaker startup is verified, and the name-entry seed/bypass/fallback patches are statically verified, but Shandalar-spawned character creation still needs a visible manual retest. |
+| Does the combined Shandalar plus active FaceMaker patch fix the user-visible character-creation repro? | Partially. Direct FaceMaker startup is verified, the name-entry seed/bypass/fallback patches are statically verified, and S2 reached the adventure map for the default/first start-color path. The other colors still need visible manual retests. |
