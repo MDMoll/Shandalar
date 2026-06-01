@@ -256,6 +256,8 @@ for path in \
   docs/verified-on-this-machine.md \
   docs/runtime-manifest.md \
   docs/manual-gameplay-verification.md \
+  docs/runtime-testing-policy.md \
+  docs/runtime-test-notes.md \
   docs/cleanup-audit.md \
   docs/cleanup-launch-copy-test.md \
   docs/duplicate-audit.md \
@@ -271,6 +273,13 @@ pass "core docs exist"
 grep -F -q 'app-default `win7`, desktop `Shandalar1440=1440x1080`' README.md || fail "README is missing the current MTG CrossOver win7/Shandalar1440 guidance"
 grep -F -q '`Shandalar-Win8-Test` bottle is comparison evidence, not the primary path.' README.md || fail "README does not identify Shandalar-Win8-Test as comparison evidence"
 pass "top-level CrossOver guidance is current"
+
+grep -F -q 'This repo work is not primarily a Wine/CrossOver GUI-automation task.' docs/runtime-testing-policy.md || fail "runtime testing policy is missing the core rule"
+grep -F -q 'Stop GUI testing immediately' docs/runtime-testing-policy.md || fail "runtime testing policy is missing stop conditions"
+grep -F -q 'docs/runtime-testing-policy.md' AGENTS.md || fail "AGENTS.md does not reference runtime testing policy"
+grep -F -q 'runtime-testing-policy.md' local/README.md || fail "local helper docs do not reference runtime testing policy"
+grep -F -q 'runtime-testing-policy.md' README.md || fail "README does not reference runtime testing policy"
+pass "runtime testing policy is documented and indexed"
 
 python3 - <<'PY'
 from pathlib import Path

@@ -16,6 +16,8 @@ They are not required for normal Windows play.
 
 | Rule | Why |
 | --- | --- |
+| Follow [../docs/runtime-testing-policy.md](../docs/runtime-testing-policy.md) before running or adding GUI helpers. | These scripts are bounded smoke-test aids, not a gameplay automation framework. |
 | Record exact bottle, working directory, command, and log path when using these helpers. | GUI automation was partial and brittle in local testing. |
 | Do not treat a SendKeys smoke as full gameplay verification. | It can prove a crash point was passed, but not that character creation, map movement, or duels are stable. |
+| Stop after the first clear success or failure; do not use SendKeys to explore menus. | Focus and active-window behavior are unreliable under CrossOver/macOS. |
 | Keep these helpers separate from runtime folders. | They are local test aids, not game assets. |

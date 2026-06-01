@@ -4,6 +4,11 @@ This is the visible test plan needed before claiming that the cleaned branch
 "works" end to end. Automated checks prove file identity and documentation
 coverage; they do not prove gameplay.
 
+For Codex/agent runtime attempts, first read
+[runtime-testing-policy.md](runtime-testing-policy.md). Do not loop on
+Wine/CrossOver GUI automation to fill this table; leave nondeterministic rows
+for a human-visible pass.
+
 Use exact paths. Record every result in this file, [running.md](running.md), or
 a focused bug note. If a test fails, record the card/phase/window state before
 changing settings.

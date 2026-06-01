@@ -2,6 +2,10 @@
 
 Verified checkout path: `/Users/mdmoll/Shandalar/Shandalar`
 
+Runtime testing policy: use [runtime-testing-policy.md](runtime-testing-policy.md)
+before launching Wine/CrossOver from an agent session. One bounded launch/log
+attempt is useful evidence; repeated GUI focus or SendKeys retries are not.
+
 ## Launch Inventory
 
 | Executable/script | Purpose | Working directory | Nearby files to preserve | Verified status | Notes |
@@ -206,6 +210,10 @@ bottle. They do not prove that the game fails in all CrossOver bottles.
 | CrossOver CLI | Run from Terminal and redirect output outside the repo if needed: `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle BOTTLE_NAME Magic.exe >~/Desktop/magic.log 2>&1`. |
 | Wine CLI | Run with Wine debug channels only when needed: `WINEDEBUG=+loaddll,+seh wine Magic.exe`. |
 | Windows | Check Event Viewer only if the app exits silently. Also note any missing DLL dialog exactly. |
+
+Follow [runtime-testing-policy.md](runtime-testing-policy.md): run once for a
+targeted question, save the command/log/screenshot/result, then stop if focus,
+keystrokes, or display mode are unreliable.
 
 ## Needs testing
 

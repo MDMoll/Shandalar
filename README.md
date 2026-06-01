@@ -17,6 +17,9 @@ repository-level license file was found. See
 Evidence language in these docs is intentional: "verified" means a command was
 run on this checkout, "inferred" means the conclusion comes from local strings,
 imports, scripts, or filenames, and "needs testing" means it was not proven.
+Runtime testing is intentionally bounded: do not let Wine/CrossOver GUI
+automation become the main work loop. See
+[docs/runtime-testing-policy.md](docs/runtime-testing-policy.md).
 
 ## Quick Start
 
@@ -148,6 +151,8 @@ the detailed command/result table.
 | [docs/release-scope.md](docs/release-scope.md) | Current branch sharing scope and public-release boundaries. |
 | [docs/patch-package-plan.md](docs/patch-package-plan.md) | Branch-delta inventory and restoration-test plan for any future patch/docs-only package. |
 | [docs/manual-gameplay-verification.md](docs/manual-gameplay-verification.md) | Manual test plan required before claiming the game works end to end. |
+| [docs/runtime-testing-policy.md](docs/runtime-testing-policy.md) | Bounded Wine/CrossOver/native Windows runtime-testing rules and stop conditions. |
+| [docs/runtime-test-notes.md](docs/runtime-test-notes.md) | Short chronological notes from bounded runtime attempts. |
 | [docs/crossover-macos.md](docs/crossover-macos.md) | Practical CrossOver bottle setup and troubleshooting. |
 | [docs/magic-exe.md](docs/magic-exe.md) | Dedicated `Magic.exe` notes, imports, hypotheses, and tests. |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Practical troubleshooting entries, including the start-color DIB assertion. |
@@ -191,8 +196,9 @@ ignore rules, expected tracked ignored file, Git binary attributes, protected
 cleanup false positives, patched runtime hashes, runtime-manifest hashes,
 representative patch bytes, tracked save/local-state inventory, security-scan
 target inventory, core docs, branch-delta inventory shape, current top-level
-CrossOver guidance, maintained-text ASCII, docs index coverage, and local
-Markdown links. It does not replace the manual gameplay checklist.
+CrossOver guidance, runtime-testing policy indexing, maintained-text ASCII,
+docs index coverage, and local Markdown links. It does not replace the manual
+gameplay checklist.
 
 ## Evidence Helpers
 

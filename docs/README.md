@@ -17,6 +17,8 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | [verified-on-this-machine.md](verified-on-this-machine.md) | Detailed local command/result evidence. |
 | [running.md](running.md) | Windows, Wine, and CrossOver launch commands and test matrix. |
 | [manual-gameplay-verification.md](manual-gameplay-verification.md) | Manual test plan and validator required before claiming the game works end to end. |
+| [runtime-testing-policy.md](runtime-testing-policy.md) | Bounded runtime-testing rules, GUI automation stop conditions, and evidence fields. |
+| [runtime-test-notes.md](runtime-test-notes.md) | Short chronological notes from bounded runtime attempts. |
 | [crossover-macos.md](crossover-macos.md) | CrossOver bottle setup, app-defaults, desktop sizing, and troubleshooting. |
 | [troubleshooting.md](troubleshooting.md) | Practical issue notes and current mitigations. |
 

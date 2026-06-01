@@ -18,6 +18,7 @@ should keep the working tree safe and evidence-driven.
 | Do not claim the repo is safe for public redistribution unless [docs/distribution.md](docs/distribution.md) has been updated with evidence. | The checkout contains bundled game binaries, art, data, decks, and rightsholder/trademark notices, and no repository-level license file was found. |
 | Do not declare binaries safe unless a named scanner was actually run and recorded. | Old game binaries can trigger false positives, but that is not proof of safety. |
 | Put scan guidance/results in [docs/security-scan.md](docs/security-scan.md). | Safety claims need scanner name, version, path, hash, date, and result. |
+| Follow [docs/runtime-testing-policy.md](docs/runtime-testing-policy.md) before launching Wine/CrossOver or adding GUI helpers. | Runtime testing is secondary evidence; if focus, SendKeys, or display mode becomes unreliable, stop and resume repo work. |
 | Preserve the root `.gitattributes` binary rules and do not run broad `git add --renormalize` without a separate review. | Legacy resource formats, saves, media, archives, and executables should not be rewritten by text filters or line-ending cleanup. |
 | Do not casually replace the patched `Shandalar.exe` binaries with older copies. | Root and `Program/Shandalar.exe` contain documented patches at `0x1785b0` for the start-color `CreateDIBSection` crash, `0xa1a42` for the name-entry default buffer, `0xa1acd`/`0xa1af2` for the name-editor bypass and empty-name fallback, and movement hooks at `0x44398c`, `0x444a2b`, and `0x444aa7` using code cave `0x46502d`. |
 | Do not casually replace the active `FaceMaker.exe` binaries with the older no-resolution copies. | Root and `Program/FaceMaker.exe` are now no-resolution/Korath-derived plus an additional documented `CreateDIBSection` compatibility patch. |
@@ -126,3 +127,17 @@ For the start-color assertion, the strongest current smoke logs are
 SendKeys against the patched repo and C-drive binaries and got past the
 post-color resource load point. Treat them as crash-point verification, not
 full gameplay proof.
+
+## Runtime Testing Policy
+
+| Rule | Why |
+| --- | --- |
+| This is not primarily a Wine/CrossOver GUI-testing repo task unless the user explicitly says so. | The useful work is usually docs, source/static inspection, inventory, cleanup planning, and targeted bug analysis. |
+| Use at most one bounded runtime attempt per relevant target by default. | Repeated relaunches and key-sequence experiments are expensive and fragile. |
+| Do not add new SendKeys/AppleScript/xdotool helpers for exploratory UI navigation. | Existing helpers are narrow smoke-test evidence aids, not a gameplay automation framework. |
+| Prefer one logged run, static inspection, and manual test checklists over trying to play the game through automation. | Wine/CrossOver focus behavior is not reliable enough to be the main proof path. |
+| Record exact command, working directory, bottle/container, Windows version, log path, screenshot path, and visible result for every attempted launch. | Future readers need evidence, not impressions. |
+| Keep native Windows evidence separate from Wine/CrossOver evidence. | Bottle behavior is not proof of native Windows behavior. |
+
+See [docs/runtime-testing-policy.md](docs/runtime-testing-policy.md) for the
+full stop conditions and evidence fields.

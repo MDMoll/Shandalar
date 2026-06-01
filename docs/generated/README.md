@@ -21,5 +21,6 @@ reverse-engineering and CrossOver/Wine investigations.
 
 Start with [../troubleshooting.md](../troubleshooting.md),
 [../crossover-macos.md](../crossover-macos.md), or
+[../runtime-testing-policy.md](../runtime-testing-policy.md), or
 [../bugs/create-dibsection-after-color.md](../bugs/create-dibsection-after-color.md)
 before reading these files.
