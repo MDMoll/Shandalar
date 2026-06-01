@@ -62,6 +62,6 @@ Run the automated subset of these checks with:
 tools/verify-share-readiness.sh
 ```
 
-That script checks the clean tree, expected tracked ignored file, Git binary
+That script checks the clean tree, absence of tracked ignored files, Git binary
 attributes, patched runtime hashes, representative patch bytes, core docs, and
 local Markdown links. It does not launch the game.

@@ -1,0 +1,12 @@
+D  CardArtNew/Thumbs.db
+?? docs/generated/safe-cleanup/duplicate-summary.tsv
+?? docs/generated/safe-cleanup/duplicate-tracked-files.tsv
+?? docs/generated/safe-cleanup/git-status-after.txt
+?? docs/generated/safe-cleanup/git-status-before.txt
+?? docs/generated/safe-cleanup/largest-duplicate-groups.tsv
+?? docs/generated/safe-cleanup/removal-approved.tsv
+?? docs/generated/safe-cleanup/removal-candidates.tsv
+?? docs/generated/safe-cleanup/removal-rejected.tsv
+?? docs/generated/safe-cleanup/tracked-files.txt
+?? docs/generated/safe-cleanup/tracked-large-files.tsv
+?? docs/generated/safe-cleanup/tracked-os-junk-candidates.txt

@@ -15,7 +15,8 @@ conservative.
 | Runtime patches | Active `Shandalar.exe`, `FaceMaker.exe`, `Magic.exe`, and `ManalinkEh.dll` changes are documented with offsets and hashes. | See [running.md](running.md), [magic-exe.md](magic-exe.md), and focused bug docs under [bugs/](bugs/). |
 | Runtime manifest | Active patched files and protected references have a compact hash manifest for review and scanning. | [runtime-manifest.md](runtime-manifest.md). |
 | Detailed local evidence | Long command/result evidence is in docs instead of the primary README. | [verified-on-this-machine.md](verified-on-this-machine.md). |
-| Cleanup evidence | Remaining candidates are inventoried with confidence instead of being deleted. | [cleanup-audit.md](cleanup-audit.md) and [file-inventory.md](file-inventory.md). |
+| Cleanup evidence | Remaining candidates are inventoried with confidence; only one verified OS cache file has been deleted. | [cleanup-audit.md](cleanup-audit.md), [cleanup-removed-files.md](cleanup-removed-files.md), and [file-inventory.md](file-inventory.md). |
+| Safe duplicate cleanup pass | One tracked OS cache file was removed; duplicate archives and runtime-looking duplicates were classified but left in place where package/runtime evidence was insufficient. | [cleanup-removed-files.md](cleanup-removed-files.md), [repo-cleanup-plan.md](repo-cleanup-plan.md), and [generated/safe-cleanup/](generated/safe-cleanup/). |
 | Cleanup test plan | Risky remaining moves have a disposable launch-copy test plan and a helper that can dry-run or create a checked full-copy target without overwriting existing paths. | [cleanup-launch-copy-test.md](cleanup-launch-copy-test.md), `tools/create-cleanup-test-copy.sh`. |
 | Git binary hygiene | Root `.gitattributes` marks legacy runtime/resource/media/archive/save formats as binary. | `git check-attr --all -- Shandalar.exe Program/Magic.exe Cards.dat Statwin/statscrn.tmp README.md`. |
 | Distribution caution | The docs distinguish a cleaned maintenance branch from public redistribution permission. | [distribution.md](distribution.md). |
@@ -44,7 +45,7 @@ conservative.
 | `Shandalar.exe --help` is documented from actual output. | Local attempts did not capture help text or dialog output. |
 | Duplicate assets are safe to remove. | [duplicate-audit.md](duplicate-audit.md) now measures the full non-git duplicate graph, but no launch-copy removal test has chosen canonical runtime/package paths. |
 | Tracked save files are ready for public release. | [save-state.md](save-state.md) documents save slots and screen-name state that should be reviewed after save/load testing. |
-| All generated/local clutter has been archived. | `CardArtNew/Thumbs.db` and save-state/export files remain tracked in place pending explicit approval and testing; see [cleanup-move-plan.md](cleanup-move-plan.md). |
+| All generated/local clutter has been archived or removed. | Save-state/export files remain tracked in place pending explicit approval and testing; see [cleanup-move-plan.md](cleanup-move-plan.md). |
 | Public redistribution is approved. | [distribution.md](distribution.md) records that no repository-level license file was found and bundled rightsholder/trademark notices are present. |
 | A patch/docs-only public package exists. | [patch-package-plan.md](patch-package-plan.md) records helper commands for temporary patch artifacts and tree-apply verification, but no package artifact has been committed, visibly runtime-tested, scanner-verified, or release-approved. |
 | The binaries are guaranteed safe. | [security-scan.md](security-scan.md) records a clean ClamAV result for the tracked scan targets, but one scanner result is not a broad safety guarantee. |

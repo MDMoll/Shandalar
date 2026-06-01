@@ -65,7 +65,7 @@ else
 fi
 
 tracked_ignored="$(git ls-files -ci --exclude-standard)"
-[ "$tracked_ignored" = "CardArtNew/Thumbs.db" ] || fail "unexpected tracked ignored files: ${tracked_ignored:-<none>}"
+[ -z "$tracked_ignored" ] || fail "unexpected tracked ignored files: ${tracked_ignored:-<none>}"
 pass "tracked ignored file inventory is expected"
 
 for path in \
@@ -91,7 +91,6 @@ for path in \
   MAGIC5.SVE \
   MAGIC5.map \
   MAGIC5.fce \
-  CardArtNew/Thumbs.db \
   archive/generated-local/Duel.GID \
   Duel.hlp
 do
@@ -259,6 +258,8 @@ for path in \
   docs/runtime-testing-policy.md \
   docs/runtime-test-notes.md \
   docs/cleanup-audit.md \
+  docs/cleanup-removed-files.md \
+  docs/repo-cleanup-plan.md \
   docs/cleanup-launch-copy-test.md \
   docs/duplicate-audit.md \
   docs/cleanup-move-plan.md \

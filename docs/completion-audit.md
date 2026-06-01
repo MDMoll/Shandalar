@@ -27,7 +27,7 @@ proof.
 | `Magic.exe` has dedicated documentation. | Proven locally | [magic-exe.md](magic-exe.md), [magic-vs-shandalar-runtime.md](magic-vs-shandalar-runtime.md), and bug notes under [bugs/](bugs/). | Visible root-vs-`Program/` behavior comparison is still pending. |
 | `Shandalar.exe --help` and command-line modes are documented or marked unverified. | Proven locally | [command-line.md](command-line.md) records attempted commands and marks `--help` capture as missing. | Capture visible help/dialog/log output on Windows or CrossOver. |
 | Runtime dependency guidance is based on binary inspection. | Proven locally | [runtime-dependencies.md](runtime-dependencies.md) and [verified-on-this-machine.md](verified-on-this-machine.md). | Native Windows dependency behavior is still untested. |
-| Cleanup candidates are listed with evidence and confidence, nothing deleted. | Proven for current audit scope | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), [duplicate-audit.md](duplicate-audit.md), and [save-state.md](save-state.md). | Approved launch-copy tests before moving save-state, art-folder, package-tree, or duplicate runtime-like files. |
+| Cleanup candidates are listed with evidence and confidence; only safe OS junk was deleted. | Proven for current audit scope | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), [cleanup-removed-files.md](cleanup-removed-files.md), [repo-cleanup-plan.md](repo-cleanup-plan.md), [duplicate-audit.md](duplicate-audit.md), and [save-state.md](save-state.md). | Approved launch-copy tests before moving save-state, art-folder, package-tree, or duplicate runtime-like files. |
 | Stale references are identified with path/line evidence where possible. | Proven locally | [stale-references.md](stale-references.md). | Live URL reachability only if requested. |
 | Generated docs distinguish verified facts from inferences. | Proven locally | Root README evidence-language note plus `Verified on this machine` and `Needs testing` sections across docs. | Keep using that convention for new investigations. |
 | Branch can be shared in git. | Proven for controlled maintenance | Clean tree, pushed branch `codex/shandalar-crossover-updates`, [release-scope.md](release-scope.md), [git-handoff.md](git-handoff.md), `tools/create-git-handoff-bundle.sh`, `tools/create-patch-package.sh`, `tools/verify-handoff-artifacts.sh`, checksum sidecars, ClamAV scan evidence in [security-scan.md](security-scan.md), and verifier pass. | Remaining manual gameplay rows are still required before claiming the game works end to end or making broader release claims. |
@@ -37,7 +37,6 @@ proof.
 
 | Path family | Why |
 | --- | --- |
-| `CardArtNew/Thumbs.db` | Generated-looking, but inside a runtime-like art folder; needs explicit approval. |
 | `MAGIC*.SVE`, `MAGIC*.map`, `MAGIC*.fce`, `MAGIC5`, `CSV/MAGIC*/`, `Savedescs`, `FaceMostRecent.txt`, `Screennames/` | Save/local state needs a visible save/load test before archiving or keeping as fixtures. |
 | `Program/Savedescs`, `Manalink3/Program/ScreenNames/` | Package-tree local state; do not move separately from owning package/runtime trees. |
 | `MENUBAK.PIC`, `WINBAK*.PIC`, `WORLBAK1.PIC`, and matching `Program/` copies | Backup-looking names, but current evidence identifies them as legacy `.PIC` resource files. |

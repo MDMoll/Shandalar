@@ -1,0 +1,3 @@
+?? docs/generated/safe-cleanup/
+!! .codex/
+!! security-scan-results.tsv

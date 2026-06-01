@@ -7,11 +7,16 @@ cleaner without quietly breaking old runtime layouts.
 Use [cleanup-launch-copy-test.md](cleanup-launch-copy-test.md) before applying
 any of these moves in the real checkout.
 
+## Completed Safe Removal
+
+| Removed path | Evidence | Result |
+| --- | --- | --- |
+| `CardArtNew/Thumbs.db` | Windows Explorer thumbnail cache; `file` reported `Composite Document File V2 Document`; SHA-256 `d613ed811f078af12887dfb5d056373606c29d036574ee31315c427bf5f101ea`; no binary string reference to `Thumbs.db`. | Removed with `git rm` in the safe duplicate cleanup pass; `.gitignore` still ignores future `Thumbs.db` files. |
+
 ## Move Candidates
 
 | Candidate | Proposed archive path | Evidence | Required before move |
 | --- | --- | --- | --- |
-| `CardArtNew/Thumbs.db` | `archive/generated-local/CardArtNew-Thumbs.db` | Windows Explorer thumbnail cache; `file` reports `Composite Document File V2 Document`; SHA-256 `d613ed811f078af12887dfb5d056373606c29d036574ee31315c427bf5f101ea`. | Explicit approval because the source path is inside a runtime-like art folder. |
 | `MAGIC5` | `archive/save-state/MAGIC5` | ASCII text derived from `MAGIC5.SVE`; begins with `; Importing Magic.exe.Cards.csv` and `; Loading MAGIC5.SVE data...`. | Approval for save-state cleanup. This one is safer than the binary save slots, but should stay grouped with save evidence. |
 | `MAGIC*.SVE`, `MAGIC*.map`, `MAGIC*.fce` | `archive/save-state/slots/` | Binary save slots and adjacent map/face state. | Save/load test in a launch copy that proves new game, load game, and save game still work without root save slots. |
 | `CSV/MAGIC3/` through `CSV/MAGIC6/` | `archive/save-state/csv-exports/` | Text exports from save inspection. | Decide whether these are public fixtures or just local evidence. |
@@ -30,7 +35,6 @@ Run from `/Users/mdmoll/Shandalar/Shandalar`:
 
 ```sh
 mkdir -p archive/generated-local archive/save-state
-git mv CardArtNew/Thumbs.db archive/generated-local/CardArtNew-Thumbs.db
 git mv MAGIC5 archive/save-state/MAGIC5
 ```
 
@@ -50,7 +54,7 @@ git mv Savedescs FaceMostRecent.txt Screennames archive/save-state/local-player-
 git status --short --untracked-files=all
 git diff --stat
 git ls-files -ci --exclude-standard
-rg -n "CardArtNew/Thumbs.db|MAGIC5|Savedescs|FaceMostRecent|Screennames|ScreenNames" README.md AGENTS.md docs archive
+rg -n "MAGIC5|Savedescs|FaceMostRecent|Screennames|ScreenNames" README.md AGENTS.md docs archive
 ```
 
 If a manual launch test is part of the move, record the exact launch path,

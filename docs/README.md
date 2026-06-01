@@ -49,6 +49,8 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | --- | --- |
 | [file-inventory.md](file-inventory.md) | File counts, large directories, generated/local-state observations. |
 | [cleanup-audit.md](cleanup-audit.md) | Cleanup candidates with evidence and confidence. |
+| [cleanup-removed-files.md](cleanup-removed-files.md) | Exact files removed by the safe cleanup pass, with evidence and rollback notes. |
+| [repo-cleanup-plan.md](repo-cleanup-plan.md) | Cleanup decision log, remaining duplicate families, and next cleanup batches. |
 | [cleanup-move-plan.md](cleanup-move-plan.md) | Pending cleanup moves that need approval or launch-copy testing. |
 | [cleanup-launch-copy-test.md](cleanup-launch-copy-test.md) | Disposable-copy test plan before moving risky cleanup candidates. |
 | [duplicate-audit.md](duplicate-audit.md) | Full non-git exact duplicate hash summary. |

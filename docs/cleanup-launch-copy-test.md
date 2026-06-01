@@ -48,7 +48,7 @@ flags in the result table if you use them.
 
 | ID | Candidate family | Copy-only action | Required visible proof |
 | --- | --- | --- | --- |
-| C1 | `CardArtNew/Thumbs.db` | Move or delete only this thumbnail cache in the copy. | Shandalar launches, deck/card screens that use `CardArtNew/` still render. |
+| C1 | `CardArtNew/Thumbs.db` | Completed in the real checkout as a safe OS-cache removal. | No launch-copy test was required for this generated cache; all `CardArtNew/` art files remain in place. |
 | C2 | Root save slots: `MAGIC*.SVE`, `MAGIC*.map`, `MAGIC*.fce` | Move the whole slot set out of root in the copy. | New game, load-game screen, save game, quit, relaunch, and load the newly saved game. |
 | C3 | Derived save exports: `MAGIC5`, `CSV/MAGIC3/` through `CSV/MAGIC6/` | Move these text/export artifacts out of root in the copy. | Same as C2; also confirm no tool or launcher complains about missing CSV/export files. |
 | C4 | Root local player state: `Savedescs`, `FaceMostRecent.txt`, `Screennames/` | Move these together in the copy. | Character creation, default-name path, save/load, and screen-name behavior are visibly recorded. |

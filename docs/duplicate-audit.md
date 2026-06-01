@@ -17,6 +17,27 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` on 2026-05-31.
 | Redundant files if one copy per hash were kept | 15,337 |
 | Theoretical duplicate bytes if one copy per hash were kept | 456,259,116 bytes, about 435.1 MiB |
 
+## Safe Duplicate Cleanup Pass
+
+A later tracked-only cleanup pass on branch `codex/safe-duplicate-cleanup`
+used `git ls-files` so only current tracked working-tree files were considered
+for deletion. It removed one tracked OS cache file:
+`CardArtNew/Thumbs.db`.
+
+| Metric | Before | After | Delta |
+| --- | ---: | ---: | ---: |
+| Tracked files scanned | 52,010 | 52,009 | -1 |
+| Duplicate SHA-256 groups | 10,797 | 10,797 | 0 |
+| Files inside duplicate groups | 26,071 | 26,071 | 0 |
+| Redundant files if one copy per hash were kept | 15,274 | 15,274 | 0 |
+| Theoretical duplicate bytes if one copy per hash were kept | 454,817,805 | 454,817,805 | 0 |
+| Files removed | 0 | 1 | +1 |
+| Bytes removed | 0 | 524,800 | +524,800 |
+
+The duplicate numbers did not change because `CardArtNew/Thumbs.db` was not
+part of a duplicate hash group. See [cleanup-removed-files.md](cleanup-removed-files.md)
+and generated evidence under [generated/safe-cleanup/](generated/safe-cleanup/).
+
 ## Largest Duplicate Families
 
 These are grouped by the top-level directories that participate in each exact
@@ -51,6 +72,7 @@ duplicate hash group.
 | --- | --- |
 | Many duplicate groups cross `Manalink3/`, `Mods/`, and `Program/`. | The repo contains overlapping package/runtime/mod layouts, not just stray copies. |
 | The largest high-confidence byte duplicates are archive pairs under `Mods/` and `Manalink3/Mods/`. | These are good future cleanup candidates, but still need an approved mod-distribution decision. |
+| A tracked OS cache file was removed in the safe cleanup pass. | This reduced tracked file count by one and removed 524,800 bytes, but did not reduce duplicate-byte totals. |
 | Runtime-like duplicates in `Program/`, root, `Statwin/`, sprite folders, sound folders, and DLLs remain low-confidence cleanup candidates. | Do not remove or archive them without launch-copy tests. |
 | The theoretical 435.1 MiB savings is not an achievable safe cleanup target yet. | It assumes one path per hash can be kept, which is not proven for legacy runtime lookups. |
 

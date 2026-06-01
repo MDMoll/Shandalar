@@ -174,6 +174,8 @@ the detailed command/result table.
 | [docs/file-inventory.md](docs/file-inventory.md) | Counts, large files, duplicate observations, and runtime-critical file types. |
 | [docs/duplicate-audit.md](docs/duplicate-audit.md) | Full non-git SHA-256 duplicate summary and cleanup confidence. |
 | [docs/cleanup-audit.md](docs/cleanup-audit.md) | Cleanup candidates with confidence and evidence. |
+| [docs/cleanup-removed-files.md](docs/cleanup-removed-files.md) | Exact safe cleanup removals and rollback notes. |
+| [docs/repo-cleanup-plan.md](docs/repo-cleanup-plan.md) | Current cleanup decision log and next cleanup batches. |
 | [docs/stale-references.md](docs/stale-references.md) | Old URLs, hard-coded paths, and historical references. |
 | [docs/reorganization.md](docs/reorganization.md) | Exact limited-reorg moves, rationale, commands, and verification. |
 | [docs/gaps.md](docs/gaps.md) | Remaining launch, command-line, duplicate, and build gaps. |
@@ -192,7 +194,7 @@ tools/verify-share-readiness.sh
 ```
 
 This verifies the clean tree, ignored local clutter, generated report/handoff
-ignore rules, expected tracked ignored file, Git binary attributes, protected
+ignore rules, absence of tracked ignored files, Git binary attributes, protected
 cleanup false positives, patched runtime hashes, runtime-manifest hashes,
 representative patch bytes, tracked save/local-state inventory, security-scan
 target inventory, core docs, branch-delta inventory shape, current top-level

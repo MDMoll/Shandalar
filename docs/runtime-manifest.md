@@ -44,7 +44,6 @@ scan, a license grant, or proof of gameplay stability.
 
 | Path | SHA-256 | File type | Status |
 | --- | --- | --- | --- |
-| `CardArtNew/Thumbs.db` | `d613ed811f078af12887dfb5d056373606c29d036574ee31315c427bf5f101ea` | Composite Document File V2 Document | Generated-looking, but still in place because it lives in an art folder. |
 | `archive/generated-local/Duel.GID` | `e246ee3cf6bc430731dad14e6d1e0e84819418bd97450bb33707b7eec39c7ff6` | MS Windows help Bookmark | Archived generated help index. |
 | `archive/generated-local/shandalar_dll.log` | `53e66f9ee0a7845250d3b5c19bcd4f2899dae05f5d855f529c21549d6e09e286` | CSV text | Archived runtime/debug log evidence. |
 | `archive/backups/Rogues_Org_BAK.csv` | `61cc4cfe359ff156949366a3ab8b17a39adb766ab54e733ffeaa1f9cb0c169b8` | CSV text | Archived historical backup. |

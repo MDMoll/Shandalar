@@ -1,0 +1,7 @@
+metric	value
+tracked_files_scanned	52009
+duplicate_sha256_groups	10797
+files_inside_duplicate_groups	26071
+redundant_files_if_one_copy_kept	15274
+theoretical_duplicate_bytes	454817805
+theoretical_duplicate_mib	433.7
