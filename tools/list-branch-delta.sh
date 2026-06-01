@@ -40,6 +40,9 @@ kind_for_path() {
     archive/*)
       printf 'archive-evidence'
       ;;
+    *.7z|*.7Z|*.zip|*.ZIP|*.rar|*.RAR)
+      printf 'compressed-archive'
+      ;;
     CardArtNew/Thumbs.db)
       printf 'generated-local'
       ;;
