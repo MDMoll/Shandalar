@@ -1,0 +1,9 @@
+Root	Launchers	Local folders used	Evidence	Keep/Archive/Remove	Reason
+.	Shandalar.exe; Magic.exe; FaceMaker.exe; Manalink_Launcher.cmd	Program; Mods; top-level runtime/resource folders	README.md launch table; AGENTS.md default launch context; CrossOver MTG docs	Keep	Canonical active repo/install root.
+Program/	Program/Shandalar.exe; Program/Magic.exe; Program/FaceMaker.exe	Program-local runtime folders and assets	Root Manalink launcher enters Program before Magic.exe; README treats Program/Magic.exe as first-class	Keep	Canonical active runtime bundle; no runtime assets removed.
+Mods/	Manalink_Launcher.cmd enumerates root-local Mods	Art; Rogues; Sound; PlayDeck; Util	Manalink_Launcher.cmd lines 8-21 and 125-132	Keep	Canonical mod archive/staging tree for active root launcher.
+Manalink3/	Manalink3/Manalink_Launcher.cmd; Manalink3/Program/Magic.exe	Program; Mods; PlayDeckAnalyser	Launcher is byte-identical to root launcher and internally coherent, but active docs do not require it; user policy says local enumeration alone is not enough to keep duplicate package roots	Archive	Historical/unsupported package root retained for evidence, but duplicate archives under Manalink3/Mods are removed in favor of top-level Mods.
+src/	src/make.exe; src/yasm.exe; src/deploy.bat	source and patch folders	AGENTS.md/building.md warn source is not proven rebuild path	Keep	Tooling/source root, not part of duplicate install-root cleanup.
+magic_updater/	magic_updater/Magic_updater.bat	updater data and scripts	file-inventory.md documents updater snapshots	Keep	Tooling root; no path-purpose proof for removal.
+PlayDeckAnalyser/	PlayDeckAnalyser/PlayDeckAnalyser.exe	CSV; Lists	Root launcher menu option starts top-level analyzer	Keep	Utility root used by active root launcher.
+Facemaker/	Facemaker/Facemaker.exe	folder-local helper/support files	magic-vs-shandalar-runtime.md comparison evidence	Keep	Historical comparison evidence, not deduped by install-root policy.

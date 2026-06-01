@@ -16,7 +16,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` on the local machine clock,
 | Safe duplicate removed | `docs/generated/safe-cleanup/post-cleanup-largest-duplicate-groups.tsv`, 2,344,775 bytes. |
 | Kept canonical copy | `docs/generated/safe-cleanup/largest-duplicate-groups.tsv`, SHA-256 `c765aca06fa871fa2b0799a8d8283f93037af49a3a388e2a2326a29063b68b48`. |
 | Quarantine test | Disposable worktree `/private/tmp/shandalar-duplicate-cleanup-test-verified` moved the candidate to `_QUARANTINE_DUPLICATES/`; the kept report remained present and the candidate path was absent. |
-| Archive policy | `Manalink3/Mods/` archive duplicates are protected because `Manalink3/` has a package-local launcher, `Program/`, `Mods/`, utility tools, and local archive enumeration. |
+| Archive policy | Superseded by install-root policy: top-level `Mods/` is canonical and exact duplicate archives were removed from unsupported `Manalink3/Mods/`. |
 
 ## Removed Files
 
@@ -28,7 +28,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` on the local machine clock,
 
 | Family | Example Paths | Reason Protected | Evidence Needed |
 | --- | --- | --- | --- |
-| `Manalink3/Mods/` archives vs root `Mods/` archives | `Manalink3/Mods/Art/Default Sonic 2014.7z`; `Mods/Art/Default Sonic 2014.7z` | `Manalink3/Manalink_Launcher.cmd` sets `modDir` relative to itself and counts local archive files, so the tree is shaped like a self-contained package. | Explicit policy that `Manalink3/` no longer needs to remain standalone, plus a disposable mod-menu/listing test. |
+| `Manalink3/Program/` and executable-adjacent package files | `Manalink3/Program/Magic.exe`; `Manalink3/Program/ManalinkEx.dll` | `Manalink3/` is unsupported as an active root, but executable-adjacent runtime files were outside the archive-only install-root pass. | Explicit package archival/removal pass or move-to-archive decision. |
 | `_undo` rollback trees | `Mods/Art/_undo/2016_02_12_12_15_32/...` | The launcher defines `undoArt`/`undoPlayDeck`; many `_undo` files are runtime-looking resources. | Rollback workflow audit proving the tree is obsolete or has a replacement. |
 | Runtime/resource families | `Program/`, `Statwin/`, `Spr1024/`, root/`Program` binaries and DLLs | Launch and resource lookup paths are still active or unresolved. | Runtime trace or launch-copy evidence. |
 | Art/deck pools | `CardArtManalink/`, `CardArtNew/`, deck folders | Duplicate image/deck content can still serve distinct lookup or variant roles. | Runtime/file-access trace and user policy on deck variants. |
@@ -44,7 +44,7 @@ Run from `/Users/mdmoll/Shandalar/Shandalar` on the local machine clock,
 | `docs/generated/duplicate-cleanup/protected-duplicates.tsv` | Protected family summary and required proof. |
 | `docs/generated/duplicate-cleanup/static-reference-results.tsv` | Reference checks for the safe candidate and archive families. |
 | `docs/generated/duplicate-cleanup/quarantine-test-results.tsv` | Disposable worktree quarantine result. |
-| `docs/generated/duplicate-cleanup/archive-policy.md` | Default archive canonical policy and why it is not applied to `Manalink3/` here. |
+| `docs/generated/duplicate-cleanup/archive-policy.md` | Active archive canonical policy after the install-root cleanup pass. |
 | `docs/generated/duplicate-cleanup/cleanup-summary.md` | Before/after duplicate metrics and classification counts. |
 
 ## Rollback

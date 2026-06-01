@@ -1,97 +1,47 @@
 candidate_path	reference_type	referenced_by	line_or_context	confidence
-docs/generated/safe-cleanup/post-cleanup-largest-duplicate-groups.tsv	exact-path	<none outside docs/generated/>	No maintained README/doc/tool reference to this exact path before removal; generated duplicate-cleanup files intentionally record it as removed evidence.	high
-docs/generated/safe-cleanup/post-cleanup-largest-duplicate-groups.tsv	generated-status-context	docs/generated/safe-cleanup/git-status-after.txt	Prior generated status captured untracked generated filenames during that pass; not a maintained link.	medium
-Manalink3/Mods/Art/Default Sonic 2014.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/Default Sonic 2014.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/Default Sonic 2014.7z	basename-without-extension	Manalink_Launcher.cmd:19	"SET ""defaultArt=Default Sonic 2014"""	high
-Manalink3/Mods/Art/Default Sonic 2014.7z	basename-without-extension	Manalink3/Manalink_Launcher.cmd:19	"SET ""defaultArt=Default Sonic 2014"""	high
-Manalink3/Mods/Art/Duel_Shell Sarlack 2013.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/Duel_Shell Sarlack 2013.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/Duel_Shell Sarlack 2013.7z	basename-without-extension	<none found>	No exact text reference to Duel_Shell Sarlack 2013; archives are still discovered by parent-directory enumeration.	medium
-Manalink3/Mods/Art/Duel_Shell Salbei 2010.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/Duel_Shell Salbei 2010.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/Duel_Shell Salbei 2010.7z	basename-without-extension	<none found>	No exact text reference to Duel_Shell Salbei 2010; archives are still discovered by parent-directory enumeration.	medium
-Manalink3/Mods/Art/DuelTerrain Ozks 2013.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/DuelTerrain Ozks 2013.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/DuelTerrain Ozks 2013.7z	basename-without-extension	<none found>	No exact text reference to DuelTerrain Ozks 2013; archives are still discovered by parent-directory enumeration.	medium
-Manalink3/Mods/Rogues/Modern Sarlack MtG.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Rogues/Modern Sarlack MtG.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Rogues/Modern Sarlack MtG.7z	basename-without-extension	<none found>	No exact text reference to Modern Sarlack MtG; archives are still discovered by parent-directory enumeration.	medium
-Manalink3/Mods/Art/PlayFace Ozks Anime 2014.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/PlayFace Ozks Anime 2014.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/PlayFace Ozks Anime 2014.7z	basename-without-extension	<none found>	No exact text reference to PlayFace Ozks Anime 2014; archives are still discovered by parent-directory enumeration.	medium
-Manalink3/Mods/Rogues/Modern Ozks 16x9.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Rogues/Modern Ozks 16x9.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Rogues/Modern Ozks 16x9.7z	basename-without-extension	<none found>	No exact text reference to Modern Ozks 16x9; archives are still discovered by parent-directory enumeration.	medium
-Manalink3/Mods/Art/Duel_DB_Shell Ozks SolidClean 2014.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/Duel_DB_Shell Ozks SolidClean 2014.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/Duel_DB_Shell Ozks SolidClean 2014.7z	basename-without-extension	<none found>	No exact text reference to Duel_DB_Shell Ozks SolidClean 2014; archives are still discovered by parent-directory enumeration.	medium
-Manalink3/Mods/Art/Duel_DB Microprose 1997.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/Duel_DB Microprose 1997.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/Duel_DB Microprose 1997.7z	basename-without-extension	<none found>	No exact text reference to Duel_DB Microprose 1997; archives are still discovered by parent-directory enumeration.	medium
-Manalink3/Mods/Art/DuelFace_DuelLife Sonic 2013.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/DuelFace_DuelLife Sonic 2013.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/DuelFace_DuelLife Sonic 2013.7z	basename-without-extension	<none found>	No exact text reference to DuelFace_DuelLife Sonic 2013; archives are still discovered by parent-directory enumeration.	medium
-Manalink3/Mods/Rogues/Classic Ozks Antiques.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Rogues/Classic Ozks Antiques.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Rogues/Classic Ozks Antiques.7z	basename-without-extension	<none found>	No exact text reference to Classic Ozks Antiques; archives are still discovered by parent-directory enumeration.	medium
-Manalink3/Mods/Art/CardFrames Sonic 2014.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/CardFrames Sonic 2014.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Art/CardFrames Sonic 2014.7z	basename-without-extension	<none found>	No exact text reference to CardFrames Sonic 2014; archives are still discovered by parent-directory enumeration.	medium
-Manalink3/Mods/Rogues/Classic Microprose Default.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Rogues/Classic Microprose Default.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Rogues/Classic Microprose Default.7z	basename-without-extension	<none found>	No exact text reference to Classic Microprose Default; archives are still discovered by parent-directory enumeration.	medium
-Manalink3/Mods/Rogues/Classic CirothUngol Ridiculous.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Rogues/Classic CirothUngol Ridiculous.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Rogues/Classic CirothUngol Ridiculous.7z	basename-without-extension	Manalink_Launcher.cmd:21	"SET ""defaultRogues=Classic CirothUngol Ridiculous"""	high
-Manalink3/Mods/Rogues/Classic CirothUngol Ridiculous.7z	basename-without-extension	Manalink3/Manalink_Launcher.cmd:21	"SET ""defaultRogues=Classic CirothUngol Ridiculous"""	high
-Manalink3/Mods/Rogues/Classic Stassy MagicCardUsers.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Rogues/Classic Stassy MagicCardUsers.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Manalink3/Mods/Rogues/Classic Stassy MagicCardUsers.7z	basename-without-extension	<none found>	No exact text reference to Classic Stassy MagicCardUsers; archives are still discovered by parent-directory enumeration.	medium
-Mods/Art/Default Sonic 2014.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/Default Sonic 2014.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/Default Sonic 2014.7z	basename-without-extension	Manalink_Launcher.cmd:19	"SET ""defaultArt=Default Sonic 2014"""	high
-Mods/Art/Default Sonic 2014.7z	basename-without-extension	Manalink3/Manalink_Launcher.cmd:19	"SET ""defaultArt=Default Sonic 2014"""	high
-Mods/Art/Duel_Shell Sarlack 2013.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/Duel_Shell Sarlack 2013.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/Duel_Shell Sarlack 2013.7z	basename-without-extension	<none found>	No exact text reference to Duel_Shell Sarlack 2013; archives are still discovered by parent-directory enumeration.	medium
-Mods/Art/Duel_Shell Salbei 2010.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/Duel_Shell Salbei 2010.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/Duel_Shell Salbei 2010.7z	basename-without-extension	<none found>	No exact text reference to Duel_Shell Salbei 2010; archives are still discovered by parent-directory enumeration.	medium
-Mods/Art/DuelTerrain Ozks 2013.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/DuelTerrain Ozks 2013.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/DuelTerrain Ozks 2013.7z	basename-without-extension	<none found>	No exact text reference to DuelTerrain Ozks 2013; archives are still discovered by parent-directory enumeration.	medium
-Mods/Rogues/Modern Sarlack MtG.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Rogues/Modern Sarlack MtG.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Rogues/Modern Sarlack MtG.7z	basename-without-extension	<none found>	No exact text reference to Modern Sarlack MtG; archives are still discovered by parent-directory enumeration.	medium
-Mods/Art/PlayFace Ozks Anime 2014.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/PlayFace Ozks Anime 2014.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/PlayFace Ozks Anime 2014.7z	basename-without-extension	<none found>	No exact text reference to PlayFace Ozks Anime 2014; archives are still discovered by parent-directory enumeration.	medium
-Mods/Rogues/Modern Ozks 16x9.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Rogues/Modern Ozks 16x9.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Rogues/Modern Ozks 16x9.7z	basename-without-extension	<none found>	No exact text reference to Modern Ozks 16x9; archives are still discovered by parent-directory enumeration.	medium
-Mods/Art/Duel_DB_Shell Ozks SolidClean 2014.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/Duel_DB_Shell Ozks SolidClean 2014.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/Duel_DB_Shell Ozks SolidClean 2014.7z	basename-without-extension	<none found>	No exact text reference to Duel_DB_Shell Ozks SolidClean 2014; archives are still discovered by parent-directory enumeration.	medium
-Mods/Art/Duel_DB Microprose 1997.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/Duel_DB Microprose 1997.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/Duel_DB Microprose 1997.7z	basename-without-extension	<none found>	No exact text reference to Duel_DB Microprose 1997; archives are still discovered by parent-directory enumeration.	medium
-Mods/Art/DuelFace_DuelLife Sonic 2013.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/DuelFace_DuelLife Sonic 2013.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/DuelFace_DuelLife Sonic 2013.7z	basename-without-extension	<none found>	No exact text reference to DuelFace_DuelLife Sonic 2013; archives are still discovered by parent-directory enumeration.	medium
-Mods/Rogues/Classic Ozks Antiques.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Rogues/Classic Ozks Antiques.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Rogues/Classic Ozks Antiques.7z	basename-without-extension	<none found>	No exact text reference to Classic Ozks Antiques; archives are still discovered by parent-directory enumeration.	medium
-Mods/Art/CardFrames Sonic 2014.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/CardFrames Sonic 2014.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Art/CardFrames Sonic 2014.7z	basename-without-extension	<none found>	No exact text reference to CardFrames Sonic 2014; archives are still discovered by parent-directory enumeration.	medium
-Mods/Rogues/Classic Microprose Default.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Rogues/Classic Microprose Default.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Rogues/Classic Microprose Default.7z	basename-without-extension	<none found>	No exact text reference to Classic Microprose Default; archives are still discovered by parent-directory enumeration.	medium
-Mods/Rogues/Classic CirothUngol Ridiculous.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Rogues/Classic CirothUngol Ridiculous.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Rogues/Classic CirothUngol Ridiculous.7z	basename-without-extension	Manalink_Launcher.cmd:21	"SET ""defaultRogues=Classic CirothUngol Ridiculous"""	high
-Mods/Rogues/Classic CirothUngol Ridiculous.7z	basename-without-extension	Manalink3/Manalink_Launcher.cmd:21	"SET ""defaultRogues=Classic CirothUngol Ridiculous"""	high
-Mods/Rogues/Classic Stassy MagicCardUsers.7z	parent-directory-enumeration	Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Rogues/Classic Stassy MagicCardUsers.7z	parent-directory-enumeration	Manalink3/Manalink_Launcher.cmd:9	"SET ""modDir=%%~sAMods"""	high
-Mods/Rogues/Classic Stassy MagicCardUsers.7z	basename-without-extension	<none found>	No exact text reference to Classic Stassy MagicCardUsers; archives are still discovered by parent-directory enumeration.	medium
+docs/generated/safe-cleanup/post-cleanup-largest-duplicate-groups.tsv	exact-path	<none outside docs/generated before removal>	No maintained README/doc/tool reference to this exact path before removal.	high
+Manalink3/Mods/Art/CardFrames Sonic 2014.7z	install-root-policy	docs/generated/install-root-decision.tsv	Manalink3 is Archive/unsupported; top-level Mods is Keep/canonical.	high
+Manalink3/Mods/Art/CardFrames Sonic 2014.7z	local-launcher-enumeration	Manalink3/Manalink_Launcher.cmd:12-15,125-132	Launcher enumerates local Art archives, but policy says local enumeration alone does not make the install root supported.	high
+Mods/Art/CardFrames Sonic 2014.7z	canonical-parent	Manalink_Launcher.cmd:12-15,125-132	Root launcher enumerates top-level Art archives.	high
+Manalink3/Mods/Art/Default Sonic 2014.7z	install-root-policy	docs/generated/install-root-decision.tsv	Manalink3 is Archive/unsupported; top-level Mods is Keep/canonical.	high
+Manalink3/Mods/Art/Default Sonic 2014.7z	local-launcher-enumeration	Manalink3/Manalink_Launcher.cmd:12-15,125-132	Launcher enumerates local Art archives, but policy says local enumeration alone does not make the install root supported.	high
+Mods/Art/Default Sonic 2014.7z	canonical-parent	Manalink_Launcher.cmd:12-15,125-132	Root launcher enumerates top-level Art archives.	high
+Manalink3/Mods/Art/DuelFace_DuelLife Sonic 2013.7z	install-root-policy	docs/generated/install-root-decision.tsv	Manalink3 is Archive/unsupported; top-level Mods is Keep/canonical.	high
+Manalink3/Mods/Art/DuelFace_DuelLife Sonic 2013.7z	local-launcher-enumeration	Manalink3/Manalink_Launcher.cmd:12-15,125-132	Launcher enumerates local Art archives, but policy says local enumeration alone does not make the install root supported.	high
+Mods/Art/DuelFace_DuelLife Sonic 2013.7z	canonical-parent	Manalink_Launcher.cmd:12-15,125-132	Root launcher enumerates top-level Art archives.	high
+Manalink3/Mods/Art/DuelTerrain Ozks 2013.7z	install-root-policy	docs/generated/install-root-decision.tsv	Manalink3 is Archive/unsupported; top-level Mods is Keep/canonical.	high
+Manalink3/Mods/Art/DuelTerrain Ozks 2013.7z	local-launcher-enumeration	Manalink3/Manalink_Launcher.cmd:12-15,125-132	Launcher enumerates local Art archives, but policy says local enumeration alone does not make the install root supported.	high
+Mods/Art/DuelTerrain Ozks 2013.7z	canonical-parent	Manalink_Launcher.cmd:12-15,125-132	Root launcher enumerates top-level Art archives.	high
+Manalink3/Mods/Art/Duel_DB Microprose 1997.7z	install-root-policy	docs/generated/install-root-decision.tsv	Manalink3 is Archive/unsupported; top-level Mods is Keep/canonical.	high
+Manalink3/Mods/Art/Duel_DB Microprose 1997.7z	local-launcher-enumeration	Manalink3/Manalink_Launcher.cmd:12-15,125-132	Launcher enumerates local Art archives, but policy says local enumeration alone does not make the install root supported.	high
+Mods/Art/Duel_DB Microprose 1997.7z	canonical-parent	Manalink_Launcher.cmd:12-15,125-132	Root launcher enumerates top-level Art archives.	high
+Manalink3/Mods/Art/Duel_DB_Shell Ozks SolidClean 2014.7z	install-root-policy	docs/generated/install-root-decision.tsv	Manalink3 is Archive/unsupported; top-level Mods is Keep/canonical.	high
+Manalink3/Mods/Art/Duel_DB_Shell Ozks SolidClean 2014.7z	local-launcher-enumeration	Manalink3/Manalink_Launcher.cmd:12-15,125-132	Launcher enumerates local Art archives, but policy says local enumeration alone does not make the install root supported.	high
+Mods/Art/Duel_DB_Shell Ozks SolidClean 2014.7z	canonical-parent	Manalink_Launcher.cmd:12-15,125-132	Root launcher enumerates top-level Art archives.	high
+Manalink3/Mods/Art/Duel_Shell Salbei 2010.7z	install-root-policy	docs/generated/install-root-decision.tsv	Manalink3 is Archive/unsupported; top-level Mods is Keep/canonical.	high
+Manalink3/Mods/Art/Duel_Shell Salbei 2010.7z	local-launcher-enumeration	Manalink3/Manalink_Launcher.cmd:12-15,125-132	Launcher enumerates local Art archives, but policy says local enumeration alone does not make the install root supported.	high
+Mods/Art/Duel_Shell Salbei 2010.7z	canonical-parent	Manalink_Launcher.cmd:12-15,125-132	Root launcher enumerates top-level Art archives.	high
+Manalink3/Mods/Art/Duel_Shell Sarlack 2013.7z	install-root-policy	docs/generated/install-root-decision.tsv	Manalink3 is Archive/unsupported; top-level Mods is Keep/canonical.	high
+Manalink3/Mods/Art/Duel_Shell Sarlack 2013.7z	local-launcher-enumeration	Manalink3/Manalink_Launcher.cmd:12-15,125-132	Launcher enumerates local Art archives, but policy says local enumeration alone does not make the install root supported.	high
+Mods/Art/Duel_Shell Sarlack 2013.7z	canonical-parent	Manalink_Launcher.cmd:12-15,125-132	Root launcher enumerates top-level Art archives.	high
+Manalink3/Mods/Art/PlayFace Ozks Anime 2014.7z	install-root-policy	docs/generated/install-root-decision.tsv	Manalink3 is Archive/unsupported; top-level Mods is Keep/canonical.	high
+Manalink3/Mods/Art/PlayFace Ozks Anime 2014.7z	local-launcher-enumeration	Manalink3/Manalink_Launcher.cmd:12-15,125-132	Launcher enumerates local Art archives, but policy says local enumeration alone does not make the install root supported.	high
+Mods/Art/PlayFace Ozks Anime 2014.7z	canonical-parent	Manalink_Launcher.cmd:12-15,125-132	Root launcher enumerates top-level Art archives.	high
+Manalink3/Mods/Rogues/Classic CirothUngol Ridiculous.7z	install-root-policy	docs/generated/install-root-decision.tsv	Manalink3 is Archive/unsupported; top-level Mods is Keep/canonical.	high
+Manalink3/Mods/Rogues/Classic CirothUngol Ridiculous.7z	local-launcher-enumeration	Manalink3/Manalink_Launcher.cmd:12-15,125-132	Launcher enumerates local Rogues archives, but policy says local enumeration alone does not make the install root supported.	high
+Mods/Rogues/Classic CirothUngol Ridiculous.7z	canonical-parent	Manalink_Launcher.cmd:12-15,125-132	Root launcher enumerates top-level Rogues archives.	high
+Manalink3/Mods/Rogues/Classic Microprose Default.7z	install-root-policy	docs/generated/install-root-decision.tsv	Manalink3 is Archive/unsupported; top-level Mods is Keep/canonical.	high
+Manalink3/Mods/Rogues/Classic Microprose Default.7z	local-launcher-enumeration	Manalink3/Manalink_Launcher.cmd:12-15,125-132	Launcher enumerates local Rogues archives, but policy says local enumeration alone does not make the install root supported.	high
+Mods/Rogues/Classic Microprose Default.7z	canonical-parent	Manalink_Launcher.cmd:12-15,125-132	Root launcher enumerates top-level Rogues archives.	high
+Manalink3/Mods/Rogues/Classic Ozks Antiques.7z	install-root-policy	docs/generated/install-root-decision.tsv	Manalink3 is Archive/unsupported; top-level Mods is Keep/canonical.	high
+Manalink3/Mods/Rogues/Classic Ozks Antiques.7z	local-launcher-enumeration	Manalink3/Manalink_Launcher.cmd:12-15,125-132	Launcher enumerates local Rogues archives, but policy says local enumeration alone does not make the install root supported.	high
+Mods/Rogues/Classic Ozks Antiques.7z	canonical-parent	Manalink_Launcher.cmd:12-15,125-132	Root launcher enumerates top-level Rogues archives.	high
+Manalink3/Mods/Rogues/Classic Stassy MagicCardUsers.7z	install-root-policy	docs/generated/install-root-decision.tsv	Manalink3 is Archive/unsupported; top-level Mods is Keep/canonical.	high
+Manalink3/Mods/Rogues/Classic Stassy MagicCardUsers.7z	local-launcher-enumeration	Manalink3/Manalink_Launcher.cmd:12-15,125-132	Launcher enumerates local Rogues archives, but policy says local enumeration alone does not make the install root supported.	high
+Mods/Rogues/Classic Stassy MagicCardUsers.7z	canonical-parent	Manalink_Launcher.cmd:12-15,125-132	Root launcher enumerates top-level Rogues archives.	high
+Manalink3/Mods/Rogues/Modern Ozks 16x9.7z	install-root-policy	docs/generated/install-root-decision.tsv	Manalink3 is Archive/unsupported; top-level Mods is Keep/canonical.	high
+Manalink3/Mods/Rogues/Modern Ozks 16x9.7z	local-launcher-enumeration	Manalink3/Manalink_Launcher.cmd:12-15,125-132	Launcher enumerates local Rogues archives, but policy says local enumeration alone does not make the install root supported.	high
+Mods/Rogues/Modern Ozks 16x9.7z	canonical-parent	Manalink_Launcher.cmd:12-15,125-132	Root launcher enumerates top-level Rogues archives.	high
+Manalink3/Mods/Rogues/Modern Sarlack MtG.7z	install-root-policy	docs/generated/install-root-decision.tsv	Manalink3 is Archive/unsupported; top-level Mods is Keep/canonical.	high
+Manalink3/Mods/Rogues/Modern Sarlack MtG.7z	local-launcher-enumeration	Manalink3/Manalink_Launcher.cmd:12-15,125-132	Launcher enumerates local Rogues archives, but policy says local enumeration alone does not make the install root supported.	high
+Mods/Rogues/Modern Sarlack MtG.7z	canonical-parent	Manalink_Launcher.cmd:12-15,125-132	Root launcher enumerates top-level Rogues archives.	high

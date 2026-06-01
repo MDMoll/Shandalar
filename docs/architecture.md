@@ -10,8 +10,8 @@ This is a practical map, not a clean-room reconstruction.
 | `Program/` | Manalink launcher runtime bundle and alternate Shandalar layout. | Verified by executables, imported local DLLs, launcher scripts, and asset folders; direct `MTG` Shandalar launch currently lacks `Program\zlib.dll`. |
 | `src/` | Source and patch tooling for DLL/card-engine work. | Verified by Makefiles, C/C++/ASM files, and patch scripts. Build not complete here. |
 | `magic_updater/` | Perl/CSV card data updater. | Verified by scripts and large CSV inputs. |
-| `Mods/` | Mod archives and mod staging tree. | Verified by `Manalink_Launcher.cmd` and `.7z` archives. |
-| `Manalink3/` | Packaged Manalink 3 distribution snapshot. | Verified by nested `Program/`, `Mods/`, and `ReadMe.txt`. |
+| `Mods/` | Canonical active mod archives and mod staging tree. | Verified by `Manalink_Launcher.cmd`, `.7z` archives, and [install-roots.md](install-roots.md). |
+| `Manalink3/` | Historical/unsupported Manalink 3 package snapshot. | Verified by nested `Program/`, `Mods/`, and launcher; duplicate archives were removed after top-level `Mods/` was selected as canonical. |
 | `PlayDeckAnalyser/` | Separate deck analysis utility. | Verified by readme and config. |
 | Art/resource folders | Runtime game art and resource stores. | Verified by file extensions, counts, and strings references. |
 | `archive/` | Preserved generated/local/debug/historical files moved out of the root. | Verified by limited reorg decision log and `git mv` paths. |
@@ -34,8 +34,9 @@ flowchart TD
     A --> I["src/ source and patch scripts"]
     I --> F
     I --> E
-    A --> J["Mods/ and Manalink3/ packaged mod material"]
+    A --> J["Top-level Mods/ canonical mod archive material"]
     J --> B
+    A --> L["Manalink3/ historical package evidence"]
     A --> K["archive/ preserved non-runtime evidence"]
 ```
 
@@ -50,7 +51,7 @@ flowchart TD
 | `Manalink_Launcher.cmd` and `Program/Magic.exe` | Launcher sets `mlDir` to `Program` and starts `Magic.exe`. | Full launcher menu was not run. |
 | `src/patches/*` and shipped binaries | Many patch scripts state they update `Magic.exe` or `Shandalar.exe` in-place. | Current shipped binaries were not traced back to a reproducible patch sequence. |
 | `magic_updater/` and CSV/dat files | Scripts and CSV files are present. | No updater command was run in this pass. |
-| `Manalink3/` and root `Mods/` | Some archives have identical SHA-256 in both places. | The full trees were not deduplicated or proven redundant. |
+| `Manalink3/` and root `Mods/` | The formerly duplicated archives had identical SHA-256 in both places; top-level `Mods/` is now canonical. | Remaining `Manalink3/Program/` and package files are historical evidence and not active root layout. |
 
 ## Major Folder Roles
 
@@ -61,7 +62,7 @@ flowchart TD
 | `Program/decks`, `Playdeck`, `decks*`, `Decks*` | Deck data collections. |
 | `CardArtManalink`, `CardArtNew`, `Cardart` | Large card-art/resource stores; likely not all loaded by one executable path, but not safe to delete without tests. |
 | `Classic`, `Editor`, `Facemaker`, `Icons`, `CSV` | Tools, legacy data, or supporting resources. |
-| `Manalink`, `ManaLink`, `Manalink3` | Manalink-related data and packaged distributions. Case and spacing matter. |
+| `Manalink`, `ManaLink`, `Manalink3` | Manalink-related data and historical packaged distribution evidence. Case and spacing matter. |
 | `archive/generated-local`, `archive/debug-evidence`, `archive/historical-docs`, `archive/historical-links`, `archive/local-helpers`, `archive/backups` | Preserved evidence/history from the limited reorganization pass. These are not current launch paths. |
 
 ## Open Questions

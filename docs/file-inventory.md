@@ -37,9 +37,9 @@ describe Git history/storage, not game files.
 
 | Metric | Value |
 | --- | --- |
-| Total files from `find . -type f` | 52,000 |
+| Total files from `find . -type f` | 52,000 at the original inventory point; later cleanup passes removed tracked junk/generated/duplicate archive files and added docs. |
 | Largest top-level directory by size | `.git` at about 1.1G |
-| Largest non-git content directories | `CardArtManalink` about 565M, `Program` about 338M, `Mods` about 219M, `Manalink3` about 217M |
+| Largest non-git content directories | `CardArtManalink` about 565M, `Program` about 341M, `Mods` about 219M, `Manalink3` about 118M after duplicate archive cleanup |
 | Dominant file types | `.dck`, `.jpg`, `.pic`, `.png`, `.spr`, `.ogg`, `.bmp`, `.wav`, `.c` |
 
 ## Top Directories by File Count
@@ -67,9 +67,9 @@ describe Git history/storage, not game files.
 | --- | ---: |
 | `.git` | 1.1G |
 | `CardArtManalink` | 565M |
-| `Program` | 338M |
+| `Program` | 341M |
 | `Mods` | 219M |
-| `Manalink3` | 217M |
+| `Manalink3` | 118M after duplicate archive cleanup |
 | `Statwin` | 113M |
 | `CardArtNew` | 104M |
 | `Sound` | 92M |
@@ -108,7 +108,7 @@ describe Git history/storage, not game files.
 | Path | Size | Notes |
 | --- | ---: | --- |
 | `.git/objects/pack/pack-*.pack` | 1.1G | Git object pack, not runtime content. |
-| `Mods/Art/Default Sonic 2014.7z` | 33M | Mod archive. Identical hash to `Manalink3/Mods/Art/Default Sonic 2014.7z`. |
+| `Mods/Art/Default Sonic 2014.7z` | 33M | Canonical top-level mod archive after duplicate `Manalink3/Mods/Art/Default Sonic 2014.7z` was removed. |
 | `Cardart/Medart.cat` | 30M | Card art catalog, likely runtime-critical for some paths. |
 | `Shandalar.dll` | 17M | Root runtime DLL. |
 | `Program/Shandalar.dll` | 14M | Program runtime DLL. |
@@ -150,7 +150,7 @@ describe Git history/storage, not game files.
 | `Program/Magic.exe` and root `Magic.exe` differ. | Different SHA-256 values. | Do not dedupe without launch comparison. |
 | `Program/zlib.dll` is absent while root `zlib.dll` is present. | Direct logged `MTG` launch of `C:\Shandalar\Program\Shandalar.exe` fails because `Program\zlib.dll` is missing. | Treat `Program/Shandalar.exe` as a deferred alternate CrossOver path until tested in a fixed copy. |
 | `Statwin/*.tmp` and `Program/statwin/*.tmp` are mostly exact pairs, despite the temp-looking extension. | SHA-256 hashes match for the bitmap mask files; `statscrn.tmp` differs between root and Program. | Do not dedupe or archive by extension. |
-| `Mods/` and `Manalink3/Mods/` contain exact duplicate archives. | A targeted SHA-256 audit over `*.7z`, `*.zip`, and `*.rar` in both trees found 15 duplicate hashes covering all 30 archive files in that query. | High duplicate confidence, medium cleanup confidence because mod/distribution layout may matter. |
+| `Mods/` and `Manalink3/Mods/` contained exact duplicate archives. | A targeted SHA-256 audit over `*.7z`, `*.zip`, and `*.rar` in both trees found 15 duplicate hashes covering all 30 archive files in that query; [install-roots.md](install-roots.md) made top-level `Mods/` canonical and those 15 `Manalink3/Mods/` archive copies were removed. | Resolved for duplicate archives; remaining package/runtime files are still protected. |
 | Deck files repeat across many deck folders. | A targeted SHA-256 audit over 492 `.dck` files in the main deck-family folders found 163 duplicate hashes covering 327 files. | High duplicate-file confidence, low cleanup confidence because content duplicates do not prove folder redundancy. |
 | `src/` and `Program/src/` are similar but not identical. | `src/Makefile` and `Program/src/Makefile` have different SHA-256 and content. | Do not dedupe casually. |
 

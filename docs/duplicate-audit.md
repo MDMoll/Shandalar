@@ -62,6 +62,27 @@ runtime assets, package archives, art, decks, DLLs, or executables were removed.
 See [duplicate-cleanup-verification.md](duplicate-cleanup-verification.md) and
 generated evidence under [generated/duplicate-cleanup/](generated/duplicate-cleanup/).
 
+## Install-Root Archive Cleanup Pass
+
+The next cleanup pass stopped treating the `Mods/` vs `Manalink3/Mods/`
+archives as isolated file duplicates. It documented install roots in
+[install-roots.md](install-roots.md), selected top-level `Mods/` as the
+canonical active archive root, and removed duplicate archive copies from the
+unsupported `Manalink3/` package root.
+
+| Metric | Before | After | Delta |
+| --- | ---: | ---: | ---: |
+| Tracked files scanned | 52,033 | 52,018 | -15 |
+| Duplicate SHA-256 groups | 10,797 | 10,782 | -15 |
+| Files inside duplicate groups | 26,071 | 26,041 | -30 |
+| Redundant files if one copy per hash were kept | 15,274 | 15,259 | -15 |
+| Theoretical duplicate bytes if one copy per hash were kept | 454,817,805 | 351,174,624 | -103,643,181 |
+| Archive files removed | 0 | 15 | +15 |
+| Archive bytes removed | 0 | 103,643,181 | +103,643,181 |
+
+No active `Program/` runtime assets, card art stores, `.pic`, `.spr`, `.dat`,
+DLL, executable, sound, or video assets were removed.
+
 ## Largest Duplicate Families
 
 These are grouped by the top-level directories that participate in each exact
@@ -69,7 +90,7 @@ duplicate hash group.
 
 | Top-level directories | Duplicate groups | Files in groups | Theoretical duplicate bytes | Cleanup confidence |
 | --- | ---: | ---: | ---: | --- |
-| `Manalink3`, `Mods` | 6,134 | 14,657 | 126.0 MiB | Protected package-layout duplicates: packaged mod archives and mod trees intentionally support a self-contained `Manalink3/` layout unless policy changes. |
+| `Manalink3`, `Mods` | 6,119 | 14,627 | about 27.2 MiB after archive cleanup | Remaining duplicates are non-archive package/mod files; the 15 exact duplicate archive pairs were removed from `Manalink3/Mods/`. |
 | `Program`, `Statwin` | 119 | 238 | 111.5 MiB | Low: `Statwin` files are runtime-looking UI/video assets and need launch-copy testing. |
 | `Mods`, `Program` | 252 | 578 | 60.3 MiB | Low: duplicates cross mod staging and runtime bundle paths. |
 | `CardArtManalink`, `CardArtNew` | 1,320 | 2,651 | 35.9 MiB | Low: card art stores may be alternate lookup trees. |
@@ -82,10 +103,7 @@ duplicate hash group.
 
 | SHA-256 | Size | Count | Example paths | Cleanup confidence |
 | --- | ---: | ---: | --- | --- |
-| `40918e8c11cc883dc7c96bd6b04f9957cec3c3eff1a505cf5d3d8886c01f9c9b` | 33.3 MiB | 2 | `Mods/Art/Default Sonic 2014.7z`; `Manalink3/Mods/Art/Default Sonic 2014.7z` | Medium: exact duplicate archive pair. |
 | `0e9d2214c919049c2b364b2a18dde0dc71e60d985f4be0ae074f999650c1fdde` | 791.4 KiB | 30 | `Mods/Art/_undo/.../DuelArt/Terr_BlackMana.bmp`; related terrain BMP files | Medium: `_undo` staging evidence, but still inside mod rollback layout. |
-| `35f8da3703b83edb5ce07b1cd264ef010bb63c07acef9299077fd30701f67965` | 20.0 MiB | 2 | `Mods/Art/Duel_Shell Sarlack 2013.7z`; `Manalink3/Mods/Art/Duel_Shell Sarlack 2013.7z` | Medium: exact duplicate archive pair. |
-| `d9471da4723f8f5e3de487e0568513a9ea960c37a2be03b3a737beefb578d655` | 9.7 MiB | 2 | `Mods/Art/Duel_Shell Salbei 2010.7z`; `Manalink3/Mods/Art/Duel_Shell Salbei 2010.7z` | Medium: exact duplicate archive pair. |
 | `a2ebc7afb3d104c7bdddf3dfe2991a92bd44018f3da55590501d317e7686ebec` | 1.4 MiB | 6 | `Program/ShellArt/WinBk_Ladder16.bmp`; `Shellart/WinBk_Ladder16.bmp`; mod `_undo` copies | Low: crosses runtime and mod rollback paths. |
 | `1d5111ef8a2fb08f538e0c234ae4ebef05d12cec621a956ab3f32eb6bf02b450` | 3.0 MiB | 2 | `Program/ManalinkEx.dll`; `Manalink3/Program/ManalinkEx.dll` | Low: DLL duplicate, but both package layouts may be meaningful. |
 | `7f73a3df97ed4c9cc509c32e7bde651eeb5790ea8722d295d2e1c7c309242ef8` | 2.9 MiB | 2 | `Program/statwin/Water.avi`; `Statwin/Water.avi` | Low: runtime-looking UI video asset. |
@@ -95,7 +113,7 @@ duplicate hash group.
 | Finding | Meaning |
 | --- | --- |
 | Many duplicate groups cross `Manalink3/`, `Mods/`, and `Program/`. | The repo contains overlapping package/runtime/mod layouts, not just stray copies. |
-| The largest high-confidence byte duplicates are archive pairs under `Mods/` and `Manalink3/Mods/`. | These are good future cleanup candidates, but still need an approved mod-distribution decision. |
+| The largest high-confidence archive duplicates under `Mods/` and `Manalink3/Mods/` were resolved by install-root policy. | Top-level `Mods/` is canonical; duplicate `Manalink3/Mods/` archive copies were removed. |
 | A tracked OS cache file was removed in the safe cleanup pass. | This reduced tracked file count by one and removed 524,800 bytes, but did not reduce duplicate-byte totals. |
 | Runtime-like duplicates in `Program/`, root, `Statwin/`, sprite folders, sound folders, and DLLs remain low-confidence cleanup candidates. | Do not remove or archive them without launch-copy tests. |
 | The theoretical 435.1 MiB savings is not an achievable safe cleanup target yet. | It assumes one path per hash can be kept, which is not proven for legacy runtime lookups. |

@@ -26,6 +26,7 @@ should keep the working tree safe and evidence-driven.
 | Do not casually replace the patched `ManalinkEh.dll` binaries with older copies. | Root and `Program/ManalinkEh.dll` contain a documented Samite/Femeref/Kithkin damage-prevention activation guard at file offsets `0x3bb035` and `0x381a25`; this patch targets a duel freeze where a healer ability was offered outside the real damage-prevention window. |
 | Do not casually replace the patched `Magic.exe` binaries with older copies. | Root and `Program/Magic.exe` contain a documented declared-attacker undo hook at `0x43c303` with code cave `0x459bc8`; this lets a human player click an already-declared attacker before Done to clear `STATE_ATTACKING`. |
 | Do not treat every `.tmp` file as disposable. | The tracked `Statwin/*.tmp` and `Program/statwin/*.tmp` files are bitmap/mask-like UI resources by `file` output; root and Program `statscrn.tmp` also differ by hash. |
+| Treat duplicate cleanup as an install-root decision first. | The active canonical layout is repo root plus top-level `Program/` and top-level `Mods/`; `Manalink3/` is historical/unsupported for active cleanup unless a future user decision says otherwise. |
 
 ## Archive Policy
 
@@ -36,6 +37,7 @@ should keep the working tree safe and evidence-driven.
 | Do not move runtime-like assets into `archive/` without explicit approval and a launch-copy test plan. | Many root files mirror or differ from `Program/` files in ways that are not fully understood. |
 | Use [docs/cleanup-launch-copy-test.md](docs/cleanup-launch-copy-test.md) before proposing additional risky cleanup moves. | Candidate removals should be proven in a disposable copy before the real checkout changes. |
 | When moving a tracked file, use `git mv` and update [docs/reorganization.md](docs/reorganization.md). | History and path evidence need to remain inspectable. |
+| Do not restore duplicate archives under `Manalink3/Mods/` just to make that package root self-contained. | [docs/package-layout-cleanup.md](docs/package-layout-cleanup.md) documents top-level `Mods/` as the canonical archive root after the install-root policy pass. |
 
 ## Default Launch Context
 

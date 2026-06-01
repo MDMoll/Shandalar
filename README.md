@@ -89,8 +89,8 @@ path, because root and `Program/` copies differ by hash. See
 | `CardArtManalink/`, `CardArtNew/`, `Cardart/`, `Dbart/`, `Duelart/`, `Exp1art/`, `Shellart/`, `Statwin/` | Art and proprietary game resource stores. Do not delete casually. |
 | `decks*`, `Decks*`, `Playdeck/`, `Mods/PlayDeck/` | Player/opponent deck collections and mod deck packs. |
 | `MAGIC*.SVE`, `MAGIC*.map`, `MAGIC*.fce`, extensionless `MAGIC5`, `Savedescs`, `Screennames/` | Tracked save/local player state and one derived save/deck export. Useful for testing, but review before public release. |
-| `Mods/` | Mod archives and mod staging folders used by the launcher. |
-| `Manalink3/` | A packaged Manalink 3 style distribution snapshot with its own `Program/`, `Mods/`, and docs. |
+| `Mods/` | Canonical mod archives and mod staging folders used by the active root launcher. |
+| `Manalink3/` | Historical/unsupported Manalink 3 package snapshot. Duplicate archives under `Manalink3/Mods/` were removed after top-level `Mods/` was selected as canonical. |
 | `magic_updater/` | Perl/CSV card data updater tooling. |
 | `PlayDeckAnalyser/` | Separate deck analysis utility and configuration. |
 | `docs/generated/` | Preserved command output and evidence snapshots for investigations; start with the concise docs first. |
@@ -172,6 +172,8 @@ the detailed command/result table.
 | [docs/architecture.md](docs/architecture.md) | High-level repo organization. |
 | [docs/building.md](docs/building.md) | What appears buildable and current blockers. |
 | [docs/file-inventory.md](docs/file-inventory.md) | Counts, large files, duplicate observations, and runtime-critical file types. |
+| [docs/install-roots.md](docs/install-roots.md) | Install-root inventory and supported-layout decisions. |
+| [docs/package-layout-cleanup.md](docs/package-layout-cleanup.md) | Package-layout cleanup decision log and exact duplicate archive removals. |
 | [docs/duplicate-audit.md](docs/duplicate-audit.md) | Full non-git SHA-256 duplicate summary and cleanup confidence. |
 | [docs/duplicate-cleanup-verification.md](docs/duplicate-cleanup-verification.md) | Verified duplicate removal evidence, protected families, archive policy, and quarantine result. |
 | [docs/cleanup-audit.md](docs/cleanup-audit.md) | Cleanup candidates with confidence and evidence. |
