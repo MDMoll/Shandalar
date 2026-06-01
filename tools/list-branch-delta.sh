@@ -40,6 +40,9 @@ kind_for_path() {
     archive/*)
       printf 'archive-evidence'
       ;;
+    CardArtNew/Thumbs.db)
+      printf 'generated-local'
+      ;;
     tools/*.sh|local/*.sh|local/*/*.sh)
       printf 'shell-tool'
       ;;
