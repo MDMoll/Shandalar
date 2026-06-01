@@ -33,11 +33,20 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | [command-line.md](command-line.md) | `--help`, `--e`, `--p`, and command-line evidence. |
 | [building.md](building.md) | Source/build observations and blockers. |
 | [architecture.md](architecture.md) | High-level repo organization. |
+| [source-map.md](source-map.md) | Source snapshot and tooling map from the deep codebase audit. |
+| [build-health.md](build-health.md) | Build dry-run results, missing toolchain notes, and build blockers. |
+| [runtime-path-audit.md](runtime-path-audit.md) | Runtime path, binary string, and launch-root risks found by the audit. |
+| [patch-risk-register.md](patch-risk-register.md) | Known binary patch areas, offsets, blast radius, and retest requirements. |
 
 ## Bug Notes
 
 | Doc | Use it for |
 | --- | --- |
+| [codebase-health-audit.md](codebase-health-audit.md) | Static/source/tooling health audit summary and next-fix branches. |
+| [bug-backlog.md](bug-backlog.md) | Ranked bug and fix-candidate backlog with evidence labels. |
+| [memory-safety-audit.md](memory-safety-audit.md) | Source-level buffer, allocation, parsing, and GDI risk review. |
+| [optimization-opportunities.md](optimization-opportunities.md) | Safe optimization candidates and evidence needed before changing code. |
+| [tooling-audit.md](tooling-audit.md) | Script/tool risks and safe maintenance-helper guidance. |
 | [bugs/create-dibsection-after-color.md](bugs/create-dibsection-after-color.md) | Start-color `CreateDIBSection` assertion and patch evidence. |
 | [bugs/duel-freeze-damage-prevention.md](bugs/duel-freeze-damage-prevention.md) | Femeref/Samite/Kithkin damage-prevention freeze investigation. |
 | [bugs/declared-attacker-undo.md](bugs/declared-attacker-undo.md) | Declared-attacker undo patch notes. |

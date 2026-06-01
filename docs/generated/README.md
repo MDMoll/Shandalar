@@ -7,6 +7,7 @@ reverse-engineering and CrossOver/Wine investigations.
 
 | Path | Meaning |
 | --- | --- |
+| `code-audit/` | Generated inventories and command-output snapshots from the static/source/tooling health audit. |
 | `create-dibsection-investigation/` | Evidence gathered while diagnosing the start-color `WM_CREATE CreateDIBSection` assertion and related runtime layout questions. |
 | `duplicate-cleanup/` | Generated duplicate-group classifications, static reference notes, quarantine results, and removal evidence for the verified duplicate cleanup pass. |
 | `install-root-inventory.tsv` | Install-root inventory with launchers, local folders, evidence, size, and status. |

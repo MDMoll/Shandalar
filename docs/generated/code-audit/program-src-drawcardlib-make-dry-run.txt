@@ -1,0 +1,11 @@
+dlltool -k -d image.def -l libimage.a
+dlltool -k -d Cardartlib.def -l libCardartlib.a
+gcc -ggdb2 -O2 -m32 -fno-omit-frame-pointer -march=i586 -mpreferred-stack-boundary=2 -Wall -Wextra -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wwrite-strings -Wshadow -W -Wstrict-prototypes -Wnested-externs -Winline -Werror -I.. -I. -c -o config.o config.c
+gcc -ggdb2 -O2 -m32 -fno-omit-frame-pointer -march=i586 -mpreferred-stack-boundary=2 -Wall -Wextra -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wwrite-strings -Wshadow -W -Wstrict-prototypes -Wnested-externs -Winline -Werror -I.. -I. -c -o drawcardlib.o drawcardlib.c
+gcc -ggdb2 -O2 -m32 -fno-omit-frame-pointer -march=i586 -mpreferred-stack-boundary=2 -Wall -Wextra -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wwrite-strings -Wshadow -W -Wstrict-prototypes -Wnested-externs -Winline -Werror -I.. -I. -c -o drawcounters.o drawcounters.c
+gcc -ggdb2 -O2 -m32 -fno-omit-frame-pointer -march=i586 -mpreferred-stack-boundary=2 -Wall -Wextra -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wwrite-strings -Wshadow -W -Wstrict-prototypes -Wnested-externs -Winline -Werror -I.. -I. -c -o drawfullcard.o drawfullcard.c
+gcc -ggdb2 -O2 -m32 -fno-omit-frame-pointer -march=i586 -mpreferred-stack-boundary=2 -Wall -Wextra -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wwrite-strings -Wshadow -W -Wstrict-prototypes -Wnested-externs -Winline -Werror -I.. -I. -c -o drawmanatext.o drawmanatext.c
+yasm -a x86 -m x86 -p nasm -r nasm -f win32 -I.. -I. -o get_displayed_card_instance.ao get_displayed_card_instance.asm
+gcc -shared -m32 -o Drawcardlib.dll config.o drawcardlib.o drawcounters.o drawfullcard.o drawmanatext.o get_displayed_card_instance.ao Drawcardlib.def -L. -limage -lCardartlib -lgdi32 -lgdiplus -lshlwapi -lMsimg32
+objcopy --only-keep-debug Drawcardlib.dll Drawcardlib.dbg
+objcopy --strip-debug Drawcardlib.dll

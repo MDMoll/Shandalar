@@ -1,0 +1,25 @@
+path	language	risk	area
+archive/local-helpers/shandalar_homedoom.bat	batch	hardcoded Windows path	historical
+magic_updater/Magic_updater.bat	batch	file mutation	tooling
+magic_updater/Manalink/CSV.pm	Perl	file mutation	tooling
+magic_updater/xml-to-csv.pl	Perl	hardcoded Windows path	tooling
+Manalink3/Manalink_Launcher.cmd	batch	file mutation; hardcoded Windows path	historical
+Manalink_Launcher.cmd	batch	file mutation; hardcoded Windows path	unknown
+Program/magic_updater/Manalink/CSV.pm	Perl	file mutation	runtime-adjacent
+Program/magic_updater/xml-to-csv.pl	Perl	hardcoded Windows path	runtime-adjacent
+Program/src/patches/patch_effect_card_pass_pc_to_drawcardlib.pl	Perl	file mutation	source
+Program/src/patches/patch_undo_declared_attacker.pl	Perl	file mutation	source
+src/build.pl	Perl	file mutation; hardcoded Windows path	source
+src/deploy.bat	batch	file mutation; hardcoded Windows path	source
+src/patches/patch_effect_card_pass_pc_to_drawcardlib.pl	Perl	file mutation	source
+src/patches/patch_experience_counters.pl	Perl	file mutation	source
+src/patches/patch_undo_declared_attacker.pl	Perl	file mutation	source
+tools/audit_codebase.py	Python	hardcoded Windows path	tooling
+tools/create-cleanup-test-copy.sh	shell	file mutation	tooling
+tools/create-patch-package.sh	shell	file mutation	tooling
+tools/print-manual-gameplay-baseline.sh	shell	hardcoded Windows path	tooling
+tools/print-security-scan-baseline.sh	shell	hardcoded Windows path	tooling
+tools/print-share-status.sh	shell	file mutation	tooling
+tools/verify-crossover-mtg-state.sh	shell	hardcoded Windows path	tooling
+tools/verify-handoff-artifacts.sh	shell	file mutation	tooling
+tools/verify-handoff-readiness.sh	shell	file mutation; hardcoded Windows path	tooling

@@ -1,0 +1,16 @@
+archive/local-helpers/shandalar_homedoom.bat
+magic_updater/Magic_updater.bat
+Manalink3/Manalink_Launcher.cmd
+Manalink_Launcher.cmd
+Program/src/cardartlib/Makefile
+Program/src/drawcardlib/Makefile
+Program/src/Makefile
+Program/src/patches/Makefile
+Shandalar help.bat
+src/cardartlib/Makefile
+src/deck/Makefile
+src/deploy.bat
+src/drawcardlib/Makefile
+src/Makefile
+src/manalinkex/Makefile
+src/patches/Makefile

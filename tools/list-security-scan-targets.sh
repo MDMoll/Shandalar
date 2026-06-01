@@ -22,6 +22,7 @@ KINDS = {
     ".ps1": "windows-script",
     ".jar": "java-archive",
     ".pl": "perl-script",
+    ".py": "python-script",
     ".sh": "shell-script",
 }
 

@@ -1,0 +1,17 @@
+path	kind	area	notes
+archive/local-helpers/shandalar_homedoom.bat	batch launcher/tool	historical	read-only inventory
+magic_updater/Magic_updater.bat	batch launcher/tool	tooling	read-only inventory
+Manalink3/Manalink_Launcher.cmd	batch launcher/tool	historical	read-only inventory
+Manalink_Launcher.cmd	batch launcher/tool	unknown	read-only inventory
+Program/src/cardartlib/Makefile	makefile	source	read-only inventory
+Program/src/drawcardlib/Makefile	makefile	source	read-only inventory
+Program/src/Makefile	makefile	source	read-only inventory
+Program/src/patches/Makefile	makefile	source	read-only inventory
+Shandalar help.bat	batch launcher/tool	unknown	read-only inventory
+src/cardartlib/Makefile	makefile	source	read-only inventory
+src/deck/Makefile	makefile	source	read-only inventory
+src/deploy.bat	batch launcher/tool	source	read-only inventory
+src/drawcardlib/Makefile	makefile	source	read-only inventory
+src/Makefile	makefile	source	read-only inventory
+src/manalinkex/Makefile	makefile	source	read-only inventory
+src/patches/Makefile	makefile	source	read-only inventory

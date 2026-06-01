@@ -1,0 +1,4 @@
+gcc -ggdb2 -O2 -m32 -fno-omit-frame-pointer -march=i586 -mpreferred-stack-boundary=2 -Wall -Wextra -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wwrite-strings -Wshadow -W -Wstrict-prototypes -Wnested-externs -Winline -Werror -I.. -I. -c -o manalinkex.o manalinkex.c
+gcc -shared -m32 -o ManalinkEx.dll manalinkex.o ManalinkEx.def
+objcopy --only-keep-debug ManalinkEx.dll ManalinkEx.dbg
+objcopy --strip-debug ManalinkEx.dll

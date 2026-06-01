@@ -1,0 +1,7 @@
+tool	command	scope	result	report_path	limitations
+tools/audit_codebase.py	python3 tools/audit_codebase.py --out docs/generated/code-audit	working-tree files excluding .git, .codex, ignored local reports, and the output directory	52105 files scanned; 4873 hazard matches	docs/generated/code-audit/	regex inventory only; not a compiler or semantic analyzer
+cppcheck	command -v cppcheck	src	not installed	-	optional tool not run
+scan-build	command -v scan-build	src	not installed	-	optional tool not run
+clang-tidy	command -v clang-tidy	src	not installed	-	no compilation database and tool not installed
+infer	command -v infer	src	not installed	-	optional tool not run
+semgrep	command -v semgrep	working tree	not installed	-	optional tool not run

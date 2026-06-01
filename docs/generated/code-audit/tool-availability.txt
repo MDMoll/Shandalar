@@ -1,0 +1,20 @@
+make: /usr/bin/make
+gcc: /usr/bin/gcc
+g++: /usr/bin/g++
+clang: /usr/bin/clang
+clang++: /usr/bin/clang++
+nasm: <not found>
+yasm: <not found>
+dlltool: <not found>
+objcopy: <not found>
+windres: <not found>
+perl: /usr/bin/perl
+python3: /opt/homebrew/bin/python3
+cppcheck: <not found>
+scan-build: <not found>
+clang-tidy: <not found>
+infer: <not found>
+semgrep: <not found>
+objdump: /usr/bin/objdump
+strings: /usr/bin/strings
+file: /usr/bin/file

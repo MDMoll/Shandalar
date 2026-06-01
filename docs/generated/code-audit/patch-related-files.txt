@@ -1,0 +1,24 @@
+CardArtManalink/Briar Patch.jpg
+CSV/Magic.exe.Cards.csv
+CSV/Shandalar.exe.Enemies.csv
+docs/patch-package-plan.md
+docs/patch-risk-register.md
+FaceMaker.exe
+Facemaker/Facemaker.exe
+Faces/patch.jat
+Magic.exe
+Manalink3/Program/FaceMaker.exe
+Manalink3/Program/Magic.exe
+Manalink3/Program/ManalinkEh.dll
+ManalinkEh.dll
+Program/FaceMaker.exe
+Program/Faces/patch.jat
+Program/Magic.exe
+Program/ManalinkEh.dll
+Program/Shandalar.exe
+Program/src/patches/Manalink/Patch.pm
+Program/src/patches/patch.h
+Shandalar.exe
+src/patches/Manalink/Patch.pm
+src/patches/patch.h
+tools/create-patch-package.sh

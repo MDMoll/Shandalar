@@ -49,6 +49,9 @@ kind_for_path() {
     tools/*.sh|local/*.sh|local/*/*.sh)
       printf 'shell-tool'
       ;;
+    tools/*.py|local/*.py|local/*/*.py)
+      printf 'python-tool'
+      ;;
     src/*|Program/src/*)
       printf 'source'
       ;;

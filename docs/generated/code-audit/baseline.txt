@@ -1,0 +1,14 @@
+pwd
+/Users/mdmoll/Shandalar/Shandalar
+
+git status --short
+?? docs/generated/code-audit/
+
+git branch --show-current
+codex/deep-codebase-health-audit
+
+git rev-parse --show-toplevel
+/Users/mdmoll/Shandalar/Shandalar
+
+git rev-parse HEAD
+f8b30aece75aa90be2f92653658e85442d6a7f0a

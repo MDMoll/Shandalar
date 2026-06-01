@@ -1,0 +1,35 @@
+# Commands Run - Codebase Health Audit
+
+Commands are recorded with working directory `/Users/mdmoll/Shandalar/Shandalar` unless noted.
+
+- `git status --short --untracked-files=all`
+- `git branch --show-current`
+- `git switch -c codex/deep-codebase-health-audit`
+- `mkdir -p docs/generated/code-audit`
+- `pwd`; `git status --short`; `git branch --show-current`; `git rev-parse --show-toplevel`; `git rev-parse HEAD` -> `docs/generated/code-audit/baseline.txt`
+- `sed -n '1,220p' README.md AGENTS.md docs/architecture.md docs/runtime-testing-policy.md docs/duplicate-audit.md docs/troubleshooting.md docs/building.md docs/file-inventory.md docs/install-roots.md`
+- `find docs/bugs -maxdepth 2 -type f | sort`
+- `python3 tools/audit_codebase.py --out docs/generated/code-audit`
+- `chmod +x tools/audit_codebase.py`
+- `(cd src && make -n) > docs/generated/code-audit/src-make-dry-run.txt 2>&1`
+- `(cd Program/src && make -n) > docs/generated/code-audit/program-src-make-dry-run.txt 2>&1`
+- `(cd src/deck && make -n) > docs/generated/code-audit/src-deck-make-dry-run.txt 2>&1`
+- `(cd src/drawcardlib && make -n) > docs/generated/code-audit/src-drawcardlib-make-dry-run.txt 2>&1`
+- `(cd src/cardartlib && make -n) > docs/generated/code-audit/src-cardartlib-make-dry-run.txt 2>&1`
+- `(cd src/manalinkex && make -n) > docs/generated/code-audit/src-manalinkex-make-dry-run.txt 2>&1`
+- `(cd src/patches && make -n) > docs/generated/code-audit/src-patches-make-dry-run.txt 2>&1`
+- `(cd Program/src/drawcardlib && make -n) > docs/generated/code-audit/program-src-drawcardlib-make-dry-run.txt 2>&1`
+- `git ls-files src/card_id.h Program/src/card_id.h`
+- `test -f src/card_id.h`; `test -f Program/src/card_id.h`
+- `diff -qr src Program/src`
+- `find src Program/src -maxdepth 2 -iname makefile -o -iname '*.mak'`
+- `find src Program/src -type f ... | wc -l`
+- `shasum -a 256 src/Makefile src/Makefile-common src/Makefile-targets Program/src/Makefile Program/src/Makefile-common Program/src/Makefile-targets`
+- `find . -path ./.git -prune -o -type f \( -iname '*.exe' -o -iname '*.dll' \) ... strings ... > docs/generated/code-audit/binary-runtime-strings.txt`
+- `rg -n 'Cards.dat|DuelSounds|FaceMaker|Magic.exe|zlib|ManalinkEx|CreateDIBSection|GAA_DAMAGE_PREVENTION|STATE_ATTACKING' src Program/src docs`
+- `sed -n` inspections of `src/cardartlib/src/main.cpp`, `src/drawcardlib/config.c`, `src/cards/draft.c`, `src/build.pl`, `src/deploy.bat`, `Manalink_Launcher.cmd`, and `src/patches/patch_undo_declared_attacker.pl`
+- `git status --short --untracked-files=all`
+- `git diff --stat`
+- `python3 tools/audit_codebase.py --help`
+- `ALLOW_DIRTY=1 tools/verify-share-readiness.sh`
+- `git diff --check`
