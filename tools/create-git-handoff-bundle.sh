@@ -5,7 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 default_branch="$(git branch --show-current)"
-branch="${default_branch:-codex/shandalar-crossover-updates}"
+branch="${default_branch:-HEAD}"
 base="master"
 dest=""
 full_bundle=0

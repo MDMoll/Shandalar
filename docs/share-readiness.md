@@ -60,14 +60,14 @@ git status --short --untracked-files=all
 tools/print-share-status.sh
 git log --oneline -10
 tools/verify-share-readiness.sh
-git push -u origin codex/shandalar-crossover-updates
+git push -u origin "$(git branch --show-current)"
 ```
 
-The current branch has already been pushed; rerun this checklist after new
-commits. If the push fails with an HTTPS credential error, authenticate GitHub
-locally and rerun the same push command. See [git-handoff.md](git-handoff.md)
-for the exact remote and [push-auth.md](push-auth.md) for HTTPS token, GitHub
-CLI, and SSH options.
+For the active `codex/fix-runtime-path-zlib` branch,
+`tools/print-share-status.sh` currently reports no upstream branch. If the push
+fails with an HTTPS credential error, authenticate GitHub locally and rerun the
+same push command. See [git-handoff.md](git-handoff.md) for the exact remote
+and [push-auth.md](push-auth.md) for HTTPS token, GitHub CLI, and SSH options.
 
 ## First Manual Gameplay Checklist
 

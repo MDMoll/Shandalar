@@ -521,12 +521,12 @@ src/subtypes.h	C/C++ header	source	30000	648
 tools/audit_codebase.py	Python	tooling	14372	379
 tools/check-security-scanner-availability.sh	shell	tooling	4695	138
 tools/create-cleanup-test-copy.sh	shell	tooling	3620	144
-tools/create-git-handoff-bundle.sh	shell	tooling	5726	192
+tools/create-git-handoff-bundle.sh	shell	tooling	5697	192
 tools/create-patch-package.sh	shell	tooling	6513	203
 tools/create-security-scan-results-template.sh	shell	tooling	1748	70
 tools/list-branch-delta.sh	shell	tooling	4506	182
 tools/list-security-scan-targets.sh	shell	tooling	1125	47
-tools/print-manual-gameplay-baseline.sh	shell	tooling	6081	171
+tools/print-manual-gameplay-baseline.sh	shell	tooling	6767	180
 tools/print-security-scan-baseline.sh	shell	tooling	4198	134
 tools/print-share-status.sh	shell	tooling	9114	199
 tools/record-manual-gameplay-result.sh	shell	tooling	6106	223

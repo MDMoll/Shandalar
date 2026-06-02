@@ -1,6 +1,8 @@
 # Branch Summary
 
-Branch: `codex/shandalar-crossover-updates`
+Current work branch at this update: `codex/fix-runtime-path-zlib`.
+Use `tools/print-share-status.sh` for the live branch, commit, upstream, and
+push status before handoff.
 
 This branch turns the checkout into a more navigable maintenance tree while
 preserving the bundled game/runtime layout. It deletes nothing and avoids
@@ -27,7 +29,7 @@ moving runtime-like assets without explicit approval and launch-copy testing.
 | ClamAV scanned the tracked security-target inventory and reported no infected files. | [security-scan.md](security-scan.md), [generated/security-scan/clamav-2026-06-01.md](generated/security-scan/clamav-2026-06-01.md), and `tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all`. |
 | Root `C:\Shandalar\Shandalar.exe` reached the main menu and the default/first start-color path reached the adventure map in CrossOver `MTG`. | S1/S2 in [manual-gameplay-verification.md](manual-gameplay-verification.md), [running.md](running.md), [verified-on-this-machine.md](verified-on-this-machine.md), and [generated/manual-gameplay/s2-map-2026-05-31.md](generated/manual-gameplay/s2-map-2026-05-31.md). |
 | Remaining cleanup candidates are intentionally deferred instead of silently removed. | [cleanup-audit.md](cleanup-audit.md), [cleanup-move-plan.md](cleanup-move-plan.md), [completion-audit.md](completion-audit.md), and [gaps.md](gaps.md). |
-| The branch is pushed and the handoff path is explicit, with owner-side auth notes, bundle/patch artifacts, checksum sidecars, and verifier coverage for credential-blocked environments. | [git-handoff.md](git-handoff.md), [push-auth.md](push-auth.md), `tools/create-git-handoff-bundle.sh`, `tools/create-patch-package.sh`, and `tools/verify-handoff-artifacts.sh`. |
+| The handoff path is explicit, with owner-side auth notes, bundle/patch artifacts, checksum sidecars, and verifier coverage for credential-blocked environments. | [git-handoff.md](git-handoff.md), [push-auth.md](push-auth.md), `tools/print-share-status.sh`, `tools/create-git-handoff-bundle.sh`, `tools/create-patch-package.sh`, and `tools/verify-handoff-artifacts.sh`. |
 
 ## Do Not Claim Yet
 
@@ -55,12 +57,13 @@ tools/record-manual-gameplay-result.sh --test D2 --result "Fail: froze at post-c
 tools/print-security-scan-baseline.sh
 tools/record-security-scan-result.sh --confirmed-real-scan --path Shandalar.exe --scanner "Windows Defender" --version "VERSION" --date 2026-05-31 --result "Clean" --notes "MpCmdRun.exe custom scan completed"
 git log --oneline -10
-git push -u origin codex/shandalar-crossover-updates
+git push -u origin "$(git branch --show-current)"
 ```
 
-The current branch has already been pushed. After new commits, rerun the same
-push command. If credentials are unavailable, see [push-auth.md](push-auth.md)
-for HTTPS token, GitHub CLI, and SSH options, or use
+For the current `codex/fix-runtime-path-zlib` branch, `tools/print-share-status.sh`
+currently reports no upstream branch. Push the branch you intend to share, then
+rerun the same status command. If credentials are unavailable, see
+[push-auth.md](push-auth.md) for HTTPS token, GitHub CLI, and SSH options, or use
 `tools/create-git-handoff-bundle.sh --replace` to recreate a Git-history
 handoff bundle for the current commit.
 The helpers now print receiver-side checksum, `git bundle verify`, `git fetch`,

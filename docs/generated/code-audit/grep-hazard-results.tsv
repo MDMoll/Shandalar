@@ -117,8 +117,7 @@ docs/adventure-map-movement.md	103	memory-allocation	new	| Does pressing the sam
 docs/architecture.md	9	hardcoded-path	C:\	| Root executable/assets | Current repo-root Shandalar launch surface and copied CrossOver `MTG` launch surface. | Verified by shortcut target, logged `C:\Shandalar\Shandalar.exe` startup, root DLL/assets, root `Magic.exe` access, and the patched repo `Shandalar.exe` start-color smoke test. |
 docs/architecture.md	47	gdi-lifetime	CreateDIBSection	| Root `Shandalar.exe` and `Program/Shandalar.exe` | Same active SHA-256 in this checkout and copied `MTG`/`Shandalar-Win8-Test` installs: `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b`. Both include the `CreateDIBSection hSection = NULL` compatibility patch, the `mPlayer` default-name seed, the name-editor bypass/fallback, and the same-arrow movement-stop code cave. Current `M
 docs/architecture.md	63	memory-allocation	delete	| `CardArtManalink`, `CardArtNew`, `Cardart` | Large card-art/resource stores; likely not all loaded by one executable path, but not safe to delete without tests. |
-docs/branch-summary.md	28	hardcoded-path	C:\	| Root `C:\Shandalar\Shandalar.exe` reached the main menu and the default/first start-color path reached the adventure map in CrossOver `MTG`. | S1/S2 in [manual-gameplay-verification.md](manual-gameplay-verification.md), [running.md](running.md), [verified-on-this-machine.md](verified-on-this-machine.md), and [generated/manual-gameplay/s2-map-2026-05-31.md](generated/manual-gameplay/s2-map-2026-0
-docs/branch-summary.md	61	memory-allocation	new	The current branch has already been pushed. After new commits, rerun the same
+docs/branch-summary.md	30	hardcoded-path	C:\	| Root `C:\Shandalar\Shandalar.exe` reached the main menu and the default/first start-color path reached the adventure map in CrossOver `MTG`. | S1/S2 in [manual-gameplay-verification.md](manual-gameplay-verification.md), [running.md](running.md), [verified-on-this-machine.md](verified-on-this-machine.md), and [generated/manual-gameplay/s2-map-2026-05-31.md](generated/manual-gameplay/s2-map-2026-0
 docs/bug-backlog.md	12	memory-allocation	malloc	| 4 | B006 | `CardArtLib` `Cards.dat` loader lacks checks | high | medium | memory safety | `loadDat()` has unchecked `fopen`, `fread`, `malloc` | Add checks in source after build harness exists | malformed data harness | moderate |
 docs/bug-backlog.md	15	hardcoded-path	c:\	| 7 | B004 | `src/build.pl` mutates source and copies to `c:\magic2k` | medium | high | tooling | script rewrites `ManalinkEh.asm` and copies DLL | Add `--dry-run`/`--out` guard | syntax and dry-run tests | moderate |
 docs/bug-backlog.md	16	hardcoded-path	c:\	| 8 | B005 | `src/deploy.bat` deletes/copies under `c:\magic2k` | medium | high | tooling | hardcoded `del /s/q` and many `copy` commands | Document as historical packaging script | static review | safe |
@@ -1191,20 +1190,27 @@ docs/magic-vs-shandalar-runtime.md	25	hardcoded-path	D:\	| Old assertion/source-
 docs/magic-vs-shandalar-runtime.md	33	gdi-lifetime	CreateDIBSection	| FaceMaker handoff | `Shandalar.exe` contains a `\Facemaker.exe` string, and FaceMaker binaries contain the same `WM_CREATE CreateDIBSection` assertion text. |
 docs/magic-vs-shandalar-runtime.md	35	gdi-lifetime	CreateDIBSection	| `WM_CREATE CreateDIBSection` string | Found directly in `Program/Shandalar.exe`; not shown in the `Program/Magic.exe` string excerpt generated in this pass. |
 docs/magic-vs-shandalar-runtime.md	41	memory-allocation	new	| `Program/Shandalar.exe` new game, each start color | Determines color-specific vs shared post-color crash. |
-docs/manual-gameplay-verification.md	64	hardcoded-path	C:\	| Working directory | `C:\Shandalar` |
-docs/manual-gameplay-verification.md	65	hardcoded-path	C:\	"| Command or shortcut target | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir ""C:\Shandalar"" ""C:\Shandalar\Shandalar.exe""` |"
-docs/manual-gameplay-verification.md	77	hardcoded-path	C:\	| Working directory | `C:\Shandalar` |
-docs/manual-gameplay-verification.md	78	hardcoded-path	C:\	| Shandalar target | `C:\Shandalar\Shandalar.exe` |
-docs/manual-gameplay-verification.md	79	hardcoded-path	C:\	| Root Magic target | `C:\Shandalar\Magic.exe` |
-docs/manual-gameplay-verification.md	80	hardcoded-path	C:\	| Program Magic target | `C:\Shandalar\Program\Magic.exe` |
-docs/manual-gameplay-verification.md	87	hardcoded-path	C:\	certutil -hashfile C:\Shandalar\Shandalar.exe SHA256
-docs/manual-gameplay-verification.md	88	hardcoded-path	C:\	certutil -hashfile C:\Shandalar\Magic.exe SHA256
-docs/manual-gameplay-verification.md	89	hardcoded-path	C:\	certutil -hashfile C:\Shandalar\ManalinkEh.dll SHA256
-docs/manual-gameplay-verification.md	98	hardcoded-path	C:\	| S1 | Launch root `Shandalar.exe` from the full checkout or `C:\Shandalar`. | Main menu appears. | Pass: visible launch of `C:\Shandalar\Shandalar.exe` in CrossOver `MTG` reached the `Magic: Shandalar` main menu; see [verified-on-this-machine.md](verified-on-this-machine.md) and [running.md](running.md). |
-docs/manual-gameplay-verification.md	99	memory-allocation	new	| S2 | Start a new game with white. | Character creation reaches the map with default `Player`; no `CreateDIBSection` assertion. | Pass: visible CrossOver `MTG` run launched `C:\Shandalar\Shandalar.exe`, Wine SendKeys selected Start New Game/default first color, and the game reached the adventure map with no visible `CreateDIBSection` assertion; cropped screenshot [generated/manual-gameplay/s2-map
-docs/manual-gameplay-verification.md	114	hardcoded-path	C:\	| D4 | Test root `Magic.exe` directly from root or `C:\Shandalar`. | Duel shell opens or reports a visible, recorded dependency/config issue. | Needs testing |
-docs/manual-gameplay-verification.md	115	hardcoded-path	C:\	| D5 | Test `Program\Magic.exe` directly from `Program\` or `C:\Shandalar\Program`. | Program Manalink path opens or reports a visible, recorded dependency/config issue. | Needs testing |
-docs/manual-gameplay-verification.md	131	hardcoded-path	C:\	| Example | Needs testing | `C:\Shandalar\Shandalar.exe` | Record screenshot/log path if possible. |
+docs/manual-gameplay-verification.md	65	hardcoded-path	C:\	| Working directory | `C:\Shandalar` |
+docs/manual-gameplay-verification.md	66	hardcoded-path	C:\	"| Command or shortcut target | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir ""C:\Shandalar"" ""C:\Shandalar\Shandalar.exe""` |"
+docs/manual-gameplay-verification.md	67	hardcoded-path	C:\	| Alternate Program working directory | `C:\Shandalar\Program` |
+docs/manual-gameplay-verification.md	68	hardcoded-path	C:\	"| Alternate Program command | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir ""C:\Shandalar\Program"" ""C:\Shandalar\Program\Shandalar.exe""` |"
+docs/manual-gameplay-verification.md	84	hardcoded-path	C:\	| Working directory | `C:\Shandalar` |
+docs/manual-gameplay-verification.md	85	hardcoded-path	C:\	| Shandalar target | `C:\Shandalar\Shandalar.exe` |
+docs/manual-gameplay-verification.md	86	hardcoded-path	C:\	| Root Magic target | `C:\Shandalar\Magic.exe` |
+docs/manual-gameplay-verification.md	87	hardcoded-path	C:\	| Program Shandalar target | `C:\Shandalar\Program\Shandalar.exe` |
+docs/manual-gameplay-verification.md	88	hardcoded-path	C:\	| Program Magic target | `C:\Shandalar\Program\Magic.exe` |
+docs/manual-gameplay-verification.md	95	hardcoded-path	C:\	certutil -hashfile C:\Shandalar\Shandalar.exe SHA256
+docs/manual-gameplay-verification.md	96	hardcoded-path	C:\	certutil -hashfile C:\Shandalar\Magic.exe SHA256
+docs/manual-gameplay-verification.md	97	hardcoded-path	C:\	certutil -hashfile C:\Shandalar\ManalinkEh.dll SHA256
+docs/manual-gameplay-verification.md	98	hardcoded-path	C:\	certutil -hashfile C:\Shandalar\Program\Shandalar.exe SHA256
+docs/manual-gameplay-verification.md	99	hardcoded-path	C:\	certutil -hashfile C:\Shandalar\Program\Magic.exe SHA256
+docs/manual-gameplay-verification.md	100	hardcoded-path	C:\	certutil -hashfile C:\Shandalar\Program\ManalinkEh.dll SHA256
+docs/manual-gameplay-verification.md	101	hardcoded-path	C:\	certutil -hashfile C:\Shandalar\Program\zlib.dll SHA256
+docs/manual-gameplay-verification.md	110	hardcoded-path	C:\	| S1 | Launch root `Shandalar.exe` from the full checkout or `C:\Shandalar`. | Main menu appears. | Pass: visible launch of `C:\Shandalar\Shandalar.exe` in CrossOver `MTG` reached the `Magic: Shandalar` main menu; see [verified-on-this-machine.md](verified-on-this-machine.md) and [running.md](running.md). |
+docs/manual-gameplay-verification.md	111	memory-allocation	new	| S2 | Start a new game with white. | Character creation reaches the map with default `Player`; no `CreateDIBSection` assertion. | Pass: visible CrossOver `MTG` run launched `C:\Shandalar\Shandalar.exe`, Wine SendKeys selected Start New Game/default first color, and the game reached the adventure map with no visible `CreateDIBSection` assertion; cropped screenshot [generated/manual-gameplay/s2-map
+docs/manual-gameplay-verification.md	126	hardcoded-path	C:\	| D4 | Test root `Magic.exe` directly from root or `C:\Shandalar`. | Duel shell opens or reports a visible, recorded dependency/config issue. | Needs testing |
+docs/manual-gameplay-verification.md	127	hardcoded-path	C:\	| D5 | Test `Program\Magic.exe` directly from `Program\` or `C:\Shandalar\Program`. | Program Manalink path opens or reports a visible, recorded dependency/config issue. | Needs testing |
+docs/manual-gameplay-verification.md	143	hardcoded-path	C:\	| Example | Needs testing | `C:\Shandalar\Shandalar.exe` | Record screenshot/log path if possible. |
 docs/memory-safety-audit.md	12	memory-allocation	malloc	| MS001 | `src/cardartlib/src/main.cpp` | `loadDat()` | unchecked file, read, allocation, and index assumptions | `fopen`, `fread`, `malloc`, and `idToName[id]` are used without local validation | high | medium | Add checked reads, allocation checks, and id bounds | malformed `Cards.dat` harness after build proof |
 docs/memory-safety-audit.md	13	buffer-handling	sprintf	"| MS002 | `src/cardartlib/src/main.cpp` | `idToNameFun()` | fixed-size path buffer overflow | `sprintf(tmp, ""CardArtManalink/%s..."")` into `char tmp[254]` | medium | medium | Use `snprintf`; reject missing or out-of-range ids | long-name synthetic data |"
 docs/memory-safety-audit.md	14	buffer-handling	sprintf	| MS003 | `src/drawcardlib/config.c` | `get_pichandlename()` | fixed static buffer overflow | `sprintf()` into `char buf[3][160]` with base/config names | medium | medium | Use bounded formatting and larger path model | long install path/config test |
@@ -1216,7 +1222,6 @@ docs/memory-safety-audit.md	20	gdi-lifetime	CreateDIBSection	| MS009 | `Shandala
 docs/memory-safety-audit.md	27	gdi-lifetime	CreateDIBSection	`CreateDIBSection` family because patch bytes and smoke evidence are already
 docs/optimization-opportunities.md	17	memory-allocation	delete	| O009 | GDI drawing | GDI object creation/restoration is scattered. | Leak/performance risk in long sessions. | Centralize restore/delete helpers one module at a time. | Windows GDI handle monitoring. | moderate |
 docs/patch-risk-register.md	13	gdi-lifetime	CreateDIBSection	| Shandalar DIB `hSection = NULL` | `Shandalar.exe`; `Program/Shandalar.exe` | `0x1785b0` file offset | Avoid start-color `CreateDIBSection` crash path | documented bytes and hashes in AGENTS/bugs docs | high | `xxd -g1 -l 32 -s $((0x1785b0)) Shandalar.exe Program/Shandalar.exe` |
-docs/push-auth.md	5	memory-allocation	new	credential failures or new commits that need another push.
 docs/README.md	50	gdi-lifetime	CreateDIBSection	| [bugs/create-dibsection-after-color.md](bugs/create-dibsection-after-color.md) | Start-color `CreateDIBSection` assertion and patch evidence. |
 docs/reorganization.md	12	memory-allocation	new	staged case-only README rename and the new documentation files:
 docs/reorganization.md	77	memory-allocation	new	| `git diff --stat` | Shows the unstaged README content update. The approved archive moves are staged by `git mv`, and new docs are untracked, so they are visible in `git status` rather than this plain diff. |
@@ -1289,8 +1294,8 @@ docs/runtime-testing-policy.md	202	gdi-lifetime	CreateDIBSection	"rg -n -i ""sld
 docs/runtime-testing-policy.md	205	gdi-lifetime	CreateDIBSection	"objdump -p Program/Shandalar.exe 2>/dev/null | rg -i ""DLL Name|CreateDIBSection|GDI32|USER32|DDRAW|DirectDraw"" -C 3"
 docs/runtime-testing-policy.md	206	gdi-lifetime	CreateDIBSection	"objdump -p Program/Magic.exe 2>/dev/null | rg -i ""DLL Name|CreateDIBSection|GDI32|USER32|DDRAW|DirectDraw"" -C 3"
 docs/save-state.md	36	memory-allocation	new	2. Launch the game from a copy of the checkout and verify whether new game,
-docs/security-scan.md	109	hardcoded-path	C:\	"| Windows Defender PowerShell | `Start-MpScan -ScanPath ""C:\path\to\Shandalar""` |"
-docs/security-scan.md	110	hardcoded-path	C:\	"| Windows Defender command line | `""%ProgramFiles%\Windows Defender\MpCmdRun.exe"" -Scan -ScanType 3 -File ""C:\path\to\Shandalar""` |"
+docs/security-scan.md	110	hardcoded-path	C:\	"| Windows Defender PowerShell | `Start-MpScan -ScanPath ""C:\path\to\Shandalar""` |"
+docs/security-scan.md	111	hardcoded-path	C:\	"| Windows Defender command line | `""%ProgramFiles%\Windows Defender\MpCmdRun.exe"" -Scan -ScanType 3 -File ""C:\path\to\Shandalar""` |"
 docs/share-readiness.md	29	hardcoded-path	C:\	| First gameplay smoke rows | Root `C:\Shandalar\Shandalar.exe` reaching the main menu and the default/first start-color path reaching the adventure map are recorded, while the remaining starting colors, save/load, duel, and regression rows remain open. | S1/S2 in [manual-gameplay-verification.md](manual-gameplay-verification.md), [running.md](running.md), [verified-on-this-machine.md](verified-on
 docs/stale-references.md	11	hardcoded-path	c:\	rg -n -i --glob '*.txt' --glob '*.md' --glob '*.cmd' --glob '*.bat' --glob '*.ini' --glob '*.pl' --glob '*.url' -e 'https?://|ftp://|www\.|[A-Z]:\\|c:\\|d:\\|e:\\|manalink\.org' .
 docs/stale-references.md	35	hardcoded-path	C:\	| `SVEtool.ini:6` | `C:\Program Files\Magic\` | Stale/default local Windows install path | Keep as a sample config; tell users to edit before use. |
@@ -4871,11 +4876,14 @@ tools/audit_codebase.py	52	hardcoded-path	C:\	"r""([A-Z]:\\|C:\\|D:\\|Program\\|
 tools/audit_codebase.py	56	memory-allocation	malloc	"PERF_RE = re.compile(r""\b(for\s*\(|while\s*\(|malloc|calloc|realloc|fopen|CreateFile|ReadFile|LoadImage|CreateDIBSection|CreateCompatible|GetPixel|SetPixel|sort|qsort|system\s*\(|popen|glob|opendir|readdir)\b"")"
 tools/audit_codebase.py	296	hardcoded-path	C:\	"[row for row in runtime_rows if re.search(r""[A-Z]:\\|C:\\|D:\\"", str(row[""text""]), re.I)],"
 tools/audit_codebase.py	332	hardcoded-path	c:\	"if re.search(r""[A-Z]:\\|c:\\|d:\\"", text, re.I):"
-tools/print-manual-gameplay-baseline.sh	150	hardcoded-path	C:\	"(""Primary working directory"", ""C:\\Shandalar""),"
-tools/print-manual-gameplay-baseline.sh	151	hardcoded-path	C:\	"(""Primary target"", ""C:\\Shandalar\\Shandalar.exe""),"
-tools/print-manual-gameplay-baseline.sh	159	hardcoded-path	C:\	"print(f'/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle {BOTTLE} --workdir ""C:\\Shandalar"" ""C:\\Shandalar\\Shandalar.exe""')"
-tools/print-manual-gameplay-baseline.sh	160	hardcoded-path	C:\	"print(f'/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle {BOTTLE} --workdir ""C:\\Shandalar"" ""C:\\Shandalar\\Magic.exe""')"
-tools/print-manual-gameplay-baseline.sh	161	hardcoded-path	C:\	"print(f'/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle {BOTTLE} --workdir ""C:\\Shandalar\\Program"" ""C:\\Shandalar\\Program\\Magic.exe""')"
+tools/print-manual-gameplay-baseline.sh	156	hardcoded-path	C:\	"(""Primary working directory"", ""C:\\Shandalar""),"
+tools/print-manual-gameplay-baseline.sh	157	hardcoded-path	C:\	"(""Primary target"", ""C:\\Shandalar\\Shandalar.exe""),"
+tools/print-manual-gameplay-baseline.sh	158	hardcoded-path	C:\	"(""Alternate Program working directory"", ""C:\\Shandalar\\Program""),"
+tools/print-manual-gameplay-baseline.sh	159	hardcoded-path	C:\	"(""Alternate Program target"", ""C:\\Shandalar\\Program\\Shandalar.exe""),"
+tools/print-manual-gameplay-baseline.sh	167	hardcoded-path	C:\	"print(f'/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle {BOTTLE} --workdir ""C:\\Shandalar"" ""C:\\Shandalar\\Shandalar.exe""')"
+tools/print-manual-gameplay-baseline.sh	168	hardcoded-path	C:\	"print(f'/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle {BOTTLE} --workdir ""C:\\Shandalar"" ""C:\\Shandalar\\Magic.exe""')"
+tools/print-manual-gameplay-baseline.sh	169	hardcoded-path	C:\	"print(f'/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle {BOTTLE} --workdir ""C:\\Shandalar\\Program"" ""C:\\Shandalar\\Program\\Shandalar.exe""')"
+tools/print-manual-gameplay-baseline.sh	170	hardcoded-path	C:\	"print(f'/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle {BOTTLE} --workdir ""C:\\Shandalar\\Program"" ""C:\\Shandalar\\Program\\Magic.exe""')"
 tools/print-security-scan-baseline.sh	123	hardcoded-path	C:\	"print('""%ProgramFiles%\\Windows Defender\\MpCmdRun.exe"" -Scan -ScanType 3 -File ""C:\\path\\to\\Shandalar""')"
 tools/verify-crossover-mtg-state.sh	143	hardcoded-path	C:\	"'""PagingFiles""=str(7):""C:\\\\pagefile.sys 512 1024\\0""',"
 tools/verify-handoff-readiness.sh	93	hardcoded-path	C:\	"printf '%s\n' ""$manual_baseline"" | grep -q ""| Primary target | C:\\\\Shandalar\\\\Shandalar.exe |"" || fail ""manual gameplay baseline missing primary target"""

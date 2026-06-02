@@ -1,17 +1,19 @@
 # Git Handoff
 
-This branch has been pushed to GitHub from this environment. Handoff artifacts
-remain useful as credential-independent fallbacks and patch-planning evidence.
+This page describes how to hand off the current branch. Use
+`tools/print-share-status.sh` for live branch, commit, upstream, and artifact
+paths. At this update, the active branch is `codex/fix-runtime-path-zlib` and
+has no upstream yet.
 
 ## Current Branch State
 
 | Field | Value |
 | --- | --- |
-| Branch | `codex/shandalar-crossover-updates` |
+| Branch | `codex/fix-runtime-path-zlib` at this update; confirm with `git branch --show-current`. |
 | Remote | `origin` |
 | Remote URL | `https://github.com/MDMoll/Shandalar.git` |
 | Latest local commit | Run `git log --oneline -1` |
-| Push status | `origin/codex/shandalar-crossover-updates` matches local `HEAD` when `git rev-parse HEAD @{u}` prints the same SHA twice. |
+| Push status | Pending for `codex/fix-runtime-path-zlib` until `git push -u origin "$(git branch --show-current)"` succeeds and `tools/print-share-status.sh` reports a matching upstream. |
 
 ## Pre-Push Check
 
@@ -30,7 +32,7 @@ present, remove them before pushing.
 ## Push Command For New Commits
 
 ```sh
-git push -u origin codex/shandalar-crossover-updates
+git push -u origin "$(git branch --show-current)"
 ```
 
 Do not push directly to `master` for this cleanup/runtime branch.
@@ -69,8 +71,8 @@ the receiver commands printed by the helper. The command shape is:
 cd /path/to/directory-containing-bundle
 shasum -a 256 -c codex-shandalar-crossover-updates-<sha>.bundle.sha256
 git bundle verify /path/to/codex-shandalar-crossover-updates-<sha>.bundle
-git fetch /path/to/codex-shandalar-crossover-updates-<sha>.bundle refs/heads/codex/shandalar-crossover-updates:refs/heads/codex/shandalar-crossover-updates
-git switch codex/shandalar-crossover-updates
+git fetch /path/to/<current-branch>-<sha>.bundle refs/heads/<current-branch>:refs/heads/<current-branch>
+git switch <current-branch>
 ```
 
 This flow was verified locally in a disposable `master`-only clone with an
@@ -105,8 +107,9 @@ fatal: could not read Username for 'https://github.com': Device not configured
 ```
 
 An SSH push attempt also failed earlier with public-key authentication. The
-current HTTPS push has since succeeded, but keep [push-auth.md](push-auth.md)
-for future credential remediation paths.
+older `codex/shandalar-crossover-updates` branch was later pushed successfully,
+but the active `codex/fix-runtime-path-zlib` branch still needs its own push or
+verified bundle handoff.
 
 ## After Pushing
 

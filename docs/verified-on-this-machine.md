@@ -54,7 +54,7 @@ Local checkout path: `/Users/mdmoll/Shandalar/Shandalar`
 | `command -v wine` | No standalone `wine` was found in `PATH`. |
 | `xprotect version` | macOS XProtect reports `Version: 5346 Installed: 2026-05-28 08:53:39 +0000`. This is metadata only, not a repo file scan. |
 | `xprotect status` | `XProtect launch scans: disabled`; `XProtect background scans: disabled`. No XProtect result is available for the required security-scan gate. |
-| `clamscan --fail-if-cvd-older-than=7 --file-list=/private/tmp/shandalar-security-scan-target-paths-runtime-path-zlib.txt --log=/private/tmp/shandalar-clamscan-runtime-path-zlib.log` | ClamAV `1.5.2/28017/Sun May 31 02:27:13 2026` scanned 228 tracked security targets after `Program/zlib.dll` was added and reported `Infected files: 0`; `tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all` validated 228 local TSV rows. |
+| `clamscan --fail-if-cvd-older-than=7 --file-list=/private/tmp/shandalar-security-scan-target-paths-handoff-refresh.txt --log=/private/tmp/shandalar-clamscan-handoff-refresh.log` | ClamAV `1.5.2/28017/Sun May 31 02:27:13 2026` scanned 228 tracked security targets after the handoff helper/doc refresh and reported `Infected files: 0`; `tools/verify-security-scan-results.sh --results security-scan-results.tsv --require-all` validated 228 local TSV rows. |
 | Earlier timed CrossOver launch attempts from `Program/` in bottle `MTG` | `Shandalar.exe --help`, `Shandalar.exe`, and `Magic.exe` exited with code 53 and no capturable stdout/stderr. This is not a gameplay verification. |
 | `make -n` in `src/` | Dry run reached many compile commands, then stopped because `src/card_id.h` is missing and `functions/utility.obj` had no usable rule. |
 

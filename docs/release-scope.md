@@ -1,7 +1,9 @@
 # Release Scope
 
-This file records the current sharing decision for
-`codex/shandalar-crossover-updates`.
+This file records the current sharing decision for controlled-maintenance
+branches. At this update the active branch is `codex/fix-runtime-path-zlib`;
+use `tools/print-share-status.sh` for the live branch, upstream, and push
+status.
 
 ## Current Decision
 
@@ -19,7 +21,7 @@ This is a practical repo-maintenance decision, not legal advice.
 | Claim | Status |
 | --- | --- |
 | The branch is cleaner and better documented for local maintenance. | Supported by [share-readiness.md](share-readiness.md) and [completion-audit.md](completion-audit.md). |
-| The branch is pushed to git for controlled maintenance. | Supported by a clean tree, `tools/verify-share-readiness.sh`, [git-handoff.md](git-handoff.md), [push-auth.md](push-auth.md), and local `HEAD` matching `origin/codex/shandalar-crossover-updates`. |
+| The branch can be shared to git for controlled maintenance. | Supported locally by a clean tree, `tools/verify-share-readiness.sh`, [git-handoff.md](git-handoff.md), [push-auth.md](push-auth.md), and `tools/print-share-status.sh`. The active `codex/fix-runtime-path-zlib` branch still needs an upstream push before claiming remote parity. |
 | A branch-delta inventory exists for patch-only planning. | Supported by [patch-package-plan.md](patch-package-plan.md) and `tools/list-branch-delta.sh`. |
 | The branch is a public release. | Do not claim. |
 | The binaries are malware-scanned. | Do not claim until [security-scan.md](security-scan.md) has named scanner/version/hash results. |
@@ -38,7 +40,7 @@ This is a practical repo-maintenance decision, not legal advice.
 
 | Candidate release | Required work before calling it ready |
 | --- | --- |
-| Private maintenance branch | Current branch is pushed; keep this release scope visible, and do not make public redistribution or scanner claims. |
+| Private maintenance branch | Push the exact current branch shown by `tools/print-share-status.sh`; keep this release scope visible, and do not make public redistribution or broad scanner claims. |
 | Patch/docs-only package | Use [patch-package-plan.md](patch-package-plan.md) to inventory the branch delta, decide a patch format, test restoration against a clean local install, and document what original assets the recipient must provide. |
 | Rights-verified full bundle | Verify rights for binaries, art, card data, deck packs, sounds, videos, archives, and fan-maintained files; run named malware scans; complete manual gameplay verification. |
 
