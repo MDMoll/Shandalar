@@ -28,15 +28,21 @@ WINE = Path("/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wi
 
 HASH_TARGETS = [
     ("Repo Shandalar.exe", REPO / "Shandalar.exe"),
+    ("Repo Program/Shandalar.exe", REPO / "Program" / "Shandalar.exe"),
     ("Repo Magic.exe", REPO / "Magic.exe"),
     ("Repo Program/Magic.exe", REPO / "Program" / "Magic.exe"),
     ("Repo ManalinkEh.dll", REPO / "ManalinkEh.dll"),
     ("Repo Program/ManalinkEh.dll", REPO / "Program" / "ManalinkEh.dll"),
+    ("Repo zlib.dll", REPO / "zlib.dll"),
+    ("Repo Program/zlib.dll", REPO / "Program" / "zlib.dll"),
     ("Bottle Shandalar.exe", INSTALL / "Shandalar.exe"),
+    ("Bottle Program/Shandalar.exe", INSTALL / "Program" / "Shandalar.exe"),
     ("Bottle Magic.exe", INSTALL / "Magic.exe"),
     ("Bottle Program/Magic.exe", INSTALL / "Program" / "Magic.exe"),
     ("Bottle ManalinkEh.dll", INSTALL / "ManalinkEh.dll"),
     ("Bottle Program/ManalinkEh.dll", INSTALL / "Program" / "ManalinkEh.dll"),
+    ("Bottle zlib.dll", INSTALL / "zlib.dll"),
+    ("Bottle Program/zlib.dll", INSTALL / "Program" / "zlib.dll"),
 ]
 
 
@@ -149,6 +155,8 @@ for left, right in [
     ("Virtual desktop", f"Shandalar1440={desktop}" if desktop != "not found" else "not found"),
     ("Primary working directory", "C:\\Shandalar"),
     ("Primary target", "C:\\Shandalar\\Shandalar.exe"),
+    ("Alternate Program working directory", "C:\\Shandalar\\Program"),
+    ("Alternate Program target", "C:\\Shandalar\\Program\\Shandalar.exe"),
 ]:
     print(markdown_row(left, right))
 
@@ -158,6 +166,7 @@ print()
 print("```sh")
 print(f'/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle {BOTTLE} --workdir "C:\\Shandalar" "C:\\Shandalar\\Shandalar.exe"')
 print(f'/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle {BOTTLE} --workdir "C:\\Shandalar" "C:\\Shandalar\\Magic.exe"')
+print(f'/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle {BOTTLE} --workdir "C:\\Shandalar\\Program" "C:\\Shandalar\\Program\\Shandalar.exe"')
 print(f'/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle {BOTTLE} --workdir "C:\\Shandalar\\Program" "C:\\Shandalar\\Program\\Magic.exe"')
 print("```")
 

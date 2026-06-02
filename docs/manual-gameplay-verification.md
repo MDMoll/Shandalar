@@ -48,14 +48,15 @@ tools/verify-manual-gameplay-results.sh
 
 ## Test Environment Record
 
-The environment rows below are filled from the automated baseline generated on
-2026-05-31. They identify the current local `MTG` CrossOver test target and
-hashes, but they are not visible gameplay results.
+The environment rows below are filled from automated baselines generated on
+2026-05-31 and refreshed on 2026-06-01 after the `Program/zlib.dll` fix. They
+identify the current local `MTG` CrossOver test targets and hashes, but they
+are not visible gameplay results.
 
 | Field | Value |
 | --- | --- |
-| Date | 2026-05-31 19:52:00 |
-| Tester | Codex visible macOS screenshot run with Wine SendKeys; not a full human gameplay pass |
+| Date | 2026-06-01 baseline refresh; S1/S2 visible evidence remains from 2026-05-31 |
+| Tester | Codex baseline refresh plus earlier visible macOS screenshot run with Wine SendKeys; not a full human gameplay pass |
 | Platform | macOS 15.7.5 arm64 via CrossOver |
 | CrossOver or Wine version | CrossOver 26.1.0.39808 |
 | Bottle name | MTG |
@@ -63,9 +64,15 @@ hashes, but they are not visible gameplay results.
 | Virtual desktop | `Shandalar1440=1440x1080` |
 | Working directory | `C:\Shandalar` |
 | Command or shortcut target | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\Shandalar.exe"` |
+| Alternate Program working directory | `C:\Shandalar\Program` |
+| Alternate Program command | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar\Program" "C:\Shandalar\Program\Shandalar.exe"` |
 | `Shandalar.exe` SHA-256 | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` |
+| `Program/Shandalar.exe` SHA-256 | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` |
 | `Magic.exe` SHA-256 | `5bf518d66342d79562efb1106449413ada06814a6c14818a1e3101fd470c82d1` |
+| `Program/Magic.exe` SHA-256 | `0fb8b87fe35c8be037ae3419a9b9cd70a27df840ae6af6c7488c2685046a74fa` |
 | `ManalinkEh.dll` SHA-256 | `6a5fd8057d456d691fb87810eee8dbe1680b18d1c4c79530cbe036cb443df1eb` |
+| `Program/ManalinkEh.dll` SHA-256 | `7fc7ad86b5a3eaaa8879c76814dc454917f2e4b58acf15530e42fdcc78da2517` |
+| `zlib.dll` / `Program/zlib.dll` SHA-256 | `9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90` |
 
 ## CrossOver `MTG` Baseline
 
@@ -77,6 +84,7 @@ Use the current local target unless deliberately testing another copy:
 | Working directory | `C:\Shandalar` |
 | Shandalar target | `C:\Shandalar\Shandalar.exe` |
 | Root Magic target | `C:\Shandalar\Magic.exe` |
+| Program Shandalar target | `C:\Shandalar\Program\Shandalar.exe` |
 | Program Magic target | `C:\Shandalar\Program\Magic.exe` |
 | App-default Windows version | `win7` |
 | Virtual desktop | `Shandalar1440=1440x1080` |
@@ -87,6 +95,10 @@ Confirm hashes before testing:
 certutil -hashfile C:\Shandalar\Shandalar.exe SHA256
 certutil -hashfile C:\Shandalar\Magic.exe SHA256
 certutil -hashfile C:\Shandalar\ManalinkEh.dll SHA256
+certutil -hashfile C:\Shandalar\Program\Shandalar.exe SHA256
+certutil -hashfile C:\Shandalar\Program\Magic.exe SHA256
+certutil -hashfile C:\Shandalar\Program\ManalinkEh.dll SHA256
+certutil -hashfile C:\Shandalar\Program\zlib.dll SHA256
 ```
 
 Expected repo hashes are listed in [runtime-manifest.md](runtime-manifest.md).
