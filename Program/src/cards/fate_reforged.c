@@ -2377,7 +2377,7 @@ int card_mardu_strike_leader(int player, int card, event_t event){
 		token_generation_t token;
 		default_token_definition(player, card, CARD_ID_WARRIOR, &token);
 		token.pow = 2;
-		token.pow = 1;
+		token.tou = 1;
 		token.color_forced = COLOR_TEST_BLACK;
 		generate_token(&token);
 	}
