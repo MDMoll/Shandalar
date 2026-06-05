@@ -9,7 +9,7 @@ int check_timer_for_ai_speculation(void)
 	if (decision_time <= 0 || decision_time > 270){
 		decision_time = 270;
 	}
-	int elapsed = get_usertime_of_current_thread_in_ms() - start_usertime_of_current_thread_in_ms;
+	long long elapsed = (long long)get_usertime_of_current_thread_in_ms() - start_usertime_of_current_thread_in_ms;
 	if (elapsed <= 0){
 		return 0;
 	}
@@ -333,6 +333,10 @@ int recorded_rand(int player, int upperbound)
 {
   // 0x401C60
 
+  // remember_ai_value() ignores value when replaying the real AI's stored speculative choice.
+  if (player == AI && !(trace_mode & 2) && ai_is_speculating != 1)
+	return remember_ai_value(player, 0);
+
   return remember_ai_value(player, internal_rand(upperbound));
 }
 
@@ -346,8 +350,7 @@ void ai_assign_blockers(int player)
   EXE_DWORD(0x60827C) = -9999;
 
   int i;
-  for (i = 0; i < 16; ++i)
-	EXE_DWORD_PTR(0x6076D8)[i] = 0;
+  memset(EXE_DWORD_PTR(0x6076D8), 0, 16 * sizeof(int));
 
   EXE_FN(int, 0x4B1A50, int, int)(player, 0);
 
@@ -381,9 +384,10 @@ void ai_assign_blockers(int player)
 		}
 
 	  uint8_t blk = BYTE0(EXE_DWORD_PTR(0x60775C)[i]);
+	  int blocking_player = EXE_DWORD(0x607C2C);	// TENTATIVE_ai_speculation_opponent
+	  int blocking_card = EXE_DWORD_PTR(0x608304)[i];	// WILDGUESS_ai_combat_block_card[i]
 
-	  card_instance_t* instance = get_card_instance(EXE_DWORD(0x607C2C),	// TENTATIVE_ai_speculation_opponent
-													EXE_DWORD_PTR(0x608304)[i]);	// WILDGUESS_ai_combat_block_card[i]
+	  card_instance_t* instance = get_card_instance(blocking_player, blocking_card);
 	  // Begin additions
 	  if (instance->blocking != 255)	// Already during one of the two triggers dispatched from here
 		continue;
@@ -407,8 +411,7 @@ void ai_assign_blockers(int player)
 	   * instance->blocking is correct during TRIGGER_BLOCKER_CHOSEN, which is necessary for Tromokratis. */
 	  if ((event_flags & EA_SELECT_BLOCK) && blk != 255)
 		dispatch_trigger2(current_turn, TRIGGER_BLOCKER_CHOSEN, EXE_STR(0x790074), 0,//PROMPT_BLOCKERSELECTION[0]
-						  EXE_DWORD(0x607C2C),	//TENTATIVE_ai_speculation_opponent
-						  EXE_DWORD_PTR(0x608304)[i]);		//WILDGUESS_ai_combat_block_card[i]
+						  blocking_player, blocking_card);
 	}
 }
 
@@ -438,15 +441,10 @@ int ai_decision_phase(int player, int *phase_code_to_go_to, int *becomes_second_
 
   if (ai_is_speculating == 1)
 	{
-	  int p;
-	  int col;
-	  for (p = 0; p <= 1; ++p)
-		for (col = 0; col <= 7; ++col)
-		  store_raw_mana_available[p][col] = raw_mana_available[p][col];
+	  memcpy(store_raw_mana_available, raw_mana_available, sizeof(store_raw_mana_available));
 
-	  p = 1 - player;
-	  for (col = 0; col <= 7; ++col)
-		raw_mana_available[p][col] = landsofcolor_controlled[p][col];
+	  int p = 1 - player;
+	  memcpy(raw_mana_available[p], landsofcolor_controlled[p], sizeof(raw_mana_available[p]));
 
 	  dispatch_event_raw(EVENT_SHOULD_AI_PLAY);
 
@@ -459,9 +457,7 @@ int ai_decision_phase(int player, int *phase_code_to_go_to, int *becomes_second_
 	  EXE_FN(void, 0x477070, void)();	// resolve_damage_cards_and_prevent_damage();
 	  EXE_FN(void, 0x477a90, void)();	// regenerate_or_graveyard_triggers();
 
-	  for (p = 0; p <= 1; ++p)
-		for (col = 0; col <= 7; ++col)
-		  raw_mana_available[p][col] = store_raw_mana_available[p][col];
+	  memcpy(raw_mana_available, store_raw_mana_available, sizeof(store_raw_mana_available));
 
 	  recalculate_all_cards_in_play();
 
@@ -498,76 +494,45 @@ int ai_decision_phase(int player, int *phase_code_to_go_to, int *becomes_second_
 
 	  ++EXE_DWORD(0x738B48);
 
-	  if (EXE_DWORD(0x60EC3C) == 1)
+	  int ai_phase_decision = EXE_DWORD(0x60EC3C);
+	  switch (ai_phase_decision)
 		{
+		case 1:
 		  if (land_can_be_played & TENTATIVE_LCBP_DURING_SECOND_MAIN_PHASE)
 			current_phase = PHASE_MAIN2;
 		  else
 			current_phase = PHASE_MAIN1;
 		  *becomes_second_arg_of_main_phase_and_discard_phase = 1;
 		  *phase_code_to_go_to = 6;
-		}
-
-	  if (EXE_DWORD(0x60EC3C) == 2)
-		{
+		  break;
+		case 2:
+		case 5:
+		case 6:
+		case 8:
 		  current_phase = PHASE_NORMAL_COMBAT_DAMAGE;
-		  *becomes_second_arg_of_main_phase_and_discard_phase = 2;
+		  *becomes_second_arg_of_main_phase_and_discard_phase = ai_phase_decision;
 		  *phase_code_to_go_to = 6;
-		}
-
-	  if (EXE_DWORD(0x60EC3C) == 3)
-		{
+		  break;
+		case 3:
 		  *becomes_second_arg_of_main_phase_and_discard_phase = 1;
 		  *phase_code_to_go_to = 7;	// discard
-		}
-
-	  if (EXE_DWORD(0x60EC3C) == 4)
-		{
+		  break;
+		case 4:
+		case 7:
 		  if (land_can_be_played & TENTATIVE_LCBP_DURING_COMBAT)
 			current_phase = PHASE_MAIN2;
 		  else
 			current_phase = PHASE_MAIN1;
 		  *becomes_third_arg_of_main_phase = 0;
-		  *becomes_second_arg_of_main_phase_and_discard_phase = 4;
+		  *becomes_second_arg_of_main_phase_and_discard_phase = ai_phase_decision;
 		  *phase_code_to_go_to = 6;
+		  break;
+		case 17:
+		  // Begin additions
+		  *phase_code_to_go_to = 4;	// upkeep
+		  // End additions
+		  break;
 		}
-
-	  if (EXE_DWORD(0x60EC3C) == 5)
-		{
-		  current_phase = PHASE_NORMAL_COMBAT_DAMAGE;
-		  *becomes_second_arg_of_main_phase_and_discard_phase = 5;
-		  *phase_code_to_go_to = 6;
-		}
-
-	  if (EXE_DWORD(0x60EC3C) == 6)
-		{
-		  current_phase = PHASE_NORMAL_COMBAT_DAMAGE;
-		  *becomes_second_arg_of_main_phase_and_discard_phase = 6;
-		  *phase_code_to_go_to = 6;
-		}
-
-	  if (EXE_DWORD(0x60EC3C) == 7)
-		{
-		  if (land_can_be_played & TENTATIVE_LCBP_DURING_COMBAT)
-			current_phase = PHASE_MAIN2;
-		  else
-			current_phase = PHASE_MAIN1;
-		  *becomes_third_arg_of_main_phase = 0;
-		  *becomes_second_arg_of_main_phase_and_discard_phase = 7;
-		  *phase_code_to_go_to = 6;
-		}
-
-	  if (EXE_DWORD(0x60EC3C) == 8)
-		{
-		  current_phase = PHASE_NORMAL_COMBAT_DAMAGE;
-		  *becomes_second_arg_of_main_phase_and_discard_phase = 8;
-		  *phase_code_to_go_to = 6;
-		}
-
-	  // Begin additions
-	  if (EXE_DWORD(0x60EC3C) == 17)
-		*phase_code_to_go_to = 4;	// upkeep
-	  // End additions
 	}
 
   // Begin additions
