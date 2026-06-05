@@ -588,10 +588,15 @@ int can_sorcery_be_played(int player, event_t event){
 
 int count_subtype_in_hand(int player, subtype_t type){
 
+  if (player < HUMAN || player > AI){
+	return 0;
+  }
+
   int i;
   int count = 0;
+  int active_count = MIN(active_cards_count[player], 150);
 
-  for(i=0; i < active_cards_count[player]; i++){
+  for(i=0; i < active_count; i++){
 	  if( in_hand(player, i) && has_subtype(player, i, type) ){
 		 count++;
 	  }
