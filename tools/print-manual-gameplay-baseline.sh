@@ -124,6 +124,7 @@ system_reg = read_text(BOTTLE_ROOT / "system.reg")
 desktop = section_value(user_reg, "Software\\\\Wine\\\\Explorer\\\\Desktops", "Shandalar1440")
 app_version = section_value(user_reg, "Software\\\\Wine\\\\AppDefaults\\\\Shandalar.exe", "Version")
 app_desktop = section_value(user_reg, "Software\\\\Wine\\\\AppDefaults\\\\Shandalar.exe\\\\Explorer", "Desktop")
+show_coin_flips = section_value(user_reg, "Software\\\\MicroProse\\\\Magic: The Gathering\\\\DuelOptions", "ShowCoinFlips")
 
 print("# Manual Gameplay Baseline")
 print()
@@ -146,6 +147,7 @@ for left, right in [
     ("CrossOver wine helper", wine_version()),
     ("App-default Version", app_version),
     ("App-default Desktop", app_desktop),
+    ("DuelOptions ShowCoinFlips", show_coin_flips),
     ("Virtual desktop", f"Shandalar1440={desktop}" if desktop != "not found" else "not found"),
     ("Primary working directory", "C:\\Shandalar"),
     ("Primary target", "C:\\Shandalar\\Shandalar.exe"),

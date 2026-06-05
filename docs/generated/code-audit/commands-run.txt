@@ -33,3 +33,218 @@ Commands are recorded with working directory `/Users/mdmoll/Shandalar/Shandalar`
 - `python3 tools/audit_codebase.py --help`
 - `ALLOW_DIRTY=1 tools/verify-share-readiness.sh`
 - `git diff --check`
+
+## Fix Pass: Build And Tooling Safety
+
+- `git switch -c codex/fix-build-tooling-safety`
+- `perl -c src/build.pl`
+- `perl src/build.pl --help`
+- `python3 tools/audit_codebase.py --help`
+- `tools/check-build-prereqs.sh --report-only`
+- `(cd src && perl build.pl --dry-run black_lotus)`
+- `python3 tools/audit_codebase.py --out docs/generated/code-audit`
+- `python3 tools/audit_codebase.py --out /private/tmp/shandalar-code-audit-all --scan-scope all`
+- `python3 -m py_compile tools/audit_codebase.py`
+- `rm -rf tools/__pycache__`
+- `tools/check-build-prereqs.sh`
+- `git diff --check`
+- `ALLOW_DIRTY=1 tools/verify-share-readiness.sh`
+- `bash -n tools/check-build-prereqs.sh`
+
+## Fix Pass: Top-Level src Header Restore
+
+- `rg -n "card_id\\.h|card_id" src Program/src --glob 'Makefile*' --glob '*.c' --glob '*.h' --glob '*.cpp' --glob '*.pl'`
+- `diff -u src/Makefile Program/src/Makefile`
+- `diff -u src/Makefile-targets Program/src/Makefile-targets`
+- `find src Program/src -maxdepth 2 -name '*card*id*' -o -name 'generate*' -o -name '*card*.pl'`
+- `file Program/src/card_id.h`
+- `shasum -a 256 Program/src/card_id.h`
+- `cp Program/src/card_id.h src/card_id.h`
+- `shasum -a 256 Program/src/card_id.h src/card_id.h`
+- `(cd src && make -n)`
+- `(cd src && make -n) > docs/generated/code-audit/src-make-dry-run.txt 2>&1`
+- `tools/check-build-prereqs.sh --report-only`
+- `bash -n tools/check-build-prereqs.sh`
+- `git check-ignore -v src/card_id.h`
+- `git status --short src/card_id.h src/.gitignore`
+
+## Fix Pass: Draft Custom Set Parser Safety
+
+- `rg -n "load_custom_set|DraftSets|draft_errors|picks\\.txt|packs\\.txt|fscanf|fopen" src/cards/draft.c Program/src/cards/draft.c`
+- `sed -n '1,260p' src/cards/draft.c`
+- `sed -n '1,260p' Program/src/cards/draft.c`
+- `sed -n '260,460p' src/cards/draft.c`
+- `rg -n "CUSTOM_SET|load_custom_set|sets\\[|set_name" src/cards/draft.c Program/src/cards/draft.c`
+- `sed -n '740,890p' src/cards/draft.c`
+- `cmp -s src/cards/draft.c Program/src/cards/draft.c`
+- `rg -n "fscanf\\([^\\n]*%\\[" src/cards/draft.c Program/src/cards/draft.c`
+- `(cd src && make -n) > docs/generated/code-audit/src-make-dry-run.txt 2>&1`
+- `(cd Program/src && make -n) > docs/generated/code-audit/program-src-make-dry-run.txt 2>&1`
+- `(cd src && gcc -fsyntax-only -DROTISSERIE -I.. -I. cards/draft.c)`
+- `(cd Program/src && gcc -fsyntax-only -DROTISSERIE -I.. -I. cards/draft.c)`
+- `(cd src && gcc -fsyntax-only -DROTISSERIE -U_FORTIFY_SOURCE -O2 -ggdb2 -march=i586 -mpreferred-stack-boundary=2 -fno-omit-frame-pointer -Wall -Wextra -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wshadow -W -Winline -Wno-unused-parameter -Werror -I.. -I. -Wbad-function-cast -Wstrict-prototypes -Wnested-externs cards/draft.c)`
+- `(cd Program/src && gcc -fsyntax-only -DROTISSERIE -U_FORTIFY_SOURCE -O2 -ggdb2 -march=i586 -mpreferred-stack-boundary=2 -fno-omit-frame-pointer -Wall -Wextra -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wshadow -W -Winline -Wno-unused-parameter -Werror -I.. -I. -Wbad-function-cast -Wstrict-prototypes -Wnested-externs cards/draft.c)`
+- `(cd src && clang -m32 -fsyntax-only -DROTISSERIE -U_FORTIFY_SOURCE -I.. -I. cards/draft.c)`
+- `(cd Program/src && clang -m32 -fsyntax-only -DROTISSERIE -U_FORTIFY_SOURCE -I.. -I. cards/draft.c)`
+- `sed -n '1230,1310p' src/functions/targets.c`
+- `sed -n '1230,1310p' Program/src/functions/targets.c`
+- `rg -n "fopen|fscanf\\([^\\n]*%\\[|targets\\.c|load_text|buffer\\[" src/functions/targets.c Program/src/functions/targets.c`
+- `cmp -s src/functions/targets.c Program/src/functions/targets.c`
+- `rg -n "auto_targets|read_auto_target_file|TargetsHuman|TargetsAI" src/functions/targets.c Program/src/functions/targets.c src Program/src --glob '*.h' --glob '*.c'`
+- `diff -u src/functions/targets.c Program/src/functions/targets.c`
+- `rg -n "fscanf\\([^\\n]*%\\[" src/cards/draft.c Program/src/cards/draft.c src/functions/targets.c Program/src/functions/targets.c`
+- `rg -n "read_auto_target_entries|TargetsHuman|TargetsAI|auto_targets\\[count\\]" src/functions/targets.c Program/src/functions/targets.c`
+
+## Fix Pass: CardArtLib Loader And Path Safety
+
+- `sed -n '1,260p' src/cardartlib/src/main.cpp`
+- `sed -n '1,260p' Program/src/cardartlib/src/main.cpp`
+- `cmp -s src/cardartlib/src/main.cpp Program/src/cardartlib/src/main.cpp`
+- `rg -n "sprintf\\(tmp|char tmp\\[254\\]|char cardname\\[200\\]|idToName\\[id\\]|fread\\(|malloc\\(|calloc\\(|memchr|loadDat|idToNameFun|lowercase_ascii" src/cardartlib/src/main.cpp Program/src/cardartlib/src/main.cpp`
+- `(cd src/cardartlib && make -n) > docs/generated/code-audit/src-cardartlib-make-dry-run.txt 2>&1`
+- `(cd Program/src/cardartlib && make -n) > docs/generated/code-audit/program-src-cardartlib-make-dry-run.txt 2>&1`
+- `(cd src/cardartlib && clang++ -fsyntax-only -std=gnu++0x -I.. -I. -Isrc src/main.cpp)`
+- `(cd Program/src/cardartlib && clang++ -fsyntax-only -std=gnu++0x -I.. -I. -Isrc src/main.cpp)`
+- `python3 tools/audit_codebase.py --out docs/generated/code-audit`
+- `perl -pi -e 's/[ \\t]+$//' docs/generated/code-audit/src-cardartlib-make-dry-run.txt docs/generated/code-audit/program-src-cardartlib-make-dry-run.txt`
+- `rg -n "char tmp\\[254\\]|char cardname\\[200\\]|sprintf\\(tmp|fscanf\\([^\\n]*%\\[" src Program/src`
+- `git diff --check`
+- `ALLOW_DIRTY=1 tools/verify-share-readiness.sh`
+
+## Final Verification After CardArtLib Header Tightening
+
+- `cmp -s src/cardartlib/src/main.cpp Program/src/cardartlib/src/main.cpp`
+- `rg -n "char tmp\\[254\\]|char cardname\\[200\\]|sprintf\\(tmp|fscanf\\([^\\n]*%\\[" src Program/src`
+- `git diff --check`
+- `ALLOW_DIRTY=1 tools/verify-share-readiness.sh`
+- `git status --short --branch`
+- `git diff --stat`
+
+## Fix Pass: Drawcardlib Config Formatting Safety
+
+- `sed -n '1,260p' src/drawcardlib/config.c`
+- `sed -n '1,260p' Program/src/drawcardlib/config.c`
+- `rg -n "get_pichandlename|get_cfg_int2_raw|sprintf|strcpy|strcat|char buf\\[" src/drawcardlib Program/src/drawcardlib`
+- `cmp -s src/drawcardlib/config.c Program/src/drawcardlib/config.c`
+- `sed -n '232,430p' src/drawcardlib/config.c`
+- `sed -n '232,430p' Program/src/drawcardlib/config.c`
+- `sed -n '430,690p' src/drawcardlib/config.c`
+- `sed -n '430,690p' Program/src/drawcardlib/config.c`
+- `rg -n "#include <stdio|#include <string|snprintf|vsnprintf" src/drawcardlib/drawcardlib.h src/drawcardlib/config.c Program/src/drawcardlib/drawcardlib.h Program/src/drawcardlib/config.c`
+- `rg -n "get_cfg_int2_raw\\(|cfg_font\\(" src/drawcardlib/config.c Program/src/drawcardlib/config.c`
+- `git diff -- src/drawcardlib/config.c Program/src/drawcardlib/config.c`
+- `rg -n "static char buf\\[3\\]\\[160\\]|strcpy\\(buf, key1\\)|strcat\\(buf, key2\\)|strcpy\\(buf, \\\"font\\\"\\)|strcat\\(buf, font_name\\)|sprintf\\(p, \\\"\\(%s\\)" src/drawcardlib/config.c Program/src/drawcardlib/config.c`
+- `rg -n "concat_cfg_key|PIC_HANDLE_NAME_BUFSIZE|snprintf\\(buf\\[idx\\]|GetPrivateProfileString\\(FONTSTXT, key|size_t total" src/drawcardlib/config.c Program/src/drawcardlib/config.c`
+- `(cd src/drawcardlib && make -n)`
+- `(cd Program/src/drawcardlib && make -n)`
+- `(cd src/drawcardlib && make -n) > docs/generated/code-audit/src-drawcardlib-make-dry-run.txt 2>&1`
+- `(cd Program/src/drawcardlib && make -n) > docs/generated/code-audit/program-src-drawcardlib-make-dry-run.txt 2>&1`
+- `python3 tools/audit_codebase.py --out docs/generated/code-audit`
+- `(cd src/drawcardlib && gcc -fsyntax-only -I.. -I. config.c)`; failed because local macOS toolchain cannot find `windows.h`
+- `(cd Program/src/drawcardlib && gcc -fsyntax-only -I.. -I. config.c)`; failed because local macOS toolchain cannot find `windows.h`
+- `git diff --check`
+- `ALLOW_DIRTY=1 tools/verify-share-readiness.sh`
+
+## Fix Pass: Historical Deploy Script Guard
+
+- `sed -n '1,220p' src/deploy.bat`
+- `rg -n -F "deploy.bat" docs tools src Program/src`
+- `rg -n -F "c:\\\\magic2k" docs tools src Program/src`
+- `git diff -- src/deploy.bat`
+- `sed -n '1,80p' src/deploy.bat`
+- `python3 tools/audit_codebase.py --out docs/generated/code-audit`
+- `rg -n "confirmed-c-magic2k-deploy|Historical packaging script not run|B005|src/deploy.bat" src/deploy.bat docs/bug-backlog.md docs/tooling-audit.md docs/codebase-health-audit.md docs/building.md docs/build-health.md docs/cleanup-audit.md docs/runtime-path-audit.md docs/stale-references.md docs/generated/code-audit/potential-bugs.tsv docs/generated/code-audit/script-tooling-risks.tsv docs/generated/code-audit/grep-hazard-results.tsv`
+- `git diff --check`
+- `ALLOW_DIRTY=1 tools/verify-share-readiness.sh`
+
+## Fix Pass: Source Snapshot Parity Guard
+
+- `sed -n '1,180p' docs/source-map.md`
+- `diff -u src/functions/targets.c Program/src/functions/targets.c`
+- `diff -u src/drawcardlib/config.c Program/src/drawcardlib/config.c`
+- `bash -n tools/check-source-snapshot-parity.sh`
+- `chmod +x tools/check-source-snapshot-parity.sh`
+- `tools/check-source-snapshot-parity.sh`
+- `tools/check-source-snapshot-parity.sh --report-dir docs/generated/code-audit --report-only`
+- `sed -n '1,40p' docs/generated/code-audit/source-snapshot-parity-summary.txt`
+- `sed -n '1,12p' docs/generated/code-audit/source-snapshot-parity.tsv`
+- `rg -n "exact-match-required|marker-checked" docs/generated/code-audit/source-snapshot-parity.tsv`
+- `python3 tools/audit_codebase.py --out docs/generated/code-audit`
+- `tools/check-source-snapshot-parity.sh --report-dir docs/generated/code-audit --report-only`
+- `sed -n '1,40p' docs/generated/code-audit/language-summary.tsv`
+- `sed -n '1,12p' docs/generated/code-audit/static-analysis-results.tsv`
+- `python3 -c 'import py_compile; py_compile.compile("tools/audit_codebase.py", cfile="/private/tmp/shandalar-audit-codebase.pyc", doraise=True)'`
+- `bash -n tools/check-source-snapshot-parity.sh`
+- `tools/check-source-snapshot-parity.sh`
+- `git diff --check`
+- `ALLOW_DIRTY=1 tools/verify-share-readiness.sh`
+
+## Fix Pass: Program zlib Runtime Layout
+
+- `git status --short`
+- `rg -n "Program(\\\\|/)zlib|Program\\\\zlib|zlib\\.dll is missing|zlib\\.dll is absent|direct .*Program.*fails|direct .*Program.*failed|B012" README.md AGENTS.md docs tools`
+- `ls -l zlib.dll Program/zlib.dll Program/Shandalar.exe Shandalar.exe`; showed `Program/zlib.dll` absent before the copy.
+- `shasum -a 256 zlib.dll Shandalar.exe Program/Shandalar.exe`
+- `file zlib.dll Shandalar.exe Program/Shandalar.exe`
+- `strings -a Program/Image.dll Image.dll Program/DrawCardLib.dll | rg -n -i "zlib|inflate|deflate|png"`
+- `git ls-files zlib.dll Program/zlib.dll Program/Image.dll Image.dll`; showed root `zlib.dll` was tracked and `Program/zlib.dll` was not yet tracked.
+- `ls -l Image.dll Program/Image.dll DrawCardLib.dll Program/DrawCardLib.dll DECKDLL.dll Program/DECKDLL.dll zlib.dll`
+- `shasum -a 256 Image.dll Program/Image.dll zlib.dll`
+- `cp zlib.dll Program/zlib.dll`
+- `ls -l zlib.dll Program/zlib.dll`
+- `shasum -a 256 zlib.dll Program/zlib.dll`
+- `file zlib.dll Program/zlib.dll`
+- `git check-attr binary -- zlib.dll Program/zlib.dll`
+- `git status --short Program/zlib.dll zlib.dll`
+- `rg -n "Program(\\\\|/)zlib|zlib\\.dll is missing|zlib\\.dll is absent|direct .*Program.*fails|Direct .*Program.*fails|lacks adjacent|B012" README.md AGENTS.md docs tools`
+- `python3 tools/audit_codebase.py --out docs/generated/code-audit`
+- `tools/check-source-snapshot-parity.sh --report-dir docs/generated/code-audit --report-only`
+- `python3 -c 'import py_compile; py_compile.compile("tools/audit_codebase.py", cfile="/private/tmp/shandalar-audit-codebase.pyc", doraise=True)'`
+- `bash -n tools/check-source-snapshot-parity.sh`
+- `bash -n tools/verify-share-readiness.sh`
+- `shasum -a 256 zlib.dll Program/zlib.dll`
+- `file zlib.dll Program/zlib.dll`
+- `git check-attr binary -- zlib.dll Program/zlib.dll`
+- `ls -l "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/zlib.dll" "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Program/zlib.dll"`
+- `shasum -a 256 "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/zlib.dll" "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Program/zlib.dll"`
+- `file "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/zlib.dll" "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Program/zlib.dll"`
+- `bash -n tools/verify-crossover-mtg-state.sh`
+- `tools/verify-crossover-mtg-state.sh`
+- `/usr/bin/perl -e 'alarm 15; exec @ARGV' /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar\Program" --cx-log /tmp/shandalar-mtg-program-zlib-retest-cx.log --debugmsg +seh,+loaddll,+file "C:\Shandalar\Program\Shandalar.exe"`; timed out as a bounded GUI smoke.
+- `rg -n -i "Library .*not found|Importing dll.*failed|failed to load|could not load|status c0000135|Unhandled exception|page fault|c0000005|err:module|err:seh|wine: failed" /tmp/shandalar-mtg-program-zlib-retest-cx.log`; no matches.
+- `sed -n '3378,3385p;3390,3396p;3448,3456p;3478,3488p' /tmp/shandalar-mtg-program-zlib-retest-cx.log`
+- `rg -n -F 'DECKDLL.dll" at' /tmp/shandalar-mtg-program-zlib-retest-cx.log`
+- `ps -ax -o pid=,command= | rg -F 'C:\Shandalar\Program\Shandalar.exe'`
+- `kill 6309 33244`
+- `ps -ax -o pid=,command= | rg -F 'C:\Shandalar\Program\Shandalar.exe'`; only the verification command itself matched after cleanup.
+- `tools/check-source-snapshot-parity.sh`
+- `git diff --check`
+- `ALLOW_DIRTY=1 tools/verify-share-readiness.sh`
+
+## Fix Pass: Draft Output File Guard
+
+- `rg -n "fopen\\(|fprintf\\(|fscanf\\(|fgets\\(|picks\\.txt|packs\\.txt|draft_errors|Playdeck|DraftSets" src/cards/draft.c Program/src/cards/draft.c`
+- `sed -n '120,240p' src/cards/draft.c`
+- `sed -n '520,680p' src/cards/draft.c`
+- `sed -n '740,830p' src/cards/draft.c`
+- `sed -n '940,1020p' src/cards/draft.c`
+- `rg -n "fopen\\(\\\"draft_errors\\.txt\\\"|fopen\\(\\\"picks\\.txt\\\"|fopen\\(\\\"packs\\.txt\\\"|fopen\\(buffer" src/cards/draft.c Program/src/cards/draft.c`
+- `rg -n "open_draft_output|Invalid pick found|Could not open draft output" src/cards/draft.c Program/src/cards/draft.c`
+- `cmp -s src/cards/draft.c Program/src/cards/draft.c`
+- `gcc -fsyntax-only -DROTISSERIE -Isrc -Isrc/cards src/cards/draft.c`; failed on local macOS 32-bit/header assumptions before draft-specific validation.
+- `gcc -fsyntax-only -DROTISSERIE -IProgram/src -IProgram/src/cards Program/src/cards/draft.c`; failed on local macOS secure `sprintf` macro conflict before draft-specific validation.
+- `clang -m32 -fsyntax-only -DROTISSERIE -U_FORTIFY_SOURCE -Isrc -Isrc/cards src/cards/draft.c`; failed on local macOS secure `sprintf` macro conflict before draft-specific validation.
+- `clang -m32 -fsyntax-only -DROTISSERIE -U_FORTIFY_SOURCE -IProgram/src -IProgram/src/cards Program/src/cards/draft.c`; failed on local macOS secure `sprintf` macro conflict before draft-specific validation.
+- `python3 tools/audit_codebase.py --out docs/generated/code-audit`
+- `(cd src && make -n) > docs/generated/code-audit/src-make-dry-run.txt 2>&1`
+- `(cd Program/src && make -n) > docs/generated/code-audit/program-src-make-dry-run.txt 2>&1`
+- `tools/check-source-snapshot-parity.sh --report-dir docs/generated/code-audit --report-only`
+- `sed -n '1,40p' docs/generated/code-audit/language-summary.tsv`
+- `rg -n "cards/draft.c|marker-checked|open_draft_output|B011|MS012" docs/generated/code-audit/source-snapshot-parity.tsv docs/generated/code-audit/static-analysis-results.tsv docs/generated/code-audit/potential-bugs.tsv docs/memory-safety-audit.md docs/source-map.md docs/codebase-health-audit.md`
+- `python3 -c 'import py_compile; py_compile.compile("tools/audit_codebase.py", cfile="/private/tmp/shandalar-audit-codebase.pyc", doraise=True)'`
+- `bash -n tools/check-source-snapshot-parity.sh`
+- `cmp -s src/cards/draft.c Program/src/cards/draft.c`
+- `rg -n "fscanf\\([^\\n]*%\\[|fopen\\(\\\"draft_errors\\.txt\\\"|fopen\\(\\\"picks\\.txt\\\"|fopen\\(\\\"packs\\.txt\\\"|fopen\\(buffer" src/cards/draft.c Program/src/cards/draft.c`
+- `tools/check-source-snapshot-parity.sh`
+- `git diff --check`
+- `ALLOW_DIRTY=1 tools/verify-share-readiness.sh`

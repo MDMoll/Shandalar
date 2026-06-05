@@ -29,6 +29,19 @@ static uint32_t expansion_size;
 static uint8_t* rarities = NULL;
 static int num_valid_expansions;
 
+static FILE* open_draft_output(const char* path, const char* mode)
+{
+	FILE *file = fopen(path, mode);
+	if (!file && strcmp(path, "draft_errors.txt")){
+		FILE *error_file = fopen("draft_errors.txt", "a+");
+		if (error_file){
+			fprintf(error_file, "Could not open draft output %s\n", path);
+			fclose(error_file);
+		}
+	}
+	return file;
+}
+
 static void read_rarities(int player, int card){
 	if (rarities){
 		return;
@@ -143,9 +156,11 @@ static void make_deck(int player){
 				break;
 			default:
 				{
-				FILE *file = fopen("draft_errors.txt", "a+");
-				fprintf(file,"Can't add land to deck.  Player = %d, ind = %d, color= %d\n", player, ind, colors[player][ind]  );
-				fclose(file);
+				FILE *file = open_draft_output("draft_errors.txt", "a+");
+				if (file){
+					fprintf(file,"Can't add land to deck.  Player = %d, ind = %d, color= %d\n", player, ind, colors[player][ind]  );
+					fclose(file);
+				}
 				break;
 				}
 		}
@@ -211,21 +226,70 @@ static const char* get_set_name(int setnum)
 }
 
 #ifdef ROTISSERIE
+static void log_custom_set_error(const char* message, int value)
+{
+	FILE *file = open_draft_output("draft_errors.txt", "a+");
+	if (file){
+		fprintf(file, "Custom set load error: %s %d\n", message, value);
+		fclose(file);
+	}
+}
+
+static void strip_line_end(char* buffer)
+{
+	size_t len = strlen(buffer);
+	while (len > 0 && (buffer[len - 1] == '\n' || buffer[len - 1] == '\r')){
+		buffer[--len] = 0;
+	}
+}
+
+static int read_custom_set_line(FILE* file, char* buffer, size_t buffer_size, const char* path)
+{
+	if (!fgets(buffer, buffer_size, file)){
+		FILE *error_file = open_draft_output("draft_errors.txt", "a+");
+		if (error_file){
+			fprintf(error_file, "Custom set load error: could not read line from %s\n", path);
+			fclose(error_file);
+		}
+		return 0;
+	}
+	strip_line_end(buffer);
+	return 1;
+}
+
 static void load_custom_set(int num_set, int set){
 		int i;
 
-		char buffer[500];
-		char buffer2[5];
-		FILE *file = fopen("DraftSets//sets.txt", "r");
-		int line=0;
+		if (num_set < 0 || num_set >= 3){
+			log_custom_set_error("invalid custom set slot", num_set);
+			return;
+		}
 
-	   for(line=0; line<set-CUSTOM_SET; line++){	//find the name of the set to load, check header *1
-			fscanf(file, "%[^\n]", buffer);
-			fscanf(file, "%[\n]", buffer2);
+		char buffer[500];
+		FILE *file = fopen("DraftSets//sets.txt", "r");
+		if (!file){
+			log_custom_set_error("could not open DraftSets//sets.txt for set", set);
+			return;
+		}
+		int line=0;
+		int lines_to_read = set-CUSTOM_SET;
+		if (lines_to_read < 1){
+			lines_to_read = 1;
+		}
+
+	   for(line=0; line<lines_to_read; line++){	//find the name of the set to load, check header *1
+			if (!read_custom_set_line(file, buffer, sizeof(buffer), "DraftSets//sets.txt")){
+				fclose(file);
+				return;
+			}
 		}
 
 		fclose(file);
-		set_name[num_set] = strncpy(buffer, buffer, strlen(buffer) );
+		set_name[num_set] = strdup(buffer);
+		if (!set_name[num_set]){
+			log_custom_set_error("out of memory while loading custom set", set);
+			return;
+		}
 
 		for(i=0;i<2000;i++){
 			in_set[ i ] = 0;
@@ -234,23 +298,43 @@ static void load_custom_set(int num_set, int set){
 		char file_buffer[500];
 		snprintf(file_buffer, 500, "DraftSets//%s.dck", buffer);
 		FILE *file2 = fopen(file_buffer, "r");
+		if (!file2){
+			log_custom_set_error("could not open custom set deck for set", set);
+			return;
+		}
 		for(i=0;i<8;i++){
-			fscanf(file2, "%[^\n]", buffer);
-			fscanf(file2, "%[\n]", buffer);
+			if (!read_custom_set_line(file2, buffer, sizeof(buffer), file_buffer)){
+				fclose(file2);
+				return;
+			}
 		}
 		// load  cards of this set
 		i=0;
-		while( fscanf(file2, "%[.]", buffer) == 1 ){
-			fscanf(file2, "%[0-9]", buffer);
-			int card_id = atoi(buffer);
-			if ( is_valid_card(card_id)>0 ){	//should not be needed if set is made from the deckbuilder, but we are in transition phase
-			in_set1[num_set][i].csvid = card_id;
-			in_set1[num_set][i].rarity = 0;		//check_rarity1(card_id, set);
-			set_rs[num_set][0]++;	//for custom sets [0] = total_cards
-			i++;
+		while( fgets(buffer, sizeof(buffer), file2) ){
+			char* card_id_text = buffer;
+			if (*card_id_text != '.'){
+				break;
 			}
-			fscanf(file2, "%[^\n]", buffer);
-			fscanf(file2, "%[\n]", buffer);
+			while (*card_id_text == '.'){
+				++card_id_text;
+			}
+			if (*card_id_text < '0' || *card_id_text > '9'){
+				continue;
+			}
+			int card_id = atoi(card_id_text);
+			if ( is_valid_card(card_id)>0 ){	//should not be needed if set is made from the deckbuilder, but we are in transition phase
+				if (i >= 1000){
+					log_custom_set_error("too many cards in custom set", set);
+					break;
+				}
+				in_set1[num_set][i].csvid = card_id;
+				in_set1[num_set][i].rarity = 0;		//check_rarity1(card_id, set);
+				set_rs[num_set][0]++;	//for custom sets [0] = total_cards
+				if (card_id >= 0 && card_id < 2000){
+					in_set[card_id] = 1;
+				}
+				i++;
+			}
 		}
 
 		fclose(file2);
@@ -298,9 +382,11 @@ static void load_set(int player, int card, int num_set, int set){
 					break;
 				default:	//UNUSED :
 					{
-						FILE *file = fopen("draft_errors.txt", "a+");
-						fprintf(file,"Can't add card to set=%d, CARD_ID = %d, Rarity= %d\n", set, card_id, rarity );
-						fclose(file);
+						FILE *file = open_draft_output("draft_errors.txt", "a+");
+						if (file){
+							fprintf(file,"Can't add card to set=%d, CARD_ID = %d, Rarity= %d\n", set, card_id, rarity );
+							fclose(file);
+						}
 						break;
 					}
 			}
@@ -492,7 +578,7 @@ static void make_rotisserie_pack(void){
 #endif
 
 static int get_best_card_in_pack(int player, int cards_left, int* pack){
-		FILE *file = fopen("picks.txt", "w");
+		FILE *file = open_draft_output("picks.txt", "w");
 		// pick the card in the pack with the highest value, as long as it is
 		// in our colors
 		int i;
@@ -503,7 +589,9 @@ static int get_best_card_in_pack(int player, int cards_left, int* pack){
 		for(i=0;i<cards_left;i++){
 
 			int card = pack[i];
-			fprintf(file,"Looking at %d\n", i );
+			if (file){
+				fprintf(file,"Looking at %d\n", i );
+			}
 			card_ptr_t* c = cards_ptr[ card ];
 			card_data_t* card_d = &cards_data[ get_internal_card_id_from_csv_id( card ) ];
 			//card_data_t* card_d = &cards_data[ card ];
@@ -566,15 +654,17 @@ static int get_best_card_in_pack(int player, int cards_left, int* pack){
 		if( best_card == -1 ){
 			best_card = best_card_backup;
 		}
-		fprintf(file,"returning %d\n", best_card );
+		if (file){
+			fprintf(file,"returning %d\n", best_card );
 
-		fclose(file);
+			fclose(file);
+		}
 		return best_card;
 }
 
 static void make_AI_picks(int pack, int pick){
 	// Remove a card out of each OTHER pack
-	FILE *file = fopen("packs.txt", "a+");
+	FILE *file = open_draft_output("packs.txt", "a+");
 	int player;
 	for (player=1;player<8;player++){
 		int which_pack = ( player + pick ) % 8;
@@ -600,7 +690,9 @@ static void make_AI_picks(int pack, int pick){
 		}
 		packs[which_pack][14] = -1;
 	}
-	fclose(file);
+	if (file){
+		fclose(file);
+	}
 }
 
 #ifdef ROTISSERIE
@@ -702,49 +794,74 @@ static void review_picks(int pack){
 static void build_deck(const char *deck_name, int player){
 
 	if(player == 0 ){
-		FILE *file2 = fopen("packs.txt", "w");
-		fprintf(file2,"Building deck for player %d:\n", player );
-		fclose(file2);
+		FILE *file2 = open_draft_output("packs.txt", "w");
+		if (file2){
+			fprintf(file2,"Building deck for player %d:\n", player );
+			fclose(file2);
+		}
 	}
 
-	FILE *file2 = fopen("packs.txt", "a+");
-	fprintf(file2,"Building deck for player %d:\n", player );
+	FILE *file2 = open_draft_output("packs.txt", "a+");
+	if (file2){
+		fprintf(file2,"Building deck for player %d:\n", player );
+	}
 
 	// score the deck
 	int score = 0;
 	if( player > 0 ){
 		int i;
 		for(i=0;i<40;i++){
-			fprintf(file2, "CARD: %d, pick=%d ", i, picks[player][i] );
-			card_ptr_t* c = cards_ptr[ picks[player][i] ];
 			if( picks[player][i]  < 1 ){
-				fprintf(file2,"Invalid pick found: %d, pick=%d\n", i, picks[player][i] );
+				if (file2){
+					fprintf(file2,"Invalid pick found: %d, pick=%d\n", i, picks[player][i] );
+				}
+				continue;
 			}
+			if (file2){
+				fprintf(file2, "CARD: %d, pick=%d ", i, picks[player][i] );
+			}
+			card_ptr_t* c = cards_ptr[ picks[player][i] ];
 			score += c->ai_base_value;
-			fprintf(file2,"CARD SCORE: %d\n", c->ai_base_value );
+			if (file2){
+				fprintf(file2,"CARD SCORE: %d\n", c->ai_base_value );
+			}
 		}
 	}
-	fprintf(file2,"Score: %d\n", score );
-	fclose(file2);
+	if (file2){
+		fprintf(file2,"Score: %d\n", score );
+		fclose(file2);
+	}
 
 	char buffer[50];
 	snprintf(buffer, 50, "Playdeck\\%s (%d).dck ", deck_name, score );
-	FILE *file = fopen(buffer, "w");
-	fprintf(file, ";%s (%d)\n;\n;Underdogs\n;no.spam@plea.se\n;11/09/2008\n;1\n;4th Edition\n;\n\n", deck_name, score);
+	FILE *file = open_draft_output(buffer, "w");
+	if (file){
+		fprintf(file, ";%s (%d)\n;\n;Underdogs\n;no.spam@plea.se\n;11/09/2008\n;1\n;4th Edition\n;\n\n", deck_name, score);
+	}
 
 	snprintf(buffer, 50, "%s.dck ", deck_name );
-	FILE *file3 = fopen(buffer, "w");
-	fprintf(file3, ";%s\n;\n;Underdogs\n;no.spam@plea.se\n;11/09/2008\n;1\n;4th Edition\n;\n\n", deck_name);
+	FILE *file3 = open_draft_output(buffer, "w");
+	if (file3){
+		fprintf(file3, ";%s\n;\n;Underdogs\n;no.spam@plea.se\n;11/09/2008\n;1\n;4th Edition\n;\n\n", deck_name);
+	}
 
 	int i;
 	for(i=0;i<45;i++){
 		if( picks[player][i] > -1){
-			fprintf(file, ".%d\t1\t%s\n", picks[player][i], cards_ptr[ picks[player][i] ]->full_name  );
-			fprintf(file3, ".%d\t1\t%s\n", picks[player][i], cards_ptr[ picks[player][i] ]->full_name  );
+			if (file){
+				fprintf(file, ".%d\t1\t%s\n", picks[player][i], cards_ptr[ picks[player][i] ]->full_name  );
+			}
+			if (file3){
+				fprintf(file3, ".%d\t1\t%s\n", picks[player][i], cards_ptr[ picks[player][i] ]->full_name  );
+			}
 		}
 	}
-	fclose(file);
-	fclose(file3);
+	if (file){
+		fclose(file);
+	}
+	if (file3){
+		fclose(file3);
+	}
 }
 
 #define SETS_PER_MENU 12
@@ -896,9 +1013,11 @@ int card_draft(int player, int card, event_t event){
 				for ( j =0; j< 3; j++) {
 					//check if set has coded sufficient cards to enforce rarity
 					if ( (set_rs[j][0] < 11) || (set_rs[j][1] < 3) || (set_rs[j][2] < 1) )  {
-						FILE *file = fopen("draft_errors.txt", "a+");
-						fprintf(file,"Not enough coded cards to enforce rarity for set %s (ID=%d), Commons=%d,	Uncommons=%d,	Rares=%d !\n", set_name[j], (sets[j] -ALIGN_IDS), set_rs[j][0], set_rs[j][1], set_rs[j][2] );	//-7 to be in accordance with expansions.h
-						fclose(file);
+						FILE *file = open_draft_output("draft_errors.txt", "a+");
+						if (file){
+							fprintf(file,"Not enough coded cards to enforce rarity for set %s (ID=%d), Commons=%d,	Uncommons=%d,	Rares=%d !\n", set_name[j], (sets[j] -ALIGN_IDS), set_rs[j][0], set_rs[j][1], set_rs[j][2] );	//-7 to be in accordance with expansions.h
+							fclose(file);
+						}
 						snprintf(buffer, 500, "Not enough coded cards to enforce rarity for set %s (ID=%d), Commons=%d,	Uncommons=%d,	Rares=%d !\n", set_name[j], (sets[j] -ALIGN_IDS), set_rs[j][0], set_rs[j][1], set_rs[j][2] );	//-7 to be in accordance with expansions.h
 						do_dialog(HUMAN, player, card, -1, -1, buffer, 0);
 						lose_the_game(AI);
@@ -907,12 +1026,14 @@ int card_draft(int player, int card, event_t event){
 				}
 			}
 			else if( enforce_rarity == 2){	//SINGLETON
-				FILE *file = fopen("draft_errors.txt", "a+");
+				FILE *file = open_draft_output("draft_errors.txt", "a+");
 				char buffer[500];
 				//check if sets have enough coded cards for SINGLETON
 				for ( j =0; j< 3; j++) {
 					if ( (set_rs[j][0] + set_rs[j][1] + set_rs[j][2]) < 120 )  {	// (num_players*15) = 90 or 120
-						fprintf(file,"Not enough coded cards (< 120) to enforce SINGLETON for set %s (ID=%d), Commons=%d,	Uncommons=%d,	Rares=%d !\n", set_name[j], (sets[j] -ALIGN_IDS), set_rs[j][0], set_rs[j][1], set_rs[j][2] );	//-7 to be in accordance with expansions.h
+						if (file){
+							fprintf(file,"Not enough coded cards (< 120) to enforce SINGLETON for set %s (ID=%d), Commons=%d,	Uncommons=%d,	Rares=%d !\n", set_name[j], (sets[j] -ALIGN_IDS), set_rs[j][0], set_rs[j][1], set_rs[j][2] );	//-7 to be in accordance with expansions.h
+						}
 						snprintf(buffer, 500,"Not enough coded cards (< 120) to enforce SINGLETON for set %s (ID=%d), Commons=%d,	Uncommons=%d,	Rares=%d !\n", set_name[j], (sets[j] -7), set_rs[j][0], set_rs[j][1], set_rs[j][2] );	//-7 to be in accordance with expansions.h
 						do_dialog(HUMAN, player, card, -1, -1, buffer, 0);
 						lose_the_game(AI);
@@ -921,14 +1042,18 @@ int card_draft(int player, int card, event_t event){
 				}
 				if ( sets[1] == sets[0] ) {
 					if ( (set_rs[0][0] + set_rs[0][1] + set_rs[0][2]) < 240 )  {	//(num_players * 15*2) = 180 or 240
-						fprintf(file,"Not enough coded cards (< 240)  to enforce SINGLETON for set %s (ID=%d), where sets[0] == sets[1]  !\n", set_name[0], (sets[0] -ALIGN_IDS));	//-7 to be in accordance with expansions.h
+						if (file){
+							fprintf(file,"Not enough coded cards (< 240)  to enforce SINGLETON for set %s (ID=%d), where sets[0] == sets[1]  !\n", set_name[0], (sets[0] -ALIGN_IDS));	//-7 to be in accordance with expansions.h
+						}
 						snprintf(buffer, 500,"Not enough coded cards (< 240) to enforce SINGLETON for set %s (ID=%d), where set1 = set2 , Restart draft !", set_name[0], (sets[0] -ALIGN_IDS));	//-7 to be in accordance with expansions.h
 						do_dialog(HUMAN, player, card, -1, -1, buffer, 0);
 						lose_the_game(AI);
 					}
 					if ( sets[2] == sets[1] ) {
 						if ( (set_rs[0][0] + set_rs[0][1] + set_rs[0][2]) < 360 )  {	//(num_players * 15*3) = 270 or 360
-							fprintf(file,"Not enough coded cards (< 360)  to enforce SINGLETON for set %s (ID=%d), where sets[0] == sets[1]== sets[2] !\n", set_name[0], (sets[0] -ALIGN_IDS));	//-7 to be in accordance with expansions.h
+							if (file){
+								fprintf(file,"Not enough coded cards (< 360)  to enforce SINGLETON for set %s (ID=%d), where sets[0] == sets[1]== sets[2] !\n", set_name[0], (sets[0] -ALIGN_IDS));	//-7 to be in accordance with expansions.h
+							}
 							snprintf(buffer, 500,"Not enough coded cards (< 360) to enforce SINGLETON for set %s (ID=%d), where set1 == set2== set3 , Restart draft !", set_name[0], (sets[0] -ALIGN_IDS));	//-7 to be in accordance with expansions.h
 							do_dialog(HUMAN, player, card, -1, -1, buffer, 0);
 							lose_the_game(AI);
@@ -937,14 +1062,18 @@ int card_draft(int player, int card, event_t event){
 				}
 				if ( sets[1] == sets[2] ) {
 					if ( (set_rs[1][0] + set_rs[1][1] + set_rs[1][2]) < 240 )  {	//(num_players * 15*2) = 180 or 240
-						fprintf(file,"Not enough coded cards (< 240)  to enforce SINGLETON for set %s (ID=%d), where sets[1] == sets[2]  !\n", set_name[1], (sets[1] -ALIGN_IDS));	//-7 to be in accordance with expansions.h
+						if (file){
+							fprintf(file,"Not enough coded cards (< 240)  to enforce SINGLETON for set %s (ID=%d), where sets[1] == sets[2]  !\n", set_name[1], (sets[1] -ALIGN_IDS));	//-7 to be in accordance with expansions.h
+						}
 						snprintf(buffer, 500,"Not enough coded cards (< 240) to enforce SINGLETON for set %s (ID=%d), where set2 == set3 , Restart draft !", set_name[1], (sets[1] -ALIGN_IDS));	//-7 to be in accordance with expansions.h
 						do_dialog(HUMAN, player, card, -1, -1, buffer, 0);
 						lose_the_game(AI);
 					}
 				}
 
-				fclose(file);
+				if (file){
+					fclose(file);
+				}
 			}
 
 			if( enforce_rarity == 3 ){	//Rotisserie

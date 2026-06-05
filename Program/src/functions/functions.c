@@ -10137,6 +10137,11 @@ int granted_generic_activated_ability(int granting_player, int granting_card, in
 				return 0;
 			}
 		}
+		if( (mode & (GAA_DAMAGE_PREVENTION | GAA_DAMAGE_PREVENTION_PLAYER | GAA_DAMAGE_PREVENTION_CREATURE | GAA_DAMAGE_PREVENTION_ME))
+			&& !(land_can_be_played & LCBP_DAMAGE_PREVENTION)
+		  ){
+			return 0;
+		}
 		if (mode & GAA_CAN_TARGET){
 			int make_untargettable = (mode & GAA_NOT_ME_AS_TARGET) && !(granted_to_instance->state & STATE_CANNOT_TARGET);	// In particular, don't remove STATE_CANNOT_TARGET later if it was set before this
 			if (make_untargettable){

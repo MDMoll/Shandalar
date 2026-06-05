@@ -1,1 +1,4 @@
-make: *** No rule to make target `src/main.obj', needed by `CardArtLib.dll'.  Stop.
+g++ -O2 -ggdb2 -march=i586 -mpreferred-stack-boundary=2 -fno-omit-frame-pointer -Wall -Wextra -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wshadow -W -Winline -Wno-unused-parameter -Werror -I.. -I. -std=gnu++0x -c -o src/main.obj src/main.cpp
+g++ -shared -static -static-libgcc -static-libstdc++ -o CardArtLib.dll  src/main.obj  CardArtLib.def -L. -lgdiplus -lboost_filesystem-mgw46-s-1_45 -lboost_system-mgw46-s-1_45
+objcopy --only-keep-debug CardArtLib.dll CardArtLib.dbg
+objcopy --strip-debug CardArtLib.dll

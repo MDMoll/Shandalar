@@ -18,7 +18,7 @@
 | The handler targeted internal damage cards. | `src/cards/unlimited.c:4090` and `Program/src/cards/unlimited.c:4033` build a target definition with `td.extra = damage_card` and `GAA_DAMAGE_PREVENTION`. |
 | Spell damage-prevention code already had a window guard. | `src/functions/functions.c:12768` and `Program/src/functions/functions.c:12546` return early for `GS_DAMAGE_PREVENTION` unless `LCBP_DAMAGE_PREVENTION` is set. |
 | The activated healer path now has the same style of guard. | `src/cards/unlimited.c` and `Program/src/cards/unlimited.c` return `0` from `card_samite_healer()` unless `land_can_be_played & LCBP_DAMAGE_PREVENTION` is true. |
-| Runtime DLLs are patched too. | Root `ManalinkEh.dll` is patched at file offset `0x3bb035`; `Program/ManalinkEh.dll` is patched at `0x381a25`. |
+| Runtime DLLs are patched too. | Root `ManalinkEh.dll` is patched at file offsets `0x3bb035`, `0x44cb23`, `0x495a30`, `0x40d0e1`, `0x495a60`, `0x40db84`, and `0x495a90`; `Program/ManalinkEh.dll` is patched at `0x381a25`, `0x40f115`, `0x452c30`, `0x3d2da1`, `0x452c60`, `0x3d3844`, and `0x452c90`. |
 
 The patched bytes are:
 
@@ -30,14 +30,18 @@ This disassembles as a test of `land_can_be_played` bit `0x04`, a jump to the
 handler's existing return-zero path when the damage-prevention window is not
 active, and then a jump back to the normal handler body when it is active.
 
+The AI decision-time cave preserves configured values `1..270` and writes
+`mov ebx, 0x10e` for missing, invalid, or higher values before the existing
+time-division logic runs.
+
 ### Needs Testing
 
 | Test | Why |
 | --- | --- |
-| Fully quit existing CrossOver Shandalar/Magic windows before retesting root `C:\Shandalar\Shandalar.exe`. | The local `MTG` copied install now has matching patched `ManalinkEh.dll` files and backups, but already-running processes can still hold older DLLs. |
+| Fully quit existing CrossOver Shandalar/Magic windows before retesting root `C:\Shandalar\Shandalar.exe`. | The local `MTG` copied install now has matching damage-prevention, AI-timer, and raw-mana snapshot patched `ManalinkEh.dll` files and backups, but already-running processes can still hold older DLLs. |
 | Retest a duel where Femeref Healer can activate after blockers are declared. | This matches the clearest reported freeze. |
 | Retest Samite Healer and Kithkin Healer if available. | They share the same handler pointer and should be affected by the same patch. |
-| If another damage-prevention card still freezes, capture the card name and phase. | Other `GAA_DAMAGE_PREVENTION` handlers exist and may need the same narrower treatment. |
+| If another damage-prevention card still freezes, capture the card name, phase, available buttons, and whether CPU is high. | The generic activated `GAA_DAMAGE_PREVENTION*` helper is now guarded too, so remaining freezes may come from another prompt family or a card path outside that helper. |
 
 ## Assertion after choosing start color: `WM_CREATE CreateDIBSection`
 
@@ -60,7 +64,7 @@ active, and then a jump back to the normal handler body when it is active.
 | Display mode, bit depth, palette, or scaling mismatch. | Plausible; needs testing. |
 | Bad row/stride/buffer copy into a graphics surface. | Plausible from disassembly/registers. |
 | Missing or malformed resource loaded after color selection. | Possible; needs file trace. |
-| Wrong working directory or adjacent DLL layout. | Possible; current `MTG` evidence favors root `C:\Shandalar\Shandalar.exe`, while direct `C:\Shandalar\Program\Shandalar.exe` fails because `Program\zlib.dll` is missing. |
+| Wrong working directory or adjacent DLL/asset layout. | Possible; current `MTG` evidence favors root `C:\Shandalar\Shandalar.exe`, while direct `C:\Shandalar\Program\Shandalar.exe` failures exposed missing `Program\zlib.dll`, missing Program CardArt files, `Program\Manalink.ini`, Program `DuelArt` configs through `Planeswalker.dat`, six Program `TT*.ttf` font files, and older Program card-data files. This checkout and the local copied install now have those Program files; the latest bounded log opened the Program card-data trio, `shandalar.dll`, and `Shandalar.ini` without the earlier fatal strings, but visible retest is still needed. |
 | Missing `D:\NewMagic\sources...` path. | Unproven and unlikely without runtime trace evidence. |
 
 The `D:\NewMagic\sources...` part is probably a compile-time source path
@@ -75,10 +79,11 @@ unless file tracing proves the game is trying to load runtime files there.
 | On Windows or fresh Wine/CrossOver, record whether you launch from repo root or `Program/`. | Both layouts exist and differ in adjacent DLLs/assets; path matters. |
 | Confirm `FaceMaker.exe` exists next to the active Shandalar launch path and has the documented `0x5f40` DIB patch. | This checkout now has active root and `Program` FaceMaker copies under the name Shandalar references; they are no-resolution/Korath-derived but no longer byte-identical to the reference `*-nores.exe` files. |
 | Confirm `FaceData.txt`, `FaceButtons.txt`, and face art exist next to the active FaceMaker path. | FaceMaker uses these local support files during character creation. |
+| For direct `C:\Shandalar\Program\Shandalar.exe` tests, confirm the Program adjacent config, font, and CardArt files listed in [runtime-manifest.md](runtime-manifest.md) exist, including `Program\Manalink.ini`, Program `DuelArt` configs through `Planeswalker.dat`, six Program `TT*.ttf` font files, `Modern\Triggering.png`, `Modern\CardOv_Nyx.png`, and the four `Planeswalker\Loyalty*.png` images. | A 2026-06-03 visible Program-path run reached `drawcardlib.dll` and reported missing `C:\Shandalar\Program\CARDART\ManaSymbols.pic`; later bounded exact-path logs reached missing Program CardArt files, `Program\Manalink.ini`, `Program\DuelArt\Modern.dat`, `Program\DuelArt\Planeswalker.dat`, and six Program `TT*.ttf` font files. These files are now present in the repo and local `MTG` copied install, with hashes recorded in [runtime-manifest.md](runtime-manifest.md). |
 | Confirm `Window = 2` in both `Shandalar.ini` and `Program/Shandalar.ini`. | The shipped comments say mode 2 keeps Adventure Mode, Deckbuilder, and Facemaker in the windowed path and generally works better. |
 | Avoid installing under `C:\Program Files`; use a writable folder such as `C:\Games\Shandalar`. | The forum thread flags permissions as a common trigger for this issue. |
 | Keep a Windows paging file enabled and non-tiny. | The forum thread says this old graphics path can require swap space even on systems with plenty of RAM; the local `MTG` bottle was changed to `C:\pagefile.sys 512 1024`. |
-| If duel prompts stop accepting `Done`, `Trigger`, or `Decline` in CrossOver bottle `MTG`, test app-default `Version=win7` with desktop `Shandalar1440` and the patched `ManalinkEh.dll` files. | This keeps the user's preferred Win7 compatibility setting, uses the larger 4:3 virtual desktop after fullscreen was undesirable, and includes the Femeref/Samite/Kithkin damage-prevention guard. The local `MTG` copied install has been updated; visible gameplay retest is still needed. |
+| If duel prompts stop accepting `Done`, `Trigger`, or `Decline` in CrossOver bottle `MTG`, test app-default `Version=win7` with desktop `Shandalar1440`, `ShowCoinFlips=0`, and the patched `ManalinkEh.dll` files. | This keeps the user's preferred Win7 compatibility setting, uses the larger 4:3 virtual desktop after fullscreen was undesirable, disables the coin-flip animation path that can freeze before turn one, and includes the Samite-family damage-prevention guard, the generic activated damage-prevention helper guard, the AI decision-time clamp patch, and the AI raw-mana snapshot patch. Visible gameplay retest is still needed. |
 | In CrossOver, test the fresh 32-bit `Shandalar-Win8-Test` bottle from `C:\Shandalar\Shandalar.exe`. | The existing `MTG` bottle is still Windows 7 at the system-registry level even with app-default `win8`; the fresh bottle reports Microsoft Windows 8 / `CurrentVersion=6.2` and now has a bottle-local `C:\Shandalar` copy. |
 | Keep the existing `MTG` bottle as a comparison, not as the presumed fix. | User testing says FaceMaker/no-resolution plus `MTG` app-default `win8`, virtual desktop, pagefile, `Window = 2`, and the first Shandalar-only patch still reproduced the issue. Later active FaceMaker and Shandalar name-bypass patches have not yet had a successful full Shandalar-spawned visible retest. |
 | In CrossOver, use a 32-bit XP bottle and a 32-bit Windows 7 bottle. | Compare old-Windows compatibility behavior if the fresh Win8 bottle also fails. |
@@ -113,7 +118,7 @@ unless file tracing proves the game is trying to load runtime files there.
 | `cmp -s /private/tmp/FaceMaker-Korath-thread.exe FaceMaker-nores.exe` plus `find /Users/mdmoll/Shandalar -iname '*facemaker*korath*'` | The known downloaded thread helper matches the no-resolution copy. No repo file named `Facemaker-Korath.exe` was visible under `/Users/mdmoll/Shandalar` during this pass. |
 | `shasum -a 256 FaceMaker.exe Program/FaceMaker.exe FaceMaker-nores.exe Program/FaceMaker-nores.exe` | Active patched FaceMaker copies hash to `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246`; no-resolution/Korath copies hash to `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b`. The visible S2 run later logged `FaceMaker-nores.exe /S`, so preserve the no-resolution helper too. |
 | `cmp -l FaceMaker-nores.exe FaceMaker.exe` | Active FaceMaker differs from the no-resolution/Korath helper at 11 byte positions, matching the `CreateDIBSection hSection = NULL` patch. |
-| `xxd -g1 -l 32 -s $((0x5f40)) FaceMaker.exe Program/FaceMaker.exe` | Both active helpers begin `6a 00 57 50 8b 4d 10 51 ff 75 04` at the patch site. |
+| Separate `xxd -g1 -l 32 -s $((0x5f40))` checks for `FaceMaker.exe` and `Program/FaceMaker.exe` | Both active helpers begin `6a 00 57 50 8b 4d 10 51 ff 75 04` at the patch site. |
 | `lldb` disassembly around `FaceMaker-Original.exe` / `FaceMaker-nores.exe` changed offsets | The Korath/no-resolution helper changes a resolution-argument branch, forces a 1024x768 fallback path, and stubs the `ChangeDisplaySettingsA` wrapper to return immediately. It does not remove `CreateDIBSection` or the GDI drawing path. |
 | `rg -n "^Window\\s*=" Shandalar.ini Program/Shandalar.ini` | Both repo files now use `Window = 2`. |
 | `rg -n "^Window\\s*=" "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Shandalar.ini" "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Program/Shandalar.ini"` | Both copied files inside the `MTG` bottle now use `Window = 2`. |
@@ -126,12 +131,13 @@ unless file tracing proves the game is trying to load runtime files there.
 | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG reg add "HKCU\Software\Wine\AppDefaults\Shandalar.exe" /v Version /t REG_SZ /d win8 /f` | Completed successfully. |
 | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG reg add "HKCU\Software\Wine\AppDefaults\Magic.exe" /v Version /t REG_SZ /d win8 /f` | Completed successfully. |
 | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG reg add "HKCU\Software\Wine\AppDefaults\FaceMaker.exe" /v Version /t REG_SZ /d win8 /f` | Completed successfully. |
-| `sed -n '790,825p;965,970p' "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/user.reg"` | Current duel-prompt retest state shows app-default `Version=win7` and desktop `Shandalar1440` entries for `FaceMaker.exe`, `Magic.exe`, and `Shandalar.exe`; `Shandalar1440` is `1440x1080`. |
+| `sed -n '260,280p;790,825p;965,970p' "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/user.reg"` | Current duel retest state shows `DuelOptions` `ShowCoinFlips=0`, app-default `Version=win7`, and desktop `Shandalar1440` entries for `FaceMaker.exe`, `Magic.exe`, and `Shandalar.exe`; `Shandalar1440` is `1440x1080`. |
 | Timed logged launch of `C:\Shandalar\Shandalar.exe` in bottle `MTG` | Stayed alive until the alarm; startup log showed `wined3d`, `explorer.exe /desktop`, 1024-wide 8bpp DIB sections, and no startup page fault. Visible start-color retest still needed. |
 | Timed logged direct launch of `C:\Shandalar\FaceMaker.exe` in bottle `MTG` | Stayed alive until the alarm; startup log showed `wined3d`, `explorer.exe /desktop`, 1024x768 8bpp DIB sections, and no startup page fault. |
 | Direct logged launch of patched `C:\Shandalar\FaceMaker.exe` in bottle `MTG` | Rendered FaceMaker UI; `/tmp/facemaker-direct-after-patch-cx.log` had no `Unhandled exception`, page fault, or `WM_CREATE CreateDIBSection` assertion. |
 | Visual smoke launch of `C:\Shandalar\Shandalar.exe` in bottle `MTG` | Reached the `Magic: Shandalar` main menu. AppleScript, Wine SendKeys, and Swift/CoreGraphics attempts could focus or see the window but did not deliver a usable Start New Game click from this machine, so Start New Game still needs manual visual testing. |
-| Direct logged launch of `C:\Shandalar\Program\Shandalar.exe` in bottle `MTG` | Fails before gameplay due missing `Program\zlib.dll`, causing `image.dll`, `DrawCardLib.dll`, and `DECKDLL.dll` load failures. |
+| Earlier direct logged launch of `C:\Shandalar\Program\Shandalar.exe` in bottle `MTG` | Failed before gameplay due missing `Program\zlib.dll`, causing `image.dll`, `DrawCardLib.dll`, and `DECKDLL.dll` load failures. This checkout and the local copied install now include matching `Program/zlib.dll`; a bounded exact-path log loaded the Program DLL chain without the old fatal loader pattern. |
+| Visible direct launch of `C:\Shandalar\Program\Shandalar.exe` in bottle `MTG` after the zlib fix | Reached `drawcardlib.dll` and showed `Could not load ManaSymbols= "C:\Shandalar\Program\CARDART\ManaSymbols.pic"`. Later bounded exact-path logs loaded those first files, reached missing Program CardArt files, then `Program\Manalink.ini`, `Program\DuelArt\Modern.dat`, `Program\DuelArt\Planeswalker.dat`, six Program `TT*.ttf` font paths, and older Program card-data files. The Program files listed in [runtime-manifest.md](runtime-manifest.md) are now present under repo and copied-install `Program`; the latest bounded log opened the Program card-data trio, `shandalar.dll`, and `Shandalar.ini` without the earlier fatal strings, so the copied Program path still needs a visible exact-path retest. |
 | Created CrossOver bottle `Shandalar-Win8-Test` | `cxbottle --bottle Shandalar-Win8-Test --create --template win8`; config reports `Template=win8`, `WineArch=win32`, registry reports `ProductName=Microsoft Windows 8`, `CurrentVersion=6.2`, and `CurrentBuild=9200`. |
 | Timed logged launch of `Y:\Shandalar\Shandalar\Shandalar.exe` in `Shandalar-Win8-Test` | Stayed alive until manual cleanup after the timed smoke; `/tmp/shandalar-win8test-startup-cx.log` showed `wined3d` and many successful `NtGdiCreateDIBSection` calls, with no startup page fault. |
 | Copied checkout into `Shandalar-Win8-Test` | Bottle-local path exists at `/Users/mdmoll/Library/Application Support/CrossOver/Bottles/Shandalar-Win8-Test/drive_c/Shandalar`, exposed as `C:\Shandalar`. |

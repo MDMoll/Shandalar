@@ -13,7 +13,7 @@ primary runtime targets. It does not prove native Windows behavior.
 | `Facemaker/Facemaker.exe` | Different older-looking helper build by hash; still imports/contains `CreateDIBSection`, `ChangeDisplaySettingsA`, and `WM_CREATE CreateDIBSection`; uses its own `Facemaker/` support-file layout. | Comparison evidence only, not the preferred active helper swap. |
 | Root `Magic.exe` | Logged root Shandalar startup opens `C:\Shandalar\Magic.exe`; root and Program `Magic.exe` differ by SHA-256; related GDI/assertion strings/imports exist. | Must be tested separately from `Program/Magic.exe`; do not assume equivalence. |
 | `Program/Magic.exe` | Imports `CreateDIBSection` and contains assertion/source-path strings, but does not run the campaign new-game color flow. | Related GDI/assertion code exists, but this exact bug is not proven to affect it. |
-| Root and `Program/ManalinkEh.dll` | The shared Samite/Femeref/Kithkin healer handler lives here for duel gameplay. Both root and `Program/` DLLs are patched to require `LCBP_DAMAGE_PREVENTION` before offering that activation. | Relevant to the later duel-freeze report, not the campaign start-color assertion. Copied CrossOver installs need their adjacent DLLs updated separately from the repo. |
+| Root and `Program/ManalinkEh.dll` | The shared Samite/Femeref/Kithkin healer handler, generic activated damage-prevention helper, `_check_timer_for_ai_speculation`, and `_ai_decision_phase` live here for duel gameplay. Both root and `Program/` DLLs are patched to require `LCBP_DAMAGE_PREVENTION` before offering damage-prevention activations, to clamp `AiDecisionTime` so missing, invalid, or higher configured values use 270, and to save both players' raw-mana rows during AI speculation. | Relevant to duel-freeze reports, not the campaign start-color assertion. Copied CrossOver installs need their adjacent DLLs updated separately from the repo; the local `MTG` bottle now matches the repo Manalink hashes. |
 | `Program/Image.dll`, `Program/Drawcardlib.dll` | Contain or import `CreateDIBSection`. | Shared graphics helpers may matter, but the reported fault module is `shandalar`. |
 
 ## What Appears Shared
@@ -41,7 +41,7 @@ primary runtime targets. It does not prove native Windows behavior.
 | `Program/Shandalar.exe` new game, each start color | Determines color-specific vs shared post-color crash. |
 | Root `Shandalar.exe` from root | Patched repo path passed the crash-point smoke test in `Shandalar-Win8-Test`; next proof is full visible gameplay including default-name character creation and same-arrow map stop. |
 | Root `FaceMaker.exe` from root | Patched helper startup is verified in `MTG`; compare with Shandalar-spawned character creation. |
-| `Program/Shandalar.exe` only after adjacent DLL layout is fixed in a copy | Determines whether identical binary behaves differently with different working directory/assets. |
+| `Program/Shandalar.exe` after matching `Program/zlib.dll`, adjacent Program config/font/card-data files, and Program CardArt assets are present in the copied install | Determines whether identical binary behaves differently with different working directory/assets/config; latest bounded log opened the Program card-data trio, `shandalar.dll`, and `Shandalar.ini` without the earlier fatal strings, but visible gameplay is still unproven. |
 | `Program/Magic.exe` launch to graphics-heavy screen | Determines whether related GDI path fails outside campaign. |
 | Root `Magic.exe` launch | Required because root and Program binaries differ by hash. |
 

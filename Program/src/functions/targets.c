@@ -1167,6 +1167,33 @@ int auto_targets[500];
 int auto_targets_target[500];
 int read_auto_target_file = 0;
 
+static int read_auto_target_entries(const char* path, int target_player, int count)
+{
+	char buffer[500];
+	FILE *file = fopen(path, "r");
+	if (!file){
+		return count;
+	}
+
+	while(count < 499 && fgets(buffer, sizeof(buffer), file)){
+		char* card_id_text = buffer;
+		if (*card_id_text != '.'){
+			break;
+		}
+		while (*card_id_text == '.'){
+			++card_id_text;
+		}
+		if (*card_id_text < '0' || *card_id_text > '9'){
+			continue;
+		}
+		auto_targets[count] = atoi(card_id_text);
+		auto_targets_target[count] = target_player;
+		count++;
+	}
+	fclose(file);
+	return count;
+}
+
 // Like default_target_definition, but doesn't set illegal_abilities.
 void base_target_definition(int player, int card, target_definition_t *td, int type)
 {
@@ -1272,30 +1299,9 @@ int choose_default_target(int player, int card, target_definition_t *td){
 
 		// read in which cards should auto target
 		if( read_auto_target_file == 0 ){
-			char buffer[500];
-			FILE *file = fopen("TargetsHuman.txt", "r");
 			int count = 0;
-			while( fscanf(file, "%[.]", buffer) == 1 ){
-				fscanf(file, "%[0-9]", buffer);
-				int num = atoi(buffer);
-				auto_targets[count] = num;
-				auto_targets_target[count] = HUMAN;
-				fscanf(file, "%[^\n]", buffer);
-				fscanf(file, "%[\n]", buffer);
-				count++;
-			}
-			fclose(file);
-			file = fopen("TargetsAI.txt", "r");
-			while( fscanf(file, "%[.]", buffer) == 1 ){
-				fscanf(file, "%[0-9]", buffer);
-				int num = atoi(buffer);
-				auto_targets[count] = num;
-				auto_targets_target[count] = AI;
-				fscanf(file, "%[^\n]", buffer);
-				fscanf(file, "%[\n]", buffer);
-				count++;
-			}
-			fclose(file);
+			count = read_auto_target_entries("TargetsHuman.txt", HUMAN, count);
+			count = read_auto_target_entries("TargetsAI.txt", AI, count);
 			auto_targets[count] = -1;
 			read_auto_target_file = 1;
 		}

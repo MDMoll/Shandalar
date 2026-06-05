@@ -1,5 +1,7 @@
 #include "manalink.h"
 #include "CardArtLib.h"
+#include <ctype.h>
+#include <cstring>
 
 #define BOOST_FILESYSTEM_VERSION 3
 #include <boost/filesystem.hpp>
@@ -28,7 +30,39 @@ static std::unique_ptr<wchar_t[]> stringToWChar(const std::string& s)
 	return wcstring;
 }
 
-static void loadDat(const char* fname){
+static bool read_exact(FILE* file, void* buffer, size_t size, size_t count)
+{
+	return fread(buffer, size, count, file) == count;
+}
+
+static void free_names(char** names, size_t count)
+{
+	if (!names)
+		return;
+	for (size_t i = 0; i < count; ++i)
+		free(names[i]);
+	free(names);
+}
+
+static std::string lowercase_ascii(const char* text)
+{
+	std::string result;
+	if (!text)
+		return result;
+	for (const unsigned char* p = (const unsigned char*)text; *p; ++p)
+		result += (char)tolower(*p);
+	return result;
+}
+
+static std::string lowercase_ascii(const std::string& text)
+{
+	std::string result;
+	for (std::string::const_iterator it = text.begin(); it != text.end(); ++it)
+		result += (char)tolower((unsigned char)*it);
+	return result;
+}
+
+static bool loadDat(const char* fname){
 	bool okchar[256] = {0};
 	for (int i = 'a'; i <= 'z'; ++i)
 		okchar[i] = true;
@@ -42,31 +76,69 @@ static void loadDat(const char* fname){
 	okchar['-'] = true;
 
 	FILE* f = fopen(fname, "rb");
-	size_t stringDataSize;
-	fread(&numberOfCards, 4, 1, f);
-	fread(&stringDataSize, 4, 1, f);
-	char* stringData = (char*)malloc(stringDataSize);
-	card_ptr_t* cardData = (card_ptr_t*)malloc(sizeof(card_ptr_t)*numberOfCards);
-	fread(cardData, sizeof(card_ptr_t), numberOfCards, f);
-	fread(stringData, 1, stringDataSize, f);
-	fclose(f);
-	idToName = (char**)calloc(numberOfCards, sizeof(char*));
+	if (!f)
+		return false;
 
-	for (unsigned int i = 0; i < numberOfCards; i++) {
+	uint32_t card_count = 0;
+	uint32_t string_data_size = 0;
+	if (!read_exact(f, &card_count, 4, 1) || !read_exact(f, &string_data_size, 4, 1)){
+		fclose(f);
+		return false;
+	}
+	if (card_count == 0 || string_data_size == 0){
+		fclose(f);
+		return false;
+	}
+
+	char* stringData = (char*)malloc(string_data_size);
+	card_ptr_t* cardData = (card_ptr_t*)malloc(sizeof(card_ptr_t) * card_count);
+	char** names = (char**)calloc(card_count, sizeof(char*));
+	if (!stringData || !cardData || !names){
+		free(stringData);
+		free(cardData);
+		free_names(names, card_count);
+		fclose(f);
+		return false;
+	}
+
+	bool ok = read_exact(f, cardData, sizeof(card_ptr_t), card_count)
+		&& read_exact(f, stringData, 1, string_data_size);
+	fclose(f);
+	if (!ok){
+		free(stringData);
+		free(cardData);
+		free_names(names, card_count);
+		return false;
+	}
+
+	for (unsigned int i = 0; i < card_count; i++) {
 		int id = cardData[i].id;//*((int*)cardData + 38*i);
-		char* name = (stringData + (int)(cardData[i].full_name));//*((int*)cardData + 1 + 38*i));
+		int name_offset = (int)(cardData[i].full_name);//*((int*)cardData + 1 + 38*i));
+		if (id < 0 || (unsigned int)id >= card_count || name_offset < 0 || (unsigned int)name_offset >= string_data_size)
+			continue;
+
+		char* name = stringData + name_offset;
+		if (!memchr(name, 0, string_data_size - name_offset))
+			continue;
+
 		//replace characters
 		for (char* p = name; *p; ++p)
 		  if (!okchar[(int)(unsigned char)(*p)])
 			*p = '_';
-		idToName[id] = (char*)malloc(strlen(name) + 1);
-		strcpy(idToName[id], name);
+		names[id] = (char*)malloc(strlen(name) + 1);
+		if (names[id])
+			strcpy(names[id], name);
 	}
+
 	free(cardData);
 	free(stringData);
+
+	idToName = names;
+	numberOfCards = card_count;
+	return true;
 }
 
-static void load_names(void)
+static bool load_names(void)
 {
 	// Precondition: idToName == NULL
 
@@ -74,26 +146,28 @@ static void load_names(void)
 
 	if (GetProcAddress(parent, "szDeckName")) { //manalink
 		char* cards_dat = (char*)0x4D722E;
-		loadDat(cards_dat);
+		return loadDat(cards_dat);
 	} else if (GetModuleHandle("deck.exe")) { //deck.exe
-		loadDat("Cards.dat");
+		return loadDat("Cards.dat");
 	} else { // shandalar
-		loadDat("Cards.dat");
+		return loadDat("Cards.dat");
 	}
 }
 
 static std::string idToNameFun(int id, int version) {
-	if (idToName == NULL){
-		load_names();
-	}
-	char tmp[254];
-	if (version > 0) {
-		sprintf(tmp, "CardArtManalink/%s (%d).jpg", idToName[id], version);
-	} else {
-		sprintf(tmp, "CardArtManalink/%s.jpg", idToName[id]);
-	}
+	if (idToName == NULL && !load_names())
+		return std::string();
+	if (id < 0 || (size_t)id >= numberOfCards || !idToName[id])
+		return std::string();
 
-	std::string path = tmp;
+	std::string path = "CardArtManalink/";
+	path += idToName[id];
+	if (version > 0) {
+		char version_buf[32];
+		sprintf(version_buf, " (%d)", version);
+		path += version_buf;
+	}
+	path += ".jpg";
 	return path;
 }
 
@@ -119,15 +193,15 @@ static void count_images(void)
 		card_ptrs = cards_ptr_shandalar_dll;
 	}
 
-	if (idToName == NULL)
-		load_names();
+	if (idToName == NULL && !load_names())
+		return;
 
 	std::unordered_map<std::string, int> name_to_csvid;
-	char buf[200];	// Manalink itself will crash for names much shorter than this
 	for (unsigned int i = 0; i < numberOfCards; ++i) {
 		const char* name = idToName[i];
-		for (char* p = buf; (*p = tolower(*name)); ++p, ++name){}
-		name_to_csvid[buf] = i;
+		if (!name)
+			continue;
+		name_to_csvid[lowercase_ascii(name)] = i;
 		card_ptrs[i].num_pics = 1;	// Always assume at least one image; it would have been corrected to 1 if initially set to 0 anyway
 	}
 
@@ -140,13 +214,14 @@ static void count_images(void)
 
 			/* boost::regex would be more concise, but this is about 10% faster when not disk-bound, and more importantly, doesn't bloat the dll file size.
 			 * boost::filesystem already increases it from 328k to 1040k; adding boost::regex ballooned it to 1540k. */
-			char cardname[200];
-			const char* name = filename.c_str();
+			std::string lower_filename = lowercase_ascii(filename);
+			std::string cardname;
+			const char* name = lower_filename.c_str();
 			unsigned int num = 0;
-			for (char* p = cardname; (*p = tolower(*name)); ++p, ++name){
-				if (*p == '('){
-					if (p > cardname && *(name - 1) == ' ' && *(name + 1) >= '1' && *(name + 1) <= '9'){
-						*(p - 1) = 0;	// overwriting the last space before the parenthesis
+			for (; *name; ++name){
+				if (*name == '('){
+					if (!cardname.empty() && cardname[cardname.size() - 1] == ' ' && *(name + 1) >= '1' && *(name + 1) <= '9'){
+						cardname.resize(cardname.size() - 1);	// remove the last space before the parenthesis
 						++name;
 						num = atoi(name);
 						while (*name && *name >= '0' && *name <= '9')
@@ -157,6 +232,7 @@ static void count_images(void)
 					} else
 						break;	// ( found, but not after a space, or not followed by [1..9]
 				}
+				cardname += *name;
 			}
 			if (num == 0)	// no image number found, or failed after finding (
 				continue;
@@ -194,6 +270,10 @@ int LoadBigArt(int id, int version, LONG width, int height) {
 	if (!images_counted)
 		count_images();
 	std::string path = idToNameFun(id, version);
+	if (path.empty()) {
+		LeaveCriticalSection(&crit);
+		return 0;
+	}
 	std::unordered_map<std::string, std::unique_ptr<gdi::Image>>::const_iterator it = cache->find(path);
 	if (it == cache->end()) {
 		if (!file_exists(path.c_str())) {
@@ -215,6 +295,10 @@ int LoadSmallArt(int id, int version, LONG width, int height) {
 void DestroyBigArt(int id, int version) {
 	EnterCriticalSection(&crit);
 	std::string path = idToNameFun(id, version);
+	if (path.empty()) {
+		LeaveCriticalSection(&crit);
+		return;
+	}
 	std::unordered_map<std::string, std::unique_ptr<gdi::Image>>::iterator it = cache->find(path);
 	if (it != cache->end()) {
 		cache->erase(it);

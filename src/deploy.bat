@@ -1,3 +1,30 @@
+@echo off
+if /I "%~1"=="--confirmed-c-magic2k-deploy" goto deploy
+if /I "%~1"=="--help" goto help
+if "%~1"=="/?" goto help
+
+:blocked
+echo Historical packaging script not run.
+echo.
+echo This script deletes and copies files under c:\magic2k.
+echo Run it only from a prepared Windows packaging copy.
+echo.
+echo Usage:
+echo   deploy.bat --confirmed-c-magic2k-deploy
+echo.
+exit /b 2
+
+:help
+echo Usage:
+echo   deploy.bat --confirmed-c-magic2k-deploy
+echo.
+echo Historical packaging script. Requires explicit confirmation because it
+echo deletes and copies files under c:\magic2k.
+echo.
+exit /b 0
+
+:deploy
+shift
 del /s/q c:\magic2k\zips\magic\src 
 
 copy c:\mingw\bin\manalink\src\*.* c:\magic2k\zips\magic\src\;
@@ -42,5 +69,3 @@ copy c:\magic2k\DBinfo.dat c:\magic2k\zips\magic;
 copy c:\magic2k\Shandalar.exe c:\magic2k\zips\magic;
 copy c:\magic2k\Menus.txt c:\magic2k\zips\magic;
 copy c:\magic2k\magic_updater c:\magic2k\zips\magic\magic_updater;
-
-

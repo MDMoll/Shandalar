@@ -1,8 +1,13 @@
 // -*- tab-width:8 -*-
 #include "patch.h"
 
-// Updates Magic.exe in-place.
-// 1. Reduces AI thinking time by a factor of 10.
+// Historical helper for unhooked Magic.exe builds.
+//
+// The active runtime moved check_timer_for_ai_speculation() into C with
+// patch_change_ai_time.pl. For current binaries, patch the ManalinkEh.dll
+// fallback with tools/patch-ai-decision-fallback.py instead.
+//
+// The executable name is preserved for old build scripts.
 
 int
 main(int argc, char** argv)
@@ -14,7 +19,7 @@ main(int argc, char** argv)
   OPEN("Magic.exe");
 
   /*************************************************************************************
-  * Replace constant in check_timer_for_ai_speculation() at 0x472d10 from 5405 to 540. *
+  * Replace constant in check_timer_for_ai_speculation() at 0x472d10 from 5405 to 270. *
   *************************************************************************************/
   /*
    * Previous contents:
@@ -29,7 +34,31 @@ main(int argc, char** argv)
    * 472d2c:	c3			# ret				; return
    */
 
-#define INJ	"\xb9\x1c\x02\x00\x00"	/* mov	ecx, 0x021c		; ecx = 540	*/
+  {
+    const char legacy_preimage[] = "\xb9\x1d\x15\x00\x00";
+    const char hooked_preimage[] = "\x90\x90\x90\x90\x90";
+    char actual[5];
+
+    if (fseek(f, 0x72d24, SEEK_SET))
+      die("Couldn't seek to %x in %s", 0x72d24, filename);
+
+    if (fread(actual, 1, sizeof(actual), f) != sizeof(actual))
+      die("Couldn't read preimage at %x in %s", 0x72d24, filename);
+
+    if (memcmp(actual, legacy_preimage, sizeof(actual)) != 0) {
+      if (memcmp(actual, hooked_preimage, sizeof(actual)) == 0)
+	popup("patch_change_ai_time_540",
+	      "Skipped Magic.exe: the active check_timer_for_ai_speculation() path already jumps into C. Patch ManalinkEh.dll with tools/patch-ai-decision-fallback.py instead.");
+      else
+	popup("patch_change_ai_time_540",
+	      "Skipped Magic.exe: unexpected bytes at 0x72d24:%s",
+	      buf_to_hexstr(actual, sizeof(actual)));
+      CLOSE();
+      return 1;
+    }
+  }
+
+#define INJ	"\xb9\x0e\x01\x00\x00"	/* mov	ecx, 0x010e		; ecx = 270	*/
   SEEK_AND_WRITE(f, 0x72d24);
 #undef INJ
 
@@ -37,4 +66,3 @@ main(int argc, char** argv)
 
   SUCCESS("patch_change_ai_time_540");
 }
-

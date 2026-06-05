@@ -25,7 +25,9 @@ helper for `Shandalar.exe`.
 
 | Patch | Root `Magic.exe` | `Program/Magic.exe` | Notes |
 | --- | --- | --- | --- |
-| Declared-attacker undo | Hook `0x43c303`, cave `0x459bc8`, SHA-256 `5bf518d66342d79562efb1106449413ada06814a6c14818a1e3101fd470c82d1`. | Hook `0x43c303`, cave `0x459bc8`, SHA-256 `0fb8b87fe35c8be037ae3419a9b9cd70a27df840ae6af6c7488c2685046a74fa`. | Lets the human player click an already-declared attacker before Done to clear `STATE_ATTACKING`. See [bugs/declared-attacker-undo.md](bugs/declared-attacker-undo.md). |
+| Declared-attacker undo | Hook `0x43c303`, cave `0x459bc8`, current SHA-256 `93a40ce2c96aafee1d858a71ed69eb8c539aa9851796eb54b1af58f0bb97aba0`. | Hook `0x43c303`, cave `0x459bc8`, current SHA-256 `685669692634ec830fe228904e11b1b536bd4b20e52192863a6280c2dbff6b66`. | Lets the human player click an already-declared attacker before Done to clear `STATE_ATTACKING`. See [bugs/declared-attacker-undo.md](bugs/declared-attacker-undo.md). |
+| Coin-flip animation default | File offset `0x5db1f`, bytes `c7 05 5c 72 78 00 00 00 00 00`. | File offset `0x5db1f`, bytes `c7 05 5c 72 78 00 00 00 00 00`. | Makes missing `ShowCoinFlips` registry data default to off. The local `MTG` bottle also explicitly sets `ShowCoinFlips=0`. See [bugs/duel-start-coinflip-animation.md](bugs/duel-start-coinflip-animation.md). |
+| Startup coin-flip dialog guard | File offsets `0x694b7` and `0x694eb` begin with `6a 00`, then call `coin_flip()`. | Same byte prefixes at `0x694b7` and `0x694eb`. | The startup/mulligan coin-flip calls pass `show_dialog_if_animation_is_off = 0`, so `ShowCoinFlips=0` suppresses the startup dialog path without disabling card coin-flip dialogs. |
 
 ## Required Nearby Files
 
@@ -58,7 +60,8 @@ Result: exit code 53, no stdout/stderr captured. This is a local CrossOver
 | Missing `ManalinkEh.dll` or `ManalinkEx.dll` | Direct imports of `Program/Magic.exe`. | Confirm both DLLs are in the working directory and watch for missing-DLL dialogs/logs. |
 | Wrong working directory | Launcher docs and scripts enter `Program/` before starting `Magic.exe`. | Launch from `Program/`, not by double-clicking a copied exe elsewhere. |
 | Old multimedia/video dependency | Imports `MSVFW32.dll` and `WINMM.dll`. | Capture exact error; try virtual desktop or codecs only after UI/log evidence. |
-| Registry expectations | Imports `advapi32.dll` registry APIs. | Compare clean bottle vs bottle where the game has been launched once. |
+| Registry expectations | Imports `advapi32.dll` registry APIs; `ShowCoinFlips` is read from `DuelOptions`. | Compare clean bottle vs bottle where the game has been launched once, and verify whether `ShowCoinFlips=0` is present when testing pre-coinflip freezes. |
+| Startup coin-flip call sites | Disassembly shows startup/mulligan call sites pass `0` for the dialog-if-animation-off argument, while `player_flips_a_coin()` passes `1` for card coin flips. | Verify bytes at `0x694b7` and `0x694eb`; then visibly test whether the first turn starts. |
 | Display/palette mode issue | Uses GDI/user32 and old UI assets; no direct D3D/DDRAW imports found. | Try Wine virtual desktop at 800x600 or 1024x768. |
 | Root/Program binary difference | Root and Program `Magic.exe` have different SHA-256. | Test both paths separately and record hashes. |
 | CrossOver desktop and Windows version behavior | Bottle `MTG` currently sets app-default `Version=win7` and desktop `Shandalar1440=1440x1080` for `Magic.exe` as the larger 4:3 retest setting. | Retest root and `Program` `Magic.exe` with that setting before changing DLLs or runtimes. |
@@ -84,3 +87,5 @@ Working directory: C:\Shandalar\Program
 4. Record whether the UI appears, whether a missing-DLL dialog appears, and
 where CrossOver writes the log.
 5. Repeat for root `C:\Shandalar\Shandalar.exe` in the same bottle.
+6. If testing a duel-start freeze, record whether the coin-flip animation is
+   shown, skipped, or freezes before the first turn starts.

@@ -6,10 +6,15 @@ extern int start_usertime_of_current_thread_in_ms;
 int check_timer_for_ai_speculation(void)
 {
 	int decision_time = get_setting(SETTING_AI_DECISION_TIME);
-	if (decision_time <= 0){
-		decision_time = 5405;
+	if (decision_time <= 0 || decision_time > 270){
+		decision_time = 270;
 	}
-	return (100 * (get_usertime_of_current_thread_in_ms() - start_usertime_of_current_thread_in_ms)) / decision_time;
+	int elapsed = get_usertime_of_current_thread_in_ms() - start_usertime_of_current_thread_in_ms;
+	if (elapsed <= 0){
+		return 0;
+	}
+	long long percent = (100LL * elapsed) / decision_time;
+	return percent > 0x7fffffff ? 0x7fffffff : (int)percent;
 }
 
 int pay_mana_maximally_satisfied(int* pay_mana_array, int x_val, int max_x_val);
@@ -433,13 +438,15 @@ int ai_decision_phase(int player, int *phase_code_to_go_to, int *becomes_second_
 
   if (ai_is_speculating == 1)
 	{
-	  int p = 1 - player;
+	  int p;
 	  int col;
-	  for (col = 0; col <= 7; ++col)
-		{
+	  for (p = 0; p <= 1; ++p)
+		for (col = 0; col <= 7; ++col)
 		  store_raw_mana_available[p][col] = raw_mana_available[p][col];
-		  raw_mana_available[p][col] = landsofcolor_controlled[p][col];
-		}
+
+	  p = 1 - player;
+	  for (col = 0; col <= 7; ++col)
+		raw_mana_available[p][col] = landsofcolor_controlled[p][col];
 
 	  dispatch_event_raw(EVENT_SHOULD_AI_PLAY);
 
@@ -454,7 +461,7 @@ int ai_decision_phase(int player, int *phase_code_to_go_to, int *becomes_second_
 
 	  for (p = 0; p <= 1; ++p)
 		for (col = 0; col <= 7; ++col)
-		  raw_mana_available[p][col] = store_raw_mana_available[p][col];	// never initialized for p == player
+		  raw_mana_available[p][col] = store_raw_mana_available[p][col];
 
 	  recalculate_all_cards_in_play();
 
@@ -479,9 +486,10 @@ int ai_decision_phase(int player, int *phase_code_to_go_to, int *becomes_second_
 	  *becomes_third_arg_of_main_phase = 0;
 	  EXE_DWORD(0x7A372C) = 0;
 
-	  if (check_timer_for_ai_speculation() > EXE_DWORD(0x786DCC) / 2
+	  int ai_speculation_percent = check_timer_for_ai_speculation();
+	  if (ai_speculation_percent > EXE_DWORD(0x786DCC) / 2
 		  && (5 * (5 * opponent_skill + 5) <= EXE_DWORD(0x738B48)
-			  || ((EXE_DWORD(0x60E9FC) & 4) < 1 ? 200 : 50) < check_timer_for_ai_speculation()))
+			  || ((EXE_DWORD(0x60E9FC) & 4) < 1 ? 200 : 50) < ai_speculation_percent))
 		{
 		  ai_is_speculating = 0;
 		  EXE_DWORD(0x7282F4) = -1;

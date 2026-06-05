@@ -37,8 +37,8 @@ rg -n -i --glob '*.txt' --glob '*.md' --glob '*.cmd' --glob '*.bat' --glob '*.in
 | `PlayDeckAnalyser/PDAnalyser.ini:14-19` | `C:\Users\del_d\OneDrive\Bureau\Magic\...`, `C:\PROGRA~1\Magic\...` | Local developer paths | Treat as defaults/samples, not current repo paths. |
 | `PlayDeckAnalyser/PDAnalyser.ini:42`, `:59` | Local external editor path | Local developer path | Document before changing. |
 | `archive/local-helpers/shandalar_homedoom.bat:1-5` | `e:\Program Files\Magic`, `RC.exe /X 1600 /Y 900` | Machine-specific helper | Old root path was `shandalar_homedoom.bat`; archived as historical/local helper, not README guidance. |
-| `src/build.pl:51-53` | `c:\magic`, `c:\magic2k`, `c:\magic2k\zips` | Stale build/deploy paths | Do not run unmodified. |
-| `src/deploy.bat:1-44` | `c:\magic2k`, `c:\mingw\bin\manalink` | Stale build/deploy paths | Treat as historical deployment script. |
+| `src/build.pl:128-129` | `c:\magic2k`, `c:\magic2k\zips` | Stale build/deploy paths | Legacy copies are opt-in via `--legacy-copy-targets`; prefer explicit `--copy-to` in a controlled build copy. |
+| `src/deploy.bat:1-71` | `c:\magic2k`, `c:\mingw\bin\manalink` | Stale build/deploy paths | Treat as historical deployment script; destructive path requires `--confirmed-c-magic2k-deploy`. |
 | `archive/debug-evidence/assertFile.txt:2` | `D:\NewMagic\sources\sidlib\lib.c` | Debug evidence | Old root path was `assertFile.txt`; archived as debug evidence. |
 | `archive/debug-evidence/ML_Debug.txt:3-35` | `D:\Newmagic\FamiliarWS\...` | Debug evidence | Old root path was `ML_Debug.txt`; archived as debug evidence. |
 

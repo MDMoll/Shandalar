@@ -24053,9 +24053,12 @@ docs/adventure-map-movement.md
 docs/architecture.md
 docs/branch-summary.md
 docs/bug-backlog.md
+docs/bugs/ai-raw-mana-snapshot.md
 docs/bugs/create-dibsection-after-color.md
 docs/bugs/declared-attacker-undo.md
 docs/bugs/duel-freeze-damage-prevention.md
+docs/bugs/duel-start-coinflip-animation.md
+docs/bugs/opponent-turn-ai-decision-time.md
 docs/build-health.md
 docs/building.md
 docs/cleanup-audit.md
@@ -24930,6 +24933,7 @@ local/crossover/sendkeys-to-name-entry-robust.vbs
 local/crossover/sendkeys-to-name-entry.vbs
 local/README.md
 LOSEDUL2.PIC
+Magic.before-coinflip-default-patch.exe
 Magic.exe
 Magic.pic
 MAGIC3.fce
@@ -36960,6 +36964,9 @@ Manalink3/Program/Watermarks.csv
 Manalink3/Program/ZLib.dll
 Manalink_Launcher.cmd
 ManalinkEh.asm
+ManalinkEh.before-ai-decision-clamp-patch.dll
+ManalinkEh.before-ai-raw-mana-snapshot-patch.dll
+ManalinkEh.before-generic-damage-prevention-guard.dll
 ManalinkEh.dll
 ManalinkEx.dll
 ManalinkInterface.dll
@@ -49604,6 +49611,7 @@ Program/CardArt/Blank.png
 Program/CardArt/CantTarget.pic
 Program/CardArt/CardBack.pic
 Program/CardArt/CardCounters.bmp
+Program/CardArt/CardCounters.png
 Program/CardArt/Classic/CardBk_Artifact.png
 Program/CardArt/Classic/CardBk_Black.png
 Program/CardArt/Classic/CardBk_Blue.png
@@ -49634,6 +49642,7 @@ Program/CardArt/Classic/CardOv_WLand.png
 Program/CardArt/Classic/Tombstone.png
 Program/CardArt/Damage.pic
 Program/CardArt/Dying.pic
+Program/CardArt/Expansion_Symbols.pic
 Program/CardArt/Futureshift/CardBk_Artifact.png
 Program/CardArt/Futureshift/CardBk_Black.png
 Program/CardArt/Futureshift/CardBk_Blue.png
@@ -49664,6 +49673,7 @@ Program/CardArt/Futureshift/CardOv_WLand.png
 Program/CardArt/Futureshift/Powertoughness.png
 Program/CardArt/Futureshift/TypeIcon.png
 Program/CardArt/ManaStripes.pic
+Program/CardArt/ManaSymbols.pic
 Program/CardArt/Modern/CardBk_Artifact.png
 Program/CardArt/Modern/CardBk_Black.png
 Program/CardArt/Modern/CardBk_Blue.png
@@ -49688,6 +49698,7 @@ Program/CardArt/Modern/CardOv_Gold.png
 Program/CardArt/Modern/CardOv_GoldBar.png
 Program/CardArt/Modern/CardOv_GoldNyx.png
 Program/CardArt/Modern/CardOv_LandBar.png
+Program/CardArt/Modern/CardOv_Nyx.png
 Program/CardArt/Modern/CardOv_R.png
 Program/CardArt/Modern/CardOv_RLand.png
 Program/CardArt/Modern/CardOv_RNyx.png
@@ -49698,6 +49709,7 @@ Program/CardArt/Modern/CardOv_W.png
 Program/CardArt/Modern/CardOv_WLand.png
 Program/CardArt/Modern/CardOv_WNyx.png
 Program/CardArt/Modern/Powertoughness.png
+Program/CardArt/Modern/Triggering.png
 Program/CardArt/Plane/CardBk_Colorless.png
 Program/CardArt/Plane/CardOv_Colorless.png
 Program/CardArt/Planeswalker/CardBk_Black.png
@@ -49717,6 +49729,10 @@ Program/CardArt/Planeswalker/CardOv_Nyx.png
 Program/CardArt/Planeswalker/CardOv_R.png
 Program/CardArt/Planeswalker/CardOv_U.png
 Program/CardArt/Planeswalker/CardOv_W.png
+Program/CardArt/Planeswalker/LoyaltyBase.png
+Program/CardArt/Planeswalker/LoyaltyMinus.png
+Program/CardArt/Planeswalker/LoyaltyPlus.png
+Program/CardArt/Planeswalker/LoyaltyZero.png
 Program/CardArt/Poison.pic
 Program/CardArt/Sonic/CardBk_Artifact.png
 Program/CardArt/Sonic/CardBk_Black.png
@@ -49802,6 +49818,7 @@ Program/CardArt/Token/CardOv_W.png
 Program/CardArt/Token/CardOv_WNyx.png
 Program/CardArt/Vanguard/CardBk_Colorless.png
 Program/CardArt/Vanguard/CardOv_Colorless.png
+Program/CardArt/Watermarks.pic
 Program/CardArt/WillUntap.pic
 Program/CardArtLib.dll
 Program/Cards.dat
@@ -49950,7 +49967,9 @@ Program/DuelArt/Life_RedPict.bmp
 Program/DuelArt/Life_WhiteMana.bmp
 Program/DuelArt/Life_WhitePatt.bmp
 Program/DuelArt/Life_WhitePict.bmp
+Program/DuelArt/Modern.dat
 Program/DuelArt/Plane.dat
+Program/DuelArt/Planeswalker.dat
 Program/DuelArt/QuestMana_Black.pic
 Program/DuelArt/QuestMana_Blue.pic
 Program/DuelArt/QuestMana_Gray.pic
@@ -50266,7 +50285,9 @@ Program/ICONB.SPR
 Program/ICONS.SPR
 Program/Image.dll
 Program/INFOBAR.PIC
+Program/libgcc_s_dw2-1.dll
 Program/LOSEDUL2.PIC
+Program/Magic.before-coinflip-default-patch.exe
 Program/Magic.exe
 Program/magic_updater/ct2exe.exe
 Program/magic_updater/ct_all.csv
@@ -50279,6 +50300,7 @@ Program/magic_updater/xct.pl
 Program/magic_updater/xml-to-csv.pl
 Program/magic_updater/xml.pl
 Program/magvid.dll
+Program/Manalink.ini
 Program/ManaLink.txt
 Program/ManaLink/Sounds/Chat.wav
 Program/ManaLink/Sounds/Drop.wav
@@ -50290,6 +50312,9 @@ Program/ManaLink/Sounds/NoNet.wav
 Program/ManaLink/Sounds/Opponent.wav
 Program/ManaLink/Sounds/Taunt.wav
 Program/ManaLink/Sounds/Users.wav
+Program/ManalinkEh.before-ai-decision-clamp-patch.dll
+Program/ManalinkEh.before-ai-raw-mana-snapshot-patch.dll
+Program/ManalinkEh.before-generic-damage-prevention-guard.dll
 Program/ManalinkEh.dll
 Program/ManalinkEx.dll
 Program/MAPBACK.PIC
@@ -51101,6 +51126,12 @@ Program/tips.pic
 Program/tradbut1.pic
 Program/TRADSCRN.PIC
 Program/TSPRITE2.SPR
+Program/TT0085m_.ttf
+Program/TT0127m_.ttf
+Program/TT0298m_.ttf
+Program/TT0299m_.ttf
+Program/TT0300m_.ttf
+Program/TT0530m_.ttf
 Program/TTSPRITE.SPR
 Program/UIStrings.txt
 Program/UTH-ARZ.PIC
@@ -51112,6 +51143,7 @@ Program/WINGAME.PIC
 Program/wiseman3.pic
 Program/WORLBAK1.PIC
 Program/WORLDS.SPR
+Program/zlib.dll
 prompts.txt
 promptsX1.txt
 promptsX2.txt
@@ -51588,6 +51620,7 @@ src/.gitattributes
 src/.gitignore
 src/build.pl
 src/capturestackbacktrace.def
+src/card_id.h
 src/cardartlib/.gitattributes
 src/cardartlib/.gitignore
 src/cardartlib/CardArtLib.def
@@ -52052,13 +52085,20 @@ Title.pic
 Title1.pic
 Todpal.tr
 tools/audit_codebase.py
+tools/check-build-prereqs.sh
 tools/check-security-scanner-availability.sh
+tools/check-source-snapshot-parity.sh
 tools/create-cleanup-test-copy.sh
 tools/create-git-handoff-bundle.sh
 tools/create-patch-package.sh
 tools/create-security-scan-results-template.sh
 tools/list-branch-delta.sh
 tools/list-security-scan-targets.sh
+tools/patch-ai-decision-clamp.py
+tools/patch-ai-decision-fallback.py
+tools/patch-ai-raw-mana-snapshot.py
+tools/patch-magic-coinflip-default.py
+tools/patch-manalink-generic-damage-prevention-guard.py
 tools/print-manual-gameplay-baseline.sh
 tools/print-security-scan-baseline.sh
 tools/print-share-status.sh
@@ -52069,6 +52109,7 @@ tools/verify-crossover-mtg-state.sh
 tools/verify-final-share-gates.sh
 tools/verify-handoff-artifacts.sh
 tools/verify-handoff-readiness.sh
+tools/verify-install-tree.sh
 tools/verify-manual-gameplay-results.sh
 tools/verify-security-scan-results.sh
 tools/verify-share-readiness.sh

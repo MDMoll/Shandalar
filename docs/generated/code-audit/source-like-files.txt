@@ -236,6 +236,7 @@ Program/src/subtypes.h
 Shandalar help.bat
 src/build.pl
 src/capturestackbacktrace.def
+src/card_id.h
 src/cardartlib/CardArtLib.def
 src/cardartlib/CardArtLib.h
 src/cardartlib/Makefile
@@ -518,13 +519,20 @@ src/patches/patch_x_cost_artifacts.pl
 src/stypes.h
 src/subtypes.h
 tools/audit_codebase.py
+tools/check-build-prereqs.sh
 tools/check-security-scanner-availability.sh
+tools/check-source-snapshot-parity.sh
 tools/create-cleanup-test-copy.sh
 tools/create-git-handoff-bundle.sh
 tools/create-patch-package.sh
 tools/create-security-scan-results-template.sh
 tools/list-branch-delta.sh
 tools/list-security-scan-targets.sh
+tools/patch-ai-decision-clamp.py
+tools/patch-ai-decision-fallback.py
+tools/patch-ai-raw-mana-snapshot.py
+tools/patch-magic-coinflip-default.py
+tools/patch-manalink-generic-damage-prevention-guard.py
 tools/print-manual-gameplay-baseline.sh
 tools/print-security-scan-baseline.sh
 tools/print-share-status.sh
@@ -534,6 +542,7 @@ tools/verify-crossover-mtg-state.sh
 tools/verify-final-share-gates.sh
 tools/verify-handoff-artifacts.sh
 tools/verify-handoff-readiness.sh
+tools/verify-install-tree.sh
 tools/verify-manual-gameplay-results.sh
 tools/verify-security-scan-results.sh
 tools/verify-share-readiness.sh

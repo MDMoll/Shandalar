@@ -1,290 +1,4 @@
 path	line	category	match	text
-AGENTS.md	23	optimization-search	CreateDIBSection	| Do not casually replace the patched `Shandalar.exe` binaries with older copies. | Root and `Program/Shandalar.exe` contain documented patches at `0x1785b0` for the start-color `CreateDIBSection` crash, `0xa1a42` for the name-entry default buffer, `0xa1acd`/`0xa1af2` for the name-editor bypass and empty-name fallback, and movement hooks at `0x44398c`, `0x444a2b`, and `0x444aa7` using code cave `0
-AGENTS.md	24	optimization-search	CreateDIBSection	| Do not casually replace the active `FaceMaker.exe` binaries with the older no-resolution copies. | Root and `Program/FaceMaker.exe` are now no-resolution/Korath-derived plus an additional documented `CreateDIBSection` compatibility patch. |
-AGENTS.md	46	optimization-search	CreateDIBSection	| Root `Shandalar.exe` | `/Users/mdmoll/Shandalar/Shandalar` or `C:\Shandalar` in copied CrossOver bottle `MTG` | Current repo copy is patched for the start-color `CreateDIBSection` crash, default-name handling with name-editor bypass/fallback, and same-arrow map stop, hashes to `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b`, and has the same SHA-256 as `Program/Shandalar.exe`;
-AGENTS.md	78	optimization-search	glob	| Search docs/scripts for stale paths | `rg -n -i --glob '*.txt' --glob '*.md' --glob '*.cmd' --glob '*.bat' --glob '*.ini' --glob '*.pl' -e 'https?://|www\.|[A-Z]:\\|c:\\|d:\\' .` |
-AGENTS.md	80	optimization-search	sort	"| Count files by top directory | `find . -type f | sed 's#^./##' | awk 'BEGIN{FS=""/""} {print $1}' | sort | uniq -c | sort -nr | head -40` |"
-AGENTS.md	81	optimization-search	for (	"| Count extensions | `find . -type f | awk 'BEGIN{IGNORECASE=1} {n=$0; sub(/^.*\//,"""",n); if (n !~ /\./) ext=""[none]""; else {ext=n; sub(/^.*\./,"""",ext); ext=tolower(ext)}; count[ext]++} END{for (e in count) print count[e], e}' | sort -nr | head -40` |"
-archive/debug-evidence/assertFile.txt	3	optimization-search	CreateDIBSection	WM_CREATE CreateDIBSection
-archive/historical-docs/Readme13.txt	172	optimization-search	sort	sort preference.
-Classic/Manalink.csv	299	optimization-search	sort	294;Ashes to Ashes;1;Ashes to Ashes;020h;1;6;0;1;1;2;0;0;0;0;2;0;0;0;0;2;0;0;0;0;0;0;0;4;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0110h;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;211;211;Sorcery;Remove two target nonartifact creatures from the game. Ashes to Ashes deals 5 damage to you.;All rivers eventually run to the sea. My job is to sort o
-docs/architecture.md	47	optimization-search	CreateDIBSection	| Root `Shandalar.exe` and `Program/Shandalar.exe` | Same active SHA-256 in this checkout and copied `MTG`/`Shandalar-Win8-Test` installs: `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b`. Both include the `CreateDIBSection hSection = NULL` compatibility patch, the `mPlayer` default-name seed, the name-editor bypass/fallback, and the same-arrow movement-stop code cave. Current `M
-docs/bug-backlog.md	12	optimization-search	fopen	| 4 | B006 | `CardArtLib` `Cards.dat` loader lacks checks | high | medium | memory safety | `loadDat()` has unchecked `fopen`, `fread`, `malloc` | Add checks in source after build harness exists | malformed data harness | moderate |
-docs/bugs/create-dibsection-after-color.md	1	optimization-search	CreateDIBSection	# Assertion after Choosing Start Color: `WM_CREATE CreateDIBSection`
-docs/bugs/create-dibsection-after-color.md	10	optimization-search	CreateDIBSection	| Current active fix | Root `Shandalar.exe` and `Program/Shandalar.exe` were patched at file offset `0x1785b0` to pass `hSection = NULL` to `CreateDIBSection` instead of the game's file-mapping handle. Active root and `Program` `FaceMaker.exe` were also patched at file offset `0x5f40` for the same `hSection = NULL` change. Later Shandalar patches seed `mPlayer` at `0xa1a42`, bypass the fragile man
-docs/bugs/create-dibsection-after-color.md	11	optimization-search	CreateDIBSection	| Runtime testing | User testing reports the FaceMaker/no-resolution swap and the `MTG` app-default Win8/desktop/pagefile settings did not resolve the assertion, and the first Shandalar-only patch still reproduced for the user. After patching Shandalar locally, `Shandalar-Win8-Test` repo/C-drive paths and the older `MTG` C-drive path were launched; Wine `wscript` SendKeys drove Start New Game far
-docs/bugs/create-dibsection-after-color.md	94	optimization-search	CreateDIBSection	`ChangeDisplaySettingsA`, `CreateWindowExA`, and `CreateDIBSection`.
-docs/bugs/create-dibsection-after-color.md	110	optimization-search	CreateDIBSection	still uses `ChangeDisplaySettingsA`, `CreateDIBSection`,
-docs/bugs/create-dibsection-after-color.md	111	optimization-search	CreateDIBSection	`WM_CREATE CreateDIBSection`, and local support files under `Facemaker/`
-docs/bugs/create-dibsection-after-color.md	118	optimization-search	CreateDIBSection	FaceMaker helper was inspected for the same `CreateDIBSection` wrapper pattern.
-docs/bugs/create-dibsection-after-color.md	120	optimization-search	CreateDIBSection	contains the same `WM_CREATE CreateDIBSection` assertion text.
-docs/bugs/create-dibsection-after-color.md	137	optimization-search	CreateDIBSection	| `0x5f40` | `8b 55 04 51 57 50 8b 4d 10 51 52` | `6a 00 57 50 8b 4d 10 51 ff 75 04` | Replace `push hSection` with `push 0` while preserving the `CreateDIBSection` call argument order. |
-docs/bugs/create-dibsection-after-color.md	170	optimization-search	CreateDIBSection	`Unhandled exception`, page fault, or `WM_CREATE CreateDIBSection` assertion.
-docs/bugs/create-dibsection-after-color.md	178	optimization-search	CreateDIBSection	Static disassembly showed the assertion-side `CreateDIBSection` wrapper passes
-docs/bugs/create-dibsection-after-color.md	201	optimization-search	CreateDIBSection	| `0x1785b0` | `8b 55 04 51 57 50 8b 4d 10 51 52` | `6a 00 57 50 8b 4d 10 51 ff 75 04` | Replace `push hSection` with `push 0` while preserving the `CreateDIBSection` call argument order. |
-docs/bugs/create-dibsection-after-color.md	438	optimization-search	CreateDIBSection	WM_CREATE CreateDIBSection
-docs/bugs/create-dibsection-after-color.md	446	optimization-search	CreateDIBSection	WM_CREATE CreateDIBSection
-docs/bugs/create-dibsection-after-color.md	498	optimization-search	CreateDIBSection	## What `CreateDIBSection` Implies
-docs/bugs/create-dibsection-after-color.md	500	optimization-search	CreateDIBSection	`CreateDIBSection` is a Windows GDI API for creating a device-independent
-docs/bugs/create-dibsection-after-color.md	506	optimization-search	CreateDIBSection	Both `Program/Shandalar.exe` and `Program/Magic.exe` import `CreateDIBSection`
-docs/bugs/create-dibsection-after-color.md	534	optimization-search	CreateDIBSection	The nearby copy code does not itself call `CreateDIBSection`. It is likely a
-docs/bugs/create-dibsection-after-color.md	543	optimization-search	CreateDIBSection	| GDI DIB creation or DIB initialization failure. | Assertion message is `WM_CREATE CreateDIBSection`; `Shandalar.exe` imports `CreateDIBSection`; crash is in graphics-adjacent copy code; forcing `hSection = NULL` at the `CreateDIBSection` call gets past the crash point in CrossOver smoke testing. | Exact `sidlib/lib.c:315` source is absent; full gameplay is not yet manually verified. | High | Man
-docs/bugs/create-dibsection-after-color.md	569	optimization-search	CreateDIBSection	| `Program/Shandalar.exe` | Contains `WM_CREATE CreateDIBSection`, `D:\NewMagic\sources\sidlib\lib.c`, `CreateDIBSection`, assertion format strings, and other old source paths. |
-docs/bugs/create-dibsection-after-color.md	571	optimization-search	CreateDIBSection	| `Program/Magic.exe` and root `Magic.exe` | Contain assertion strings and `CreateDIBSection`, but the observed new-game campaign crash is reported for `Shandalar.exe`. |
-docs/bugs/create-dibsection-after-color.md	572	optimization-search	CreateDIBSection	| `Program/Image.dll`, `Program/Drawcardlib.dll` | Contain or import `CreateDIBSection`. |
-docs/bugs/create-dibsection-after-color.md	573	optimization-search	CreateDIBSection	| FaceMaker binaries | Also contain `WM_CREATE CreateDIBSection` and `sidlib` strings. |
-docs/bugs/create-dibsection-after-color.md	576	optimization-search	CreateDIBSection	`Program/Magic.exe` import `CreateDIBSection` and `BitBlt` from GDI.
-docs/bugs/create-dibsection-after-color.md	596	optimization-search	CreateDIBSection	| Patched `C:\Shandalar\Shandalar-nosection-test.exe` in fresh bottle `Shandalar-Win8-Test` plus Wine `wscript` SendKeys | Passed the original crash point; log shows `advfac64.pic`, `magic3.map`, `magic4.map`, and `begin.spr` loaded after DIB creation, with no `Unhandled exception` or `WM_CREATE CreateDIBSection` assertion. |
-docs/bugs/create-dibsection-after-color.md	600	optimization-search	CreateDIBSection	| Patched `C:\Shandalar\FaceMaker.exe` in existing bottle `MTG` | Direct helper UI rendered; `/tmp/facemaker-direct-after-patch-cx.log` shows no `Unhandled exception`, page fault, or `WM_CREATE CreateDIBSection` assertion. |
-docs/bugs/create-dibsection-after-color.md	606	optimization-search	CreateDIBSection	combination of `CreateDIBSection`, GDI imports, and a faulting memory copy with
-docs/bugs/create-dibsection-after-color.md	655	optimization-search	CreateDIBSection	| Use the patched active `FaceMaker.exe` / `Program/FaceMaker.exe` that passes `hSection = NULL` to its own `CreateDIBSection` wrapper. | Medium | Direct CrossOver helper startup rendered successfully. The S2 run also observed `FaceMaker-nores.exe /S`, so preserve and test both helper names rather than assuming only `FaceMaker.exe` matters. |
-docs/bugs/create-dibsection-after-color.md	680	optimization-search	CreateDIBSection	`CreateDIBSection` parameters and add logging/error handling only in a
-docs/cleanup-audit.md	90	optimization-search	sort	| Full duplicate hash report | `find . -type f -exec shasum -a 256 {} + | sort` |
-docs/crossover-macos.md	145	optimization-search	CreateDIBSection	`Program/Shandalar.exe` at file offset `0x1785b0` so `CreateDIBSection` receives
-docs/crossover-macos.md	148	optimization-search	CreateDIBSection	`CreateDIBSection` wrapper, file offset `0x5f40`. A later Shandalar follow-up
-docs/crossover-macos.md	201	optimization-search	CreateDIBSection	`WM_CREATE CreateDIBSection` assertion. The older practical `MTG` path also
-docs/crossover-macos.md	305	optimization-search	CreateDIBSection	| 2026-05-30 | 26.1.0.39808 | `MTG` | App-default `win8` | User retest | Still reproduced start-color issue | `WM_CREATE CreateDIBSection` class of failure | Same settings as above | App-default Win8 in a Windows 7 bottle is not sufficient evidence of a fix. |
-docs/crossover-macos.md	315	optimization-search	CreateDIBSection	| 2026-05-30 | 26.1.0.39808 | `Shandalar-Win8-Test` | Windows 8 / 32-bit | Patched `C:\Shandalar\Shandalar-nosection-test.exe` | Passed reported crash point | None in smoke log | Binary patch forces `hSection = NULL` for `CreateDIBSection` | `/tmp/shandalar-win8test-nosection-sendkeys-cx.log` showed post-color loads of `advfac64.pic`, `magic3.map`, `magic4.map`, and `begin.spr`. |
-docs/crossover-macos.md	319	optimization-search	CreateDIBSection	| 2026-05-30 | 26.1.0.39808 | `MTG` | App-default `win8` | Patched `C:\Shandalar\FaceMaker.exe` | Direct helper UI rendered | None in smoke log | Active FaceMaker patch forces `hSection = NULL` for its own `CreateDIBSection` wrapper | `/tmp/facemaker-direct-after-patch-cx.log` had no `Unhandled exception`, page fault, or `WM_CREATE CreateDIBSection` assertion. |
-docs/file-inventory.md	21	optimization-search	CreateDIBSection	`CreateDIBSection` wrapper; the `*-nores.exe` files remain preserved as
-docs/file-inventory.md	148	optimization-search	CreateDIBSection	| Active `Program/FaceMaker.exe` and root `FaceMaker.exe` are identical to each other but no longer identical to the no-resolution helper copies. | Active SHA-256: `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246`; no-resolution/Korath SHA-256: `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b`. The difference is the 11-byte `CreateDIBSection hSection = NULL` patch
-docs/gaps.md	16	optimization-search	CreateDIBSection	| Latest Wine log attachment | The current attachment set still only exposes the earlier CreateDIBSection investigation prompt/log plus unrelated text; no new Wine log dump was found under `/Users/mdmoll/.codex/attachments`. | If the issue persists after the combined Shandalar patch, attach or save the new log inside the repo or provide its exact path. |
-docs/generated/create-dibsection-investigation/address-analysis.md	53	optimization-search	CreateDIBSection	The nearby code does not itself call `CreateDIBSection`; it looks like a
-docs/generated/create-dibsection-investigation/address-analysis.md	63	optimization-search	CreateDIBSection	## CreateDIBSection Call-Site Patch
-docs/generated/create-dibsection-investigation/address-analysis.md	65	optimization-search	CreateDIBSection	A later pass found the assertion-side `CreateDIBSection` call in
-docs/generated/create-dibsection-investigation/address-analysis.md	67	optimization-search	CreateDIBSection	The original bytes set up a normal six-argument `CreateDIBSection` call while
-docs/generated/create-dibsection-investigation/address-analysis.md	78	optimization-search	CreateDIBSection	call dword ptr [CreateDIBSection]
-docs/generated/create-dibsection-investigation/address-analysis.md	90	optimization-search	CreateDIBSection	call dword ptr [CreateDIBSection]
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	4	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	8	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	15	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	22	optimization-search	CreateDIBSection	WM_CREATE CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	28	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	35	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	42	optimization-search	CreateDIBSection	WM_CREATE CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	48	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	50	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	57	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	77	optimization-search	CreateDIBSection	WM_CREATE CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	83	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	90	optimization-search	CreateDIBSection	WM_CREATE CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	96	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	104	optimization-search	CreateDIBSection	WM_CREATE CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	110	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	113	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	135	optimization-search	CreateDIBSection	WM_CREATE CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	141	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	143	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	150	optimization-search	CreateDIBSection	WM_CREATE CreateDIBSection
-docs/generated/create-dibsection-investigation/binary-strings-results.txt	156	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/create-dibsection-investigation/executable-imports.txt	7	optimization-search	CreateDIBSection	docs/generated/create-dibsection-investigation/magic-objdump-p.txt:          51  CreateDIBSection
-docs/generated/create-dibsection-investigation/executable-imports.txt	22	optimization-search	CreateDIBSection	docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:          36  CreateDIBSection
-docs/generated/create-dibsection-investigation/grep-results.txt	11	optimization-search	CreateDIBSection	./archive/debug-evidence/assertFile.txt:3:WM_CREATE CreateDIBSection
-docs/generated/create-dibsection-investigation/magic-objdump-p.txt	239	optimization-search	CreateDIBSection	51  CreateDIBSection
-docs/generated/create-dibsection-investigation/magic-objdump-p.txt	308	optimization-search	ReadFile	679  ReadFile
-docs/generated/create-dibsection-investigation/magic-objdump-p.txt	365	optimization-search	realloc	751  realloc
-docs/generated/create-dibsection-investigation/magic-objdump-p.txt	369	optimization-search	malloc	729  malloc
-docs/generated/create-dibsection-investigation/magic-objdump-p.txt	377	optimization-search	fopen	671  fopen
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	14118	optimization-search	sort	./magic_updater/Manalink.csv:14187:14185;Statute of Denial;1;Statute of Denial;|2|U|U;8h;2;3;1;2;0;2;0;0;0;1;0h;0;0;4;0;0;0;0;1003h;-1;-1;-1;-1;-1;-1;211;211;0;Instant;Counter target spell. If you control a |Sblue creature, draw a card, then discard a card.;Pyrotechnic activity of any sort is strictly prohibited. It is irrelevant that today is a holiday.;;;;;;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	16085	optimization-search	for (	./src/functions/engine.c:896:  for (i = COLOR_BLACK; i <= COLOR_WHITE; ++i)
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	16125	optimization-search	for (	./src/functions/engine.c:2044:  for (i = COLOR_BLACK; i <= COLOR_WHITE; ++i)
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	16264	optimization-search	for (	./src/functions/has_creature_type.c:1279:  for (i = 0; i <= (SUBTYPE_MAX_USED_PLANESWALKER_SUBTYPE & 0xFFF); ++i)
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	16908	optimization-search	for (	./src/functions/produce_mana.c:28:   *    On the other hand, we don't want to do for (i = 0; i < count; ++i) declare_mana_available_hex(player, COLOR_TEST_ANY_COLORED, 1) either, since           *
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	16967	optimization-search	for (	"./src/functions/produce_mana.c:373:				for (i = 0; i < cols[COLOR_WHITE]; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	16968	optimization-search	for (	"./src/functions/produce_mana.c:376:				for (i = 0; i < cols[COLOR_BLUE]; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	16969	optimization-search	for (	"./src/functions/produce_mana.c:379:				for (i = 0; i < cols[COLOR_BLACK]; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	16970	optimization-search	for (	"./src/functions/produce_mana.c:382:				for (i = 0; i < cols[COLOR_RED]; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	16971	optimization-search	for (	"./src/functions/produce_mana.c:385:				for (i = 0; i < cols[COLOR_GREEN]; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17363	optimization-search	for (	"./src/functions/functions.c:1067:			  for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17366	optimization-search	for (	"./src/functions/functions.c:1076:			  for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17486	optimization-search	for (	"./src/functions/functions.c:4077:			for (c = COLOR_BLACK; c <= COLOR_WHITE; ++c)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17487	optimization-search	for (	"./src/functions/functions.c:4106:			for (c = COLOR_BLACK; c <= COLOR_WHITE; ++c)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17488	optimization-search	for (	"./src/functions/functions.c:4134:			for (c = COLOR_BLACK; c <= COLOR_WHITE; ++c)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17489	optimization-search	for(	"./src/functions/functions.c:4190:		for(i=COLOR_BLACK; i<=COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17490	optimization-search	for(	"./src/functions/functions.c:4198:		for(i=COLOR_BLACK; i<=COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17491	optimization-search	for(	"./src/functions/functions.c:4205:		for(i=COLOR_BLACK; i<=COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17497	optimization-search	for(	"./src/functions/functions.c:4219:	for(i=COLOR_BLACK; i<=COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17503	optimization-search	for(	"./src/functions/functions.c:4239:		for(i=COLOR_BLACK; i<=COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17504	optimization-search	for(	"./src/functions/functions.c:4247:		for(i=COLOR_BLACK; i<=COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17505	optimization-search	for(	"./src/functions/functions.c:4254:		for(i=COLOR_BLACK; i<=COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17506	optimization-search	for(	"./src/functions/functions.c:4268:	for(i=COLOR_BLACK; i<=COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17528	optimization-search	for (	"./src/functions/functions.c:4351:				for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17539	optimization-search	for (	"./src/functions/functions.c:4376:				for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17555	optimization-search	for (	"./src/functions/functions.c:4471:				for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17600	optimization-search	for (	"./src/functions/functions.c:5001:				for (i = COLOR_BLACK; i <= COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17601	optimization-search	for (	"./src/functions/functions.c:5013:		for (i = COLOR_BLACK; i <= COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17602	optimization-search	for (	"./src/functions/functions.c:5025:		for (i = COLOR_BLACK; i <= COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17603	optimization-search	for (	"./src/functions/functions.c:5032:		for (i = COLOR_BLACK; i <= COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17829	optimization-search	for(	"./src/functions/functions.c:11905:	for(k=0; k<black; k++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17830	optimization-search	for(	"./src/functions/functions.c:11908:	for(k=0; k<blue; k++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17831	optimization-search	for(	"./src/functions/functions.c:11911:	for(k=0; k<green; k++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17832	optimization-search	for(	"./src/functions/functions.c:11914:	for(k=0; k<red; k++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	17833	optimization-search	for(	"./src/functions/functions.c:11917:	for(k=0; k<white; k++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	18334	optimization-search	sort	"./Manalink3/Program/PlayDeck/Porphyry Nodes - Dark deck.dck:8:;Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The black version keeps just 4 Vindicate to kill starting weenies and is enhanced by strong contour cards."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	21456	optimization-search	for (	"./src/cards/future_sight.c:244:				for (i = COLOR_COLORLESS; i <= COLOR_WHITE; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	21457	optimization-search	for (	"./src/cards/future_sight.c:256:	for (i = COLOR_COLORLESS; i <= COLOR_WHITE; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	22106	optimization-search	for (	"./src/cards/journey_into_nyx.c:3774:		for (clr = COLOR_BLACK; clr <= COLOR_WHITE; ++clr){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	23280	optimization-search	sort	"./Playdeck/Porphyry Nodes - Dark deck.dck:8:;Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The black version keeps just 4 Vindicate to kill starting weenies and is enhanced by strong contour cards."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	23313	optimization-search	for (	"./src/cards/planeshift.c:6:	for (i = COLOR_BLACK; i <= COLOR_WHITE; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	23490	optimization-search	for (	"./src/cards/unlimited.c:1436:			for (i = COLOR_COLORLESS; i <= COLOR_WHITE; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	23526	optimization-search	for (	"./src/cards/unlimited.c:3063:			for (i = COLOR_COLORLESS; i <= COLOR_WHITE; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	23975	optimization-search	sort	"./Manalink3/Program/PlayDeck/Ravagers of Lands Deck.dck:8:;A vicous deck that uses only creatures that destroy a land (or other permanents) as they come into play. It is a sort of ""triggered effect/kicker"" deck focused on lands destruction."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	24256	optimization-search	for (	"./src/cards/dragons_maze.c:3779:			for (i = COLOR_BLACK; i <= COLOR_WHITE; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	25848	optimization-search	sort	"./src/cards/m13.c:975:	 * as an unordered event instead of a proper trigger, the player can't sort the effects properly to fix it explicitly, either."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	26632	optimization-search	for (	"./src/cards/theros.c:4708:					for (clr = COLOR_BLACK; clr <= COLOR_WHITE; ++clr){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	27549	optimization-search	for (	"./src/cards/commander_2013.c:1003:		for (i = 0; i < times_triggered; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	28003	optimization-search	for(	"./src/cards/eventide.c:254:		for(i=0; i<black; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	28005	optimization-search	for(	"./src/cards/eventide.c:260:		for(i=0; i<blue; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	28007	optimization-search	for(	"./src/cards/eventide.c:266:		for(i=0; i<green; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	28009	optimization-search	for(	"./src/cards/eventide.c:272:		for(i=0; i<red; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	28011	optimization-search	for(	"./src/cards/eventide.c:278:		for(i=0; i<white; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	28038	optimization-search	for (	"./src/cards/eventide.c:552:		for (i = COLOR_BLACK; i <= COLOR_WHITE; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	28884	optimization-search	for (	"./src/cards/ice_age.c:193:		  for (i = COLOR_COLORLESS; i <= COLOR_WHITE; ++i)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	28885	optimization-search	for (	"./src/cards/ice_age.c:210:	  for (i = COLOR_COLORLESS; i <= COLOR_WHITE && snow > 0; ++i)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	28886	optimization-search	for (	"./src/cards/ice_age.c:231:		  for (i = COLOR_COLORLESS; i <= COLOR_WHITE; ++i)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	28938	optimization-search	for (	"./src/cards/ice_age.c:1524:		  for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	28939	optimization-search	for (	./src/cards/ice_age.c:1530:  for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col)
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	30049	optimization-search	for(	"./src/cards/betrayers_of_kamigawa.c:2417:		for(i=COLOR_BLACK; i<=COLOR_WHITE;i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	30052	optimization-search	for(	"./src/cards/betrayers_of_kamigawa.c:2425:		for(i=COLOR_BLACK; i<=COLOR_WHITE;i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	31910	optimization-search	for (	"./src/cards/fifth_dawn.c:24:		  for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	31957	optimization-search	for (	"./src/cards/fifth_dawn.c:1529:		for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	32676	optimization-search	sort	"./Playdeck/Ravagers of Lands Deck.dck:8:;A vicous deck that uses only creatures that destroy a land (or other permanents) as they come into play. It is a sort of ""triggered effect/kicker"" deck focused on lands destruction."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	34485	optimization-search	sort	"./Manalink3/Program/PlayDeck/Porphyry Nodes - Chaos deck.dck:8:;Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The red version relies on the usual combo of Allay & Shattering Pulse together with some best of red shoots."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	36117	optimization-search	sort	"./Playdeck/Porphyry Nodes - Chaos deck.dck:8:;Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The red version relies on the usual combo of Allay & Shattering Pulse together with some best of red shoots."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	36718	optimization-search	sort	"./Manalink3/Mods/PlayDeck/PlayDeck_Brewin/Porphyry Nodes - Chaos deck.dck:8:;Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The red version relies on the usual combo of Allay & Shattering Pulse together with some best of red shoots."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	48031	optimization-search	sort	"./Manalink3/Mods/PlayDeck/Degenerate/Orion79 themed/Porphyry Nodes - Chaos deck.dck:8:;Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The red version relies on the usual combo of Allay & Shattering Pulse together with some best of red shoots."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	48950	optimization-search	sort	"./Manalink3/Mods/PlayDeck/Degenerate/Orion79 themed/Ravagers of Lands Deck.dck:8:;A vicous deck that uses only creatures that destroy a land (or other permanents) as they come into play. It is a sort of ""triggered effect/kicker"" deck focused on lands destruction."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	49118	optimization-search	sort	"./Manalink3/Mods/PlayDeck/Degenerate/Orion79 themed/Porphyry Nodes - Dark deck.dck:8:;Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The black version keeps just 4 Vindicate to kill starting weenies and is enhanced by strong contour cards."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	49601	optimization-search	sort	"./Manalink3/Mods/PlayDeck/PlayDeck_Brewin/Ravagers of Lands Deck.dck:8:;A vicous deck that uses only creatures that destroy a land (or other permanents) as they come into play. It is a sort of ""triggered effect/kicker"" deck focused on lands destruction."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	50944	optimization-search	sort	"./Manalink3/Mods/PlayDeck/PlayDeck_Brewin/Porphyry Nodes - Dark deck.dck:8:;Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The black version keeps just 4 Vindicate to kill starting weenies and is enhanced by strong contour cards."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	53293	optimization-search	sort	"./Mods/PlayDeck/Degenerate/Orion79 themed/Ravagers of Lands Deck.dck:8:;A vicous deck that uses only creatures that destroy a land (or other permanents) as they come into play. It is a sort of ""triggered effect/kicker"" deck focused on lands destruction."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	53330	optimization-search	sort	"./Mods/PlayDeck/Degenerate/Orion79 themed/Porphyry Nodes - Chaos deck.dck:8:;Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The red version relies on the usual combo of Allay & Shattering Pulse together with some best of red shoots."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	53359	optimization-search	sort	"./Mods/PlayDeck/Degenerate/Orion79 themed/Porphyry Nodes - Dark deck.dck:8:;Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The black version keeps just 4 Vindicate to kill starting weenies and is enhanced by strong contour cards."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	57105	optimization-search	sort	./Program/magic_updater/Manalink.csv:14187:14185;Statute of Denial;1;Statute of Denial;|2|U|U;8h;2;3;1;2;0;2;0;0;0;1;0h;0;0;4;0;0;0;0;1003h;-1;-1;-1;-1;-1;-1;211;211;0;Instant;Counter target spell. If you control a |Sblue creature, draw a card, then discard a card.;Pyrotechnic activity of any sort is strictly prohibited. It is irrelevant that today is a holiday.;;;;;;0;0;0;0;0;0;0;0;0;0;0;0;0;0;
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	58038	optimization-search	for (	./Program/src/functions/engine.c:896:  for (i = COLOR_BLACK; i <= COLOR_WHITE; ++i)
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	58178	optimization-search	for (	./Program/src/functions/has_creature_type.c:1279:  for (i = 0; i <= (SUBTYPE_MAX_USED_PLANESWALKER_SUBTYPE & 0xFFF); ++i)
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	58696	optimization-search	for (	./Program/src/functions/produce_mana.c:28:   *    On the other hand, we don't want to do for (i = 0; i < count; ++i) declare_mana_available_hex(player, COLOR_TEST_ANY_COLORED, 1) either, since           *
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	58755	optimization-search	for (	"./Program/src/functions/produce_mana.c:373:				for (i = 0; i < cols[COLOR_WHITE]; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	58756	optimization-search	for (	"./Program/src/functions/produce_mana.c:376:				for (i = 0; i < cols[COLOR_BLUE]; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	58757	optimization-search	for (	"./Program/src/functions/produce_mana.c:379:				for (i = 0; i < cols[COLOR_BLACK]; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	58758	optimization-search	for (	"./Program/src/functions/produce_mana.c:382:				for (i = 0; i < cols[COLOR_RED]; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	58759	optimization-search	for (	"./Program/src/functions/produce_mana.c:385:				for (i = 0; i < cols[COLOR_GREEN]; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	58992	optimization-search	for (	"./Program/src/functions/functions.c:1022:			  for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	58995	optimization-search	for (	"./Program/src/functions/functions.c:1031:			  for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	59130	optimization-search	for (	"./Program/src/functions/functions.c:4062:				for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	59141	optimization-search	for (	"./Program/src/functions/functions.c:4087:				for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	59157	optimization-search	for (	"./Program/src/functions/functions.c:4182:				for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	59202	optimization-search	for (	"./Program/src/functions/functions.c:4721:				for (i = COLOR_BLACK; i <= COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	59203	optimization-search	for (	"./Program/src/functions/functions.c:4733:		for (i = COLOR_BLACK; i <= COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	59204	optimization-search	for (	"./Program/src/functions/functions.c:4745:		for (i = COLOR_BLACK; i <= COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	59205	optimization-search	for (	"./Program/src/functions/functions.c:4752:		for (i = COLOR_BLACK; i <= COLOR_WHITE; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	59431	optimization-search	for(	"./Program/src/functions/functions.c:11686:	for(k=0; k<black; k++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	59432	optimization-search	for(	"./Program/src/functions/functions.c:11689:	for(k=0; k<blue; k++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	59433	optimization-search	for(	"./Program/src/functions/functions.c:11692:	for(k=0; k<green; k++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	59434	optimization-search	for(	"./Program/src/functions/functions.c:11695:	for(k=0; k<red; k++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	59435	optimization-search	for(	"./Program/src/functions/functions.c:11698:	for(k=0; k<white; k++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	59696	optimization-search	sort	./Program/src/functions/abilities.c:35:  /* 1<<17: Intimidate/Fear.  Intimidate is evergreen, and Fear formerly so.  Combining them is acceptable since they have the same sort of effect and
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	61733	optimization-search	for (	"./Program/src/cards/future_sight.c:244:				for (i = COLOR_COLORLESS; i <= COLOR_WHITE; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	61734	optimization-search	for (	"./Program/src/cards/future_sight.c:256:	for (i = COLOR_COLORLESS; i <= COLOR_WHITE; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	62340	optimization-search	for (	"./Program/src/cards/journey_into_nyx.c:3777:		for (clr = COLOR_BLACK; clr <= COLOR_WHITE; ++clr){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	63604	optimization-search	for (	"./Program/src/cards/planeshift.c:6:	for (i = COLOR_BLACK; i <= COLOR_WHITE; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	63737	optimization-search	for (	"./Program/src/cards/unlimited.c:1423:			for (i = COLOR_COLORLESS; i <= COLOR_WHITE; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	63772	optimization-search	for (	"./Program/src/cards/unlimited.c:2976:			for (i = COLOR_COLORLESS; i <= COLOR_WHITE; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	63781	optimization-search	for (	"./Program/src/cards/unlimited.c:3654:			for (i = COLOR_COLORLESS; i <= COLOR_WHITE; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	64204	optimization-search	for (	"./Program/src/cards/dragons_maze.c:3696:			for (i = COLOR_BLACK; i <= COLOR_WHITE; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	65409	optimization-search	for (	"./Program/src/cards/ice_age.c:193:		  for (i = COLOR_COLORLESS; i <= COLOR_WHITE; ++i)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	65410	optimization-search	for (	"./Program/src/cards/ice_age.c:210:	  for (i = COLOR_COLORLESS; i <= COLOR_WHITE && snow > 0; ++i)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	65411	optimization-search	for (	"./Program/src/cards/ice_age.c:231:		  for (i = COLOR_COLORLESS; i <= COLOR_WHITE; ++i)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	65463	optimization-search	for (	"./Program/src/cards/ice_age.c:1513:		  for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	65464	optimization-search	for (	./Program/src/cards/ice_age.c:1519:  for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col)
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	65702	optimization-search	sort	"./Program/src/cards/m13.c:970:	 * as an unordered event instead of a proper trigger, the player can't sort the effects properly to fix it explicitly, either."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	66332	optimization-search	for(	"./Program/src/cards/odissey.c:2002:						for(k=selected; k<tutored; k++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	67638	optimization-search	for (	"./Program/src/cards/fifth_dawn.c:24:		  for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col)"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	67685	optimization-search	for (	"./Program/src/cards/fifth_dawn.c:1521:		for (col = COLOR_BLACK; col <= COLOR_WHITE; ++col){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	68681	optimization-search	for (	"./Program/src/cards/theros.c:4676:					for (clr = COLOR_BLACK; clr <= COLOR_WHITE; ++clr){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	69698	optimization-search	for(	"./Program/src/cards/eventide.c:247:		for(i=0; i<black; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	69700	optimization-search	for(	"./Program/src/cards/eventide.c:253:		for(i=0; i<blue; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	69702	optimization-search	for(	"./Program/src/cards/eventide.c:259:		for(i=0; i<green; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	69704	optimization-search	for(	"./Program/src/cards/eventide.c:265:		for(i=0; i<red; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	69706	optimization-search	for(	"./Program/src/cards/eventide.c:271:		for(i=0; i<white; i++){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	69733	optimization-search	for (	"./Program/src/cards/eventide.c:545:		for (i = COLOR_BLACK; i <= COLOR_WHITE; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	70017	optimization-search	for (	"./Program/src/cards/commander_2013.c:1020:		for (i = 0; i < times_triggered; ++i){"
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	72551	optimization-search	sort	"./Mods/PlayDeck/PlayDeck_Brewin/Porphyry Nodes - Dark deck.dck:8:;Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The black version keeps just 4 Vindicate to kill starting weenies and is enhanced by strong contour cards."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	73083	optimization-search	sort	"./Mods/PlayDeck/PlayDeck_Brewin/Ravagers of Lands Deck.dck:8:;A vicous deck that uses only creatures that destroy a land (or other permanents) as they come into play. It is a sort of ""triggered effect/kicker"" deck focused on lands destruction."
-docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt	73914	optimization-search	sort	"./Mods/PlayDeck/PlayDeck_Brewin/Porphyry Nodes - Chaos deck.dck:8:;Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The red version relies on the usual combo of Allay & Shattering Pulse together with some best of red shoots."
-docs/generated/create-dibsection-investigation/path-reference-search.txt	1684	optimization-search	CreateDIBSection	./docs/generated/create-dibsection-investigation/executable-imports.txt:7:docs/generated/create-dibsection-investigation/magic-objdump-p.txt:          51  CreateDIBSection
-docs/generated/create-dibsection-investigation/path-reference-search.txt	1699	optimization-search	CreateDIBSection	./docs/generated/create-dibsection-investigation/executable-imports.txt:22:docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt:          36  CreateDIBSection
-docs/generated/create-dibsection-investigation/path-reference-search.txt	8673	optimization-search	fopen	"./Program/src/drawcardlib/config.c:865:  if (!(rarity_dat = fopen(""rarity.dat"", ""rb"")))"
-docs/generated/create-dibsection-investigation/path-reference-search.txt	8692	optimization-search	fopen	"./Program/src/drawcardlib/config.c:1164:  if (!(watermarks_csv = fopen(""watermarks.csv"", ""r"")))"
-docs/generated/create-dibsection-investigation/path-reference-search.txt	8700	optimization-search	fopen	"./Program/src/drawcardlib/config.c:1245:  if (!(rarity_dat = fopen(""rarity.dat"", ""rb"")))"
-docs/generated/create-dibsection-investigation/path-reference-search.txt	8744	optimization-search	fopen	"./Program/src/cards/draft.c:40:	if( !( f = fopen(""rarity.dat"", ""rb"") ) ){"
-docs/generated/create-dibsection-investigation/path-reference-search.txt	8824	optimization-search	fopen	"./src/cards/draft.c:40:	if( !( f = fopen(""rarity.dat"", ""rb"") ) ){"
-docs/generated/create-dibsection-investigation/path-reference-search.txt	10301	optimization-search	fopen	"./src/drawcardlib/config.c:961:  if (!(rarity_dat = fopen(""rarity.dat"", ""rb"")))"
-docs/generated/create-dibsection-investigation/path-reference-search.txt	10344	optimization-search	fopen	"./src/drawcardlib/config.c:1322:  if (!(watermarks_csv = fopen(""watermarks.csv"", ""r"")))"
-docs/generated/create-dibsection-investigation/path-reference-search.txt	10352	optimization-search	fopen	"./src/drawcardlib/config.c:1437:  if (!(rarity_dat = fopen(""rarity.dat"", ""rb"")))"
-docs/generated/create-dibsection-investigation/path-reference-search.txt	21415	optimization-search	sort	./docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt:14114:./magic_updater/Manalink.csv:14187:14185;Statute of Denial;1;Statute of Denial;|2|U|U;8h;2;3;1;2;0;2;0;0;0;1;0h;0;0;4;0;0;0;0;1003h;-1;-1;-1;-1;-1;-1;211;211;0;Instant;Counter target spell. If you control a |Sblue creature, draw a card, then discard a card.;Pyrotechnic activity of any sort is strictly prohibited
-docs/generated/create-dibsection-investigation/path-reference-search.txt	30442	optimization-search	sort	./docs/generated/create-dibsection-investigation/new-game-color-flow-search.txt:57100:./Program/magic_updater/Manalink.csv:14187:14185;Statute of Denial;1;Statute of Denial;|2|U|U;8h;2;3;1;2;0;2;0;0;0;1;0h;0;0;4;0;0;0;0;1003h;-1;-1;-1;-1;-1;-1;211;211;0;Instant;Counter target spell. If you control a |Sblue creature, draw a card, then discard a card.;Pyrotechnic activity of any sort is strictly pr
-docs/generated/create-dibsection-investigation/procmon-plan.md	19	optimization-search	CreateFile	CreateFile
-docs/generated/create-dibsection-investigation/runtime-test-notes.md	86	optimization-search	CreateDIBSection	| `/tmp/shandalar-win8test-nosection-sendkeys-cx.log` | `NtGdiCreateDIBSection format (1024,-800)`, then `advfac64.pic`, `magic3.map`, `magic4.map`, and `begin.spr`; no `Unhandled exception`, page fault, or `WM_CREATE CreateDIBSection` assertion. |
-docs/generated/create-dibsection-investigation/runtime-test-notes.md	87	optimization-search	CreateDIBSection	| `/tmp/shandalar-repo-patched-sendkeys-cx.log` | Same post-color resources loaded from `Y:\Shandalar\Shandalar`; no `Unhandled exception`, page fault, or `WM_CREATE CreateDIBSection` assertion. |
-docs/generated/create-dibsection-investigation/runtime-test-notes.md	88	optimization-search	CreateDIBSection	| `/tmp/shandalar-win8test-cdrive-patched-sendkeys-cx.log` | Same post-color resources loaded from `C:\Shandalar`; no `Unhandled exception`, page fault, or `WM_CREATE CreateDIBSection` assertion. |
-docs/generated/create-dibsection-investigation/runtime-test-notes.md	89	optimization-search	CreateDIBSection	| `/tmp/shandalar-mtg-cdrive-patched-sendkeys-cx.log` | Same post-color resources loaded from `C:\Shandalar` in the older `MTG` bottle; no `Unhandled exception`, page fault, or `WM_CREATE CreateDIBSection` assertion. |
-docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt	87	optimization-search	ReadFile	466  ReadFile
-docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt	257	optimization-search	SetPixel	360  SetPixel
-docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt	261	optimization-search	GetPixel	242  GetPixel
-docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt	296	optimization-search	CreateDIBSection	36  CreateDIBSection
-docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt	428	optimization-search	qsort	671  qsort
-docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt	457	optimization-search	malloc	652  malloc
-docs/generated/create-dibsection-investigation/shandalar-objdump-p.txt	476	optimization-search	fopen	594  fopen
-docs/generated/create-dibsection-investigation/wine-debug-notes.md	61	optimization-search	CreateDIBSection	CreateDIBSection
-docs/generated/manual-gameplay/s2-map-2026-05-31.md	47	optimization-search	CreateDIBSection	`WM_CREATE CreateDIBSection` assertion was seen during the run.
-docs/generated/README.md	11	optimization-search	CreateDIBSection	| `create-dibsection-investigation/` | Evidence gathered while diagnosing the start-color `WM_CREATE CreateDIBSection` assertion and related runtime layout questions. |
-docs/magic-vs-shandalar-runtime.md	3	optimization-search	CreateDIBSection	This page compares the observed `CreateDIBSection` start-color bug with the two
-docs/magic-vs-shandalar-runtime.md	10	optimization-search	CreateDIBSection	| `Program/Shandalar.exe` | User-reported crash occurs here; binary contains `WM_CREATE CreateDIBSection`, `D:\NewMagic\sources\sidlib\lib.c`, and imports `CreateDIBSection`; now patched at `0x1785b0` to pass `hSection = NULL`, at `0xa1a42`/`0xa1acd`/`0xa1af2` for default-name seed, name-editor bypass, and empty-name fallback, and with same-arrow movement hooks around `0x444aa7`. | First-class aff
-docs/magic-vs-shandalar-runtime.md	12	optimization-search	CreateDIBSection	| Root `FaceMaker.exe` | No-resolution/Korath-derived helper, now additionally patched at file offset `0x5f40` so its own `CreateDIBSection` wrapper passes `hSection = NULL`; direct CrossOver `MTG` launch rendered its UI with no unhandled exception/page fault/assertion in the log. | Strongly relevant to character creation, but direct launch does not prove the Shandalar-spawned path. |
-docs/magic-vs-shandalar-runtime.md	13	optimization-search	CreateDIBSection	| `Facemaker/Facemaker.exe` | Different older-looking helper build by hash; still imports/contains `CreateDIBSection`, `ChangeDisplaySettingsA`, and `WM_CREATE CreateDIBSection`; uses its own `Facemaker/` support-file layout. | Comparison evidence only, not the preferred active helper swap. |
-docs/magic-vs-shandalar-runtime.md	15	optimization-search	CreateDIBSection	| `Program/Magic.exe` | Imports `CreateDIBSection` and contains assertion/source-path strings, but does not run the campaign new-game color flow. | Related GDI/assertion code exists, but this exact bug is not proven to affect it. |
-docs/magic-vs-shandalar-runtime.md	17	optimization-search	CreateDIBSection	| `Program/Image.dll`, `Program/Drawcardlib.dll` | Contain or import `CreateDIBSection`. | Shared graphics helpers may matter, but the reported fault module is `shandalar`. |
-docs/magic-vs-shandalar-runtime.md	23	optimization-search	CreateDIBSection	| GDI bitmap creation | Both `Program/Shandalar.exe` and `Program/Magic.exe` import `CreateDIBSection`. |
-docs/magic-vs-shandalar-runtime.md	33	optimization-search	CreateDIBSection	| FaceMaker handoff | `Shandalar.exe` contains a `\Facemaker.exe` string, and FaceMaker binaries contain the same `WM_CREATE CreateDIBSection` assertion text. |
-docs/magic-vs-shandalar-runtime.md	35	optimization-search	CreateDIBSection	| `WM_CREATE CreateDIBSection` string | Found directly in `Program/Shandalar.exe`; not shown in the `Program/Magic.exe` string excerpt generated in this pass. |
-docs/manual-gameplay-verification.md	99	optimization-search	CreateDIBSection	| S2 | Start a new game with white. | Character creation reaches the map with default `Player`; no `CreateDIBSection` assertion. | Pass: visible CrossOver `MTG` run launched `C:\Shandalar\Shandalar.exe`, Wine SendKeys selected Start New Game/default first color, and the game reached the adventure map with no visible `CreateDIBSection` assertion; cropped screenshot [generated/manual-gameplay/s2-map
-docs/memory-safety-audit.md	12	optimization-search	fopen	| MS001 | `src/cardartlib/src/main.cpp` | `loadDat()` | unchecked file, read, allocation, and index assumptions | `fopen`, `fread`, `malloc`, and `idToName[id]` are used without local validation | high | medium | Add checked reads, allocation checks, and id bounds | malformed `Cards.dat` harness after build proof |
-docs/memory-safety-audit.md	16	optimization-search	fopen	"| MS005 | `src/cards/draft.c` | `load_custom_set()` | unbounded input parse | `fscanf(file, ""%[^\n]"", buffer)` and `%[0-9]` with fixed buffers | medium | high | Use `fgets` and bounded parsing; check `fopen` | malformed `DraftSets` copy |"
-docs/memory-safety-audit.md	20	optimization-search	CreateDIBSection	| MS009 | `Shandalar.exe` / `FaceMaker.exe` | `CreateDIBSection` wrappers | binary-patched crash path | documented `hSection = NULL` patches exist | high | high | Do not change without binary rollback/test plan | `xxd` patch checks plus manual start-color tests |
-docs/memory-safety-audit.md	27	optimization-search	CreateDIBSection	`CreateDIBSection` family because patch bytes and smoke evidence are already
-docs/patch-risk-register.md	13	optimization-search	CreateDIBSection	| Shandalar DIB `hSection = NULL` | `Shandalar.exe`; `Program/Shandalar.exe` | `0x1785b0` file offset | Avoid start-color `CreateDIBSection` crash path | documented bytes and hashes in AGENTS/bugs docs | high | `xxd -g1 -l 32 -s $((0x1785b0)) Shandalar.exe Program/Shandalar.exe` |
-docs/README.md	50	optimization-search	CreateDIBSection	| [bugs/create-dibsection-after-color.md](bugs/create-dibsection-after-color.md) | Start-color `CreateDIBSection` assertion and patch evidence. |
-docs/reorganization.md	78	optimization-search	sort	| `find archive -maxdepth 2 -type f | sort` | Lists exactly the archived files and `archive/README.md`. |
-docs/running.md	13	optimization-search	CreateDIBSection	| `Shandalar.exe` | Shandalar adventure shell and duel entry path. | repo root or `C:\Shandalar` in copied bottle | Root DLLs, `Shandalar.ini`, `Cards.dat`, `DBInfo.dat`, `Rarity.dat`, art/sound/resource folders, root `Magic.exe`. | Present, PE32 i386, and patched for the start-color `CreateDIBSection` crash plus default-name seed/bypass/fallback. In `Shandalar-Win8-Test`, the hSection patch passe
-docs/running.md	148	optimization-search	CreateDIBSection	| `xxd -g1 -l 32 -s $((0x5f40)) FaceMaker.exe Program/FaceMaker.exe` | repo root | Both patched dumps begin `6a 00 57 50 8b 4d 10 51 ff 75 04`, forcing FaceMaker's `CreateDIBSection` wrapper to receive `hSection = NULL`. |
-docs/running.md	153	optimization-search	CreateDIBSection	| `xxd -g1 -l 32 -s $((0x1785b0)) Shandalar.exe` and `Program/Shandalar.exe` | repo root | Both patched dumps begin `6a 00 57 50 8b 4d 10 51 ff 75 04`, forcing `CreateDIBSection` to receive `hSection = NULL`. |
-docs/running.md	165	optimization-search	CreateDIBSection	"| `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir ""C:\Shandalar"" --cx-log /tmp/facemaker-direct-after-patch-cx.log --debugmsg +seh,+bitmap,+process,+file ""C:\Shandalar\FaceMaker.exe""` | repo root | Direct patched FaceMaker startup rendered its UI; log had no `Unhandled exception`, page fault, or `WM_CREATE CreateDIBSection` assertion. |"
-docs/runtime-testing-policy.md	31	optimization-search	CreateDIBSection	| Known crash path | One targeted reproduction attempt, such as start new game, choose starting color, and observe the `WM_CREATE CreateDIBSection` assertion/crash. |
-docs/runtime-testing-policy.md	115	optimization-search	CreateDIBSection	"grep -iE ""CreateDIBSection|DIB|bitmap|gdi|seh|exception|page fault|loaddll|NAME NOT FOUND|PATH NOT FOUND|D:\\\\NewMagic"" \"
-docs/runtime-testing-policy.md	149	optimization-search	CreateDIBSection	## Known CreateDIBSection Crash Context
-docs/runtime-testing-policy.md	157	optimization-search	CreateDIBSection	WM_CREATE CreateDIBSection
-docs/runtime-testing-policy.md	176	optimization-search	CreateDIBSection	| `WM_CREATE CreateDIBSection` | The useful investigation target. |
-docs/runtime-testing-policy.md	187	optimization-search	CreateDIBSection	2. Search for `sldib`, `CreateDIBSection`, `WM_CREATE`, `DIBSection`,
-docs/runtime-testing-policy.md	190	optimization-search	CreateDIBSection	4. Inspect imports for `GDI32.dll`, `CreateDIBSection`, `USER32.dll`,
-docs/runtime-testing-policy.md	202	optimization-search	CreateDIBSection	"rg -n -i ""sldib|CreateDIBSection|WM_CREATE|DIBSection|Assertion Error|Line->|File->|CreateDIB"" ."
-docs/runtime-testing-policy.md	205	optimization-search	CreateDIBSection	"objdump -p Program/Shandalar.exe 2>/dev/null | rg -i ""DLL Name|CreateDIBSection|GDI32|USER32|DDRAW|DirectDraw"" -C 3"
-docs/runtime-testing-policy.md	206	optimization-search	CreateDIBSection	"objdump -p Program/Magic.exe 2>/dev/null | rg -i ""DLL Name|CreateDIBSection|GDI32|USER32|DDRAW|DirectDraw"" -C 3"
-docs/runtime-testing-policy.md	230	optimization-search	CreateFile	- CreateFile
-docs/stale-references.md	11	optimization-search	glob	rg -n -i --glob '*.txt' --glob '*.md' --glob '*.cmd' --glob '*.bat' --glob '*.ini' --glob '*.pl' --glob '*.url' -e 'https?://|ftp://|www\.|[A-Z]:\\|c:\\|d:\\|e:\\|manalink\.org' .
-docs/troubleshooting.md	42	optimization-search	CreateDIBSection	## Assertion after choosing start color: `WM_CREATE CreateDIBSection`
-docs/troubleshooting.md	50	optimization-search	CreateDIBSection	| Choosing a starting color triggers an assertion. | Reported message includes `WM_CREATE CreateDIBSection`. |
-docs/troubleshooting.md	90	optimization-search	CreateDIBSection	| Use the patched `Shandalar.exe` binaries in this checkout. | Root `Shandalar.exe` and `Program/Shandalar.exe` now pass `hSection = NULL` to `CreateDIBSection`; CrossOver smoke testing got past the reported crash point. |
-docs/troubleshooting.md	93	optimization-search	CreateDIBSection	| Use the patched active `FaceMaker.exe` binaries in this checkout. | Root `FaceMaker.exe` and `Program/FaceMaker.exe` now pass `hSection = NULL` to their own `CreateDIBSection` wrapper; direct CrossOver FaceMaker startup rendered successfully. |
-docs/troubleshooting.md	115	optimization-search	CreateDIBSection	| `cmp -l FaceMaker-nores.exe FaceMaker.exe` | Active FaceMaker differs from the no-resolution/Korath helper at 11 byte positions, matching the `CreateDIBSection hSection = NULL` patch. |
-docs/troubleshooting.md	117	optimization-search	CreateDIBSection	| `lldb` disassembly around `FaceMaker-Original.exe` / `FaceMaker-nores.exe` changed offsets | The Korath/no-resolution helper changes a resolution-argument branch, forces a 1024x768 fallback path, and stubs the `ChangeDisplaySettingsA` wrapper to return immediately. It does not remove `CreateDIBSection` or the GDI drawing path. |
-docs/troubleshooting.md	132	optimization-search	CreateDIBSection	| Direct logged launch of patched `C:\Shandalar\FaceMaker.exe` in bottle `MTG` | Rendered FaceMaker UI; `/tmp/facemaker-direct-after-patch-cx.log` had no `Unhandled exception`, page fault, or `WM_CREATE CreateDIBSection` assertion. |
-docs/verified-on-this-machine.md	17	optimization-search	CreateDIBSection	| `xxd -g1 -l 32 -s $((0x5f40)) FaceMaker.exe Program/FaceMaker.exe` | Both active FaceMaker dumps begin `6a 00 57 50 8b 4d 10 51 ff 75 04`, forcing their `CreateDIBSection` wrapper to receive `hSection = NULL`. |
-docs/verified-on-this-machine.md	21	optimization-search	CreateDIBSection	| `xxd -g1 -l 32 -s $((0x1785b0)) Shandalar.exe` and `Program/Shandalar.exe` | Both dumps begin `6a 00 57 50 8b 4d 10 51 ff 75 04`, forcing the Shandalar `CreateDIBSection` wrapper to receive `hSection = NULL`. |
-docs/verified-on-this-machine.md	36	optimization-search	CreateDIBSection	| Direct launch of patched `C:\Shandalar\FaceMaker.exe` | Rendered the FaceMaker UI in bottle `MTG`; `/tmp/facemaker-direct-after-patch-cx.log` showed no unhandled exception, page fault, or `WM_CREATE CreateDIBSection` assertion. |
-docs/verified-on-this-machine.md	38	optimization-search	CreateDIBSection	| Visible `MTG` default/first start-color run via Wine SendKeys | Reached the adventure map without a visible `WM_CREATE CreateDIBSection` assertion; S2 is recorded in [manual-gameplay-verification.md](manual-gameplay-verification.md), with cropped evidence at [generated/manual-gameplay/s2-map-2026-05-31.png](generated/manual-gameplay/s2-map-2026-05-31.png) and notes in [generated/manual-gameplay/
-docs/verified-on-this-machine.md	44	optimization-search	CreateDIBSection	| Binary patches applied to root and `Program/` `Shandalar.exe` | File offset `0x1785b0` passes `hSection = NULL` to `CreateDIBSection`; `0xa1a42` seeds `mPlayer`; `0xa1acd` bypasses the fragile name editor; `0xa1af2` jumps to a fallback guard at `0x465170`/file offset `0x64570`; movement hooks at `0x44398c`, `0x444a2b`, and `0x444aa7` use code cave `0x46502d` and flag `0x583a2c` for same-arrow st
-Editor/BinaryCards.csv	299	optimization-search	sort	294;Ashes to Ashes;1;Ashes to Ashes;020h;1;6;0;1;1;2;0;0;0;0;2;0;0;0;0;2;0;0;0;0;0;0;0;4;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0110h;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;211;211;Sorcery;Remove two target nonartifact creatures from the game. Ashes to Ashes deals 5 damage to you.;All rivers eventually run to the sea. My job is to sort o
 magic_updater/Manalink.csv	296	optimization-search	sort	294;Ashes to Ashes;1;Ashes to Ashes;|1|B|B;20h;1;6;1;1;2;0;0;0;0;2;0h;0;0;0;0;0;0;0;1008h;-1;-1;-1;-1;-1;-1;211;211;0;Sorcery;Exile two target nonartifact creatures. Ashes to Ashes deals 5 damage to you.;All rivers eventually run to the sea. My job is to sort out who goes first.\nMaeveen O'Donagh, Memoirs of a Soldier;;;;;;0;0;0;0;2;0;0;0;0;0;0;0;4;0;0;0;0;0;0;0;0;0;0;0;80;0;0;0;0;0;0;0;0;0;0;0
 magic_updater/Manalink.csv	2490	optimization-search	sort	2488;Giant Mantis;1;Giant Mantis;|3|G;8h;5;7;1;3;0;0;1;0;0;0;0h;2;4;0;0;0;0;0;1001h;61h;-1;-1;-1;-1;-1;214;211;0;Creature  Insect;Reach (This creature can block creatures with flying.);I hate insects of every sort. The only mercy is that they are generally small.\nMwani, Mtenda goatherd;;;;;;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;2;4;50;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;
 magic_updater/Manalink.csv	4523	optimization-search	sort	4521;Liability;1;Liability;|1|B|B;8h;1;2;2;1;2;0;0;0;0;1;0h;0;0;0;0;0;0;0;1002h;-1;-1;-1;-1;-1;-1;211;211;0;Enchantment;Whenever a nontoken permanent is put into a player's graveyard from the battlefield, that player loses 1 life.;Gerrard realized that the helpless woman they'd rescued from Rath was nothing of the sort.;;;;;;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;40;0;0;0;0;0;0;0;0;0;0;0;
@@ -303,120 +17,28 @@ magic_updater/xml-to-csv.pl	2699	optimization-search	sort	foreach my $k (sort ke
 magic_updater/xml-to-csv.pl	2738	optimization-search	sort	foreach my $k (sort keys %dfc_skipped)
 magic_updater/xml-to-csv.pl	2769	optimization-search	while (	CTALL_LOOP: while (my $row = $csv->getline($ctall_in))
 magic_updater/xml-to-csv.pl	2847	optimization-search	sort	foreach my $k (sort keys %add_ct)
-Manalink.csv	299	optimization-search	sort	294;Ashes to Ashes;1;Ashes to Ashes;020h;1;6;0;1;1;2;0;0;0;0;2;0;0;0;0;2;0;0;0;0;0;0;0;4;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0110h;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;211;211;Sorcery;Remove two target nonartifact creatures from the game. Ashes to Ashes deals 5 damage to you.;All rivers eventually run to the sea. My job is to sort o
-Manalink3/Manalink_Launcher.cmd	713	optimization-search	sort	"DIR ""%modSelect%"" /AD-S /B /ON 1>""%modTmp%\sort.tmp"" 2>NUL"
-Manalink3/Manalink_Launcher.cmd	716	optimization-search	sort	"IF NOT EXIST ""%modSelect%\%%~nB\"" %PC% ""%%~nB\n"">>""%modTmp%\sort.tmp"""
-Manalink3/Manalink_Launcher.cmd	719	optimization-search	sort	"FOR /F ""usebackq tokens=*"" %%A IN (`SORT ""%modTmp%\sort.tmp""`) DO ("
-Manalink3/Manalink_Launcher.cmd	723	optimization-search	sort	"DEL /F /Q ""%modTmp%\sort.tmp"" >NUL 2>&1"
-Manalink3/Mods/PlayDeck/Degenerate/Orion79 themed/Ally Deck 2.dck	8	optimization-search	sort	";Composed by Allies, this deck uses a sort of ""comes into play"" effect: more Allies in play, greater is the effect. This version provides powerful creatures and is enriched with Doubling Season and Contagion Engine. Capsize is not so useful here."
-Manalink3/Mods/PlayDeck/Degenerate/Orion79 themed/Ally Deck.dck	8	optimization-search	sort	";Composed by allies, this deck uses a sort of ""comes into play"" effect at cascade level: more allies in play, greater is the effect. Capsize is a ""must"" in this deck, since it allows to constantly recall and re-play allies (especially the ones WITHOUT +1/+1 counters) magnifying their effect."
-Manalink3/Mods/PlayDeck/Degenerate/Orion79 themed/Beasts Deck - Spiritmonger.dck	8	optimization-search	sort	;This version of the Beasts deck is a sort of tribute to the mighty Spiritmonger, probably the most powerful of all beasts. Also, this deck uses Guardian Beast to make Artifact Lands invulnerable, while Ravenous Baloth is a sort of universal Diamon Valley that nicely interacts especially with Protean Hulk or Blastoderm (before that it dies).
-Manalink3/Mods/PlayDeck/Degenerate/Orion79 themed/Berserkers Deck.dck	8	optimization-search	sort	";Except the Areathi one, the Berserkers Deck includes all creatures that has a sort of affinity with ""Haste"". Maybe the only true weakness of this deck is that included creatures don't interact very well together since they rarely may gain advantage from each other's ability."
-Manalink3/Mods/PlayDeck/Degenerate/Orion79 themed/Porphyry Nodes - Chaos deck.dck	8	optimization-search	sort	";Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The red version relies on the usual combo of Allay & Shattering Pulse together with some best of red shoots."
-Manalink3/Mods/PlayDeck/Degenerate/Orion79 themed/Porphyry Nodes - Dark deck.dck	8	optimization-search	sort	";Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The black version keeps just 4 Vindicate to kill starting weenies and is enhanced by strong contour cards."
-Manalink3/Mods/PlayDeck/Degenerate/Orion79 themed/Ravagers of Lands Deck.dck	8	optimization-search	sort	";A vicous deck that uses only creatures that destroy a land (or other permanents) as they come into play. It is a sort of ""triggered effect/kicker"" deck focused on lands destruction."
-Manalink3/Mods/PlayDeck/Degenerate/Orion79 themed/Triggered Effect Deck 1.dck	8	optimization-search	sort	";A curious deck that uses Capsize in combination with creatures that bring some advantage when each of them ""comes into play"". They become a sort of expensive buyback (and some of them can't be used because are more expensive than permanents with the same effect), but are very helpful too."
-Manalink3/Mods/PlayDeck/Degenerate/Vanguard Avatar/Linked Avatar Deck - VA.dck	8	optimization-search	sort	;This deck uses a sort of combo with Serra Avatar and Wall of Reverence and/or Noble Purpose. The Avatar will grow bigger and bigger together with an outstandin number of life points. It only fears cards that remove creatures from the game.
-Manalink3/Mods/PlayDeck/Degenerate/Vanguard Avatar/Linked Avatar Deck.dck	8	optimization-search	sort	;This deck uses a sort of combo with Serra Avatar and Wall of Reverence and/or Noble Purpose. The Avatar will grow bigger and bigger together with an outstandin number of life points. It only fears cards that remove creatures from the game.
-Manalink3/Mods/PlayDeck/Degenerate/Vanguard Avatar/Triggered Effect VA.dck	8	optimization-search	sort	";A curious deck that uses capsize in combination with creatures that bring some advantage when each of them ""comes into play"". They become a sort of expensive buyback (and some of them can't be used because are more expensive than permanents with the same effect), but are very helpful too. This version draws a lot of lands very quickly."
-Manalink3/Mods/PlayDeck/Manalink Tournament/Vintage Reproduction Deck.dck	8	optimization-search	sort	;This deck is a sort of reprocution of traditional Vintage controll decks, where it replaces the Power 9 cards and other famous restricted cards with other Extended cards that are not banned nor restricted. Some of them (as Twincast) are of a different color from their original counterpart. This deck may win both milling opponent's deck or killing him with Iridiscent Angel.
-Manalink3/Mods/PlayDeck/PlayDeck_Brewin/Ally Deck 2.dck	8	optimization-search	sort	";Composed by Allies, this deck uses a sort of ""comes into play"" effect: more Allies in play, greater is the effect. This version provides powerful creatures and is enriched with Doubling Season and Contagion Engine. Capsize is not so useful here."
-Manalink3/Mods/PlayDeck/PlayDeck_Brewin/Ally Deck.dck	8	optimization-search	sort	";Composed by allies, this deck uses a sort of ""comes into play"" effect at cascade level: more allies in play, greater is the effect. Capsize is a ""must"" in this deck, since it allows to constantly recall and re-play allies (especially the ones WITHOUT +1/+1 counters) magnifying their effect."
-Manalink3/Mods/PlayDeck/PlayDeck_Brewin/Beasts Deck - Spiritmonger.dck	8	optimization-search	sort	;This version of the Beasts deck is a sort of tribute to the mighty Spiritmonger, probably the most powerful of all beasts. Also, this deck uses Guardian Beast to make Artifact Lands invulnerable, while Ravenous Baloth is a sort of universal Diamon Valley that nicely interacts especially with Protean Hulk or Blastoderm (before that it dies).
-Manalink3/Mods/PlayDeck/PlayDeck_Brewin/Berserkers Deck.dck	8	optimization-search	sort	";Except the Areathi one, the Berserkers Deck includes all creatures that has a sort of affinity with ""Haste"". Maybe the only true weakness of this deck is that included creatures don't interact very well together since they rarely may gain advantage from each other's ability."
-Manalink3/Mods/PlayDeck/PlayDeck_Brewin/Linked Avatar Deck.dck	8	optimization-search	sort	;This deck uses a sort of combo with Serra Avatar and Wall of Reverence and/or Noble Purpose. The Avatar will grow bigger and bigger together with an outstandin number of life points. It only fears cards that remove creatures from the game.
-Manalink3/Mods/PlayDeck/PlayDeck_Brewin/Porphyry Nodes - Chaos deck.dck	8	optimization-search	sort	";Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The red version relies on the usual combo of Allay & Shattering Pulse together with some best of red shoots."
-Manalink3/Mods/PlayDeck/PlayDeck_Brewin/Porphyry Nodes - Dark deck.dck	8	optimization-search	sort	";Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The black version keeps just 4 Vindicate to kill starting weenies and is enhanced by strong contour cards."
-Manalink3/Mods/PlayDeck/PlayDeck_Brewin/Ravagers of Lands Deck.dck	8	optimization-search	sort	";A vicous deck that uses only creatures that destroy a land (or other permanents) as they come into play. It is a sort of ""triggered effect/kicker"" deck focused on lands destruction."
-Manalink3/Mods/PlayDeck/PlayDeck_Brewin/Triggered Effect Deck 1.dck	8	optimization-search	sort	";A curious deck that uses Capsize in combination with creatures that bring some advantage when each of them ""comes into play"". They become a sort of expensive buyback (and some of them can't be used because are more expensive than permanents with the same effect), but are very helpful too."
-Manalink3/Mods/PlayDeck/PlayDeck_Brewin/Triggered Effect VA.dck	8	optimization-search	sort	";A curious deck that uses capsize in combination with creatures that bring some advantage when each of them ""comes into play"". They become a sort of expensive buyback (and some of them can't be used because are more expensive than permanents with the same effect), but are very helpful too. This version draws a lot of lands very quickly."
-Manalink3/Mods/PlayDeck/PlayDeck_Brewin/Vintage Reproduction Deck.dck	8	optimization-search	sort	;This deck is a sort of reprocution of traditional Vintage controll decks, where it replaces the Power 9 cards and other famous restricted cards with other Extended cards that are not banned nor restricted. Some of them (as Twincast) are of a different color from their original counterpart. This deck may win both milling opponent's deck or killing him with Iridiscent Angel.
-Manalink3/PlayDeckAnalyser/ReadMe_PlayDeckAnalyser_v05.txt	185	optimization-search	sort	"""Card ID#"" do a straight sort from top to bottom. ""Card Color"" and"
-Manalink3/PlayDeckAnalyser/ReadMe_PlayDeckAnalyser_v05.txt	186	optimization-search	sort	"""Card Quantity"" first sort by catagory, and then alphabetically."
-Manalink3/Program/PlayDeck/Ally Deck 2.dck	8	optimization-search	sort	";Composed by Allies, this deck uses a sort of ""comes into play"" effect: more Allies in play, greater is the effect. This version provides powerful creatures and is enriched with Doubling Season and Contagion Engine. Capsize is not so useful here."
-Manalink3/Program/PlayDeck/Ally Deck.dck	8	optimization-search	sort	";Composed by allies, this deck uses a sort of ""comes into play"" effect at cascade level: more allies in play, greater is the effect. Capsize is a ""must"" in this deck, since it allows to constantly recall and re-play allies (especially the ones WITHOUT +1/+1 counters) magnifying their effect."
-Manalink3/Program/PlayDeck/Beasts Deck - Spiritmonger.dck	8	optimization-search	sort	;This version of the Beasts deck is a sort of tribute to the mighty Spiritmonger, probably the most powerful of all beasts. Also, this deck uses Guardian Beast to make Artifact Lands invulnerable, while Ravenous Baloth is a sort of universal Diamon Valley that nicely interacts especially with Protean Hulk or Blastoderm (before that it dies).
-Manalink3/Program/PlayDeck/Berserkers Deck.dck	8	optimization-search	sort	";Except the Areathi one, the Berserkers Deck includes all creatures that has a sort of affinity with ""Haste"". Maybe the only true weakness of this deck is that included creatures don't interact very well together since they rarely may gain advantage from each other's ability."
-Manalink3/Program/PlayDeck/Linked Avatar Deck.dck	8	optimization-search	sort	;This deck uses a sort of combo with Serra Avatar and Wall of Reverence and/or Noble Purpose. The Avatar will grow bigger and bigger together with an outstandin number of life points. It only fears cards that remove creatures from the game.
-Manalink3/Program/PlayDeck/Porphyry Nodes - Chaos deck.dck	8	optimization-search	sort	";Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The red version relies on the usual combo of Allay & Shattering Pulse together with some best of red shoots."
-Manalink3/Program/PlayDeck/Porphyry Nodes - Dark deck.dck	8	optimization-search	sort	";Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The black version keeps just 4 Vindicate to kill starting weenies and is enhanced by strong contour cards."
-Manalink3/Program/PlayDeck/Ravagers of Lands Deck.dck	8	optimization-search	sort	";A vicous deck that uses only creatures that destroy a land (or other permanents) as they come into play. It is a sort of ""triggered effect/kicker"" deck focused on lands destruction."
-Manalink3/Program/PlayDeck/Triggered Effect Deck 1.dck	8	optimization-search	sort	";A curious deck that uses Capsize in combination with creatures that bring some advantage when each of them ""comes into play"". They become a sort of expensive buyback (and some of them can't be used because are more expensive than permanents with the same effect), but are very helpful too."
-Manalink3/Program/PlayDeck/Vintage Reproduction Deck.dck	8	optimization-search	sort	;This deck is a sort of reprocution of traditional Vintage controll decks, where it replaces the Power 9 cards and other famous restricted cards with other Extended cards that are not banned nor restricted. Some of them (as Twincast) are of a different color from their original counterpart. This deck may win both milling opponent's deck or killing him with Iridiscent Angel.
-Manalink3/Program/ReadMe.txt	451	optimization-search	sort	sort preference.
-Manalink3/Program/ReadMe.txt	1758	optimization-search	sort	whatever sort of communications link you're using. This does not shut down
-Manalink3/Program/ReadMe.txt	1813	optimization-search	sort	The options on the right determine what sort of decks are allowed in the match. There are
 Manalink_Launcher.cmd	713	optimization-search	sort	"DIR ""%modSelect%"" /AD-S /B /ON 1>""%modTmp%\sort.tmp"" 2>NUL"
 Manalink_Launcher.cmd	716	optimization-search	sort	"IF NOT EXIST ""%modSelect%\%%~nB\"" %PC% ""%%~nB\n"">>""%modTmp%\sort.tmp"""
 Manalink_Launcher.cmd	719	optimization-search	sort	"FOR /F ""usebackq tokens=*"" %%A IN (`SORT ""%modTmp%\sort.tmp""`) DO ("
 Manalink_Launcher.cmd	723	optimization-search	sort	"DEL /F /Q ""%modTmp%\sort.tmp"" >NUL 2>&1"
-Master.csv	296	optimization-search	sort	"0294,Ashes to Ashes,Sorcery,Drew Tucker,Ashes to Ashes removes two target non-artifact creatures from the game and deals 5 damage to you.,""``All rivers eventually run to the sea. My job is to sort out who goes first.'' ---Maeveen O'Donagh, Memoirs of a Soldier"""
-Mods/PlayDeck/Degenerate/Orion79 themed/Ally Deck 2.dck	8	optimization-search	sort	";Composed by Allies, this deck uses a sort of ""comes into play"" effect: more Allies in play, greater is the effect. This version provides powerful creatures and is enriched with Doubling Season and Contagion Engine. Capsize is not so useful here."
-Mods/PlayDeck/Degenerate/Orion79 themed/Ally Deck.dck	8	optimization-search	sort	";Composed by allies, this deck uses a sort of ""comes into play"" effect at cascade level: more allies in play, greater is the effect. Capsize is a ""must"" in this deck, since it allows to constantly recall and re-play allies (especially the ones WITHOUT +1/+1 counters) magnifying their effect."
-Mods/PlayDeck/Degenerate/Orion79 themed/Beasts Deck - Spiritmonger.dck	8	optimization-search	sort	;This version of the Beasts deck is a sort of tribute to the mighty Spiritmonger, probably the most powerful of all beasts. Also, this deck uses Guardian Beast to make Artifact Lands invulnerable, while Ravenous Baloth is a sort of universal Diamon Valley that nicely interacts especially with Protean Hulk or Blastoderm (before that it dies).
-Mods/PlayDeck/Degenerate/Orion79 themed/Berserkers Deck.dck	8	optimization-search	sort	";Except the Areathi one, the Berserkers Deck includes all creatures that has a sort of affinity with ""Haste"". Maybe the only true weakness of this deck is that included creatures don't interact very well together since they rarely may gain advantage from each other's ability."
-Mods/PlayDeck/Degenerate/Orion79 themed/Porphyry Nodes - Chaos deck.dck	8	optimization-search	sort	";Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The red version relies on the usual combo of Allay & Shattering Pulse together with some best of red shoots."
-Mods/PlayDeck/Degenerate/Orion79 themed/Porphyry Nodes - Dark deck.dck	8	optimization-search	sort	";Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The black version keeps just 4 Vindicate to kill starting weenies and is enhanced by strong contour cards."
-Mods/PlayDeck/Degenerate/Orion79 themed/Ravagers of Lands Deck.dck	8	optimization-search	sort	";A vicous deck that uses only creatures that destroy a land (or other permanents) as they come into play. It is a sort of ""triggered effect/kicker"" deck focused on lands destruction."
-Mods/PlayDeck/Degenerate/Orion79 themed/Triggered Effect Deck 1.dck	8	optimization-search	sort	";A curious deck that uses Capsize in combination with creatures that bring some advantage when each of them ""comes into play"". They become a sort of expensive buyback (and some of them can't be used because are more expensive than permanents with the same effect), but are very helpful too."
-Mods/PlayDeck/Degenerate/Vanguard Avatar/Linked Avatar Deck - VA.dck	8	optimization-search	sort	;This deck uses a sort of combo with Serra Avatar and Wall of Reverence and/or Noble Purpose. The Avatar will grow bigger and bigger together with an outstandin number of life points. It only fears cards that remove creatures from the game.
-Mods/PlayDeck/Degenerate/Vanguard Avatar/Linked Avatar Deck.dck	8	optimization-search	sort	;This deck uses a sort of combo with Serra Avatar and Wall of Reverence and/or Noble Purpose. The Avatar will grow bigger and bigger together with an outstandin number of life points. It only fears cards that remove creatures from the game.
-Mods/PlayDeck/Degenerate/Vanguard Avatar/Triggered Effect VA.dck	8	optimization-search	sort	";A curious deck that uses capsize in combination with creatures that bring some advantage when each of them ""comes into play"". They become a sort of expensive buyback (and some of them can't be used because are more expensive than permanents with the same effect), but are very helpful too. This version draws a lot of lands very quickly."
-Mods/PlayDeck/Manalink Tournament/Vintage Reproduction Deck.dck	8	optimization-search	sort	;This deck is a sort of reprocution of traditional Vintage controll decks, where it replaces the Power 9 cards and other famous restricted cards with other Extended cards that are not banned nor restricted. Some of them (as Twincast) are of a different color from their original counterpart. This deck may win both milling opponent's deck or killing him with Iridiscent Angel.
-Mods/PlayDeck/PlayDeck_Brewin/Ally Deck 2.dck	8	optimization-search	sort	";Composed by Allies, this deck uses a sort of ""comes into play"" effect: more Allies in play, greater is the effect. This version provides powerful creatures and is enriched with Doubling Season and Contagion Engine. Capsize is not so useful here."
-Mods/PlayDeck/PlayDeck_Brewin/Ally Deck.dck	8	optimization-search	sort	";Composed by allies, this deck uses a sort of ""comes into play"" effect at cascade level: more allies in play, greater is the effect. Capsize is a ""must"" in this deck, since it allows to constantly recall and re-play allies (especially the ones WITHOUT +1/+1 counters) magnifying their effect."
-Mods/PlayDeck/PlayDeck_Brewin/Beasts Deck - Spiritmonger.dck	8	optimization-search	sort	;This version of the Beasts deck is a sort of tribute to the mighty Spiritmonger, probably the most powerful of all beasts. Also, this deck uses Guardian Beast to make Artifact Lands invulnerable, while Ravenous Baloth is a sort of universal Diamon Valley that nicely interacts especially with Protean Hulk or Blastoderm (before that it dies).
-Mods/PlayDeck/PlayDeck_Brewin/Berserkers Deck.dck	8	optimization-search	sort	";Except the Areathi one, the Berserkers Deck includes all creatures that has a sort of affinity with ""Haste"". Maybe the only true weakness of this deck is that included creatures don't interact very well together since they rarely may gain advantage from each other's ability."
-Mods/PlayDeck/PlayDeck_Brewin/Linked Avatar Deck.dck	8	optimization-search	sort	;This deck uses a sort of combo with Serra Avatar and Wall of Reverence and/or Noble Purpose. The Avatar will grow bigger and bigger together with an outstandin number of life points. It only fears cards that remove creatures from the game.
-Mods/PlayDeck/PlayDeck_Brewin/Porphyry Nodes - Chaos deck.dck	8	optimization-search	sort	";Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The red version relies on the usual combo of Allay & Shattering Pulse together with some best of red shoots."
-Mods/PlayDeck/PlayDeck_Brewin/Porphyry Nodes - Dark deck.dck	8	optimization-search	sort	";Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The black version keeps just 4 Vindicate to kill starting weenies and is enhanced by strong contour cards."
-Mods/PlayDeck/PlayDeck_Brewin/Ravagers of Lands Deck.dck	8	optimization-search	sort	";A vicous deck that uses only creatures that destroy a land (or other permanents) as they come into play. It is a sort of ""triggered effect/kicker"" deck focused on lands destruction."
-Mods/PlayDeck/PlayDeck_Brewin/Triggered Effect Deck 1.dck	8	optimization-search	sort	";A curious deck that uses Capsize in combination with creatures that bring some advantage when each of them ""comes into play"". They become a sort of expensive buyback (and some of them can't be used because are more expensive than permanents with the same effect), but are very helpful too."
-Mods/PlayDeck/PlayDeck_Brewin/Triggered Effect VA.dck	8	optimization-search	sort	";A curious deck that uses capsize in combination with creatures that bring some advantage when each of them ""comes into play"". They become a sort of expensive buyback (and some of them can't be used because are more expensive than permanents with the same effect), but are very helpful too. This version draws a lot of lands very quickly."
-Mods/PlayDeck/PlayDeck_Brewin/Vintage Reproduction Deck.dck	8	optimization-search	sort	;This deck is a sort of reprocution of traditional Vintage controll decks, where it replaces the Power 9 cards and other famous restricted cards with other Extended cards that are not banned nor restricted. Some of them (as Twincast) are of a different color from their original counterpart. This deck may win both milling opponent's deck or killing him with Iridiscent Angel.
-Playdeck/Ally Deck 2.dck	8	optimization-search	sort	";Composed by Allies, this deck uses a sort of ""comes into play"" effect: more Allies in play, greater is the effect. This version provides powerful creatures and is enriched with Doubling Season and Contagion Engine. Capsize is not so useful here."
-Playdeck/Ally Deck.dck	8	optimization-search	sort	";Composed by allies, this deck uses a sort of ""comes into play"" effect at cascade level: more allies in play, greater is the effect. Capsize is a ""must"" in this deck, since it allows to constantly recall and re-play allies (especially the ones WITHOUT +1/+1 counters) magnifying their effect."
-Playdeck/Beasts Deck - Spiritmonger.dck	8	optimization-search	sort	;This version of the Beasts deck is a sort of tribute to the mighty Spiritmonger, probably the most powerful of all beasts. Also, this deck uses Guardian Beast to make Artifact Lands invulnerable, while Ravenous Baloth is a sort of universal Diamon Valley that nicely interacts especially with Protean Hulk or Blastoderm (before that it dies).
-Playdeck/Berserkers Deck.dck	8	optimization-search	sort	";Except the Areathi one, the Berserkers Deck includes all creatures that has a sort of affinity with ""Haste"". Maybe the only true weakness of this deck is that included creatures don't interact very well together since they rarely may gain advantage from each other's ability."
-Playdeck/Linked Avatar Deck - VA.dck	8	optimization-search	sort	;This deck uses a sort of combo with Serra Avatar and Wall of Reverence and/or Noble Purpose. The Avatar will grow bigger and bigger together with an outstandin number of life points. It only fears cards that remove creatures from the game.
-Playdeck/Linked Avatar Deck.dck	8	optimization-search	sort	;This deck uses a sort of combo with Serra Avatar and Wall of Reverence and/or Noble Purpose. The Avatar will grow bigger and bigger together with an outstandin number of life points. It only fears cards that remove creatures from the game.
-Playdeck/Porphyry Nodes - Chaos deck.dck	8	optimization-search	sort	";Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The red version relies on the usual combo of Allay & Shattering Pulse together with some best of red shoots."
-Playdeck/Porphyry Nodes - Dark deck.dck	8	optimization-search	sort	";Since Porphyry Nodes ""targets"" creatures, it can be used in combo with white-warded creatures to generate a sort of ""custom"" Abyss. The black version keeps just 4 Vindicate to kill starting weenies and is enhanced by strong contour cards."
-Playdeck/Ravagers of Lands Deck.dck	8	optimization-search	sort	";A vicous deck that uses only creatures that destroy a land (or other permanents) as they come into play. It is a sort of ""triggered effect/kicker"" deck focused on lands destruction."
-Playdeck/Triggered Effect Deck 1.dck	8	optimization-search	sort	";A curious deck that uses Capsize in combination with creatures that bring some advantage when each of them ""comes into play"". They become a sort of expensive buyback (and some of them can't be used because are more expensive than permanents with the same effect), but are very helpful too."
-Playdeck/Triggered Effect VA.dck	8	optimization-search	sort	";A curious deck that uses capsize in combination with creatures that bring some advantage when each of them ""comes into play"". They become a sort of expensive buyback (and some of them can't be used because are more expensive than permanents with the same effect), but are very helpful too. This version draws a lot of lands very quickly."
-Playdeck/Vintage Reproduction Deck.dck	8	optimization-search	sort	;This deck is a sort of reprocution of traditional Vintage controll decks, where it replaces the Power 9 cards and other famous restricted cards with other Extended cards that are not banned nor restricted. Some of them (as Twincast) are of a different color from their original counterpart. This deck may win both milling opponent's deck or killing him with Iridiscent Angel.
 PlayDeckAnalyser/ReadMe_PlayDeckAnalyser_v05.txt	185	optimization-search	sort	"""Card ID#"" do a straight sort from top to bottom. ""Card Color"" and"
 PlayDeckAnalyser/ReadMe_PlayDeckAnalyser_v05.txt	186	optimization-search	sort	"""Card Quantity"" first sort by catagory, and then alphabetically."
-Program/magic_updater/Manalink.csv	296	optimization-search	sort	294;Ashes to Ashes;1;Ashes to Ashes;|1|B|B;20h;1;6;1;1;2;0;0;0;0;2;0h;0;0;0;0;0;0;0;1008h;-1;-1;-1;-1;-1;-1;211;211;0;Sorcery;Exile two target nonartifact creatures. Ashes to Ashes deals 5 damage to you.;All rivers eventually run to the sea. My job is to sort out who goes first.\nMaeveen O'Donagh, Memoirs of a Soldier;;;;;;0;0;0;0;2;0;0;0;0;0;0;0;4;0;0;0;0;0;0;0;0;0;0;0;80;0;0;0;0;0;0;0;0;0;0;0
-Program/magic_updater/Manalink.csv	2490	optimization-search	sort	2488;Giant Mantis;1;Giant Mantis;|3|G;8h;5;7;1;3;0;0;1;0;0;0;0h;2;4;0;0;0;0;0;1001h;61h;-1;-1;-1;-1;-1;214;211;0;Creature  Insect;Reach (This creature can block creatures with flying.);I hate insects of every sort. The only mercy is that they are generally small.\nMwani, Mtenda goatherd;;;;;;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;2;4;50;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;
-Program/magic_updater/Manalink.csv	4523	optimization-search	sort	4521;Liability;1;Liability;|1|B|B;8h;1;2;2;1;2;0;0;0;0;1;0h;0;0;0;0;0;0;0;1002h;-1;-1;-1;-1;-1;-1;211;211;0;Enchantment;Whenever a nontoken permanent is put into a player's graveyard from the battlefield, that player loses 1 life.;Gerrard realized that the helpless woman they'd rescued from Rath was nothing of the sort.;;;;;;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;40;0;0;0;0;0;0;0;0;0;0;0;
-Program/magic_updater/Manalink.csv	14187	optimization-search	sort	14185;Statute of Denial;1;Statute of Denial;|2|U|U;8h;2;3;1;2;0;2;0;0;0;1;0h;0;0;4;0;0;0;0;1003h;-1;-1;-1;-1;-1;-1;211;211;0;Instant;Counter target spell. If you control a |Sblue creature, draw a card, then discard a card.;Pyrotechnic activity of any sort is strictly prohibited. It is irrelevant that today is a holiday.;;;;;;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;60;0;0;0;0;0;0;0;0;0;0;
-Program/magic_updater/xml-to-csv.pl	54	optimization-search	while (	while (1)
-Program/magic_updater/xml-to-csv.pl	175	optimization-search	while (	while (scalar @sets > 0 && $sets[0] ne '(B) Block')
-Program/magic_updater/xml-to-csv.pl	181	optimization-search	while (	while (scalar @realsets > 0 && $realsets[0] ne 'Promo')
-Program/magic_updater/xml-to-csv.pl	1683	optimization-search	while (	while (scalar @new_types < 7)
-Program/magic_updater/xml-to-csv.pl	1717	optimization-search	while (	while (scalar @sub_types >= 2)
-Program/magic_updater/xml-to-csv.pl	1723	optimization-search	while (	while (scalar @sub_types < 2)
-Program/magic_updater/xml-to-csv.pl	2170	optimization-search	while (	while (my $row = $csv->getline($manalink_in))
-Program/magic_updater/xml-to-csv.pl	2344	optimization-search	sort	foreach my $k (sort keys %add_ml)
-Program/magic_updater/xml-to-csv.pl	2388	optimization-search	while (	while (my $row = $csv->getline($ctall_in))
-Program/magic_updater/xml-to-csv.pl	2462	optimization-search	sort	foreach my $k (sort keys %add_ct)
-Program/src/cardartlib/src/main.cpp	33	optimization-search	for (	for (int i = 'a'; i <= 'z'; ++i)
-Program/src/cardartlib/src/main.cpp	35	optimization-search	for (	for (int i = 'A'; i <= 'Z'; ++i)
-Program/src/cardartlib/src/main.cpp	37	optimization-search	for (	for (int i = '0'; i <= '9'; ++i)
-Program/src/cardartlib/src/main.cpp	44	optimization-search	fopen	"FILE* f = fopen(fname, ""rb"");"
-Program/src/cardartlib/src/main.cpp	48	optimization-search	malloc	char* stringData = (char*)malloc(stringDataSize);
-Program/src/cardartlib/src/main.cpp	49	optimization-search	malloc	card_ptr_t* cardData = (card_ptr_t*)malloc(sizeof(card_ptr_t)*numberOfCards);
-Program/src/cardartlib/src/main.cpp	53	optimization-search	calloc	idToName = (char**)calloc(numberOfCards, sizeof(char*));
-Program/src/cardartlib/src/main.cpp	55	optimization-search	for (	for (unsigned int i = 0; i < numberOfCards; i++) {
-Program/src/cardartlib/src/main.cpp	59	optimization-search	for (	for (char* p = name; *p; ++p)
-Program/src/cardartlib/src/main.cpp	62	optimization-search	malloc	idToName[id] = (char*)malloc(strlen(name) + 1);
-Program/src/cardartlib/src/main.cpp	127	optimization-search	for (	for (unsigned int i = 0; i < numberOfCards; ++i) {
-Program/src/cardartlib/src/main.cpp	129	optimization-search	for (	for (char* p = buf; (*p = tolower(*name)); ++p, ++name){}
-Program/src/cardartlib/src/main.cpp	134	optimization-search	for (	"for (fs::directory_iterator dirit(fs::path(""./CardArtManalink"")), end; dirit != end; ++dirit){"
-Program/src/cardartlib/src/main.cpp	146	optimization-search	for (	for (char* p = cardname; (*p = tolower(*name)); ++p, ++name){
-Program/src/cardartlib/src/main.cpp	304	optimization-search	for (	for (unsigned int i = 0; i < numberOfCards; ++i)
+Program/src/cardartlib/src/main.cpp	42	optimization-search	for (	for (size_t i = 0; i < count; ++i)
+Program/src/cardartlib/src/main.cpp	52	optimization-search	for (	for (const unsigned char* p = (const unsigned char*)text; *p; ++p)
+Program/src/cardartlib/src/main.cpp	60	optimization-search	for (	for (std::string::const_iterator it = text.begin(); it != text.end(); ++it)
+Program/src/cardartlib/src/main.cpp	67	optimization-search	for (	for (int i = 'a'; i <= 'z'; ++i)
+Program/src/cardartlib/src/main.cpp	69	optimization-search	for (	for (int i = 'A'; i <= 'Z'; ++i)
+Program/src/cardartlib/src/main.cpp	71	optimization-search	for (	for (int i = '0'; i <= '9'; ++i)
+Program/src/cardartlib/src/main.cpp	78	optimization-search	fopen	"FILE* f = fopen(fname, ""rb"");"
+Program/src/cardartlib/src/main.cpp	93	optimization-search	malloc	char* stringData = (char*)malloc(string_data_size);
+Program/src/cardartlib/src/main.cpp	94	optimization-search	malloc	card_ptr_t* cardData = (card_ptr_t*)malloc(sizeof(card_ptr_t) * card_count);
+Program/src/cardartlib/src/main.cpp	95	optimization-search	calloc	char** names = (char**)calloc(card_count, sizeof(char*));
+Program/src/cardartlib/src/main.cpp	114	optimization-search	for (	for (unsigned int i = 0; i < card_count; i++) {
+Program/src/cardartlib/src/main.cpp	125	optimization-search	for (	for (char* p = name; *p; ++p)
+Program/src/cardartlib/src/main.cpp	128	optimization-search	malloc	names[id] = (char*)malloc(strlen(name) + 1);
+Program/src/cardartlib/src/main.cpp	200	optimization-search	for (	for (unsigned int i = 0; i < numberOfCards; ++i) {
+Program/src/cardartlib/src/main.cpp	208	optimization-search	for (	"for (fs::directory_iterator dirit(fs::path(""./CardArtManalink"")), end; dirit != end; ++dirit){"
+Program/src/cardartlib/src/main.cpp	388	optimization-search	for (	for (unsigned int i = 0; i < numberOfCards; ++i)
 Program/src/cards/alara_reborn.c	13	optimization-search	while(	while(i<500 && deck[i] != -1 ){
 Program/src/cards/alara_reborn.c	104	optimization-search	for(	for(q=1; q<6; q++){
 Program/src/cards/alara_reborn.c	106	optimization-search	for(	for(k=0; k<mana[q]; k++){
@@ -782,81 +404,74 @@ Program/src/cards/dissension.c	2780	optimization-search	for (	for (i = 0; i < 3;
 Program/src/cards/dissension.c	2794	optimization-search	for (	for (i = 0; i < 3; ++i){
 Program/src/cards/dissension.c	3355	optimization-search	for(	for(i=2; i<instance->targets[1].player; i++){
 Program/src/cards/dissension.c	3911	optimization-search	for(	for(i=0; i<2; i++){
-Program/src/cards/draft.c	40	optimization-search	fopen	"if( !( f = fopen(""rarity.dat"", ""rb"") ) ){"
-Program/src/cards/draft.c	55	optimization-search	malloc	if( !(rarities = malloc(expansion_size * total_cards + 1)) ){
-Program/src/cards/draft.c	79	optimization-search	for(	for(i=0;i<100;i++){
-Program/src/cards/draft.c	108	optimization-search	for(	for(i=0;i<deck_index;i++){
-Program/src/cards/draft.c	115	optimization-search	for(	for(i=worst_index;i<deck_index;i++){
-Program/src/cards/draft.c	124	optimization-search	for(	for(i=0;i<lands_needed;i++){
-Program/src/cards/draft.c	146	optimization-search	fopen	"FILE *file = fopen(""draft_errors.txt"", ""a+"");"
-Program/src/cards/draft.c	156	optimization-search	for(	for(i=0;i<40;i++){
-Program/src/cards/draft.c	159	optimization-search	for(	for(i=40;i<45;i++){
-Program/src/cards/draft.c	169	optimization-search	fopen	"FILE* f = fopen(""Menus.txt"", ""r"");"
-Program/src/cards/draft.c	177	optimization-search	while (	"} while (strcmp(buf, ""@EXPANSIONNAMES\n""));"
-Program/src/cards/draft.c	185	optimization-search	malloc	all_set_names = (const char**)malloc(num_valid_expansions * sizeof(const char*));
-Program/src/cards/draft.c	189	optimization-search	for (	for (i = 0; i < num_valid_expansions; ++i)
-Program/src/cards/draft.c	219	optimization-search	fopen	"FILE *file = fopen(""DraftSets//sets.txt"", ""r"");"
-Program/src/cards/draft.c	222	optimization-search	for(	"for(line=0; line<set-CUSTOM_SET; line++){	//find the name of the set to load, check header *1"
-Program/src/cards/draft.c	230	optimization-search	for(	for(i=0;i<2000;i++){
-Program/src/cards/draft.c	236	optimization-search	fopen	"FILE *file2 = fopen(file_buffer, ""r"");"
-Program/src/cards/draft.c	237	optimization-search	for(	for(i=0;i<8;i++){
-Program/src/cards/draft.c	266	optimization-search	for (	for (card_id=0; card_id < available_slots; card_id++) {
-Program/src/cards/draft.c	301	optimization-search	fopen	"FILE *file = fopen(""draft_errors.txt"", ""a+"");"
-Program/src/cards/draft.c	323	optimization-search	for(	"for(i=0;i<15;i++){	//put cards in pack"
-Program/src/cards/draft.c	328	optimization-search	for(	for(j=0;j<i;j++){
-Program/src/cards/draft.c	342	optimization-search	for(	"for(i=0;i<15;i++){	//put cards in pack"
-Program/src/cards/draft.c	348	optimization-search	for(	for(k=0; k < set_cards; k++) {
-Program/src/cards/draft.c	360	optimization-search	for(	for(k=0; k < set_cards; k++) {
-Program/src/cards/draft.c	370	optimization-search	for(	for(k=0; k < set_cards; k++) {
-Program/src/cards/draft.c	383	optimization-search	for(	for(j=0;j<i;j++){
-Program/src/cards/draft.c	397	optimization-search	for(	"for(i=0;i<15;i++){	//put cards in pack"
-Program/src/cards/draft.c	401	optimization-search	while (	while (in_set1[num_set][card].rarity == 7) {
-Program/src/cards/draft.c	421	optimization-search	fopen	"//FILE *file = fopen(""packs.txt"", ""a+"");"
-Program/src/cards/draft.c	423	optimization-search	for(	for(card=0;card<500;card++){
-Program/src/cards/draft.c	434	optimization-search	for(	for(card=0;card<2000;card++){
-Program/src/cards/draft.c	463	optimization-search	sort	// insert sort the cards by color then name
-Program/src/cards/draft.c	467	optimization-search	for(	for(i=0;i<count;i++){
-Program/src/cards/draft.c	475	optimization-search	for(	for(i=499;i>=idx;i--){
-Program/src/cards/draft.c	486	optimization-search	for(	for(i=0;i<500;i++){
-Program/src/cards/draft.c	495	optimization-search	fopen	"FILE *file = fopen(""picks.txt"", ""w"");"
-Program/src/cards/draft.c	503	optimization-search	for(	for(i=0;i<cards_left;i++){
-Program/src/cards/draft.c	577	optimization-search	fopen	"FILE *file = fopen(""packs.txt"", ""a+"");"
-Program/src/cards/draft.c	579	optimization-search	for (	for (player=1;player<8;player++){
-Program/src/cards/draft.c	598	optimization-search	for (	for (i=best_card;i<14;i++){
-Program/src/cards/draft.c	620	optimization-search	for (	for (i=best_card;i<cards_count;i++){
-Program/src/cards/draft.c	642	optimization-search	for(	for(i=0;i<500;i++){
-Program/src/cards/draft.c	653	optimization-search	while(	while(selected == -1 ){
-Program/src/cards/draft.c	658	optimization-search	for (	for (i=selected;i<14;i++){
-Program/src/cards/draft.c	669	optimization-search	for(	for(i=0;i<500;i++){
-Program/src/cards/draft.c	680	optimization-search	while(	while(selected == -1 ){
-Program/src/cards/draft.c	685	optimization-search	for (	for (i=selected;i<500;i++){
-Program/src/cards/draft.c	696	optimization-search	for(	for(i=0;i<15*(pack+1);i++){
-Program/src/cards/draft.c	705	optimization-search	fopen	"FILE *file2 = fopen(""packs.txt"", ""w"");"
-Program/src/cards/draft.c	710	optimization-search	fopen	"FILE *file2 = fopen(""packs.txt"", ""a+"");"
-Program/src/cards/draft.c	717	optimization-search	for(	for(i=0;i<40;i++){
-Program/src/cards/draft.c	732	optimization-search	fopen	"FILE *file = fopen(buffer, ""w"");"
-Program/src/cards/draft.c	736	optimization-search	fopen	"FILE *file3 = fopen(buffer, ""w"");"
-Program/src/cards/draft.c	740	optimization-search	for(	for(i=0;i<45;i++){
-Program/src/cards/draft.c	761	optimization-search	for (	for (i = 0; i < SETS_PER_MENU && i + start_from < num_valid_expansions; ++i)
-Program/src/cards/draft.c	790	optimization-search	for (	for (base = ALIGN_COLUMNS; base < num_valid_expansions; base += SETS_PER_MENU)
-Program/src/cards/draft.c	803	optimization-search	while (	while (set == -1)
-Program/src/cards/draft.c	835	optimization-search	for(	for(j=0;j<2000;j++){
-Program/src/cards/draft.c	841	optimization-search	for(	for(j=0;j<100;j++){
-Program/src/cards/draft.c	843	optimization-search	for(	for(k=0;k<8;k++){
-Program/src/cards/draft.c	849	optimization-search	for(	for(j=0;j<3;j++){
-Program/src/cards/draft.c	866	optimization-search	for (	for (j = 0; j < num_sets; ++j){
-Program/src/cards/draft.c	872	optimization-search	for(	for(j=0;j<3;j++){
-Program/src/cards/draft.c	874	optimization-search	for(	for(k=0;k<1000;k++){
-Program/src/cards/draft.c	876	optimization-search	for(	for(i=0;i<2;i++){
-Program/src/cards/draft.c	883	optimization-search	for(	for(j=0;j<3;j++){
-Program/src/cards/draft.c	885	optimization-search	for(	for(k=0;k<3;k++){
-Program/src/cards/draft.c	899	optimization-search	fopen	"FILE *file = fopen(""draft_errors.txt"", ""a+"");"
-Program/src/cards/draft.c	910	optimization-search	fopen	"FILE *file = fopen(""draft_errors.txt"", ""a+"");"
-Program/src/cards/draft.c	973	optimization-search	fopen	"//FILE *file = fopen(""rot.txt"", ""a+"");"
-Program/src/cards/draft.c	999	optimization-search	for(	for(count=0;count<24;count++){
-Program/src/cards/draft.c	1009	optimization-search	for (	for (j=0;j<3;j++){
-Program/src/cards/draft.c	1011	optimization-search	for (	for (i=0;i<15;i++){
-Program/src/cards/draft.c	1026	optimization-search	for(	for(j = 1;j<8;j++){
+Program/src/cards/draft.c	34	optimization-search	fopen	FILE *file = fopen(path, mode);
+Program/src/cards/draft.c	36	optimization-search	fopen	"FILE *error_file = fopen(""draft_errors.txt"", ""a+"");"
+Program/src/cards/draft.c	53	optimization-search	fopen	"if( !( f = fopen(""rarity.dat"", ""rb"") ) ){"
+Program/src/cards/draft.c	68	optimization-search	malloc	if( !(rarities = malloc(expansion_size * total_cards + 1)) ){
+Program/src/cards/draft.c	92	optimization-search	for(	for(i=0;i<100;i++){
+Program/src/cards/draft.c	121	optimization-search	for(	for(i=0;i<deck_index;i++){
+Program/src/cards/draft.c	128	optimization-search	for(	for(i=worst_index;i<deck_index;i++){
+Program/src/cards/draft.c	137	optimization-search	for(	for(i=0;i<lands_needed;i++){
+Program/src/cards/draft.c	171	optimization-search	for(	for(i=0;i<40;i++){
+Program/src/cards/draft.c	174	optimization-search	for(	for(i=40;i<45;i++){
+Program/src/cards/draft.c	184	optimization-search	fopen	"FILE* f = fopen(""Menus.txt"", ""r"");"
+Program/src/cards/draft.c	192	optimization-search	while (	"} while (strcmp(buf, ""@EXPANSIONNAMES\n""));"
+Program/src/cards/draft.c	200	optimization-search	malloc	all_set_names = (const char**)malloc(num_valid_expansions * sizeof(const char*));
+Program/src/cards/draft.c	204	optimization-search	for (	for (i = 0; i < num_valid_expansions; ++i)
+Program/src/cards/draft.c	241	optimization-search	while (	while (len > 0 && (buffer[len - 1] == '\n' || buffer[len - 1] == '\r')){
+Program/src/cards/draft.c	269	optimization-search	fopen	"FILE *file = fopen(""DraftSets//sets.txt"", ""r"");"
+Program/src/cards/draft.c	280	optimization-search	for(	"for(line=0; line<lines_to_read; line++){	//find the name of the set to load, check header *1"
+Program/src/cards/draft.c	294	optimization-search	for(	for(i=0;i<2000;i++){
+Program/src/cards/draft.c	300	optimization-search	fopen	"FILE *file2 = fopen(file_buffer, ""r"");"
+Program/src/cards/draft.c	305	optimization-search	for(	for(i=0;i<8;i++){
+Program/src/cards/draft.c	350	optimization-search	for (	for (card_id=0; card_id < available_slots; card_id++) {
+Program/src/cards/draft.c	409	optimization-search	for(	"for(i=0;i<15;i++){	//put cards in pack"
+Program/src/cards/draft.c	414	optimization-search	for(	for(j=0;j<i;j++){
+Program/src/cards/draft.c	428	optimization-search	for(	"for(i=0;i<15;i++){	//put cards in pack"
+Program/src/cards/draft.c	434	optimization-search	for(	for(k=0; k < set_cards; k++) {
+Program/src/cards/draft.c	446	optimization-search	for(	for(k=0; k < set_cards; k++) {
+Program/src/cards/draft.c	456	optimization-search	for(	for(k=0; k < set_cards; k++) {
+Program/src/cards/draft.c	469	optimization-search	for(	for(j=0;j<i;j++){
+Program/src/cards/draft.c	483	optimization-search	for(	"for(i=0;i<15;i++){	//put cards in pack"
+Program/src/cards/draft.c	487	optimization-search	while (	while (in_set1[num_set][card].rarity == 7) {
+Program/src/cards/draft.c	507	optimization-search	fopen	"//FILE *file = fopen(""packs.txt"", ""a+"");"
+Program/src/cards/draft.c	509	optimization-search	for(	for(card=0;card<500;card++){
+Program/src/cards/draft.c	520	optimization-search	for(	for(card=0;card<2000;card++){
+Program/src/cards/draft.c	549	optimization-search	sort	// insert sort the cards by color then name
+Program/src/cards/draft.c	553	optimization-search	for(	for(i=0;i<count;i++){
+Program/src/cards/draft.c	561	optimization-search	for(	for(i=499;i>=idx;i--){
+Program/src/cards/draft.c	572	optimization-search	for(	for(i=0;i<500;i++){
+Program/src/cards/draft.c	589	optimization-search	for(	for(i=0;i<cards_left;i++){
+Program/src/cards/draft.c	669	optimization-search	for (	for (player=1;player<8;player++){
+Program/src/cards/draft.c	688	optimization-search	for (	for (i=best_card;i<14;i++){
+Program/src/cards/draft.c	712	optimization-search	for (	for (i=best_card;i<cards_count;i++){
+Program/src/cards/draft.c	734	optimization-search	for(	for(i=0;i<500;i++){
+Program/src/cards/draft.c	745	optimization-search	while(	while(selected == -1 ){
+Program/src/cards/draft.c	750	optimization-search	for (	for (i=selected;i<14;i++){
+Program/src/cards/draft.c	761	optimization-search	for(	for(i=0;i<500;i++){
+Program/src/cards/draft.c	772	optimization-search	while(	while(selected == -1 ){
+Program/src/cards/draft.c	777	optimization-search	for (	for (i=selected;i<500;i++){
+Program/src/cards/draft.c	788	optimization-search	for(	for(i=0;i<15*(pack+1);i++){
+Program/src/cards/draft.c	813	optimization-search	for(	for(i=0;i<40;i++){
+Program/src/cards/draft.c	849	optimization-search	for(	for(i=0;i<45;i++){
+Program/src/cards/draft.c	878	optimization-search	for (	for (i = 0; i < SETS_PER_MENU && i + start_from < num_valid_expansions; ++i)
+Program/src/cards/draft.c	907	optimization-search	for (	for (base = ALIGN_COLUMNS; base < num_valid_expansions; base += SETS_PER_MENU)
+Program/src/cards/draft.c	920	optimization-search	while (	while (set == -1)
+Program/src/cards/draft.c	952	optimization-search	for(	for(j=0;j<2000;j++){
+Program/src/cards/draft.c	958	optimization-search	for(	for(j=0;j<100;j++){
+Program/src/cards/draft.c	960	optimization-search	for(	for(k=0;k<8;k++){
+Program/src/cards/draft.c	966	optimization-search	for(	for(j=0;j<3;j++){
+Program/src/cards/draft.c	983	optimization-search	for (	for (j = 0; j < num_sets; ++j){
+Program/src/cards/draft.c	989	optimization-search	for(	for(j=0;j<3;j++){
+Program/src/cards/draft.c	991	optimization-search	for(	for(k=0;k<1000;k++){
+Program/src/cards/draft.c	993	optimization-search	for(	for(i=0;i<2;i++){
+Program/src/cards/draft.c	1000	optimization-search	for(	for(j=0;j<3;j++){
+Program/src/cards/draft.c	1002	optimization-search	for(	for(k=0;k<3;k++){
+Program/src/cards/draft.c	1102	optimization-search	fopen	"//FILE *file = fopen(""rot.txt"", ""a+"");"
+Program/src/cards/draft.c	1128	optimization-search	for(	for(count=0;count<24;count++){
+Program/src/cards/draft.c	1138	optimization-search	for (	for (j=0;j<3;j++){
+Program/src/cards/draft.c	1140	optimization-search	for (	for (i=0;i<15;i++){
+Program/src/cards/draft.c	1155	optimization-search	for(	for(j = 1;j<8;j++){
 Program/src/cards/dragons_maze.c	62	optimization-search	for(	for(i=0; i<instance->info_slot; i++){
 Program/src/cards/dragons_maze.c	245	optimization-search	for(	for(i=0; i<instance->number_of_targets; i++){
 Program/src/cards/dragons_maze.c	851	optimization-search	for(	for(i=0; i<active_cards_count[player]; i++){
@@ -2270,60 +1885,61 @@ Program/src/defs.h	2519	optimization-search	while (	"#define APNAP(playervar, ..
 Program/src/defs.h	2542	optimization-search	while (	"#define SWAP(a, b)	do { __typeof__(a) temp_swap_ = a; a = b; b = temp_swap_; } while (0)	// gcc extension: typeof"
 Program/src/drawcardlib/config.c	221	optimization-search	for (	for (x = 0; x < 5; ++x)
 Program/src/drawcardlib/config.c	222	optimization-search	for (	for (y = 0; y < 5; ++y)
-Program/src/drawcardlib/config.c	424	optimization-search	for (	for (i = 0; i < MAX_PICHANDLES_PLUS_1; ++i)
-Program/src/drawcardlib/config.c	430	optimization-search	for (	for (i = 0; i < FRAME_MAX_LOADED + 2; ++i)
-Program/src/drawcardlib/config.c	437	optimization-search	for (	for (i = 0; i <= MAX_FONTHANDLES; ++i)
-Program/src/drawcardlib/config.c	453	optimization-search	while (	"#define ADD_FONT(fontname)	do { strcpy(buf, base_dir); strcat(buf, fontname); AddFontResource(buf); } while (0)"
-Program/src/drawcardlib/config.c	463	optimization-search	for (	for (i = 0; frames_pic_names[i]; ++i)
-Program/src/drawcardlib/config.c	490	optimization-search	for (	for (fs = 0; fs <= MAX_FRAMESET; ++fs)
-Program/src/drawcardlib/config.c	501	optimization-search	for (	for (j = 0; j < i; ++j)
-Program/src/drawcardlib/config.c	514	optimization-search	LoadImage	if (!(pics[i] = LoadImage(buf, palette, 0, 0)))
-Program/src/drawcardlib/config.c	539	optimization-search	for (	for (i = BIGCARDTITLE_FONT; i <= BIGCARDTITLE_FONT9; ++i)
-Program/src/drawcardlib/config.c	548	optimization-search	for (	for (i = BIGCARDTYPE_FONT; i <= BIGCARDTYPE_FONT9; ++i)
-Program/src/drawcardlib/config.c	700	optimization-search	for (	for (i = 0; i < FULLCARD_CURVE_MANA_MAX; ++i)
-Program/src/drawcardlib/config.c	780	optimization-search	for (	for (i = 0; i < NUM_FRAMEPARTS_PER_FRAMESET; ++i)
-Program/src/drawcardlib/config.c	800	optimization-search	for (	for (p = q = path; *q; ++p, ++q)
-Program/src/drawcardlib/config.c	845	optimization-search	for (	for (i = 0; i < 255; ++i)
-Program/src/drawcardlib/config.c	863	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); return; } while (0)"
-Program/src/drawcardlib/config.c	865	optimization-search	fopen	"if (!(rarity_dat = fopen(""rarity.dat"", ""rb"")))"
-Program/src/drawcardlib/config.c	884	optimization-search	for (	for (i = 1; i < 255; ++i)
-Program/src/drawcardlib/config.c	900	optimization-search	for (	for (p = name; *p; ++p)
-Program/src/drawcardlib/config.c	926	optimization-search	for (	for (j = 1; j < i; ++j)
-Program/src/drawcardlib/config.c	936	optimization-search	calloc	"watermarks[idx].expansions = calloc(raw_expansions, 1);	// note that raw_expansions is 8 greater than the maximum permissible EXPANSION_t"
-Program/src/drawcardlib/config.c	938	optimization-search	while (	while (isascii(*p) && isdigit(*p))
-Program/src/drawcardlib/config.c	944	optimization-search	while (	"while (isascii(*p) && isdigit(*p))	// skip number"
-Program/src/drawcardlib/config.c	1030	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
-Program/src/drawcardlib/config.c	1033	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
-Program/src/drawcardlib/config.c	1085	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
-Program/src/drawcardlib/config.c	1095	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
-Program/src/drawcardlib/config.c	1116	optimization-search	for (	for (i = 0; i < CARDBK_MIN_FRAMEPART; ++i)
-Program/src/drawcardlib/config.c	1124	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
-Program/src/drawcardlib/config.c	1130	optimization-search	for (	for (i = 0; i < NUM_FRAMEPARTS_PER_FRAMESET; ++i)
-Program/src/drawcardlib/config.c	1145	optimization-search	sort	// Lookup table for a partial radix sort on watermark names
-Program/src/drawcardlib/config.c	1152	optimization-search	for (	for (i = 0; watermarks[i].name; ++i)
-Program/src/drawcardlib/config.c	1162	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); return; } while (0)"
-Program/src/drawcardlib/config.c	1164	optimization-search	fopen	"if (!(watermarks_csv = fopen(""watermarks.csv"", ""r"")))"
-Program/src/drawcardlib/config.c	1169	optimization-search	while (	while (fgets(line, 1024, watermarks_csv))
-Program/src/drawcardlib/config.c	1196	optimization-search	for (	for (p = wmark; *p; ++p)
-Program/src/drawcardlib/config.c	1216	optimization-search	for (	for (idx = 0; lookup[radix][idx]; ++idx)
-Program/src/drawcardlib/config.c	1241	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); return; } while (0)"
-Program/src/drawcardlib/config.c	1245	optimization-search	fopen	"if (!(rarity_dat = fopen(""rarity.dat"", ""rb"")))"
-Program/src/drawcardlib/config.c	1265	optimization-search	calloc	if (!(raw_rarities = (uint8_t*)calloc(expansion_size, total_cards)))
-Program/src/drawcardlib/config.c	1266	optimization-search	calloc	"BAIL(""Could not calloc uint8_t* %d, %d"", expansion_size, total_cards);"
-Program/src/drawcardlib/config.c	1275	optimization-search	malloc	if (!(rarities = (Rarity**)malloc(total_cards * sizeof(Rarity**))))
-Program/src/drawcardlib/config.c	1276	optimization-search	malloc	"BAIL(""Could not malloc Rarity** %d"", total_cards * sizeof(Rarity**));"
-Program/src/drawcardlib/config.c	1279	optimization-search	for (	for (card = 0; card < total_cards; ++card)
-Program/src/drawcardlib/config.c	1282	optimization-search	malloc	"if (!(r = (Rarity*)malloc(sizeof(Rarity) + raw_expansions + 2)))	// This is wider than it needs to be because of FAKE_EXPANSIONS, but that's ok."
-Program/src/drawcardlib/config.c	1285	optimization-search	malloc	"BAIL(""Could not malloc Rarity* %d"", sizeof(Rarity) + raw_expansions + 2);"
-Program/src/drawcardlib/config.c	1291	optimization-search	for (	for (raw_exp = FAKE_EXPANSIONS; raw_exp <= raw_expansions; ++raw_exp)
-Program/src/drawcardlib/config.c	1341	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); goto bail; } while (0)"
-Program/src/drawcardlib/config.c	1347	optimization-search	fopen	"if (!(menus_txt = fopen(""menus.txt"", ""r"")))"
-Program/src/drawcardlib/config.c	1355	optimization-search	while (	while (fgets(line, 1024, menus_txt))
-Program/src/drawcardlib/config.c	1382	optimization-search	malloc	expansion_categories = malloc(alloc_size);
-Program/src/drawcardlib/config.c	1388	optimization-search	for (	for (i = 0; i < num_entries && i < raw_expansions; ++i)
-Program/src/drawcardlib/config.c	1437	optimization-search	malloc	expansion_categories = malloc(alloc_size);
-Program/src/drawcardlib/config.c	1453	optimization-search	for (	for (card = 0; card < total_cards; ++card)
-Program/src/drawcardlib/config.c	1464	optimization-search	for (	for (raw_exp = FAKE_EXPANSIONS; raw_exp <= raw_expansions; ++raw_exp)
+Program/src/drawcardlib/config.c	251	optimization-search	malloc	char* buf = (char*)malloc(total + 1);
+Program/src/drawcardlib/config.c	451	optimization-search	for (	for (i = 0; i < MAX_PICHANDLES_PLUS_1; ++i)
+Program/src/drawcardlib/config.c	457	optimization-search	for (	for (i = 0; i < FRAME_MAX_LOADED + 2; ++i)
+Program/src/drawcardlib/config.c	464	optimization-search	for (	for (i = 0; i <= MAX_FONTHANDLES; ++i)
+Program/src/drawcardlib/config.c	480	optimization-search	while (	"#define ADD_FONT(fontname)	do { strcpy(buf, base_dir); strcat(buf, fontname); AddFontResource(buf); } while (0)"
+Program/src/drawcardlib/config.c	490	optimization-search	for (	for (i = 0; frames_pic_names[i]; ++i)
+Program/src/drawcardlib/config.c	517	optimization-search	for (	for (fs = 0; fs <= MAX_FRAMESET; ++fs)
+Program/src/drawcardlib/config.c	528	optimization-search	for (	for (j = 0; j < i; ++j)
+Program/src/drawcardlib/config.c	541	optimization-search	LoadImage	if (!(pics[i] = LoadImage(buf, palette, 0, 0)))
+Program/src/drawcardlib/config.c	566	optimization-search	for (	for (i = BIGCARDTITLE_FONT; i <= BIGCARDTITLE_FONT9; ++i)
+Program/src/drawcardlib/config.c	575	optimization-search	for (	for (i = BIGCARDTYPE_FONT; i <= BIGCARDTYPE_FONT9; ++i)
+Program/src/drawcardlib/config.c	727	optimization-search	for (	for (i = 0; i < FULLCARD_CURVE_MANA_MAX; ++i)
+Program/src/drawcardlib/config.c	807	optimization-search	for (	for (i = 0; i < NUM_FRAMEPARTS_PER_FRAMESET; ++i)
+Program/src/drawcardlib/config.c	827	optimization-search	for (	for (p = q = path; *q; ++p, ++q)
+Program/src/drawcardlib/config.c	872	optimization-search	for (	for (i = 0; i < 255; ++i)
+Program/src/drawcardlib/config.c	890	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); return; } while (0)"
+Program/src/drawcardlib/config.c	892	optimization-search	fopen	"if (!(rarity_dat = fopen(""rarity.dat"", ""rb"")))"
+Program/src/drawcardlib/config.c	911	optimization-search	for (	for (i = 1; i < 255; ++i)
+Program/src/drawcardlib/config.c	927	optimization-search	for (	for (p = name; *p; ++p)
+Program/src/drawcardlib/config.c	953	optimization-search	for (	for (j = 1; j < i; ++j)
+Program/src/drawcardlib/config.c	963	optimization-search	calloc	"watermarks[idx].expansions = calloc(raw_expansions, 1);	// note that raw_expansions is 8 greater than the maximum permissible EXPANSION_t"
+Program/src/drawcardlib/config.c	965	optimization-search	while (	while (isascii(*p) && isdigit(*p))
+Program/src/drawcardlib/config.c	971	optimization-search	while (	"while (isascii(*p) && isdigit(*p))	// skip number"
+Program/src/drawcardlib/config.c	1057	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
+Program/src/drawcardlib/config.c	1060	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
+Program/src/drawcardlib/config.c	1112	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
+Program/src/drawcardlib/config.c	1122	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
+Program/src/drawcardlib/config.c	1143	optimization-search	for (	for (i = 0; i < CARDBK_MIN_FRAMEPART; ++i)
+Program/src/drawcardlib/config.c	1151	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
+Program/src/drawcardlib/config.c	1157	optimization-search	for (	for (i = 0; i < NUM_FRAMEPARTS_PER_FRAMESET; ++i)
+Program/src/drawcardlib/config.c	1172	optimization-search	sort	// Lookup table for a partial radix sort on watermark names
+Program/src/drawcardlib/config.c	1179	optimization-search	for (	for (i = 0; watermarks[i].name; ++i)
+Program/src/drawcardlib/config.c	1189	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); return; } while (0)"
+Program/src/drawcardlib/config.c	1191	optimization-search	fopen	"if (!(watermarks_csv = fopen(""watermarks.csv"", ""r"")))"
+Program/src/drawcardlib/config.c	1196	optimization-search	while (	while (fgets(line, 1024, watermarks_csv))
+Program/src/drawcardlib/config.c	1223	optimization-search	for (	for (p = wmark; *p; ++p)
+Program/src/drawcardlib/config.c	1243	optimization-search	for (	for (idx = 0; lookup[radix][idx]; ++idx)
+Program/src/drawcardlib/config.c	1268	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); return; } while (0)"
+Program/src/drawcardlib/config.c	1272	optimization-search	fopen	"if (!(rarity_dat = fopen(""rarity.dat"", ""rb"")))"
+Program/src/drawcardlib/config.c	1292	optimization-search	calloc	if (!(raw_rarities = (uint8_t*)calloc(expansion_size, total_cards)))
+Program/src/drawcardlib/config.c	1293	optimization-search	calloc	"BAIL(""Could not calloc uint8_t* %d, %d"", expansion_size, total_cards);"
+Program/src/drawcardlib/config.c	1302	optimization-search	malloc	if (!(rarities = (Rarity**)malloc(total_cards * sizeof(Rarity**))))
+Program/src/drawcardlib/config.c	1303	optimization-search	malloc	"BAIL(""Could not malloc Rarity** %d"", total_cards * sizeof(Rarity**));"
+Program/src/drawcardlib/config.c	1306	optimization-search	for (	for (card = 0; card < total_cards; ++card)
+Program/src/drawcardlib/config.c	1309	optimization-search	malloc	"if (!(r = (Rarity*)malloc(sizeof(Rarity) + raw_expansions + 2)))	// This is wider than it needs to be because of FAKE_EXPANSIONS, but that's ok."
+Program/src/drawcardlib/config.c	1312	optimization-search	malloc	"BAIL(""Could not malloc Rarity* %d"", sizeof(Rarity) + raw_expansions + 2);"
+Program/src/drawcardlib/config.c	1318	optimization-search	for (	for (raw_exp = FAKE_EXPANSIONS; raw_exp <= raw_expansions; ++raw_exp)
+Program/src/drawcardlib/config.c	1368	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); goto bail; } while (0)"
+Program/src/drawcardlib/config.c	1374	optimization-search	fopen	"if (!(menus_txt = fopen(""menus.txt"", ""r"")))"
+Program/src/drawcardlib/config.c	1382	optimization-search	while (	while (fgets(line, 1024, menus_txt))
+Program/src/drawcardlib/config.c	1409	optimization-search	malloc	expansion_categories = malloc(alloc_size);
+Program/src/drawcardlib/config.c	1415	optimization-search	for (	for (i = 0; i < num_entries && i < raw_expansions; ++i)
+Program/src/drawcardlib/config.c	1464	optimization-search	malloc	expansion_categories = malloc(alloc_size);
+Program/src/drawcardlib/config.c	1480	optimization-search	for (	for (card = 0; card < total_cards; ++card)
+Program/src/drawcardlib/config.c	1491	optimization-search	for (	for (raw_exp = FAKE_EXPANSIONS; raw_exp <= raw_expansions; ++raw_exp)
 Program/src/drawcardlib/drawcardlib.c	156	optimization-search	for (	for (i = 0; i < 256; ++i, ++entry)
 Program/src/drawcardlib/drawcardlib.c	182	optimization-search	for (	for (i = 0; i <= MAX_CFG; ++i)
 Program/src/drawcardlib/drawcardlib.c	194	optimization-search	for (	for (i = 0; i < MAX_PICHANDLES_PLUS_1; ++i)
@@ -2362,12 +1978,14 @@ Program/src/functions/abilities.c	434	optimization-search	for (	for (c = 0; c < 
 Program/src/functions/abilities.c	984	optimization-search	for (	for (c = 0; c < active_cards_count[1-current_turn]; ++c)
 Program/src/functions/abilities.c	1022	optimization-search	for(	for(i=2; i<instance->targets[1].player; i++){
 Program/src/functions/abilities.c	1149	optimization-search	for(	for(i=0; i<2; i++){
-Program/src/functions/ai.c	344	optimization-search	for (	for (i = 0; i < 16; ++i)
-Program/src/functions/ai.c	361	optimization-search	for (	for (i = 0; i < EXE_DWORD(0x607D54); ++i)
-Program/src/functions/ai.c	438	optimization-search	for (	for (col = 0; col <= 7; ++col)
-Program/src/functions/ai.c	448	optimization-search	for (	for (c = 0; c < active_cards_count[AI]; ++c)
-Program/src/functions/ai.c	455	optimization-search	for (	for (p = 0; p <= 1; ++p)
-Program/src/functions/ai.c	456	optimization-search	for (	for (col = 0; col <= 7; ++col)
+Program/src/functions/ai.c	349	optimization-search	for (	for (i = 0; i < 16; ++i)
+Program/src/functions/ai.c	366	optimization-search	for (	for (i = 0; i < EXE_DWORD(0x607D54); ++i)
+Program/src/functions/ai.c	443	optimization-search	for (	for (p = 0; p <= 1; ++p)
+Program/src/functions/ai.c	444	optimization-search	for (	for (col = 0; col <= 7; ++col)
+Program/src/functions/ai.c	448	optimization-search	for (	for (col = 0; col <= 7; ++col)
+Program/src/functions/ai.c	455	optimization-search	for (	for (c = 0; c < active_cards_count[AI]; ++c)
+Program/src/functions/ai.c	462	optimization-search	for (	for (p = 0; p <= 1; ++p)
+Program/src/functions/ai.c	463	optimization-search	for (	for (col = 0; col <= 7; ++col)
 Program/src/functions/auras.c	492	optimization-search	for (	for (i = 0; i < 2; i++){
 Program/src/functions/auras.c	493	optimization-search	for (	for (count = 0; count < active_cards_count[i]; ++count){
 Program/src/functions/auras.c	507	optimization-search	for (	for (i = 0; i < 2; i++){
@@ -2701,50 +2319,50 @@ Program/src/functions/functions.c	9410	optimization-search	for (	for (c = begin;
 Program/src/functions/functions.c	9855	optimization-search	for(	for(i=2; i<instance->targets[1].player; i++){
 Program/src/functions/functions.c	9885	optimization-search	for(	for(i=2; i<instance->targets[1].player; i++){
 Program/src/functions/functions.c	9926	optimization-search	for(	for(i=0; i<2; i++){
-Program/src/functions/functions.c	10542	optimization-search	for (	for (p = 0; p <= 1; ++p)
-Program/src/functions/functions.c	10543	optimization-search	for (	for (c = 0; c < active_cards_count[1-player]; ++c)
-Program/src/functions/functions.c	10549	optimization-search	for (	for (c = active_cards_count[1-player] - 1; c >= 0; --c)
-Program/src/functions/functions.c	10641	optimization-search	for(	for(i=0; i<2; i++){
-Program/src/functions/functions.c	10704	optimization-search	for(	for(i=0; i<2; i++){
-Program/src/functions/functions.c	10789	optimization-search	for (	for (p = 0; p <= 1; ++p)
-Program/src/functions/functions.c	10790	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c)
-Program/src/functions/functions.c	10867	optimization-search	for(	for(i=0;i<revealed; i++){
-Program/src/functions/functions.c	10876	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
-Program/src/functions/functions.c	11067	optimization-search	for (	for (p = 0; p < 2; ++p)
-Program/src/functions/functions.c	11069	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c)
-Program/src/functions/functions.c	11080	optimization-search	for(	for(i=0; i<2; i++){
-Program/src/functions/functions.c	11123	optimization-search	for (	for (c = 0; c < active_cards_count[player]; ++c){
-Program/src/functions/functions.c	11150	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
-Program/src/functions/functions.c	11162	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
-Program/src/functions/functions.c	11175	optimization-search	for(	for(k=selected; k<hand_index; k++){
-Program/src/functions/functions.c	11438	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
-Program/src/functions/functions.c	11686	optimization-search	for(	for(k=0; k<black; k++){
-Program/src/functions/functions.c	11689	optimization-search	for(	for(k=0; k<blue; k++){
-Program/src/functions/functions.c	11692	optimization-search	for(	for(k=0; k<green; k++){
-Program/src/functions/functions.c	11695	optimization-search	for(	for(k=0; k<red; k++){
-Program/src/functions/functions.c	11698	optimization-search	for(	for(k=0; k<white; k++){
-Program/src/functions/functions.c	11706	optimization-search	for(	for(i=0; i<2; i++){
-Program/src/functions/functions.c	12332	optimization-search	while (	while (1){
-Program/src/functions/functions.c	12531	optimization-search	for(	for(p=0; p<2; p++){
-Program/src/functions/functions.c	12593	optimization-search	for(	for(i=0; i<instance->number_of_targets; i++){
-Program/src/functions/functions.c	12687	optimization-search	for(	for(i=base_target; i<trgs; i++){
-Program/src/functions/functions.c	13210	optimization-search	for (	for (p = 0; p < 2; ++p){
-Program/src/functions/functions.c	13211	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c){
-Program/src/functions/functions.c	13284	optimization-search	for (	for (i = 0; i < end; ++i)
-Program/src/functions/functions.c	14055	optimization-search	for(	for(c = 0; c < active_cards_count[player]; c++){
-Program/src/functions/functions.c	14064	optimization-search	for(	for(c = 0; c < active_cards_count[player]; c++){
-Program/src/functions/functions.c	14074	optimization-search	for(	for(c = 0; c < active_cards_count[player]; c++){
-Program/src/functions/functions.c	14193	optimization-search	for(	for(i=0; i<instance->info_slot; i++){
-Program/src/functions/functions.c	14228	optimization-search	for (	for (c = 0; c < active_cards_count[affected_card_controller]; ++c){
-Program/src/functions/functions.c	14246	optimization-search	for (	for (c = 0; c < active_cards_count[affected_card_controller]; ++c){
-Program/src/functions/functions.c	14463	optimization-search	while (	while (v6 < 999);
-Program/src/functions/functions.c	14466	optimization-search	for (	for (c = 0; active_cards_count[player] > c; ++c)
-Program/src/functions/functions.c	14550	optimization-search	for (	for (p = 0; p < 2; p++){
-Program/src/functions/functions.c	14552	optimization-search	while (	while (hand_count[p] > 0){
-Program/src/functions/functions.c	14575	optimization-search	for (	for (c = 0; c < active_cards_count[player]; ++c)
-Program/src/functions/functions.c	14628	optimization-search	for (	for (i = inst->number_of_targets - 1; i >= 0; --i)
-Program/src/functions/functions.c	14647	optimization-search	for (	for (i = 0; i < ins->number_of_targets; ++i)
-Program/src/functions/functions.c	14720	optimization-search	for (	for (c = 0; c < active_cards_count[player]; ++c)
+Program/src/functions/functions.c	10547	optimization-search	for (	for (p = 0; p <= 1; ++p)
+Program/src/functions/functions.c	10548	optimization-search	for (	for (c = 0; c < active_cards_count[1-player]; ++c)
+Program/src/functions/functions.c	10554	optimization-search	for (	for (c = active_cards_count[1-player] - 1; c >= 0; --c)
+Program/src/functions/functions.c	10646	optimization-search	for(	for(i=0; i<2; i++){
+Program/src/functions/functions.c	10709	optimization-search	for(	for(i=0; i<2; i++){
+Program/src/functions/functions.c	10794	optimization-search	for (	for (p = 0; p <= 1; ++p)
+Program/src/functions/functions.c	10795	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c)
+Program/src/functions/functions.c	10872	optimization-search	for(	for(i=0;i<revealed; i++){
+Program/src/functions/functions.c	10881	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
+Program/src/functions/functions.c	11072	optimization-search	for (	for (p = 0; p < 2; ++p)
+Program/src/functions/functions.c	11074	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c)
+Program/src/functions/functions.c	11085	optimization-search	for(	for(i=0; i<2; i++){
+Program/src/functions/functions.c	11128	optimization-search	for (	for (c = 0; c < active_cards_count[player]; ++c){
+Program/src/functions/functions.c	11155	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
+Program/src/functions/functions.c	11167	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
+Program/src/functions/functions.c	11180	optimization-search	for(	for(k=selected; k<hand_index; k++){
+Program/src/functions/functions.c	11443	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
+Program/src/functions/functions.c	11691	optimization-search	for(	for(k=0; k<black; k++){
+Program/src/functions/functions.c	11694	optimization-search	for(	for(k=0; k<blue; k++){
+Program/src/functions/functions.c	11697	optimization-search	for(	for(k=0; k<green; k++){
+Program/src/functions/functions.c	11700	optimization-search	for(	for(k=0; k<red; k++){
+Program/src/functions/functions.c	11703	optimization-search	for(	for(k=0; k<white; k++){
+Program/src/functions/functions.c	11711	optimization-search	for(	for(i=0; i<2; i++){
+Program/src/functions/functions.c	12337	optimization-search	while (	while (1){
+Program/src/functions/functions.c	12536	optimization-search	for(	for(p=0; p<2; p++){
+Program/src/functions/functions.c	12598	optimization-search	for(	for(i=0; i<instance->number_of_targets; i++){
+Program/src/functions/functions.c	12692	optimization-search	for(	for(i=base_target; i<trgs; i++){
+Program/src/functions/functions.c	13215	optimization-search	for (	for (p = 0; p < 2; ++p){
+Program/src/functions/functions.c	13216	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c){
+Program/src/functions/functions.c	13289	optimization-search	for (	for (i = 0; i < end; ++i)
+Program/src/functions/functions.c	14060	optimization-search	for(	for(c = 0; c < active_cards_count[player]; c++){
+Program/src/functions/functions.c	14069	optimization-search	for(	for(c = 0; c < active_cards_count[player]; c++){
+Program/src/functions/functions.c	14079	optimization-search	for(	for(c = 0; c < active_cards_count[player]; c++){
+Program/src/functions/functions.c	14198	optimization-search	for(	for(i=0; i<instance->info_slot; i++){
+Program/src/functions/functions.c	14233	optimization-search	for (	for (c = 0; c < active_cards_count[affected_card_controller]; ++c){
+Program/src/functions/functions.c	14251	optimization-search	for (	for (c = 0; c < active_cards_count[affected_card_controller]; ++c){
+Program/src/functions/functions.c	14468	optimization-search	while (	while (v6 < 999);
+Program/src/functions/functions.c	14471	optimization-search	for (	for (c = 0; active_cards_count[player] > c; ++c)
+Program/src/functions/functions.c	14555	optimization-search	for (	for (p = 0; p < 2; p++){
+Program/src/functions/functions.c	14557	optimization-search	while (	while (hand_count[p] > 0){
+Program/src/functions/functions.c	14580	optimization-search	for (	for (c = 0; c < active_cards_count[player]; ++c)
+Program/src/functions/functions.c	14633	optimization-search	for (	for (i = inst->number_of_targets - 1; i >= 0; --i)
+Program/src/functions/functions.c	14652	optimization-search	for (	for (i = 0; i < ins->number_of_targets; ++i)
+Program/src/functions/functions.c	14725	optimization-search	for (	for (c = 0; c < active_cards_count[player]; ++c)
 Program/src/functions/global_checking.c	837	optimization-search	for(	for(i=0; i<32; i++){
 Program/src/functions/global_checking.c	852	optimization-search	for(	for(i=0; i<32; i++){
 Program/src/functions/global_checking.c	864	optimization-search	for(	for(i=0; i<32; i++){
@@ -2928,20 +2546,20 @@ Program/src/functions/targets.c	771	optimization-search	for (	for (c = 0; c < ac
 Program/src/functions/targets.c	934	optimization-search	while (	while (1)
 Program/src/functions/targets.c	1041	optimization-search	for (	for (p = 0; p < 2; ++p)
 Program/src/functions/targets.c	1042	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c)
-Program/src/functions/targets.c	1276	optimization-search	fopen	"FILE *file = fopen(""TargetsHuman.txt"", ""r"");"
-Program/src/functions/targets.c	1288	optimization-search	fopen	"file = fopen(""TargetsAI.txt"", ""r"");"
-Program/src/functions/targets.c	1310	optimization-search	for(	for(i=0;i<500;i++){
-Program/src/functions/targets.c	1320	optimization-search	for(	for(p=0;p<2;p++){
-Program/src/functions/targets.c	1321	optimization-search	for(	for(i=-1;i<active_cards_count[p];i++){
-Program/src/functions/targets.c	1409	optimization-search	for (	for (i = 0; i < num && can_target(td); ++i)
-Program/src/functions/targets.c	1441	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
-Program/src/functions/targets.c	1483	optimization-search	for (	for (i = 0; i < num && can_target(td); ++i)
-Program/src/functions/targets.c	1496	optimization-search	for (	for (p = 0; p <= 1; ++p)
-Program/src/functions/targets.c	1497	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c)
-Program/src/functions/targets.c	1862	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
-Program/src/functions/targets.c	1929	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
-Program/src/functions/targets.c	1947	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
-Program/src/functions/targets.c	1955	optimization-search	for (	for (j = 0; j < i; ++j)
+Program/src/functions/targets.c	1173	optimization-search	fopen	"FILE *file = fopen(path, ""r"");"
+Program/src/functions/targets.c	1178	optimization-search	while(	while(count < 499 && fgets(buffer, sizeof(buffer), file)){
+Program/src/functions/targets.c	1316	optimization-search	for(	for(i=0;i<500;i++){
+Program/src/functions/targets.c	1326	optimization-search	for(	for(p=0;p<2;p++){
+Program/src/functions/targets.c	1327	optimization-search	for(	for(i=-1;i<active_cards_count[p];i++){
+Program/src/functions/targets.c	1415	optimization-search	for (	for (i = 0; i < num && can_target(td); ++i)
+Program/src/functions/targets.c	1447	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
+Program/src/functions/targets.c	1489	optimization-search	for (	for (i = 0; i < num && can_target(td); ++i)
+Program/src/functions/targets.c	1502	optimization-search	for (	for (p = 0; p <= 1; ++p)
+Program/src/functions/targets.c	1503	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c)
+Program/src/functions/targets.c	1868	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
+Program/src/functions/targets.c	1935	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
+Program/src/functions/targets.c	1953	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
+Program/src/functions/targets.c	1961	optimization-search	for (	for (j = 0; j < i; ++j)
 Program/src/functions/token_generation.c	94	optimization-search	for (	for (i = 4; i <= 8; ++i)
 Program/src/functions/token_generation.c	197	optimization-search	for (	for (p = 0; p <= 1; ++p)
 Program/src/functions/token_generation.c	198	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c)
@@ -3008,25 +2626,23 @@ Program/src/manalink.h	2005	optimization-search	sort	"void sort_ArrayConstCharPt
 Program/src/patches/patch.h	49	optimization-search	malloc	"char* hexstr = (char*)malloc(11 * len + 1);	// really only need 5*len + 1, but we're going to die here anyway, so make sure we can fit "" 0xffffffff"""
 Program/src/patches/patch.h	52	optimization-search	for (	for (i = 0; i < len; ++i, ++buf)
 Program/src/patches/patch.h	70	optimization-search	fopen	"if (!(f = fopen(filename, ""r+b"")))	\"
-README.md	46	optimization-search	CreateDIBSection	| `Shandalar.exe` | Shandalar adventure shell and duel path. | Same SHA-256 as `Program/Shandalar.exe`; patched for the start-color `CreateDIBSection` crash, default-name bypass/fallback, and same-arrow adventure-map stop behavior. |
-README.md	50	optimization-search	CreateDIBSection	| `FaceMaker.exe` / `Program/FaceMaker.exe` | Character portrait/name helper launched during new-game setup. | Both active copies are based on the no-resolution/Korath helper, then patched at `0x5f40` so their `CreateDIBSection` wrapper also passes `hSection = NULL`. The reference `*-nores.exe` copies remain unpatched. |
-README.md	123	optimization-search	CreateDIBSection	| Start-color `WM_CREATE CreateDIBSection` assertion, name-entry glitch, and map movement stop | FaceMaker/no-resolution and bottle-setting fixes did not solve the original issue. Root and `Program/` `Shandalar.exe` include a narrow `CreateDIBSection` compatibility patch, a default-name seed plus name-editor bypass/fallback, and a same-arrow movement-stop patch; the active FaceMaker copies have th
-README.md	159	optimization-search	CreateDIBSection	| [docs/bugs/create-dibsection-after-color.md](docs/bugs/create-dibsection-after-color.md) | Focused investigation of the `WM_CREATE CreateDIBSection` assertion after choosing a start color. |
-src/cardartlib/src/main.cpp	33	optimization-search	for (	for (int i = 'a'; i <= 'z'; ++i)
-src/cardartlib/src/main.cpp	35	optimization-search	for (	for (int i = 'A'; i <= 'Z'; ++i)
-src/cardartlib/src/main.cpp	37	optimization-search	for (	for (int i = '0'; i <= '9'; ++i)
-src/cardartlib/src/main.cpp	44	optimization-search	fopen	"FILE* f = fopen(fname, ""rb"");"
-src/cardartlib/src/main.cpp	48	optimization-search	malloc	char* stringData = (char*)malloc(stringDataSize);
-src/cardartlib/src/main.cpp	49	optimization-search	malloc	card_ptr_t* cardData = (card_ptr_t*)malloc(sizeof(card_ptr_t)*numberOfCards);
-src/cardartlib/src/main.cpp	53	optimization-search	calloc	idToName = (char**)calloc(numberOfCards, sizeof(char*));
-src/cardartlib/src/main.cpp	55	optimization-search	for (	for (unsigned int i = 0; i < numberOfCards; i++) {
-src/cardartlib/src/main.cpp	59	optimization-search	for (	for (char* p = name; *p; ++p)
-src/cardartlib/src/main.cpp	62	optimization-search	malloc	idToName[id] = (char*)malloc(strlen(name) + 1);
-src/cardartlib/src/main.cpp	127	optimization-search	for (	for (unsigned int i = 0; i < numberOfCards; ++i) {
-src/cardartlib/src/main.cpp	129	optimization-search	for (	for (char* p = buf; (*p = tolower(*name)); ++p, ++name){}
-src/cardartlib/src/main.cpp	134	optimization-search	for (	"for (fs::directory_iterator dirit(fs::path(""./CardArtManalink"")), end; dirit != end; ++dirit){"
-src/cardartlib/src/main.cpp	146	optimization-search	for (	for (char* p = cardname; (*p = tolower(*name)); ++p, ++name){
-src/cardartlib/src/main.cpp	304	optimization-search	for (	for (unsigned int i = 0; i < numberOfCards; ++i)
+src/build.pl	64	optimization-search	while (	while (my $line = <$fh>) {
+src/cardartlib/src/main.cpp	42	optimization-search	for (	for (size_t i = 0; i < count; ++i)
+src/cardartlib/src/main.cpp	52	optimization-search	for (	for (const unsigned char* p = (const unsigned char*)text; *p; ++p)
+src/cardartlib/src/main.cpp	60	optimization-search	for (	for (std::string::const_iterator it = text.begin(); it != text.end(); ++it)
+src/cardartlib/src/main.cpp	67	optimization-search	for (	for (int i = 'a'; i <= 'z'; ++i)
+src/cardartlib/src/main.cpp	69	optimization-search	for (	for (int i = 'A'; i <= 'Z'; ++i)
+src/cardartlib/src/main.cpp	71	optimization-search	for (	for (int i = '0'; i <= '9'; ++i)
+src/cardartlib/src/main.cpp	78	optimization-search	fopen	"FILE* f = fopen(fname, ""rb"");"
+src/cardartlib/src/main.cpp	93	optimization-search	malloc	char* stringData = (char*)malloc(string_data_size);
+src/cardartlib/src/main.cpp	94	optimization-search	malloc	card_ptr_t* cardData = (card_ptr_t*)malloc(sizeof(card_ptr_t) * card_count);
+src/cardartlib/src/main.cpp	95	optimization-search	calloc	char** names = (char**)calloc(card_count, sizeof(char*));
+src/cardartlib/src/main.cpp	114	optimization-search	for (	for (unsigned int i = 0; i < card_count; i++) {
+src/cardartlib/src/main.cpp	125	optimization-search	for (	for (char* p = name; *p; ++p)
+src/cardartlib/src/main.cpp	128	optimization-search	malloc	names[id] = (char*)malloc(strlen(name) + 1);
+src/cardartlib/src/main.cpp	200	optimization-search	for (	for (unsigned int i = 0; i < numberOfCards; ++i) {
+src/cardartlib/src/main.cpp	208	optimization-search	for (	"for (fs::directory_iterator dirit(fs::path(""./CardArtManalink"")), end; dirit != end; ++dirit){"
+src/cardartlib/src/main.cpp	388	optimization-search	for (	for (unsigned int i = 0; i < numberOfCards; ++i)
 src/cards/alara_reborn.c	13	optimization-search	while(	while(i<500 && deck[i] != -1 ){
 src/cards/alara_reborn.c	104	optimization-search	for(	for(q=1; q<6; q++){
 src/cards/alara_reborn.c	106	optimization-search	for(	for(k=0; k<mana[q]; k++){
@@ -3458,81 +3074,74 @@ src/cards/dissension.c	2810	optimization-search	for (	for (i = 0; i < 3; ++i){
 src/cards/dissension.c	2824	optimization-search	for (	for (i = 0; i < 3; ++i){
 src/cards/dissension.c	3403	optimization-search	for(	for(i=2; i<instance->targets[1].player; i++){
 src/cards/dissension.c	3968	optimization-search	for(	for(i=0; i<2; i++){
-src/cards/draft.c	40	optimization-search	fopen	"if( !( f = fopen(""rarity.dat"", ""rb"") ) ){"
-src/cards/draft.c	55	optimization-search	malloc	if( !(rarities = malloc(expansion_size * total_cards + 1)) ){
-src/cards/draft.c	79	optimization-search	for(	for(i=0;i<100;i++){
-src/cards/draft.c	108	optimization-search	for(	for(i=0;i<deck_index;i++){
-src/cards/draft.c	115	optimization-search	for(	for(i=worst_index;i<deck_index;i++){
-src/cards/draft.c	124	optimization-search	for(	for(i=0;i<lands_needed;i++){
-src/cards/draft.c	146	optimization-search	fopen	"FILE *file = fopen(""draft_errors.txt"", ""a+"");"
-src/cards/draft.c	156	optimization-search	for(	for(i=0;i<40;i++){
-src/cards/draft.c	159	optimization-search	for(	for(i=40;i<45;i++){
-src/cards/draft.c	169	optimization-search	fopen	"FILE* f = fopen(""Menus.txt"", ""r"");"
-src/cards/draft.c	177	optimization-search	while (	"} while (strcmp(buf, ""@EXPANSIONNAMES\n""));"
-src/cards/draft.c	185	optimization-search	malloc	all_set_names = (const char**)malloc(num_valid_expansions * sizeof(const char*));
-src/cards/draft.c	189	optimization-search	for (	for (i = 0; i < num_valid_expansions; ++i)
-src/cards/draft.c	219	optimization-search	fopen	"FILE *file = fopen(""DraftSets//sets.txt"", ""r"");"
-src/cards/draft.c	222	optimization-search	for(	"for(line=0; line<set-CUSTOM_SET; line++){	//find the name of the set to load, check header *1"
-src/cards/draft.c	230	optimization-search	for(	for(i=0;i<2000;i++){
-src/cards/draft.c	236	optimization-search	fopen	"FILE *file2 = fopen(file_buffer, ""r"");"
-src/cards/draft.c	237	optimization-search	for(	for(i=0;i<8;i++){
-src/cards/draft.c	266	optimization-search	for (	for (card_id=0; card_id < available_slots; card_id++) {
-src/cards/draft.c	301	optimization-search	fopen	"FILE *file = fopen(""draft_errors.txt"", ""a+"");"
-src/cards/draft.c	323	optimization-search	for(	"for(i=0;i<15;i++){	//put cards in pack"
-src/cards/draft.c	328	optimization-search	for(	for(j=0;j<i;j++){
-src/cards/draft.c	342	optimization-search	for(	"for(i=0;i<15;i++){	//put cards in pack"
-src/cards/draft.c	348	optimization-search	for(	for(k=0; k < set_cards; k++) {
-src/cards/draft.c	360	optimization-search	for(	for(k=0; k < set_cards; k++) {
-src/cards/draft.c	370	optimization-search	for(	for(k=0; k < set_cards; k++) {
-src/cards/draft.c	383	optimization-search	for(	for(j=0;j<i;j++){
-src/cards/draft.c	397	optimization-search	for(	"for(i=0;i<15;i++){	//put cards in pack"
-src/cards/draft.c	401	optimization-search	while (	while (in_set1[num_set][card].rarity == 7) {
-src/cards/draft.c	421	optimization-search	fopen	"//FILE *file = fopen(""packs.txt"", ""a+"");"
-src/cards/draft.c	423	optimization-search	for(	for(card=0;card<500;card++){
-src/cards/draft.c	434	optimization-search	for(	for(card=0;card<2000;card++){
-src/cards/draft.c	463	optimization-search	sort	// insert sort the cards by color then name
-src/cards/draft.c	467	optimization-search	for(	for(i=0;i<count;i++){
-src/cards/draft.c	475	optimization-search	for(	for(i=499;i>=idx;i--){
-src/cards/draft.c	486	optimization-search	for(	for(i=0;i<500;i++){
-src/cards/draft.c	495	optimization-search	fopen	"FILE *file = fopen(""picks.txt"", ""w"");"
-src/cards/draft.c	503	optimization-search	for(	for(i=0;i<cards_left;i++){
-src/cards/draft.c	577	optimization-search	fopen	"FILE *file = fopen(""packs.txt"", ""a+"");"
-src/cards/draft.c	579	optimization-search	for (	for (player=1;player<8;player++){
-src/cards/draft.c	598	optimization-search	for (	for (i=best_card;i<14;i++){
-src/cards/draft.c	620	optimization-search	for (	for (i=best_card;i<cards_count;i++){
-src/cards/draft.c	642	optimization-search	for(	for(i=0;i<500;i++){
-src/cards/draft.c	653	optimization-search	while(	while(selected == -1 ){
-src/cards/draft.c	658	optimization-search	for (	for (i=selected;i<14;i++){
-src/cards/draft.c	669	optimization-search	for(	for(i=0;i<500;i++){
-src/cards/draft.c	680	optimization-search	while(	while(selected == -1 ){
-src/cards/draft.c	685	optimization-search	for (	for (i=selected;i<500;i++){
-src/cards/draft.c	696	optimization-search	for(	for(i=0;i<15*(pack+1);i++){
-src/cards/draft.c	705	optimization-search	fopen	"FILE *file2 = fopen(""packs.txt"", ""w"");"
-src/cards/draft.c	710	optimization-search	fopen	"FILE *file2 = fopen(""packs.txt"", ""a+"");"
-src/cards/draft.c	717	optimization-search	for(	for(i=0;i<40;i++){
-src/cards/draft.c	732	optimization-search	fopen	"FILE *file = fopen(buffer, ""w"");"
-src/cards/draft.c	736	optimization-search	fopen	"FILE *file3 = fopen(buffer, ""w"");"
-src/cards/draft.c	740	optimization-search	for(	for(i=0;i<45;i++){
-src/cards/draft.c	761	optimization-search	for (	for (i = 0; i < SETS_PER_MENU && i + start_from < num_valid_expansions; ++i)
-src/cards/draft.c	790	optimization-search	for (	for (base = ALIGN_COLUMNS; base < num_valid_expansions; base += SETS_PER_MENU)
-src/cards/draft.c	803	optimization-search	while (	while (set == -1)
-src/cards/draft.c	835	optimization-search	for(	for(j=0;j<2000;j++){
-src/cards/draft.c	841	optimization-search	for(	for(j=0;j<100;j++){
-src/cards/draft.c	843	optimization-search	for(	for(k=0;k<8;k++){
-src/cards/draft.c	849	optimization-search	for(	for(j=0;j<3;j++){
-src/cards/draft.c	866	optimization-search	for (	for (j = 0; j < num_sets; ++j){
-src/cards/draft.c	872	optimization-search	for(	for(j=0;j<3;j++){
-src/cards/draft.c	874	optimization-search	for(	for(k=0;k<1000;k++){
-src/cards/draft.c	876	optimization-search	for(	for(i=0;i<2;i++){
-src/cards/draft.c	883	optimization-search	for(	for(j=0;j<3;j++){
-src/cards/draft.c	885	optimization-search	for(	for(k=0;k<3;k++){
-src/cards/draft.c	899	optimization-search	fopen	"FILE *file = fopen(""draft_errors.txt"", ""a+"");"
-src/cards/draft.c	910	optimization-search	fopen	"FILE *file = fopen(""draft_errors.txt"", ""a+"");"
-src/cards/draft.c	973	optimization-search	fopen	"//FILE *file = fopen(""rot.txt"", ""a+"");"
-src/cards/draft.c	999	optimization-search	for(	for(count=0;count<24;count++){
-src/cards/draft.c	1009	optimization-search	for (	for (j=0;j<3;j++){
-src/cards/draft.c	1011	optimization-search	for (	for (i=0;i<15;i++){
-src/cards/draft.c	1026	optimization-search	for(	for(j = 1;j<8;j++){
+src/cards/draft.c	34	optimization-search	fopen	FILE *file = fopen(path, mode);
+src/cards/draft.c	36	optimization-search	fopen	"FILE *error_file = fopen(""draft_errors.txt"", ""a+"");"
+src/cards/draft.c	53	optimization-search	fopen	"if( !( f = fopen(""rarity.dat"", ""rb"") ) ){"
+src/cards/draft.c	68	optimization-search	malloc	if( !(rarities = malloc(expansion_size * total_cards + 1)) ){
+src/cards/draft.c	92	optimization-search	for(	for(i=0;i<100;i++){
+src/cards/draft.c	121	optimization-search	for(	for(i=0;i<deck_index;i++){
+src/cards/draft.c	128	optimization-search	for(	for(i=worst_index;i<deck_index;i++){
+src/cards/draft.c	137	optimization-search	for(	for(i=0;i<lands_needed;i++){
+src/cards/draft.c	171	optimization-search	for(	for(i=0;i<40;i++){
+src/cards/draft.c	174	optimization-search	for(	for(i=40;i<45;i++){
+src/cards/draft.c	184	optimization-search	fopen	"FILE* f = fopen(""Menus.txt"", ""r"");"
+src/cards/draft.c	192	optimization-search	while (	"} while (strcmp(buf, ""@EXPANSIONNAMES\n""));"
+src/cards/draft.c	200	optimization-search	malloc	all_set_names = (const char**)malloc(num_valid_expansions * sizeof(const char*));
+src/cards/draft.c	204	optimization-search	for (	for (i = 0; i < num_valid_expansions; ++i)
+src/cards/draft.c	241	optimization-search	while (	while (len > 0 && (buffer[len - 1] == '\n' || buffer[len - 1] == '\r')){
+src/cards/draft.c	269	optimization-search	fopen	"FILE *file = fopen(""DraftSets//sets.txt"", ""r"");"
+src/cards/draft.c	280	optimization-search	for(	"for(line=0; line<lines_to_read; line++){	//find the name of the set to load, check header *1"
+src/cards/draft.c	294	optimization-search	for(	for(i=0;i<2000;i++){
+src/cards/draft.c	300	optimization-search	fopen	"FILE *file2 = fopen(file_buffer, ""r"");"
+src/cards/draft.c	305	optimization-search	for(	for(i=0;i<8;i++){
+src/cards/draft.c	350	optimization-search	for (	for (card_id=0; card_id < available_slots; card_id++) {
+src/cards/draft.c	409	optimization-search	for(	"for(i=0;i<15;i++){	//put cards in pack"
+src/cards/draft.c	414	optimization-search	for(	for(j=0;j<i;j++){
+src/cards/draft.c	428	optimization-search	for(	"for(i=0;i<15;i++){	//put cards in pack"
+src/cards/draft.c	434	optimization-search	for(	for(k=0; k < set_cards; k++) {
+src/cards/draft.c	446	optimization-search	for(	for(k=0; k < set_cards; k++) {
+src/cards/draft.c	456	optimization-search	for(	for(k=0; k < set_cards; k++) {
+src/cards/draft.c	469	optimization-search	for(	for(j=0;j<i;j++){
+src/cards/draft.c	483	optimization-search	for(	"for(i=0;i<15;i++){	//put cards in pack"
+src/cards/draft.c	487	optimization-search	while (	while (in_set1[num_set][card].rarity == 7) {
+src/cards/draft.c	507	optimization-search	fopen	"//FILE *file = fopen(""packs.txt"", ""a+"");"
+src/cards/draft.c	509	optimization-search	for(	for(card=0;card<500;card++){
+src/cards/draft.c	520	optimization-search	for(	for(card=0;card<2000;card++){
+src/cards/draft.c	549	optimization-search	sort	// insert sort the cards by color then name
+src/cards/draft.c	553	optimization-search	for(	for(i=0;i<count;i++){
+src/cards/draft.c	561	optimization-search	for(	for(i=499;i>=idx;i--){
+src/cards/draft.c	572	optimization-search	for(	for(i=0;i<500;i++){
+src/cards/draft.c	589	optimization-search	for(	for(i=0;i<cards_left;i++){
+src/cards/draft.c	669	optimization-search	for (	for (player=1;player<8;player++){
+src/cards/draft.c	688	optimization-search	for (	for (i=best_card;i<14;i++){
+src/cards/draft.c	712	optimization-search	for (	for (i=best_card;i<cards_count;i++){
+src/cards/draft.c	734	optimization-search	for(	for(i=0;i<500;i++){
+src/cards/draft.c	745	optimization-search	while(	while(selected == -1 ){
+src/cards/draft.c	750	optimization-search	for (	for (i=selected;i<14;i++){
+src/cards/draft.c	761	optimization-search	for(	for(i=0;i<500;i++){
+src/cards/draft.c	772	optimization-search	while(	while(selected == -1 ){
+src/cards/draft.c	777	optimization-search	for (	for (i=selected;i<500;i++){
+src/cards/draft.c	788	optimization-search	for(	for(i=0;i<15*(pack+1);i++){
+src/cards/draft.c	813	optimization-search	for(	for(i=0;i<40;i++){
+src/cards/draft.c	849	optimization-search	for(	for(i=0;i<45;i++){
+src/cards/draft.c	878	optimization-search	for (	for (i = 0; i < SETS_PER_MENU && i + start_from < num_valid_expansions; ++i)
+src/cards/draft.c	907	optimization-search	for (	for (base = ALIGN_COLUMNS; base < num_valid_expansions; base += SETS_PER_MENU)
+src/cards/draft.c	920	optimization-search	while (	while (set == -1)
+src/cards/draft.c	952	optimization-search	for(	for(j=0;j<2000;j++){
+src/cards/draft.c	958	optimization-search	for(	for(j=0;j<100;j++){
+src/cards/draft.c	960	optimization-search	for(	for(k=0;k<8;k++){
+src/cards/draft.c	966	optimization-search	for(	for(j=0;j<3;j++){
+src/cards/draft.c	983	optimization-search	for (	for (j = 0; j < num_sets; ++j){
+src/cards/draft.c	989	optimization-search	for(	for(j=0;j<3;j++){
+src/cards/draft.c	991	optimization-search	for(	for(k=0;k<1000;k++){
+src/cards/draft.c	993	optimization-search	for(	for(i=0;i<2;i++){
+src/cards/draft.c	1000	optimization-search	for(	for(j=0;j<3;j++){
+src/cards/draft.c	1002	optimization-search	for(	for(k=0;k<3;k++){
+src/cards/draft.c	1102	optimization-search	fopen	"//FILE *file = fopen(""rot.txt"", ""a+"");"
+src/cards/draft.c	1128	optimization-search	for(	for(count=0;count<24;count++){
+src/cards/draft.c	1138	optimization-search	for (	for (j=0;j<3;j++){
+src/cards/draft.c	1140	optimization-search	for (	for (i=0;i<15;i++){
+src/cards/draft.c	1155	optimization-search	for(	for(j = 1;j<8;j++){
 src/cards/dragons_maze.c	67	optimization-search	for(	for(i=0; i<instance->info_slot; i++){
 src/cards/dragons_maze.c	258	optimization-search	for(	for(i=0; i<instance->number_of_targets; i++){
 src/cards/dragons_maze.c	867	optimization-search	for(	for(i=0; i<active_cards_count[player]; i++){
@@ -5182,63 +4791,64 @@ src/defs.h	2886	optimization-search	while (	"#define APNAP(playervar, ...)	do { 
 src/defs.h	2909	optimization-search	while (	"#define SWAP(a, b)	do { __typeof__(a) temp_swap_ = a; a = b; b = temp_swap_; } while (0)	// gcc extension: typeof"
 src/drawcardlib/config.c	222	optimization-search	for (	for (x = 0; x < 5; ++x)
 src/drawcardlib/config.c	223	optimization-search	for (	for (y = 0; y < 5; ++y)
-src/drawcardlib/config.c	428	optimization-search	for (	for (i = 0; i < MAX_PICHANDLES_PLUS_1; ++i)
-src/drawcardlib/config.c	434	optimization-search	for (	for (i = 0; i < FRAME_MAX_LOADED + 2; ++i)
-src/drawcardlib/config.c	441	optimization-search	for (	for (i = 0; i <= MAX_FONTHANDLES; ++i)
-src/drawcardlib/config.c	457	optimization-search	while (	"#define ADD_FONT(fontname)	do { strcpy(buf, base_dir); strcat(buf, fontname); AddFontResource(buf); } while (0)"
-src/drawcardlib/config.c	467	optimization-search	for (	for (i = 0; frames_pic_names[i]; ++i)
-src/drawcardlib/config.c	494	optimization-search	for (	for (fs = 0; fs <= MAX_FRAMESET; ++fs)
-src/drawcardlib/config.c	506	optimization-search	for (	for (fs = 0; fs <= MAX_FRAMESET; ++fs)
-src/drawcardlib/config.c	517	optimization-search	for (	for (j = 0; j < i; ++j)
-src/drawcardlib/config.c	530	optimization-search	LoadImage	if (!(pics[i] = LoadImage(buf, palette, 0, 0)))
-src/drawcardlib/config.c	557	optimization-search	for (	for (i = BIGCARDTITLE_FONT; i <= BIGCARDTITLE_FONT9; ++i)
-src/drawcardlib/config.c	568	optimization-search	for (	for (i = BIGCARDTYPE_FONT; i <= BIGCARDTYPE_FONT9; ++i)
-src/drawcardlib/config.c	588	optimization-search	for (	for (i = BIGCARDVANGUARD_FONT; i <= BIGCARDVANGUARD_FONT3; ++i)
-src/drawcardlib/config.c	605	optimization-search	for (	for (i = SMALLCARDTITLE_FONT; i <= SMALLCARDTITLE_FONT9; ++i)
-src/drawcardlib/config.c	778	optimization-search	for (	for (i = 0; i < FULLCARD_CURVE_MANA_MAX; ++i)
-src/drawcardlib/config.c	876	optimization-search	for (	for (i = 0; i < NUM_FRAMEPARTS_PER_FRAMESET; ++i)
-src/drawcardlib/config.c	896	optimization-search	for (	for (p = q = path; *q; ++p, ++q)
-src/drawcardlib/config.c	941	optimization-search	for (	for (i = 0; i < 255; ++i)
-src/drawcardlib/config.c	959	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); return; } while (0)"
-src/drawcardlib/config.c	961	optimization-search	fopen	"if (!(rarity_dat = fopen(""rarity.dat"", ""rb"")))"
-src/drawcardlib/config.c	980	optimization-search	for (	for (i = 1; i < 255; ++i)
-src/drawcardlib/config.c	996	optimization-search	for (	for (p = name; *p; ++p)
-src/drawcardlib/config.c	1022	optimization-search	for (	for (j = 1; j < i; ++j)
-src/drawcardlib/config.c	1032	optimization-search	calloc	"watermarks[idx].expansions = calloc(raw_expansions, 1);	// note that raw_expansions is 8 greater than the maximum permissible EXPANSION_t"
-src/drawcardlib/config.c	1034	optimization-search	while (	while (isascii(*p) && isdigit(*p))
-src/drawcardlib/config.c	1040	optimization-search	while (	"while (isascii(*p) && isdigit(*p))	// skip number"
-src/drawcardlib/config.c	1170	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
-src/drawcardlib/config.c	1173	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
-src/drawcardlib/config.c	1243	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
-src/drawcardlib/config.c	1253	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
-src/drawcardlib/config.c	1274	optimization-search	for (	for (i = 0; i < CARDBK_MIN_FRAMEPART; ++i)
-src/drawcardlib/config.c	1282	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
-src/drawcardlib/config.c	1288	optimization-search	for (	for (i = 0; i < NUM_FRAMEPARTS_PER_FRAMESET; ++i)
-src/drawcardlib/config.c	1303	optimization-search	sort	// Lookup table for a partial radix sort on watermark names
-src/drawcardlib/config.c	1310	optimization-search	for (	for (i = 0; watermarks[i].name; ++i)
-src/drawcardlib/config.c	1320	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); return; } while (0)"
-src/drawcardlib/config.c	1322	optimization-search	fopen	"if (!(watermarks_csv = fopen(""watermarks.csv"", ""r"")))"
-src/drawcardlib/config.c	1327	optimization-search	while (	while (fgets(line, 1024, watermarks_csv))
-src/drawcardlib/config.c	1354	optimization-search	for (	for (p = wmark; *p; ++p)
-src/drawcardlib/config.c	1408	optimization-search	for (	for (idx = 0; lookup[radix][idx]; ++idx)
-src/drawcardlib/config.c	1433	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); return; } while (0)"
-src/drawcardlib/config.c	1437	optimization-search	fopen	"if (!(rarity_dat = fopen(""rarity.dat"", ""rb"")))"
-src/drawcardlib/config.c	1457	optimization-search	calloc	if (!(raw_rarities = (uint8_t*)calloc(expansion_size, total_cards)))
-src/drawcardlib/config.c	1458	optimization-search	calloc	"BAIL(""Could not calloc uint8_t* %d, %d"", expansion_size, total_cards);"
-src/drawcardlib/config.c	1467	optimization-search	malloc	if (!(rarities = (Rarity**)malloc(total_cards * sizeof(Rarity**))))
-src/drawcardlib/config.c	1468	optimization-search	malloc	"BAIL(""Could not malloc Rarity** %d"", total_cards * sizeof(Rarity**));"
-src/drawcardlib/config.c	1471	optimization-search	for (	for (card = 0; card < total_cards; ++card)
-src/drawcardlib/config.c	1474	optimization-search	malloc	"if (!(r = (Rarity*)malloc(sizeof(Rarity) + raw_expansions + 2)))	// This is wider than it needs to be because of FAKE_EXPANSIONS, but that's ok."
-src/drawcardlib/config.c	1477	optimization-search	malloc	"BAIL(""Could not malloc Rarity* %d"", sizeof(Rarity) + raw_expansions + 2);"
-src/drawcardlib/config.c	1483	optimization-search	for (	for (raw_exp = FAKE_EXPANSIONS; raw_exp <= raw_expansions; ++raw_exp)
-src/drawcardlib/config.c	1534	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); goto bail; } while (0)"
-src/drawcardlib/config.c	1540	optimization-search	fopen	"if (!(menus_txt = fopen(""menus.txt"", ""r"")))"
-src/drawcardlib/config.c	1548	optimization-search	while (	while (fgets(line, 1024, menus_txt))
-src/drawcardlib/config.c	1575	optimization-search	malloc	expansion_categories = malloc(alloc_size);
-src/drawcardlib/config.c	1581	optimization-search	for (	for (i = 0; i < num_entries && i < raw_expansions; ++i)
-src/drawcardlib/config.c	1630	optimization-search	malloc	expansion_categories = malloc(alloc_size);
-src/drawcardlib/config.c	1646	optimization-search	for (	for (card = 0; card < total_cards; ++card)
-src/drawcardlib/config.c	1658	optimization-search	for (	for (raw_exp = FAKE_EXPANSIONS; raw_exp <= raw_expansions; ++raw_exp)
+src/drawcardlib/config.c	252	optimization-search	malloc	char* buf = (char*)malloc(total + 1);
+src/drawcardlib/config.c	455	optimization-search	for (	for (i = 0; i < MAX_PICHANDLES_PLUS_1; ++i)
+src/drawcardlib/config.c	461	optimization-search	for (	for (i = 0; i < FRAME_MAX_LOADED + 2; ++i)
+src/drawcardlib/config.c	468	optimization-search	for (	for (i = 0; i <= MAX_FONTHANDLES; ++i)
+src/drawcardlib/config.c	484	optimization-search	while (	"#define ADD_FONT(fontname)	do { strcpy(buf, base_dir); strcat(buf, fontname); AddFontResource(buf); } while (0)"
+src/drawcardlib/config.c	494	optimization-search	for (	for (i = 0; frames_pic_names[i]; ++i)
+src/drawcardlib/config.c	521	optimization-search	for (	for (fs = 0; fs <= MAX_FRAMESET; ++fs)
+src/drawcardlib/config.c	533	optimization-search	for (	for (fs = 0; fs <= MAX_FRAMESET; ++fs)
+src/drawcardlib/config.c	544	optimization-search	for (	for (j = 0; j < i; ++j)
+src/drawcardlib/config.c	557	optimization-search	LoadImage	if (!(pics[i] = LoadImage(buf, palette, 0, 0)))
+src/drawcardlib/config.c	584	optimization-search	for (	for (i = BIGCARDTITLE_FONT; i <= BIGCARDTITLE_FONT9; ++i)
+src/drawcardlib/config.c	595	optimization-search	for (	for (i = BIGCARDTYPE_FONT; i <= BIGCARDTYPE_FONT9; ++i)
+src/drawcardlib/config.c	615	optimization-search	for (	for (i = BIGCARDVANGUARD_FONT; i <= BIGCARDVANGUARD_FONT3; ++i)
+src/drawcardlib/config.c	632	optimization-search	for (	for (i = SMALLCARDTITLE_FONT; i <= SMALLCARDTITLE_FONT9; ++i)
+src/drawcardlib/config.c	805	optimization-search	for (	for (i = 0; i < FULLCARD_CURVE_MANA_MAX; ++i)
+src/drawcardlib/config.c	903	optimization-search	for (	for (i = 0; i < NUM_FRAMEPARTS_PER_FRAMESET; ++i)
+src/drawcardlib/config.c	923	optimization-search	for (	for (p = q = path; *q; ++p, ++q)
+src/drawcardlib/config.c	968	optimization-search	for (	for (i = 0; i < 255; ++i)
+src/drawcardlib/config.c	986	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); return; } while (0)"
+src/drawcardlib/config.c	988	optimization-search	fopen	"if (!(rarity_dat = fopen(""rarity.dat"", ""rb"")))"
+src/drawcardlib/config.c	1007	optimization-search	for (	for (i = 1; i < 255; ++i)
+src/drawcardlib/config.c	1023	optimization-search	for (	for (p = name; *p; ++p)
+src/drawcardlib/config.c	1049	optimization-search	for (	for (j = 1; j < i; ++j)
+src/drawcardlib/config.c	1059	optimization-search	calloc	"watermarks[idx].expansions = calloc(raw_expansions, 1);	// note that raw_expansions is 8 greater than the maximum permissible EXPANSION_t"
+src/drawcardlib/config.c	1061	optimization-search	while (	while (isascii(*p) && isdigit(*p))
+src/drawcardlib/config.c	1067	optimization-search	while (	"while (isascii(*p) && isdigit(*p))	// skip number"
+src/drawcardlib/config.c	1197	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
+src/drawcardlib/config.c	1200	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
+src/drawcardlib/config.c	1270	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
+src/drawcardlib/config.c	1280	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
+src/drawcardlib/config.c	1301	optimization-search	for (	for (i = 0; i < CARDBK_MIN_FRAMEPART; ++i)
+src/drawcardlib/config.c	1309	optimization-search	for (	for (i = 0; i <= MAX_FRAMESET; ++i)
+src/drawcardlib/config.c	1315	optimization-search	for (	for (i = 0; i < NUM_FRAMEPARTS_PER_FRAMESET; ++i)
+src/drawcardlib/config.c	1330	optimization-search	sort	// Lookup table for a partial radix sort on watermark names
+src/drawcardlib/config.c	1337	optimization-search	for (	for (i = 0; watermarks[i].name; ++i)
+src/drawcardlib/config.c	1347	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); return; } while (0)"
+src/drawcardlib/config.c	1349	optimization-search	fopen	"if (!(watermarks_csv = fopen(""watermarks.csv"", ""r"")))"
+src/drawcardlib/config.c	1354	optimization-search	while (	while (fgets(line, 1024, watermarks_csv))
+src/drawcardlib/config.c	1381	optimization-search	for (	for (p = wmark; *p; ++p)
+src/drawcardlib/config.c	1435	optimization-search	for (	for (idx = 0; lookup[radix][idx]; ++idx)
+src/drawcardlib/config.c	1460	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); return; } while (0)"
+src/drawcardlib/config.c	1464	optimization-search	fopen	"if (!(rarity_dat = fopen(""rarity.dat"", ""rb"")))"
+src/drawcardlib/config.c	1484	optimization-search	calloc	if (!(raw_rarities = (uint8_t*)calloc(expansion_size, total_cards)))
+src/drawcardlib/config.c	1485	optimization-search	calloc	"BAIL(""Could not calloc uint8_t* %d, %d"", expansion_size, total_cards);"
+src/drawcardlib/config.c	1494	optimization-search	malloc	if (!(rarities = (Rarity**)malloc(total_cards * sizeof(Rarity**))))
+src/drawcardlib/config.c	1495	optimization-search	malloc	"BAIL(""Could not malloc Rarity** %d"", total_cards * sizeof(Rarity**));"
+src/drawcardlib/config.c	1498	optimization-search	for (	for (card = 0; card < total_cards; ++card)
+src/drawcardlib/config.c	1501	optimization-search	malloc	"if (!(r = (Rarity*)malloc(sizeof(Rarity) + raw_expansions + 2)))	// This is wider than it needs to be because of FAKE_EXPANSIONS, but that's ok."
+src/drawcardlib/config.c	1504	optimization-search	malloc	"BAIL(""Could not malloc Rarity* %d"", sizeof(Rarity) + raw_expansions + 2);"
+src/drawcardlib/config.c	1510	optimization-search	for (	for (raw_exp = FAKE_EXPANSIONS; raw_exp <= raw_expansions; ++raw_exp)
+src/drawcardlib/config.c	1561	optimization-search	while (	"#define BAIL(...) do { popup(""drawcardlib.dll"", __VA_ARGS__); goto bail; } while (0)"
+src/drawcardlib/config.c	1567	optimization-search	fopen	"if (!(menus_txt = fopen(""menus.txt"", ""r"")))"
+src/drawcardlib/config.c	1575	optimization-search	while (	while (fgets(line, 1024, menus_txt))
+src/drawcardlib/config.c	1602	optimization-search	malloc	expansion_categories = malloc(alloc_size);
+src/drawcardlib/config.c	1608	optimization-search	for (	for (i = 0; i < num_entries && i < raw_expansions; ++i)
+src/drawcardlib/config.c	1657	optimization-search	malloc	expansion_categories = malloc(alloc_size);
+src/drawcardlib/config.c	1673	optimization-search	for (	for (card = 0; card < total_cards; ++card)
+src/drawcardlib/config.c	1685	optimization-search	for (	for (raw_exp = FAKE_EXPANSIONS; raw_exp <= raw_expansions; ++raw_exp)
 src/drawcardlib/drawcardlib.c	156	optimization-search	for (	for (i = 0; i < 256; ++i, ++entry)
 src/drawcardlib/drawcardlib.c	182	optimization-search	for (	for (i = 0; i <= MAX_CFG; ++i)
 src/drawcardlib/drawcardlib.c	194	optimization-search	for (	for (i = 0; i < MAX_PICHANDLES_PLUS_1; ++i)
@@ -5285,12 +4895,14 @@ src/functions/abilities.c	1195	optimization-search	for(	for(i=0; i<2; i++){
 src/functions/ability_icons.c	44	optimization-search	sort	* Combining them is acceptable since they have the same sort of effect and
 src/functions/ability_icons.c	123	optimization-search	for (	for (i = 0; i < 32; ++i){
 src/functions/ability_icons.c	128	optimization-search	for (	for (i = 0; i < 17; ++i){
-src/functions/ai.c	344	optimization-search	for (	for (i = 0; i < 16; ++i)
-src/functions/ai.c	361	optimization-search	for (	for (i = 0; i < EXE_DWORD(0x607D54); ++i)
-src/functions/ai.c	438	optimization-search	for (	for (col = 0; col <= 7; ++col)
-src/functions/ai.c	448	optimization-search	for (	for (c = 0; c < active_cards_count[AI]; ++c)
-src/functions/ai.c	455	optimization-search	for (	for (p = 0; p <= 1; ++p)
-src/functions/ai.c	456	optimization-search	for (	for (col = 0; col <= 7; ++col)
+src/functions/ai.c	349	optimization-search	for (	for (i = 0; i < 16; ++i)
+src/functions/ai.c	366	optimization-search	for (	for (i = 0; i < EXE_DWORD(0x607D54); ++i)
+src/functions/ai.c	443	optimization-search	for (	for (p = 0; p <= 1; ++p)
+src/functions/ai.c	444	optimization-search	for (	for (col = 0; col <= 7; ++col)
+src/functions/ai.c	448	optimization-search	for (	for (col = 0; col <= 7; ++col)
+src/functions/ai.c	455	optimization-search	for (	for (c = 0; c < active_cards_count[AI]; ++c)
+src/functions/ai.c	462	optimization-search	for (	for (p = 0; p <= 1; ++p)
+src/functions/ai.c	463	optimization-search	for (	for (col = 0; col <= 7; ++col)
 src/functions/auras.c	523	optimization-search	for (	for (i = 0; i < 2; i++){
 src/functions/auras.c	524	optimization-search	for (	for (count = 0; count < active_cards_count[i]; ++count){
 src/functions/auras.c	538	optimization-search	for (	for (i = 0; i < 2; i++){
@@ -5666,38 +5278,38 @@ src/functions/functions.c	9942	optimization-search	for (	for (c = begin; c <= la
 src/functions/functions.c	10435	optimization-search	for(	for(i=2; i<instance->targets[1].player; i++){
 src/functions/functions.c	10465	optimization-search	for(	for(i=2; i<instance->targets[1].player; i++){
 src/functions/functions.c	10506	optimization-search	for(	for(i=0; i<2; i++){
-src/functions/functions.c	11125	optimization-search	for (	for (p = 0; p <= 1; ++p)
-src/functions/functions.c	11126	optimization-search	for (	for (c = 0; c < active_cards_count[1-player]; ++c)
-src/functions/functions.c	11132	optimization-search	for (	for (c = active_cards_count[1-player] - 1; c >= 0; --c)
-src/functions/functions.c	11224	optimization-search	for(	for(i=0; i<2; i++){
-src/functions/functions.c	11327	optimization-search	for(	for(i=0;i<revealed; i++){
-src/functions/functions.c	11336	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
-src/functions/functions.c	11527	optimization-search	for (	for (p = 0; p < 2; ++p)
-src/functions/functions.c	11529	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c)
-src/functions/functions.c	11540	optimization-search	for(	for(i=0; i<2; i++){
-src/functions/functions.c	11583	optimization-search	for (	for (c = 0; c < active_cards_count[player]; ++c){
-src/functions/functions.c	11610	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
-src/functions/functions.c	11622	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
-src/functions/functions.c	11635	optimization-search	for(	for(k=selected; k<hand_index; k++){
-src/functions/functions.c	11657	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
-src/functions/functions.c	11905	optimization-search	for(	for(k=0; k<black; k++){
-src/functions/functions.c	11908	optimization-search	for(	for(k=0; k<blue; k++){
-src/functions/functions.c	11911	optimization-search	for(	for(k=0; k<green; k++){
-src/functions/functions.c	11914	optimization-search	for(	for(k=0; k<red; k++){
-src/functions/functions.c	11917	optimization-search	for(	for(k=0; k<white; k++){
-src/functions/functions.c	11925	optimization-search	for(	for(i=0; i<2; i++){
-src/functions/functions.c	12508	optimization-search	while (	while (1){
-src/functions/functions.c	12718	optimization-search	for(	for(p=0; p<2; p++){
-src/functions/functions.c	12719	optimization-search	for(	for(c=0; c<active_cards_count[c]; c++){
-src/functions/functions.c	12753	optimization-search	for(	for(p=0; p<2; p++){
-src/functions/functions.c	12815	optimization-search	for(	for(i=0; i<instance->number_of_targets; i++){
-src/functions/functions.c	12944	optimization-search	for(	for(i=base_target; i<trgs; i++){
-src/functions/functions.c	13512	optimization-search	for (	for (p = 0; p < 2; ++p){
-src/functions/functions.c	13513	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c){
-src/functions/functions.c	13586	optimization-search	for (	for (i = 0; i < end; ++i)
-src/functions/functions.c	14346	optimization-search	for(	for(c = 0; c < active_cards_count[player]; c++){
-src/functions/functions.c	14355	optimization-search	for(	for(c = 0; c < active_cards_count[player]; c++){
-src/functions/functions.c	14355	truncated	-	Stopped after 200 matches in this file.
+src/functions/functions.c	11130	optimization-search	for (	for (p = 0; p <= 1; ++p)
+src/functions/functions.c	11131	optimization-search	for (	for (c = 0; c < active_cards_count[1-player]; ++c)
+src/functions/functions.c	11137	optimization-search	for (	for (c = active_cards_count[1-player] - 1; c >= 0; --c)
+src/functions/functions.c	11229	optimization-search	for(	for(i=0; i<2; i++){
+src/functions/functions.c	11332	optimization-search	for(	for(i=0;i<revealed; i++){
+src/functions/functions.c	11341	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
+src/functions/functions.c	11532	optimization-search	for (	for (p = 0; p < 2; ++p)
+src/functions/functions.c	11534	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c)
+src/functions/functions.c	11545	optimization-search	for(	for(i=0; i<2; i++){
+src/functions/functions.c	11588	optimization-search	for (	for (c = 0; c < active_cards_count[player]; ++c){
+src/functions/functions.c	11615	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
+src/functions/functions.c	11627	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
+src/functions/functions.c	11640	optimization-search	for(	for(k=selected; k<hand_index; k++){
+src/functions/functions.c	11662	optimization-search	for(	for(i=0;i<active_cards_count[player]; i++){
+src/functions/functions.c	11910	optimization-search	for(	for(k=0; k<black; k++){
+src/functions/functions.c	11913	optimization-search	for(	for(k=0; k<blue; k++){
+src/functions/functions.c	11916	optimization-search	for(	for(k=0; k<green; k++){
+src/functions/functions.c	11919	optimization-search	for(	for(k=0; k<red; k++){
+src/functions/functions.c	11922	optimization-search	for(	for(k=0; k<white; k++){
+src/functions/functions.c	11930	optimization-search	for(	for(i=0; i<2; i++){
+src/functions/functions.c	12513	optimization-search	while (	while (1){
+src/functions/functions.c	12723	optimization-search	for(	for(p=0; p<2; p++){
+src/functions/functions.c	12724	optimization-search	for(	for(c=0; c<active_cards_count[c]; c++){
+src/functions/functions.c	12758	optimization-search	for(	for(p=0; p<2; p++){
+src/functions/functions.c	12820	optimization-search	for(	for(i=0; i<instance->number_of_targets; i++){
+src/functions/functions.c	12949	optimization-search	for(	for(i=base_target; i<trgs; i++){
+src/functions/functions.c	13517	optimization-search	for (	for (p = 0; p < 2; ++p){
+src/functions/functions.c	13518	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c){
+src/functions/functions.c	13591	optimization-search	for (	for (i = 0; i < end; ++i)
+src/functions/functions.c	14351	optimization-search	for(	for(c = 0; c < active_cards_count[player]; c++){
+src/functions/functions.c	14360	optimization-search	for(	for(c = 0; c < active_cards_count[player]; c++){
+src/functions/functions.c	14360	truncated	-	Stopped after 200 matches in this file.
 src/functions/gain_control_and_legend_rule.c	46	optimization-search	for (	for (c = 0; c < active_cards_count[player]; ++c){
 src/functions/gain_control_and_legend_rule.c	121	optimization-search	while (	while (1)
 src/functions/gain_control_and_legend_rule.c	127	optimization-search	while (	while (1)
@@ -5894,20 +5506,20 @@ src/functions/targets.c	771	optimization-search	for (	for (c = 0; c < actives; +
 src/functions/targets.c	934	optimization-search	while (	while (1)
 src/functions/targets.c	1041	optimization-search	for (	for (p = 0; p < 2; ++p)
 src/functions/targets.c	1042	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c)
-src/functions/targets.c	1276	optimization-search	fopen	"FILE *file = fopen(""TargetsHuman.txt"", ""r"");"
-src/functions/targets.c	1288	optimization-search	fopen	"file = fopen(""TargetsAI.txt"", ""r"");"
-src/functions/targets.c	1310	optimization-search	for(	for(i=0;i<500;i++){
-src/functions/targets.c	1320	optimization-search	for(	for(p=0;p<2;p++){
-src/functions/targets.c	1321	optimization-search	for(	for(i=-1;i<active_cards_count[p];i++){
-src/functions/targets.c	1409	optimization-search	for (	for (i = 0; i < num && can_target(td); ++i)
-src/functions/targets.c	1441	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
-src/functions/targets.c	1483	optimization-search	for (	for (i = 0; i < num && can_target(td); ++i)
-src/functions/targets.c	1496	optimization-search	for (	for (p = 0; p <= 1; ++p)
-src/functions/targets.c	1497	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c)
-src/functions/targets.c	1862	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
-src/functions/targets.c	1929	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
-src/functions/targets.c	1947	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
-src/functions/targets.c	1955	optimization-search	for (	for (j = 0; j < i; ++j)
+src/functions/targets.c	1173	optimization-search	fopen	"FILE *file = fopen(path, ""r"");"
+src/functions/targets.c	1178	optimization-search	while(	while(count < 499 && fgets(buffer, sizeof(buffer), file)){
+src/functions/targets.c	1316	optimization-search	for(	for(i=0;i<500;i++){
+src/functions/targets.c	1326	optimization-search	for(	for(p=0;p<2;p++){
+src/functions/targets.c	1327	optimization-search	for(	for(i=-1;i<active_cards_count[p];i++){
+src/functions/targets.c	1415	optimization-search	for (	for (i = 0; i < num && can_target(td); ++i)
+src/functions/targets.c	1447	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
+src/functions/targets.c	1489	optimization-search	for (	for (i = 0; i < num && can_target(td); ++i)
+src/functions/targets.c	1502	optimization-search	for (	for (p = 0; p <= 1; ++p)
+src/functions/targets.c	1503	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c)
+src/functions/targets.c	1868	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
+src/functions/targets.c	1935	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
+src/functions/targets.c	1953	optimization-search	for (	for (i = 0; i < instance->number_of_targets; ++i)
+src/functions/targets.c	1961	optimization-search	for (	for (j = 0; j < i; ++j)
 src/functions/token_generation.c	97	optimization-search	for (	for (i = 4; i <= 8; ++i)
 src/functions/token_generation.c	207	optimization-search	for (	for (p = 0; p <= 1; ++p)
 src/functions/token_generation.c	208	optimization-search	for (	for (c = 0; c < active_cards_count[p]; ++c)
@@ -6071,6 +5683,10 @@ src/patches/patch.h	70	optimization-search	fopen	"if (!(f = fopen(filename, ""r+
 tools/audit_codebase.py	43	optimization-search	malloc	"""memory-allocation"": re.compile(r""\b(malloc|calloc|realloc|free|new\s+|delete\s+|GlobalAlloc|LocalAlloc)\b""),"
 tools/audit_codebase.py	45	optimization-search	CreateDIBSection	"""gdi-lifetime"": re.compile(r""\b(CreateDIBSection|CreateCompatibleBitmap|CreateCompatibleDC|SelectObject|DeleteObject|DeleteDC|ReleaseDC)\b""),"
 tools/audit_codebase.py	56	optimization-search	malloc	"PERF_RE = re.compile(r""\b(for\s*\(|while\s*\(|malloc|calloc|realloc|fopen|CreateFile|ReadFile|LoadImage|CreateDIBSection|CreateCompatible|GetPixel|SetPixel|sort|qsort|system\s*\(|popen|glob|opendir|readdir)\b"")"
+tools/check-source-snapshot-parity.sh	124	optimization-search	sort	"find src -type f -print | sed 's#^src/##' | sort > ""$src_list"""
+tools/check-source-snapshot-parity.sh	125	optimization-search	sort	"find Program/src -type f -print | sed 's#^Program/src/##' | sort > ""$program_list"""
+tools/check-source-snapshot-parity.sh	126	optimization-search	sort	"cat ""$src_list"" ""$program_list"" | sort -u > ""$all_list"""
+tools/check-source-snapshot-parity.sh	223	optimization-search	while(	"check_marker ""functions/targets.c"" ""while(count < 499 && fgets(buffer, sizeof(buffer), file))"" ""bounded-auto-target-read"""
 tools/list-branch-delta.sh	135	optimization-search	for (	"awk -F '\t' 'NR > 1 {count[$4]++; if ($5 != ""-"") bytes[$4] += $5} END {for (k in count) print k ""\t"" count[k] ""\t"" bytes[k]+0}' |"
 tools/list-branch-delta.sh	136	optimization-search	sort	sort |
 tools/list-branch-delta.sh	143	optimization-search	for (	"awk -F '\t' 'NR > 1 {count[$1]++} END {for (s in count) print s ""\t"" count[s]}' |"

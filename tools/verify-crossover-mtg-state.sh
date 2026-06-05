@@ -25,12 +25,82 @@ WINE = Path("/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wi
 EXPECTED_HASHES = {
     "Shandalar.exe": "ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b",
     "Program/Shandalar.exe": "ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b",
-    "Magic.exe": "5bf518d66342d79562efb1106449413ada06814a6c14818a1e3101fd470c82d1",
-    "Program/Magic.exe": "0fb8b87fe35c8be037ae3419a9b9cd70a27df840ae6af6c7488c2685046a74fa",
+    "Magic.exe": "93a40ce2c96aafee1d858a71ed69eb8c539aa9851796eb54b1af58f0bb97aba0",
+    "Program/Magic.exe": "685669692634ec830fe228904e11b1b536bd4b20e52192863a6280c2dbff6b66",
     "FaceMaker.exe": "41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246",
     "Program/FaceMaker.exe": "41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246",
-    "ManalinkEh.dll": "6a5fd8057d456d691fb87810eee8dbe1680b18d1c4c79530cbe036cb443df1eb",
-    "Program/ManalinkEh.dll": "7fc7ad86b5a3eaaa8879c76814dc454917f2e4b58acf15530e42fdcc78da2517",
+    "Shandalar.dll": "ebd4d8d5375fa05f8db8203e0069db347c062a0b1d48856bc6307190de225534",
+    "Program/Shandalar.dll": "ebd4d8d5375fa05f8db8203e0069db347c062a0b1d48856bc6307190de225534",
+    "CardArtLib.dll": "975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f6416457e510484",
+    "Program/CardArtLib.dll": "975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f6416457e510484",
+    "DeckDLL.dll": "98a4d135e655b980f46e2e6a96843dfea459c6655d85d378bc46c6c744f64578",
+    "Program/Deckdll.dll": "98a4d135e655b980f46e2e6a96843dfea459c6655d85d378bc46c6c744f64578",
+    "Drawcardlib.dll": "8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712",
+    "Program/Drawcardlib.dll": "8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712",
+    "ManalinkEh.dll": "cd9709398eba57d12044dcb936c2e728619a6eac3f401156b155efc6f872e656",
+    "Program/ManalinkEh.dll": "6832a01eb11ae8872e4a00f8e8916e918a8538be865cf4bb43a9929cc690f07c",
+    "zlib.dll": "9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90",
+    "Program/zlib.dll": "9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90",
+    "libgcc_s_dw2-1.dll": "89f6147f5ed3f271d0b88f0586e079b9ac22e76c31221e5d5013aa273cc4694b",
+    "Program/libgcc_s_dw2-1.dll": "89f6147f5ed3f271d0b88f0586e079b9ac22e76c31221e5d5013aa273cc4694b",
+    "Cards.dat": "abb2f631bd7897dcebde9d6c4bf61a6ea2e37e30fda42490c37b6f4d60f42e94",
+    "Program/Cards.dat": "abb2f631bd7897dcebde9d6c4bf61a6ea2e37e30fda42490c37b6f4d60f42e94",
+    "DBInfo.dat": "519ccecb98548c1a2e15fe8025951aafba9f116595b5775a0f2ab2bb393e48c1",
+    "Program/DBInfo.dat": "519ccecb98548c1a2e15fe8025951aafba9f116595b5775a0f2ab2bb393e48c1",
+    "Rarity.dat": "e0c779a73f0ed780b0c689741805a4e40f7f4949420a8d27fa73137e528ae04f",
+    "Program/Rarity.dat": "e0c779a73f0ed780b0c689741805a4e40f7f4949420a8d27fa73137e528ae04f",
+    "Program/Manalink.ini": "30153fd22c76b0c0751c538938af46fbf25b1b51d5b4bb2bd9a2eead1b9c2f2b",
+    "Program/DuelArt/Modern.dat": "9a2d70be70b70ef27036a47550bc0d549437df0c032a4e0237a217e4731e1aee",
+    "Program/DuelArt/Planeswalker.dat": "619e0b9780ec204b9fbf6f48b2eb541c9d8a6f19a73f27d4d76d25828db7d369",
+    "Program/TT0530m_.ttf": "51afc07ba27699fec048dd387f6e6068177c0ee4cd95c6483eb378978fdd1cee",
+    "Program/TT0127m_.ttf": "e3b5229e753851acab9450fcad1acd9f89412f7bdaebfb6fbf25fc0536ab02d2",
+    "Program/TT0085m_.ttf": "e738818f4bbf3f29c68601fe5cb16cb045650e7d1854806e584204fd2686ed4c",
+    "Program/TT0298m_.ttf": "a36d52dec6c6216e2dce6f0979c715e5454a0d18647bedd03096f33dbd3d707f",
+    "Program/TT0299m_.ttf": "fb1ce5027aa0a0cd3817f559e63fe4d28b6e125c0c32d3635337d2acfb109519",
+    "Program/TT0300m_.ttf": "83a70d460edbdc1a804764d6b17de2189765a5eb18cf598e8fa7e88058d67a79",
+    "Program/CardArt/ManaSymbols.pic": "60662a25dce90dc8d4cd0b0227fe62c33b50ac95115711428d463770b8d42cbd",
+    "Program/CardArt/Expansion_Symbols.pic": "01264f3dd6b9a8b5576b50bba49e951cb3fbdba1d33aee2b7ee8a9530d5e7348",
+    "Program/CardArt/Watermarks.pic": "ec276a27c79a8cea55cdcb5474cbc5b96071f3744c18d7fc466ea6c503892c9c",
+    "Program/CardArt/CardCounters.png": "8d26128c1932b22f25b84b96d8d01e9b2dce008cd96265f3efabdc0c5f11ecbb",
+    "Program/CardArt/Modern/Triggering.png": "a8c94fc5b58540f884e799a1603f65dd61d99af9e50efee4762b4021bedc6f00",
+    "Program/CardArt/Modern/CardOv_Nyx.png": "b4bbf12f1f9851e2526ba25ad9b3de147fafa6aa7b1bc4400616b65aaf25209d",
+    "Program/CardArt/Planeswalker/LoyaltyBase.png": "7413ba6227b9b07a491a2730e170525ea4744d188e31e2665abc2361ebd6e79e",
+    "Program/CardArt/Planeswalker/LoyaltyMinus.png": "89f01e1bda607459ea6560c0b6608a9aab409799c05cd00279fee6d0bfd82cb9",
+    "Program/CardArt/Planeswalker/LoyaltyPlus.png": "ad4b8971dd43955ccfd3daf9020b3a6f60c0a8fe9f21b73847c07a81b12af3ef",
+    "Program/CardArt/Planeswalker/LoyaltyZero.png": "8faf7ec5225538bcb97b539a1614282007ea484317411806a311f1c2d800ccef",
+}
+
+EXPECTED_HEX_PREFIXES = {
+    "Magic.exe": [
+        (0x5DB1F, bytes.fromhex("c7055c72780000000000")),
+        (0x694B7, bytes.fromhex("6a0068ac5c71008b451050e8c9710000")),
+        (0x694EB, bytes.fromhex("6a0068ac5c71008b451050e895710000")),
+    ],
+    "Program/Magic.exe": [
+        (0x5DB1F, bytes.fromhex("c7055c72780000000000")),
+        (0x694B7, bytes.fromhex("6a0068ac5c71008b451050e8c9710000")),
+        (0x694EB, bytes.fromhex("6a0068ac5c71008b451050e895710000")),
+    ],
+    "ManalinkEh.dll": [
+        (0x3BB035, bytes.fromhex("f60590f14e00040f84ae000000e90100")),
+        (0x1A8, bytes.fromhex("00010000")),
+        (0x44CB23, bytes.fromhex("e9089b0400")),
+        (0x495A30, bytes.fromhex("f7c30000000f7410f60590f14e0004750731d2e9d961fbfff6c3040f844265fbffe9d264fbff")),
+        (0x40D0E1, bytes.fromhex("e97a950800909090909090")),
+        (0x495A60, bytes.fromhex("89c385c07e0881fb0e0100007e05bb0e010000e9746af7ff")),
+        (0x40DB84, bytes.fromhex("e9078b0800")),
+        (0x495A90, bytes.fromhex("8d7db431c08b0c85c0f34e00890c874083f81075f0ba010000002b5508c1e20531c08b8c82a0f44e00898c82c0f34e004083f80875ece9eb74f7ff")),
+    ],
+    "Program/ManalinkEh.dll": [
+        (0x381A25, bytes.fromhex("f60590f14e00040f84ae000000e90100")),
+        (0x1A8, bytes.fromhex("00010000")),
+        (0x40F115, bytes.fromhex("e916450400")),
+        (0x452C30, bytes.fromhex("f7c30000000f7410f60590f14e0004750731d2e9d9b7fbfff6c3040f8434bbfbffe9c4bafbff")),
+        (0x3D2DA1, bytes.fromhex("e9ba080800909090909090")),
+        (0x452C60, bytes.fromhex("89c385c07e0881fb0e0100007e05bb0e010000e934f7f7ff")),
+        (0x3D3844, bytes.fromhex("e947fe0700")),
+        (0x452C90, bytes.fromhex("8d7db431c08b0c85c0f34e00890c874083f81075f0ba010000002b5508c1e20531c08b8c82a0f44e00898c82c0f34e004083f80875ece9ab01f8ff")),
+    ],
 }
 
 FACE_SUPPORT = [
@@ -79,6 +149,18 @@ def expect_hash(rel_path: str, expected: str) -> None:
         fail(f"{rel_path} sha256 {actual} != {expected}")
 
 
+def expect_hex_prefix(rel_path: str, offset: int, expected: bytes) -> None:
+    path = INSTALL / rel_path
+    expect_file(path)
+    with path.open("rb") as handle:
+        handle.seek(offset)
+        actual = handle.read(len(expected))
+    if actual != expected:
+        fail(
+            f"{rel_path} hex at 0x{offset:x} {actual.hex()} != {expected.hex()}"
+        )
+
+
 def section_has_value(text: str, section: str, raw_value: str) -> bool:
     in_section = False
     section_header = f"[{section}]"
@@ -110,6 +192,11 @@ for rel_path, expected in EXPECTED_HASHES.items():
     expect_hash(rel_path, expected)
 ok(f"patched bottle runtime hashes match docs ({len(EXPECTED_HASHES)} checked)")
 
+for rel_path, checks in EXPECTED_HEX_PREFIXES.items():
+    for offset, expected in checks:
+        expect_hex_prefix(rel_path, offset, expected)
+ok("patched bottle representative byte checks match docs")
+
 for rel_path in FACE_SUPPORT:
     expect_file(INSTALL / rel_path)
 ok("FaceMaker support files are present in root and Program paths")
@@ -118,9 +205,25 @@ for rel_path in ["Shandalar.ini", "Program/Shandalar.ini"]:
     text = read_text(INSTALL / rel_path)
     if not re.search(r"(?m)^Window\s*=\s*2$", text):
         fail(f"{rel_path} does not contain Window = 2")
+    if not re.search(r"(?m)^AiDecisionTime\s*=\s*270$", text):
+        fail(f"{rel_path} does not contain AiDecisionTime = 270")
 ok("bottle Shandalar ini files use Window = 2")
 
+for rel_path in ["config.txt", "Program/config.txt"]:
+    text = read_text(INSTALL / rel_path)
+    if not re.search(r"(?m)^AiDecisionTime:270$", text):
+        fail(f"{rel_path} does not contain AiDecisionTime:270")
+ok("bottle config files use AiDecisionTime:270")
+
 user_reg = read_text(BASE / "user.reg")
+if not section_has_value(
+    user_reg,
+    "Software\\\\MicroProse\\\\Magic: The Gathering\\\\DuelOptions",
+    '"ShowCoinFlips"="0"',
+):
+    fail("DuelOptions ShowCoinFlips=0 not found")
+ok("MTG DuelOptions disables coin-flip animations")
+
 for exe in ["FaceMaker.exe", "Magic.exe", "Shandalar.exe"]:
     if not section_has_value(user_reg, f"Software\\\\Wine\\\\AppDefaults\\\\{exe}", '"Version"="win7"'):
         fail(f"{exe} app-default Version=win7 not found")

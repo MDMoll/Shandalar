@@ -23,7 +23,7 @@ Program/src/card_id.h	C/C++ header	source	750807	15647
 Program/src/cardartlib/CardArtLib.def	module definition	source	314	18
 Program/src/cardartlib/CardArtLib.h	C/C++ header	source	1276	42
 Program/src/cardartlib/Makefile	make	source	328	17
-Program/src/cardartlib/src/main.cpp	C++	source	9611	331
+Program/src/cardartlib/src/main.cpp	C++	source	11405	415
 Program/src/cards/alara_reborn.c	C	source	73506	2406
 Program/src/cards/alliances.c	C	source	93519	3025
 Program/src/cards/antiquities.c	C	source	74714	2438
@@ -46,7 +46,7 @@ Program/src/cards/conspiracy.c	C	source	95874	2861
 Program/src/cards/dark_ascension.c	C	source	115755	3802
 Program/src/cards/darksteel.c	C	source	83291	2769
 Program/src/cards/dissension.c	C	source	135149	4210
-Program/src/cards/draft.c	C	source	29212	1039
+Program/src/cards/draft.c	C	source	31816	1168
 Program/src/cards/dragons_maze.c	C	source	120784	3849
 Program/src/cards/dragons_of_tarkir.c	C	source	171171	5322
 Program/src/cards/equipment.c	C	source	4634	131
@@ -121,7 +121,7 @@ Program/src/cards/zendikar.c	C	source	145870	4540
 Program/src/defs.h	C/C++ header	source	129699	2605
 Program/src/dmp.pl	Perl	source	2476	148
 Program/src/drawcardlib/Cardartlib.def	module definition	source	193	12
-Program/src/drawcardlib/config.c	C	source	53282	1493
+Program/src/drawcardlib/config.c	C	source	53922	1520
 Program/src/drawcardlib/drawcardlib.c	C	source	60689	1598
 Program/src/drawcardlib/Drawcardlib.def	module definition	source	290	16
 Program/src/drawcardlib/drawcardlib.h	C/C++ header	source	21075	442
@@ -134,7 +134,7 @@ Program/src/drawcardlib/image.def	module definition	source	39	4
 Program/src/drawcardlib/Makefile	make	source	1772	55
 Program/src/Expansions.h	C/C++ header	source	4374	137
 Program/src/functions/abilities.c	C	source	38575	1165
-Program/src/functions/ai.c	C	source	21077	592
+Program/src/functions/ai.c	C	source	21296	600
 Program/src/functions/auras.c	C	source	27942	703
 Program/src/functions/boost_creature_type.c	C	source	2720	89
 Program/src/functions/call_card_fn.asm	assembly	source	879	24
@@ -150,7 +150,7 @@ Program/src/functions/engine.c	C	source	53500	1427
 Program/src/functions/equipments.c	C	source	15846	475
 Program/src/functions/events.c	C	source	41446	1038
 Program/src/functions/exiledby.c	C	source	18930	569
-Program/src/functions/functions.c	C	source	482860	14797
+Program/src/functions/functions.c	C	source	483067	14802
 Program/src/functions/generic_protection_from.asm	assembly	source	646	38
 Program/src/functions/get_power.asm	assembly	source	381	31
 Program/src/functions/global_checking.c	C	source	33335	1158
@@ -169,7 +169,7 @@ Program/src/functions/protection_from_white.asm	assembly	source	179	10
 Program/src/functions/rules_engine.c	C	source	109478	3275
 Program/src/functions/sacrifices.c	C	source	26777	859
 Program/src/functions/show_backtrace.c	C	source	1031	44
-Program/src/functions/targets.c	C	source	71094	2068
+Program/src/functions/targets.c	C	source	71113	2074
 Program/src/functions/token_generation.c	C	source	17190	462
 Program/src/functions/tutors.c	C	source	47330	1523
 Program/src/functions/upkeep.c	C	source	10431	259
@@ -189,7 +189,7 @@ Program/src/patches/patch_always_set_tapped_for_mana_color.pl	Perl	source	956	22
 Program/src/patches/patch_attach_equipment.pl	Perl	source	4898	106
 Program/src/patches/patch_autotap_artifacts_and_creatures.pl	Perl	source	5408	102
 Program/src/patches/patch_change_ai_time.pl	Perl	source	5474	152
-Program/src/patches/patch_change_ai_time_540.c	C	source	1285	40
+Program/src/patches/patch_change_ai_time_540.c	C	source	2432	68
 Program/src/patches/patch_charge_mana.pl	Perl	source	10085	171
 Program/src/patches/patch_charge_mana_can_activate.c	C	source	2991	68
 Program/src/patches/patch_charge_mana_can_activate.pl	Perl	source	2592	54
@@ -235,12 +235,13 @@ Program/src/patches/patch_wndproc_CardClass_hook.pl	Perl	source	1240	23
 Program/src/patches/patch_x_cost_artifacts.pl	Perl	source	2220	36
 Program/src/subtypes.h	C/C++ header	source	29858	644
 Shandalar help.bat	batch	unknown	27	1
-src/build.pl	Perl	source	1438	56
+src/build.pl	Perl	source	4288	148
 src/capturestackbacktrace.def	module definition	source	60	4
+src/card_id.h	C/C++ header	source	750807	15647
 src/cardartlib/CardArtLib.def	module definition	source	314	18
 src/cardartlib/CardArtLib.h	C/C++ header	source	1276	42
 src/cardartlib/Makefile	make	source	341	18
-src/cardartlib/src/main.cpp	C++	source	9611	331
+src/cardartlib/src/main.cpp	C++	source	11405	415
 src/cards/alara_reborn.c	C	source	75289	2478
 src/cards/alliances.c	C	source	93947	3025
 src/cards/angels_feather.asm	assembly	source	178	10
@@ -275,7 +276,7 @@ src/cards/dark_ascension.c	C	source	116536	3800
 src/cards/darksteel.c	C	source	86503	2859
 src/cards/demons_horn.asm	assembly	source	172	10
 src/cards/dissension.c	C	source	138067	4276
-src/cards/draft.c	C	source	29212	1039
+src/cards/draft.c	C	source	31816	1168
 src/cards/dragons_claw.asm	assembly	source	172	10
 src/cards/dragons_maze.c	C	source	123602	3936
 src/cards/dragons_of_tarkir.c	C	source	171443	5328
@@ -384,11 +385,11 @@ src/deck/image.def	module definition	source	39	4
 src/deck/Makefile	make	source	628	32
 src/deck/resources.h	C/C++ header	source	5114	146
 src/defs.h	C/C++ header	source	150606	2975
-src/deploy.bat	batch	source	2112	46
+src/deploy.bat	batch	source	2716	71
 src/dmp.pl	Perl	source	2476	148
 src/Drawcardlib.def	module definition	source	134	8
 src/drawcardlib/Cardartlib.def	module definition	source	193	12
-src/drawcardlib/config.c	C	source	60793	1687
+src/drawcardlib/config.c	C	source	61433	1714
 src/drawcardlib/drawcardlib.c	C	source	67343	1777
 src/drawcardlib/Drawcardlib.def	module definition	source	290	16
 src/drawcardlib/drawcardlib.h	C/C++ header	source	25092	490
@@ -404,7 +405,7 @@ src/functions/abilities.c	C	source	39512	1220
 src/functions/ability_effects.asm	assembly	source	304	20
 src/functions/ability_icons.c	C	source	5315	139
 src/functions/affect_me.c	C	source	161	9
-src/functions/ai.c	C	source	21022	592
+src/functions/ai.c	C	source	21241	600
 src/functions/auras.c	C	source	31543	821
 src/functions/boost_creature_type.c	C	source	2720	89
 src/functions/call_card_fn.asm	assembly	source	879	24
@@ -420,7 +421,7 @@ src/functions/engine.c	C	source	74203	2052
 src/functions/equipments.c	C	source	16067	481
 src/functions/events.c	C	source	43473	1105
 src/functions/exiledby.c	C	source	19013	569
-src/functions/functions.c	C	source	495175	15367
+src/functions/functions.c	C	source	495381	15371
 src/functions/gain_control_and_legend_rule.c	C	source	18509	537
 src/functions/generic_life_artifact_charm.asm	assembly	source	1960	96
 src/functions/generic_protection_from.asm	assembly	source	646	38
@@ -445,7 +446,7 @@ src/functions/protection_from_white.asm	assembly	source	179	10
 src/functions/rules_engine.c	C	source	111395	3293
 src/functions/sacrifices.c	C	source	26777	859
 src/functions/show_backtrace.c	C	source	1031	44
-src/functions/targets.c	C	source	71093	2068
+src/functions/targets.c	C	source	71112	2074
 src/functions/token_generation.c	C	source	18209	498
 src/functions/tutors.c	C	source	48931	1561
 src/functions/upkeep.c	C	source	10449	262
@@ -468,7 +469,7 @@ src/patches/patch_always_set_tapped_for_mana_color.pl	Perl	source	956	22
 src/patches/patch_attach_equipment.pl	Perl	source	4898	106
 src/patches/patch_autotap_artifacts_and_creatures.pl	Perl	source	5408	102
 src/patches/patch_change_ai_time.pl	Perl	source	5474	152
-src/patches/patch_change_ai_time_540.c	C	source	1285	40
+src/patches/patch_change_ai_time_540.c	C	source	2432	68
 src/patches/patch_charge_mana.pl	Perl	source	10597	177
 src/patches/patch_charge_mana_can_activate.c	C	source	2991	68
 src/patches/patch_charge_mana_can_activate.pl	Perl	source	2906	59
@@ -518,23 +519,31 @@ src/patches/patch_wndproc_CardClass_hook.pl	Perl	source	1240	23
 src/patches/patch_x_cost_artifacts.pl	Perl	source	2220	36
 src/stypes.h	C/C++ header	source	14866	342
 src/subtypes.h	C/C++ header	source	30000	648
-tools/audit_codebase.py	Python	tooling	14372	379
+tools/audit_codebase.py	Python	tooling	27774	780
+tools/check-build-prereqs.sh	shell	tooling	3680	146
 tools/check-security-scanner-availability.sh	shell	tooling	4695	138
+tools/check-source-snapshot-parity.sh	shell	tooling	8448	266
 tools/create-cleanup-test-copy.sh	shell	tooling	3620	144
 tools/create-git-handoff-bundle.sh	shell	tooling	5726	192
 tools/create-patch-package.sh	shell	tooling	6513	203
 tools/create-security-scan-results-template.sh	shell	tooling	1748	70
 tools/list-branch-delta.sh	shell	tooling	4506	182
 tools/list-security-scan-targets.sh	shell	tooling	1125	47
-tools/print-manual-gameplay-baseline.sh	shell	tooling	6081	171
+tools/patch-ai-decision-clamp.py	Python	tooling	7300	215
+tools/patch-ai-decision-fallback.py	Python	tooling	4518	135
+tools/patch-ai-raw-mana-snapshot.py	Python	tooling	7855	238
+tools/patch-magic-coinflip-default.py	Python	tooling	3383	110
+tools/patch-manalink-generic-damage-prevention-guard.py	Python	tooling	7515	220
+tools/print-manual-gameplay-baseline.sh	shell	tooling	6257	173
 tools/print-security-scan-baseline.sh	shell	tooling	4198	134
 tools/print-share-status.sh	shell	tooling	9114	199
 tools/record-manual-gameplay-result.sh	shell	tooling	6106	223
 tools/record-security-scan-result.sh	shell	tooling	8938	279
-tools/verify-crossover-mtg-state.sh	shell	tooling	5022	149
+tools/verify-crossover-mtg-state.sh	shell	tooling	11734	252
 tools/verify-final-share-gates.sh	shell	tooling	2105	67
 tools/verify-handoff-artifacts.sh	shell	tooling	4166	134
 tools/verify-handoff-readiness.sh	shell	tooling	12512	234
+tools/verify-install-tree.sh	shell	tooling	9142	156
 tools/verify-manual-gameplay-results.sh	shell	tooling	6883	236
 tools/verify-security-scan-results.sh	shell	tooling	4636	164
-tools/verify-share-readiness.sh	shell	tooling	16585	434
+tools/verify-share-readiness.sh	shell	tooling	25304	587

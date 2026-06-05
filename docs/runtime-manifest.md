@@ -1,6 +1,6 @@
 # Runtime Manifest
 
-Generated from local inspection on 2026-05-31 in
+Generated from local inspection on 2026-05-31 and updated on 2026-06-05 in
 `/Users/mdmoll/Shandalar/Shandalar`.
 
 This manifest is for identity, review, and scan handoff. It is not a malware
@@ -11,13 +11,98 @@ scan, a license grant, or proof of gameplay stability.
 | Path | SHA-256 | File type | Notes |
 | --- | --- | --- | --- |
 | `Shandalar.exe` | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` | PE32 GUI Intel 80386 | Root CrossOver launch target; patched for DIB, name, and movement behavior. |
-| `Program/Shandalar.exe` | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` | PE32 GUI Intel 80386 | Same bytes as root; direct `MTG` launch is still deferred because `Program/zlib.dll` is absent. |
-| `Magic.exe` | `5bf518d66342d79562efb1106449413ada06814a6c14818a1e3101fd470c82d1` | PE32 GUI Intel 80386 | Root duel executable; patched for declared-attacker undo. |
-| `Program/Magic.exe` | `0fb8b87fe35c8be037ae3419a9b9cd70a27df840ae6af6c7488c2685046a74fa` | PE32 GUI Intel 80386 | Manalink launcher target; patched for declared-attacker undo. |
+| `Program/Shandalar.exe` | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` | PE32 GUI Intel 80386 | Same bytes as root; adjacent `Program/zlib.dll`, Program helper DLLs, `Program/libgcc_s_dw2-1.dll`, Program config, font, card-data, and CardArt assets observed so far are now present in this checkout and the local copied install, but the direct copied-bottle Program path still needs visible retesting. |
+| `Magic.exe` | `93a40ce2c96aafee1d858a71ed69eb8c539aa9851796eb54b1af58f0bb97aba0` | PE32 GUI Intel 80386 | Root duel executable; patched for declared-attacker undo and `ShowCoinFlips` default-off behavior. |
+| `Program/Magic.exe` | `685669692634ec830fe228904e11b1b536bd4b20e52192863a6280c2dbff6b66` | PE32 GUI Intel 80386 | Manalink launcher target; patched for declared-attacker undo and `ShowCoinFlips` default-off behavior. |
 | `FaceMaker.exe` | `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246` | PE32 GUI Intel 80386 | Active patched FaceMaker helper. |
 | `Program/FaceMaker.exe` | `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246` | PE32 GUI Intel 80386 | Same bytes as root active FaceMaker helper. |
-| `ManalinkEh.dll` | `6a5fd8057d456d691fb87810eee8dbe1680b18d1c4c79530cbe036cb443df1eb` | PE32 DLL Intel 80386 | Root DLL patched for the damage-prevention activation freeze. |
-| `Program/ManalinkEh.dll` | `7fc7ad86b5a3eaaa8879c76814dc454917f2e4b58acf15530e42fdcc78da2517` | PE32 DLL Intel 80386 | Program DLL patched at its own offset for the same damage-prevention guard. |
+| `ManalinkEh.dll` | `cd9709398eba57d12044dcb936c2e728619a6eac3f401156b155efc6f872e656` | PE32 DLL Intel 80386 | Root DLL patched for Samite-family damage-prevention activation, generic activated damage-prevention gating, AI decision-time clamping, and AI raw-mana speculation snapshot restore safety. |
+| `Program/ManalinkEh.dll` | `6832a01eb11ae8872e4a00f8e8916e918a8538be865cf4bb43a9929cc690f07c` | PE32 DLL Intel 80386 | Program DLL patched at its own offsets for Samite-family damage-prevention activation, generic activated damage-prevention gating, AI clamping, and AI raw-mana speculation snapshot restore safety. |
+| `zlib.dll` | `9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90` | PE32 DLL Intel 80386 | Root image/decompression support DLL. |
+| `Program/zlib.dll` | `9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `zlib.dll` added to close the adjacent Program loader gap in this checkout. |
+| `Shandalar.dll` | `ebd4d8d5375fa05f8db8203e0069db347c062a0b1d48856bc6307190de225534` | PE32 DLL Intel 80386 | Root Shandalar helper generation; copied to `Program/Shandalar.dll` after a visible Program-path Hornet fatal recurred from the older Program helper. |
+| `Program/Shandalar.dll` | `ebd4d8d5375fa05f8db8203e0069db347c062a0b1d48856bc6307190de225534` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `Shandalar.dll`; the old Program copy contained the Hornet `raw_cards_data` assert string and mismatched the current root card-data generation. |
+| `CardArtLib.dll` | `975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f6416457e510484` | PE32 DLL Intel 80386 | Root card-art helper generation. |
+| `Program/CardArtLib.dll` | `975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f6416457e510484` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `CardArtLib.dll` for direct Program-path Shandalar launches. |
+| `DeckDLL.dll` | `98a4d135e655b980f46e2e6a96843dfea459c6655d85d378bc46c6c744f64578` | PE32 DLL Intel 80386 | Root deck/card-data helper generation. |
+| `Program/Deckdll.dll` | `98a4d135e655b980f46e2e6a96843dfea459c6655d85d378bc46c6c744f64578` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `DeckDLL.dll` with the existing Program filename case preserved. |
+| `Drawcardlib.dll` | `8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712` | PE32 DLL Intel 80386 | Root card-rendering helper generation. |
+| `Program/Drawcardlib.dll` | `8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `Drawcardlib.dll`; this generation imports `libgcc_s_dw2-1.dll`. |
+| `libgcc_s_dw2-1.dll` | `89f6147f5ed3f271d0b88f0586e079b9ac22e76c31221e5d5013aa273cc4694b` | PE32 DLL Intel 80386 | Root GCC runtime helper needed by the current drawcard helper. |
+| `Program/libgcc_s_dw2-1.dll` | `89f6147f5ed3f271d0b88f0586e079b9ac22e76c31221e5d5013aa273cc4694b` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `libgcc_s_dw2-1.dll` added after the first helper-DLL sync retest showed the newer Program `DrawCardLib.dll` could not load it. |
+
+## Active Card Data Files
+
+`Cards.dat`, `DBInfo.dat`, and `Rarity.dat` are working-directory-relative
+runtime data. Keep each folder's trio in sync: `DeckDLL` checks that
+`DBInfo.dat` and `Rarity.dat` record counts match the loaded `Cards.dat` count,
+and direct Program-path Shandalar startup now expects card ids beyond the older
+Program trio.
+
+| Path | SHA-256 | File type | Notes |
+| --- | --- | --- | --- |
+| `Cards.dat` | `abb2f631bd7897dcebde9d6c4bf61a6ea2e37e30fda42490c37b6f4d60f42e94` | data | Root active card database; header count is `0x41b2` / 16818 cards. |
+| `Program/Cards.dat` | `abb2f631bd7897dcebde9d6c4bf61a6ea2e37e30fda42490c37b6f4d60f42e94` | data | Byte-for-byte copy of root `Cards.dat`; replaced the older Program copy whose 15718-card header made `raw_cards_data[-1]` possible while building Hornet. |
+| `DBInfo.dat` | `519ccecb98548c1a2e15fe8025951aafba9f116595b5775a0f2ab2bb393e48c1` | data | Root active card metadata; header count is `0x41b2` / 16818 records. |
+| `Program/DBInfo.dat` | `519ccecb98548c1a2e15fe8025951aafba9f116595b5775a0f2ab2bb393e48c1` | data | Byte-for-byte copy of root `DBInfo.dat`; copied after the older 15718-record Program copy caused DeckDLL's generic `Cards.dat, DBInfo.dat or Rarity.dat` fatal. |
+| `Rarity.dat` | `e0c779a73f0ed780b0c689741805a4e40f7f4949420a8d27fa73137e528ae04f` | data | Root active rarity/card metadata; header count is `0x41b2` / 16818 records. |
+| `Program/Rarity.dat` | `e0c779a73f0ed780b0c689741805a4e40f7f4949420a8d27fa73137e528ae04f` | data | Byte-for-byte copy of root `Rarity.dat`; copied together with `Program/Cards.dat` to keep the Program trio internally consistent. |
+
+## Active Program Adjacent Config
+
+These files are required by logged direct Program-path runs of
+`C:\Shandalar\Program\Shandalar.exe` from `C:\Shandalar\Program`. The local
+`MTG` copied install has matching copies at the same relative paths.
+
+| Path | SHA-256 | File type | Notes |
+| --- | --- | --- | --- |
+| `Program/Manalink.ini` | `30153fd22c76b0c0751c538938af46fbf25b1b51d5b4bb2bd9a2eead1b9c2f2b` | ASCII text | Copied from the active root `Manalink.ini`; a 2026-06-04 bounded log first reported repeated missing `C:\Shandalar\Program\Manalink.ini`, and the follow-up log opened this path successfully. |
+| `Program/DuelArt/Modern.dat` | `9a2d70be70b70ef27036a47550bc0d549437df0c032a4e0237a217e4731e1aee` | ASCII text | Copied from the preserved Program-style `Mods/Art/_undo/.../DuelArt/Modern.dat` snapshot after the follow-up 2026-06-04 log repeatedly looked for `C:\Shandalar\Program\DuelArt\Modern.dat`; `/tmp/shandalar-mtg-program-planeswalker-font-retest-cx.log` later opened this path with `ret 0`. |
+| `Program/DuelArt/Planeswalker.dat` | `619e0b9780ec204b9fbf6f48b2eb541c9d8a6f19a73f27d4d76d25828db7d369` | ASCII text | Copied from the preserved Program-style `Mods/Art/_undo/.../DuelArt/Planeswalker.dat` snapshot after the post-`Modern.dat` 2026-06-04 log repeatedly looked for `C:\Shandalar\Program\DuelArt\Planeswalker.dat`; the follow-up log opened this path with `ret 0`. |
+
+## Active Program Font Files
+
+`Program/Drawcardlib.dll` builds these names from its base directory before
+adding private card-rendering fonts. A post-`Modern.dat` exact-path log showed
+missing `C:\Shandalar\Program\TT*.ttf` lookups for these six names. The files
+below are byte-for-byte copies of the matching root font files, with names
+matching the hardcoded Program-path lookups exactly.
+
+| Path | SHA-256 | File type | Notes |
+| --- | --- | --- | --- |
+| `Program/TT0530m_.ttf` | `51afc07ba27699fec048dd387f6e6068177c0ee4cd95c6483eb378978fdd1cee` | TrueType Font data | Opened with `ret 0` in `/tmp/shandalar-mtg-program-planeswalker-font-retest-cx.log`. |
+| `Program/TT0127m_.ttf` | `e3b5229e753851acab9450fcad1acd9f89412f7bdaebfb6fbf25fc0536ab02d2` | TrueType Font data | Opened with `ret 0` in `/tmp/shandalar-mtg-program-planeswalker-font-retest-cx.log`. |
+| `Program/TT0085m_.ttf` | `e738818f4bbf3f29c68601fe5cb16cb045650e7d1854806e584204fd2686ed4c` | TrueType Font data | Opened with `ret 0` in `/tmp/shandalar-mtg-program-planeswalker-font-retest-cx.log`. |
+| `Program/TT0298m_.ttf` | `a36d52dec6c6216e2dce6f0979c715e5454a0d18647bedd03096f33dbd3d707f` | TrueType Font data | Opened with `ret 0` in `/tmp/shandalar-mtg-program-planeswalker-font-retest-cx.log`. |
+| `Program/TT0299m_.ttf` | `fb1ce5027aa0a0cd3817f559e63fe4d28b6e125c0c32d3635337d2acfb109519` | TrueType Font data | Opened with `ret 0` in `/tmp/shandalar-mtg-program-planeswalker-font-retest-cx.log`. |
+| `Program/TT0300m_.ttf` | `83a70d460edbdc1a804764d6b17de2189765a5eb18cf598e8fa7e88058d67a79` | TrueType Font data | Opened with `ret 0` in `/tmp/shandalar-mtg-program-planeswalker-font-retest-cx.log`. |
+
+## Active Program Card Rendering Assets
+
+These `Program/CardArt/` assets are required by `Program/Drawcardlib.dll` when
+launching from `C:\Shandalar\Program`. A visible 2026-06-03 CrossOver dialog
+reported missing `C:\Shandalar\Program\CARDART\ManaSymbols.pic`; a later
+bounded exact-path log reached missing
+`C:\Shandalar\Program\CARDART\modern\Triggering.png`; a follow-up bounded log
+after that copy loaded `Triggering.png` and reached missing
+`C:\Shandalar\Program\CARDART\planeswalker\LoyaltyBase.png`; a 2026-06-04
+bounded log after the loyalty copy reached missing
+`C:\Shandalar\Program\CARDART\modern\CardOv_Nyx.png`. The files below were
+copied from the preserved `Mods/Art/_undo/.../CardArt` snapshot into both this
+checkout and the local `MTG` copied install.
+
+| Path | SHA-256 | File type | Notes |
+| --- | --- | --- | --- |
+| `Program/CardArt/ManaSymbols.pic` | `60662a25dce90dc8d4cd0b0227fe62c33b50ac95115711428d463770b8d42cbd` | PNG image data, 1508 x 26 RGBA | Required by drawcardlib `ManaSymbols` config. |
+| `Program/CardArt/Expansion_Symbols.pic` | `01264f3dd6b9a8b5576b50bba49e951cb3fbdba1d33aee2b7ee8a9530d5e7348` | PNG image data, 3600 x 1875 RGBA | Required when expansion symbols are visible. |
+| `Program/CardArt/Watermarks.pic` | `ec276a27c79a8cea55cdcb5474cbc5b96071f3744c18d7fc466ea6c503892c9c` | PNG image data, 750 x 600 RGBA | Required by watermark rendering config. |
+| `Program/CardArt/CardCounters.png` | `8d26128c1932b22f25b84b96d8d01e9b2dce008cd96265f3efabdc0c5f11ecbb` | PNG image data, 1152 x 1440 RGBA | `Program/DuelArt/Duel.dat` sets `Cardcounters=Cardcounters.png`. |
+| `Program/CardArt/Modern/Triggering.png` | `a8c94fc5b58540f884e799a1603f65dd61d99af9e50efee4762b4021bedc6f00` | PNG image data, 224 x 224 RGBA | Required by the Modern card-frame config after the first top-level drawcardlib assets load. |
+| `Program/CardArt/Modern/CardOv_Nyx.png` | `b4bbf12f1f9851e2526ba25ad9b3de147fafa6aa7b1bc4400616b65aaf25209d` | PNG image data, 337 x 484 RGBA | Generic Modern Nyx overlay required because `Program/DuelArt/Duel.dat` maps the Modern `CardOv_*Nyx` frame entries to `CardOv_Nyx.png`. |
+| `Program/CardArt/Planeswalker/LoyaltyBase.png` | `7413ba6227b9b07a491a2730e170525ea4744d188e31e2665abc2361ebd6e79e` | PNG image data, 62 x 39 RGBA | Required by the Planeswalker card-frame config after `Triggering.png` loads. |
+| `Program/CardArt/Planeswalker/LoyaltyMinus.png` | `89f01e1bda607459ea6560c0b6608a9aab409799c05cd00279fee6d0bfd82cb9` | PNG image data, 62 x 43 RGBA | Planeswalker loyalty badge image from the preserved Program-style snapshot. |
+| `Program/CardArt/Planeswalker/LoyaltyPlus.png` | `ad4b8971dd43955ccfd3daf9020b3a6f60c0a8fe9f21b73847c07a81b12af3ef` | PNG image data, 62 x 43 RGBA | Planeswalker loyalty badge image from the preserved Program-style snapshot. |
+| `Program/CardArt/Planeswalker/LoyaltyZero.png` | `8faf7ec5225538bcb97b539a1614282007ea484317411806a311f1c2d800ccef` | PNG image data, 62 x 43 RGBA | Planeswalker loyalty badge image from the preserved Program-style snapshot. |
 
 ## Preserved Reference Executables
 
@@ -53,8 +138,8 @@ scan, a license grant, or proof of gameplay stability.
 Run from `/Users/mdmoll/Shandalar/Shandalar`:
 
 ```sh
-shasum -a 256 Shandalar.exe Program/Shandalar.exe Magic.exe Program/Magic.exe FaceMaker.exe Program/FaceMaker.exe ManalinkEh.dll Program/ManalinkEh.dll FaceMaker-Original.exe FaceMaker-nores.exe Program/FaceMaker-nores.exe
-file Shandalar.exe Program/Shandalar.exe Magic.exe Program/Magic.exe FaceMaker.exe Program/FaceMaker.exe ManalinkEh.dll Program/ManalinkEh.dll FaceMaker-Original.exe FaceMaker-nores.exe Program/FaceMaker-nores.exe
+shasum -a 256 Shandalar.exe Program/Shandalar.exe Magic.exe Program/Magic.exe FaceMaker.exe Program/FaceMaker.exe ManalinkEh.dll Program/ManalinkEh.dll zlib.dll Program/zlib.dll Shandalar.dll Program/Shandalar.dll CardArtLib.dll Program/CardArtLib.dll DeckDLL.dll Program/Deckdll.dll Drawcardlib.dll Program/Drawcardlib.dll libgcc_s_dw2-1.dll Program/libgcc_s_dw2-1.dll Cards.dat Program/Cards.dat DBInfo.dat Program/DBInfo.dat Rarity.dat Program/Rarity.dat Program/Manalink.ini Program/DuelArt/Modern.dat Program/DuelArt/Planeswalker.dat Program/TT0530m_.ttf Program/TT0127m_.ttf Program/TT0085m_.ttf Program/TT0298m_.ttf Program/TT0299m_.ttf Program/TT0300m_.ttf Program/CardArt/ManaSymbols.pic Program/CardArt/Expansion_Symbols.pic Program/CardArt/Watermarks.pic Program/CardArt/CardCounters.png Program/CardArt/Modern/Triggering.png Program/CardArt/Modern/CardOv_Nyx.png Program/CardArt/Planeswalker/LoyaltyBase.png Program/CardArt/Planeswalker/LoyaltyMinus.png Program/CardArt/Planeswalker/LoyaltyPlus.png Program/CardArt/Planeswalker/LoyaltyZero.png FaceMaker-Original.exe FaceMaker-nores.exe Program/FaceMaker-nores.exe
+file Shandalar.exe Program/Shandalar.exe Magic.exe Program/Magic.exe FaceMaker.exe Program/FaceMaker.exe ManalinkEh.dll Program/ManalinkEh.dll zlib.dll Program/zlib.dll Shandalar.dll Program/Shandalar.dll CardArtLib.dll Program/CardArtLib.dll DeckDLL.dll Program/Deckdll.dll Drawcardlib.dll Program/Drawcardlib.dll libgcc_s_dw2-1.dll Program/libgcc_s_dw2-1.dll Cards.dat Program/Cards.dat DBInfo.dat Program/DBInfo.dat Rarity.dat Program/Rarity.dat Program/Manalink.ini Program/DuelArt/Modern.dat Program/DuelArt/Planeswalker.dat Program/TT0530m_.ttf Program/TT0127m_.ttf Program/TT0085m_.ttf Program/TT0298m_.ttf Program/TT0299m_.ttf Program/TT0300m_.ttf Program/CardArt/ManaSymbols.pic Program/CardArt/Expansion_Symbols.pic Program/CardArt/Watermarks.pic Program/CardArt/CardCounters.png Program/CardArt/Modern/Triggering.png Program/CardArt/Modern/CardOv_Nyx.png Program/CardArt/Planeswalker/LoyaltyBase.png Program/CardArt/Planeswalker/LoyaltyMinus.png Program/CardArt/Planeswalker/LoyaltyPlus.png Program/CardArt/Planeswalker/LoyaltyZero.png FaceMaker-Original.exe FaceMaker-nores.exe Program/FaceMaker-nores.exe
 tools/verify-share-readiness.sh
 ```
 

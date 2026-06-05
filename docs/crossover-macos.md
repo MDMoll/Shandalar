@@ -18,14 +18,15 @@ Result on this machine: CrossOver 26.1.0.39808.
 | 1 | Create separate 32-bit bottles for Windows XP, Windows 7, Windows 8, and Windows 10 tests. Use Windows 11 only for comparison. |
 | 2 | Start with no extra redistributables. The inspected launch targets import `msvcrt.dll`, not `vcruntime*.dll`, `msvcp*.dll`, or `mfc*.dll`. |
 | 3 | If a missing-runtime dialog appears, install x86 runtimes into the bottle, not the repo. Try Visual C++ 2010 x86 only after recording the exact missing DLL or old-doc rationale. |
-| 4 | For the current copied `MTG` install, use `C:\Shandalar\Shandalar.exe` with working directory `C:\Shandalar`. Direct `C:\Shandalar\Program\Shandalar.exe` currently fails because `Program\zlib.dll` is absent. |
+| 4 | For the current copied `MTG` install, use `C:\Shandalar\Shandalar.exe` with working directory `C:\Shandalar`. Direct `C:\Shandalar\Program\Shandalar.exe` previously exposed missing adjacent layout files: first `Program\zlib.dll`, then Program CardArt assets, `Program\Manalink.ini`, Program `DuelArt` configs through `Planeswalker.dat`, six Program `TT*.ttf` font files, and older Program card-data files. This checkout and the local copied install now have those files; the latest bounded Program-path log opened the Program card-data trio, `shandalar.dll`, and `Shandalar.ini` without the earlier fatal strings, but the exact Program path still needs visible retesting. |
 | 5 | Save separate launchers for root `Shandalar.exe`, root `Magic.exe`, and `Program\Magic.exe` only after each one works. |
 | 6 | Leave high-resolution or Retina mode off for first launch unless testing proves it helps; use Wine virtual desktop for the Shandalar start-color path. |
 | 7 | For the start-color assertion, make sure `FaceMaker.exe`, `FaceData.txt`, `FaceButtons.txt`, and face art are present next to the active Shandalar launch path, but do not treat FaceMaker alone as proven sufficient. |
 | 8 | Set `Window = 2` in both `Shandalar.ini` and `Program/Shandalar.ini` before the start-color retest. |
 | 9 | Give the bottle a non-tiny paging file, such as `C:\pagefile.sys 512 1024`, because the forum thread identifies paging-file absence as a trigger. |
 | 10 | Use the patched `Shandalar.exe` for the start-color assertion. The local `MTG` and `Shandalar-Win8-Test` copied installs were patched in this pass, with original backups saved beside each executable. |
-| 11 | For the Femeref Healer duel freeze, use the patched `ManalinkEh.dll` too. The local `MTG` copied install has already been updated with backups; repeat that backup/copy pattern for any other copied CrossOver install before retesting there. |
+| 11 | For duel-freeze retests, use the patched `ManalinkEh.dll` too. The local `MTG` copied install has already been updated with backups for the Femeref/Samite/Kithkin healer guard, generic activated damage-prevention guard, AI decision-time clamp, and AI raw-mana snapshot patch. Repeat the backup/copy pattern for any other copied CrossOver install only with explicit approval before retesting there. |
+| 12 | For duel-start retests, keep `ShowCoinFlips=0`. A bounded `--e 0442 --p 0442` log in `MTG` opened root `Magic.exe` without targeted coin-flip/fatal strings, but visible first-turn input still needs testing. |
 
 ## Run Command Values
 
@@ -36,9 +37,9 @@ shows that root `Shandalar.exe` opens root `Magic.exe`.
 | Target | Command | Working directory | Status |
 | --- | --- | --- |
 | Shandalar in copied `MTG` bottle | `C:\Shandalar\Shandalar.exe` | `C:\Shandalar` | Bottle-local copy is now patched; config-only fixes did not solve user retesting before this patch. |
-| Root Magic in copied `MTG` bottle | `C:\Shandalar\Magic.exe` | `C:\Shandalar` | Opened by root `Shandalar.exe`; root `ManalinkEh.dll` must be the patched copy for the Femeref/Samite/Kithkin healer freeze retest. |
-| Program Magic in copied `MTG` bottle | `C:\Shandalar\Program\Magic.exe` | `C:\Shandalar\Program` | Manalink launcher path; `Program\ManalinkEh.dll` must be the patched copy for equivalent healer testing. |
-| Program Shandalar in copied `MTG` bottle | `C:\Shandalar\Program\Shandalar.exe` | `C:\Shandalar\Program` | Currently fails in this bottle because `Program\zlib.dll` is missing. |
+| Root Magic in copied `MTG` bottle | `C:\Shandalar\Magic.exe` | `C:\Shandalar` | Opened by root `Shandalar.exe`; a bounded `--e 0442 --p 0442` direct-duel log also opened it without targeted coin-flip/fatal strings. Root `ManalinkEh.dll` is patched for damage-prevention, AI clamp, and AI raw-mana snapshot retests. |
+| Program Magic in copied `MTG` bottle | `C:\Shandalar\Program\Magic.exe` | `C:\Shandalar\Program` | Manalink launcher path; `Program\ManalinkEh.dll` is patched for equivalent damage-prevention, AI clamp, and AI raw-mana snapshot testing. |
+| Program Shandalar in copied `MTG` bottle | `C:\Shandalar\Program\Shandalar.exe` | `C:\Shandalar\Program` | Earlier failures exposed missing `Program\zlib.dll`, missing Program CardArt drawcardlib assets, `Program\Manalink.ini`, Program `DuelArt` configs through `Planeswalker.dat`, Program `TT*.ttf` font files, and older Program card-data files. Repo and copied-install layouts now include them, and the latest bounded log opened the Program card-data trio, `shandalar.dll`, and `Shandalar.ini` without the earlier fatal strings. The exact path still needs a visible retest. |
 | Shandalar in fresh Win8 test bottle | `C:\Shandalar\Shandalar.exe` | `C:\Shandalar` | Bottle-local copy is now patched and passed the crash-point smoke test. |
 | Patched fresh Win8 repo-mapped launch | `Y:\Shandalar\Shandalar\Shandalar.exe` | `Y:\Shandalar\Shandalar` | Start-color crash point verified with Wine `wscript` SendKeys after the repo binary patch. |
 
@@ -47,7 +48,9 @@ CLI form:
 ```sh
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\Shandalar.exe"
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\Magic.exe"
+/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\Shandalar.exe" --e 0442 --p 0442
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\FaceMaker.exe"
+/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar\Program" "C:\Shandalar\Program\Shandalar.exe"
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar\Program" "C:\Shandalar\Program\Magic.exe"
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle Shandalar-Win8-Test --workdir "C:\Shandalar" "C:\Shandalar\Shandalar.exe"
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle Shandalar-Win8-Test --workdir "Y:\Shandalar\Shandalar" "Y:\Shandalar\Shandalar\Shandalar.exe"
@@ -58,6 +61,16 @@ Logging form used for the current investigation:
 ```sh
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" --cx-log /tmp/shandalar-mtg-cdrive-appdefault-desktop-cx.log --debugmsg +seh,+gdi,+bitmap,+loaddll,+file "C:\Shandalar\Shandalar.exe"
 ```
+
+Direct-duel smoke form used after the coin-flip default patch:
+
+```sh
+/usr/bin/perl -e 'alarm 25; exec @ARGV' /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" --cx-log /tmp/shandalar-mtg-root-ep0442-coinflip-default-cx.log --debugmsg +seh,+file,+process "C:\Shandalar\Shandalar.exe" --e 0442 --p 0442
+```
+
+The command printed `Stand-alone duel: "decks/0442.dck" vs. "decks/0442.dck"`,
+opened root `Magic.exe`, and had no targeted coin-flip/fatal strings in the log.
+The child process stayed alive until the alarm and was killed manually.
 
 For a fresh bottle that launches directly from the macOS checkout instead of a
 copied `C:\Shandalar` tree, start with the repo root for Shandalar:
@@ -233,12 +246,13 @@ Verified commands:
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG reg add "HKCU\Software\Wine\AppDefaults\Shandalar.exe\Explorer" /v Desktop /t REG_SZ /d Shandalar1440 /f
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG reg add "HKCU\Software\Wine\AppDefaults\Magic.exe\Explorer" /v Desktop /t REG_SZ /d Shandalar1440 /f
 /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG reg add "HKCU\Software\Wine\AppDefaults\FaceMaker.exe\Explorer" /v Desktop /t REG_SZ /d Shandalar1440 /f
+/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG reg add "HKCU\Software\MicroProse\Magic: The Gathering\DuelOptions" /v ShowCoinFlips /t REG_SZ /d 0 /f
 ```
 
 Verified registry evidence:
 
 ```sh
-sed -n '790,825p;965,970p' "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/user.reg"
+sed -n '260,280p;790,825p;965,970p' "/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/user.reg"
 ```
 
 Optional local verifier for the current `MTG` bottle state:
@@ -247,13 +261,19 @@ Optional local verifier for the current `MTG` bottle state:
 tools/verify-crossover-mtg-state.sh
 ```
 
-This checks the copied `C:\Shandalar` runtime hashes, FaceMaker support files,
-`Window = 2`, app-default `win7`, `Shandalar1440=1440x1080`, and the paging-file
+This checks the copied `C:\Shandalar` runtime hashes, representative Magic and
+Manalink patch bytes, FaceMaker support files, `Window = 2`,
+`AiDecisionTime=270`, app-default `win7`, `ShowCoinFlips=0`,
+`Shandalar1440=1440x1080`, root/Program zlib hashes, Program adjacent
+config/font files, Program CardArt drawcardlib assets, and the paging-file
 registry setting. It does not launch the game or prove gameplay.
 
 Expected entries:
 
 ```text
+[Software\\MicroProse\\Magic: The Gathering\\DuelOptions]
+"ShowCoinFlips"="0"
+
 [Software\\Wine\\AppDefaults\\FaceMaker.exe]
 "Version"="win7"
 
@@ -281,7 +301,7 @@ Expected entries:
 | Symptom | Try |
 | --- | --- |
 | Immediate silent exit | Re-run from CrossOver Run Command with logging enabled. Record missing DLL dialogs or exit code. For bottle `MTG`, use root `C:\Shandalar\Shandalar.exe` first. |
-| Duel prompts stop accepting `Done`, `Trigger`, or `Decline` | Use the current `MTG` Win7/`Shandalar1440` setting above, fully quit any old CrossOver Shandalar/Magic windows, then relaunch root `C:\Shandalar\Shandalar.exe` from working directory `C:\Shandalar`. The local copied DLLs are already patched; if it still freezes, capture the exact card/phase and a live process sample while frozen. |
+| Duel prompts stop accepting `Done`, `Trigger`, or `Decline` | Use the current `MTG` Win7/`Shandalar1440`/`ShowCoinFlips=0` setting above, fully quit any old CrossOver Shandalar/Magic windows, then relaunch root `C:\Shandalar\Shandalar.exe` from working directory `C:\Shandalar`. The local copied DLLs and Magic executables are already patched; if it still freezes, capture the exact card/phase and a live process sample while frozen. |
 | Fullscreen/palette weirdness | Try a virtual desktop in `winecfg`, start with 800x600 or 1024x768. |
 | Assertion after choosing a start color | Use the patched `Shandalar.exe` and patched active `FaceMaker.exe`; verify FaceMaker support files, set `Window = 2`, enlarge the bottle paging file, and use a Wine virtual desktop. For the active `MTG` path, keep app-default `Version=win7` and `Shandalar1440=1440x1080`; use `Shandalar-Win8-Test` only as a comparison bottle. |
 | Window opens offscreen | Enable virtual desktop, then relaunch from the same folder that contains the executable and DLLs. |
@@ -297,7 +317,21 @@ Expected entries:
 | 2026-05-30 | 26.1.0.39808 | `MTG` | Not inspected | `Magic.exe` | Exit 53, no stdout/stderr | None captured | None | Timed CLI run from `Program/`. |
 | 2026-05-30 | 26.1.0.39808 | `MTG` | Windows 7 in registry | Registry only | Updated `PagingFiles` from `C:\pagefile.sys 27 77` to `C:\pagefile.sys 512 1024` | None | Paging-file registry changed with CrossOver `wine reg add` | Visible game retest still needed. |
 | 2026-05-30 | 26.1.0.39808 | `MTG` | Windows 7 in registry | Copied install config | Set both `C:\Shandalar\Shandalar.ini` and `C:\Shandalar\Program\Shandalar.ini` to `Window = 2` | None | Hashes now match the repo ini files | Visible game retest still needed. |
-| 2026-05-30 | 26.1.0.39808 | `MTG` | Windows 7 in registry | `C:\Shandalar\Program\Shandalar.exe` | Loader failure before gameplay | Missing `Program\zlib.dll` cascades into `image.dll`, `DrawCardLib.dll`, and `DECKDLL.dll` load failures | None | This is why direct `Program` Shandalar is not the current `MTG` retest path. |
+| 2026-05-30 | 26.1.0.39808 | `MTG` | Windows 7 in registry | `C:\Shandalar\Program\Shandalar.exe` | Loader failure before gameplay | Missing `Program\zlib.dll` cascades into `image.dll`, `DrawCardLib.dll`, and `DECKDLL.dll` load failures | None | Historical pre-`Program/zlib.dll` layout fix; local repo and copied install now have matching zlib DLLs, and a later bounded loader smoke loaded the dependent DLL chain. |
+| 2026-06-02 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\Program\Shandalar.exe` | Timed loader-path smoke | No old missing-zlib/import-failure/page-fault pattern in targeted scan | `/tmp/shandalar-mtg-program-zlib-retest-cx.log` | Program `zlib.dll`, `image.dll`, `DrawCardLib.dll`, and `DECKDLL.dll` loaded natively; run timed out as a GUI smoke and leftover processes were killed. Not visible gameplay proof. |
+| 2026-06-03 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\Program\Shandalar.exe` | Visible dialog from `drawcardlib.dll` | `Could not load ManaSymbols= "C:\Shandalar\Program\CARDART\ManaSymbols.pic"` | Copied `ManaSymbols.pic`, `Expansion_Symbols.pic`, `Watermarks.pic`, and `CardCounters.png` from the preserved `Mods/Art/_undo/.../CardArt` snapshot into repo `Program/CardArt` and the local copied install. | Static hashes now match [runtime-manifest.md](runtime-manifest.md); later bounded exact-path logs reached missing `Modern/Triggering.png`, `Planeswalker/LoyaltyBase.png`, and `Modern/CardOv_Nyx.png`, now also copied. Exact-path visible retest still needed. |
+| 2026-06-03 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\Program\Shandalar.exe` | Bounded logged retest after first Program CardArt copy | Missing `C:\Shandalar\Program\CARDART\modern\Triggering.png` in `/tmp/shandalar-mtg-program-cardart-retest-cx.log` | Copied `Modern/Triggering.png` from the same preserved Program-style snapshot into repo `Program/CardArt/Modern` and the local copied install. | `Program/CardArt/Modern` now matches the preserved snapshot by `diff -qr`. |
+| 2026-06-03 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\Program\Shandalar.exe` | Bounded logged retest after `Triggering.png` copy | Missing `C:\Shandalar\Program\CARDART\planeswalker\LoyaltyBase.png` in `/tmp/shandalar-mtg-program-cardart-triggering-retest-cx.log` | Copied `LoyaltyBase.png`, `LoyaltyMinus.png`, `LoyaltyPlus.png`, and `LoyaltyZero.png` from the same preserved Program-style snapshot into repo `Program/CardArt/Planeswalker` and the local copied install. | No further visible Program-path retest has been run. |
+| 2026-06-04 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\Program\Shandalar.exe` | Bounded logged retest after loyalty-image copy | Missing `C:\Shandalar\Program\CARDART\modern\CardOv_Nyx.png` in `/tmp/shandalar-mtg-program-cardart-loyalty-retest-cx.log` | Copied `CardOv_Nyx.png` from the preserved Program-style `Planeswalker` frame folder into repo `Program/CardArt/Modern` and the local copied install. | `Program/DuelArt/Duel.dat` maps the Modern `CardOv_*Nyx` entries to this generic overlay. |
+| 2026-06-04 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\Program\Shandalar.exe` | Bounded logged retest after `CardOv_Nyx.png` copy | Missing `C:\Shandalar\Program\Manalink.ini` in `/tmp/shandalar-mtg-program-cardart-nyx-retest-cx.log` | Copied active root `Manalink.ini` into repo `Program/Manalink.ini` and the local copied install. | Follow-up log opened the Program path successfully. |
+| 2026-06-04 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\Program\Shandalar.exe` | Bounded logged retest after `Program/Manalink.ini` copy | Missing `C:\Shandalar\Program\DuelArt\Modern.dat` in `/tmp/shandalar-mtg-program-manalinkini-retest-cx.log` | Copied `Modern.dat` from the preserved Program-style `Mods/Art/_undo/.../DuelArt` snapshot into repo `Program/DuelArt` and the local copied install. | Follow-up log opened `Modern.dat` and exposed the next Program adjacent gaps. |
+| 2026-06-04 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\Program\Shandalar.exe` | Bounded logged retest after `Modern.dat` copy | Missing `C:\Shandalar\Program\DuelArt\Planeswalker.dat` and Program `TT*.ttf` font files in `/tmp/shandalar-mtg-program-moderndat-retest-cx.log` | Copied `Planeswalker.dat` from the preserved Program-style `Mods/Art/_undo/.../DuelArt` snapshot and copied the six root font files into Program under the exact hardcoded `TT*.ttf` names; mirrored all into the local copied install. | No new drawcardlib missing-asset dialog or page fault found in the targeted scan. |
+| 2026-06-04 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\Program\Shandalar.exe` | Bounded logged retest after `Planeswalker.dat` and font copies | No new Program data/art/font missing path in targeted scan; run exited with code 1 | None after this run | `/tmp/shandalar-mtg-program-planeswalker-font-retest-cx.log` opened `Program\DuelArt\Modern.dat`, `Program\DuelArt\Planeswalker.dat`, the six Program `TT*.ttf` font paths, and then `Program\Magic.exe`. This is loader/config evidence only, not visible gameplay proof. |
+| 2026-06-04 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\Program\Shandalar.exe` | Visible Program-path fatal after adjacent config/font/art copies | `Bad raw_cards_data[-1].card() building Hornet: expected 15835, got -1` | Copied root `Cards.dat` and `Rarity.dat` into repo `Program/` and the local copied install. | The pre-fix Program `Cards.dat`/`Rarity.dat` files had 15718 records, which was too short for expected id 15835. |
+| 2026-06-04 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\Program\Shandalar.exe` | Bounded logged retest after card-data copy | No `raw_cards_data`, Hornet fatal, missing-asset dialog, page fault, or unhandled-exception strings found in targeted scan | None after this run | `/tmp/shandalar-mtg-program-carddata-retest-cx.log` opened `C:\Shandalar\Program\Cards.dat` with `ret 0`. The process stayed alive until the 20-second alarm and was killed; this is specific-fatal evidence only, not visible gameplay proof. |
+| 2026-06-04 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\Program\Shandalar.exe` | Visible Program-path fatal after `Cards.dat`/`Rarity.dat` copies | `Fatal: Couldn't find Cards.dat, DBInfo.dat or Rarity.dat` | Copied root `DBInfo.dat` into repo `Program/` and the local copied install. | `DeckDLL` returns this same fatal when `DBInfo.dat` opens but its record count does not match `Cards.dat`; the pre-fix Program `DBInfo.dat` header had 15718 records and now matches root at 16818. Exact-path visible retest still needed. |
+| 2026-06-04 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\Program\Shandalar.exe` | Bounded logged retest after `DBInfo.dat` copy | No generic card-data fatal, `raw_cards_data`, Hornet fatal, missing-asset dialog, page fault, or unhandled-exception strings found in targeted scan | None after this run | `/tmp/shandalar-mtg-program-dbinfo-retest-cx.log` opened `C:\Shandalar\Program\DBInfo.dat` with `ret 0`. The process stayed alive until the 20-second alarm and was killed; cleanup tail includes `wineserver crashed`, so this is specific-fatal evidence only, not visible gameplay proof. |
+| 2026-06-04 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\Program\Shandalar.exe` | Bounded logged retest after full Program card-data trio | No generic card-data fatal, `raw_cards_data`, Hornet fatal, missing-asset dialog, page fault, assertion, or unhandled-exception strings found in targeted scan | None after this run | `/tmp/shandalar-mtg-program-post-dbinfo-visible-retest-cx.log` opened `C:\Shandalar\Program\Cards.dat`, `DBInfo.dat`, `Rarity.dat`, `shandalar.dll`, and `Shandalar.ini`. The child process stayed alive past the 20-second alarm and was killed manually, so this is loader/fatal-regression evidence only, not visible gameplay proof. |
 | 2026-05-30 | 26.1.0.39808 | `MTG` | App-default `win8` | Registry only | Set app-default virtual desktop for `Shandalar.exe`, `Magic.exe`, and `FaceMaker.exe`; set app-default Windows 8 for all three | None | `HKCU\Software\Wine\AppDefaults\*.exe` plus `HKCU\Software\Wine\Explorer\Desktops` | Persistent setting verified in `user.reg`. |
 | 2026-05-30 | 26.1.0.39808 | `MTG` | App-default `win8` | `C:\Shandalar\Shandalar.exe` | Stayed alive until timed alarm | None in startup log | Uses app-default virtual desktop `Shandalar` at `1024x768` | Log showed `wined3d`, `explorer.exe /desktop`, and 1024-wide 8bpp DIB sections. Visible start-color retest still needed. |
 | 2026-05-30 | 26.1.0.39808 | `MTG` | App-default `win8` | `C:\Shandalar\FaceMaker.exe` | Stayed alive until timed alarm | None in startup log | Uses app-default virtual desktop `Shandalar` at `1024x768` | Direct FaceMaker log showed 1024x768 8bpp DIB sections; this does not prove the Shandalar-spawned character-creation path. |
@@ -320,8 +354,11 @@ Expected entries:
 
 | 2026-05-31 | 26.1.0.39808 | `MTG` | App-default `win7` | Registry only | Set `Shandalar.exe`, `Magic.exe`, and `FaceMaker.exe` to desktop `root` instead of virtual desktop `Shandalar` | None | `HKCU\Software\Wine\AppDefaults\*.exe` | Superseded by the later `Shandalar1440` setting after fullscreen/root-desktop testing was undesirable; visible gameplay retest was not completed for this row. |
 | 2026-05-31 | 26.1.0.39808 | `MTG` | App-default `win7` | Registry only | Set `Shandalar.exe`, `Magic.exe`, and `FaceMaker.exe` to desktop `Shandalar1440=1440x1080` | None | `HKCU\Software\Wine\Explorer\Desktops` and `HKCU\Software\Wine\AppDefaults\*.exe` | This is the current 4:3 size-up test after fullscreen was undesirable; visible gameplay retest still needed. |
-| 2026-05-31 | 26.1.0.39808 | Repo | N/A | `ManalinkEh.dll` and `Program/ManalinkEh.dll` | Patched for Femeref/Samite/Kithkin healer damage-prevention activation freeze | None from static verification | Binary DLL patch plus matching source guards | `xxd` and `objdump` verify the new `LCBP_DAMAGE_PREVENTION` gate. |
-| 2026-05-31 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\ManalinkEh.dll` and `C:\Shandalar\Program\ManalinkEh.dll` | Copied patched healer DLLs into the active copied install | None from copy/hash verification | Backups preserved as `*.before-femeref-healer-patch.dll` | Active bottle hashes match the patched repo DLL hashes; visible gameplay retest still needed. |
+| 2026-05-31 | 26.1.0.39808 | Repo | N/A | `ManalinkEh.dll` and `Program/ManalinkEh.dll` | Patched for Femeref/Samite/Kithkin healer damage-prevention activation freeze | None from static verification | Binary DLL patch plus matching source guards | `xxd` and `objdump` verify the new `LCBP_DAMAGE_PREVENTION` gate. Later repo hashes also include the generic damage-prevention guard, AI clamp patch, and AI raw-mana snapshot patch. |
+| 2026-05-31 | 26.1.0.39808 | `MTG` | App-default `win7` | `C:\Shandalar\ManalinkEh.dll` and `C:\Shandalar\Program\ManalinkEh.dll` | Copied patched healer DLLs into the active copied install | None from copy/hash verification | Backups preserved as `*.before-femeref-healer-patch.dll` | Later damage-prevention, AI clamp, and AI raw-mana snapshot patches updated these same DLLs again with additional backups; visible gameplay retest still needed. |
+| 2026-06-04 | 26.1.0.39808 | Repo and `MTG` | App-default `win7` | `ManalinkEh.dll` and `Program/ManalinkEh.dll` | Patched `_check_timer_for_ai_speculation` fallback from 5405 to 270 | None from static verification | Guarded patch helper plus byte/hash checks | `xxd` and `objdump` verify `mov ebx, 0x10e`; this was later superseded by the AI clamp and raw-mana snapshot patch hashes. |
+| 2026-06-05 | 26.1.0.39808 | Repo and `MTG` | App-default `win7` | `ManalinkEh.dll` and `Program/ManalinkEh.dll` | Patched `_ai_decision_phase` raw-mana snapshot restore | None from static verification | Guarded patch helper plus byte/hash checks; `tools/verify-crossover-mtg-state.sh` | `xxd` and `objdump` verify both players' raw-mana rows are saved before replacing only the opponent row; visible gameplay retest still needed. |
+| 2026-06-04 | 26.1.0.39808 | Repo and `MTG` | App-default `win7` | `Magic.exe`, `Program/Magic.exe`, and `user.reg` | Patched missing-registry `ShowCoinFlips` default from 1 to 0, and set active `MTG` `ShowCoinFlips=0` | None from static verification | Guarded patch helper plus registry update | `xxd` verifies `c7 05 5c 72 78 00 00 00 00 00`; active bottle hashes match the patched repo Magic hashes. Visible duel-start retest still needed. |
 
 ## Needs testing
 

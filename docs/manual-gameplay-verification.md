@@ -49,23 +49,27 @@ tools/verify-manual-gameplay-results.sh
 ## Test Environment Record
 
 The environment rows below are filled from the automated baseline generated on
-2026-05-31. They identify the current local `MTG` CrossOver test target and
-hashes, but they are not visible gameplay results.
+2026-05-31 and refreshed for later runtime patch hashes on 2026-06-05. They
+identify the current local `MTG` CrossOver test target and hashes, but they are
+not visible gameplay results. The local `MTG` Manalink DLLs now include the
+raw-mana snapshot patch, but this remains static copied-install evidence only.
 
 | Field | Value |
 | --- | --- |
-| Date | 2026-05-31 19:52:00 |
-| Tester | Codex visible macOS screenshot run with Wine SendKeys; not a full human gameplay pass |
+| Date | 2026-05-31 19:52:00; runtime hashes refreshed 2026-06-05 |
+| Tester | Codex visible macOS screenshot run with Wine SendKeys; later hash refresh was static verification, not a full human gameplay pass |
 | Platform | macOS 15.7.5 arm64 via CrossOver |
 | CrossOver or Wine version | CrossOver 26.1.0.39808 |
 | Bottle name | MTG |
 | Bottle Windows version | App-default `win7`; system registry Microsoft Windows 7 (6.1) |
 | Virtual desktop | `Shandalar1440=1440x1080` |
+| DuelOptions ShowCoinFlips | `0` |
 | Working directory | `C:\Shandalar` |
 | Command or shortcut target | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\Shandalar.exe"` |
 | `Shandalar.exe` SHA-256 | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` |
-| `Magic.exe` SHA-256 | `5bf518d66342d79562efb1106449413ada06814a6c14818a1e3101fd470c82d1` |
-| `ManalinkEh.dll` SHA-256 | `6a5fd8057d456d691fb87810eee8dbe1680b18d1c4c79530cbe036cb443df1eb` |
+| `Magic.exe` SHA-256 | `93a40ce2c96aafee1d858a71ed69eb8c539aa9851796eb54b1af58f0bb97aba0` |
+| `ManalinkEh.dll` SHA-256 | `cd9709398eba57d12044dcb936c2e728619a6eac3f401156b155efc6f872e656` |
+| Repo `ManalinkEh.dll` SHA-256 | `cd9709398eba57d12044dcb936c2e728619a6eac3f401156b155efc6f872e656` |
 
 ## CrossOver `MTG` Baseline
 
@@ -80,6 +84,7 @@ Use the current local target unless deliberately testing another copy:
 | Program Magic target | `C:\Shandalar\Program\Magic.exe` |
 | App-default Windows version | `win7` |
 | Virtual desktop | `Shandalar1440=1440x1080` |
+| DuelOptions ShowCoinFlips | `0` |
 
 Confirm hashes before testing:
 
@@ -113,6 +118,12 @@ Expected repo hashes are listed in [runtime-manifest.md](runtime-manifest.md).
 | D3 | Trigger an optional creature or ability prompt and choose both available responses across repeated tests. | Prompt accepts input and resolves. | Needs testing |
 | D4 | Test root `Magic.exe` directly from root or `C:\Shandalar`. | Duel shell opens or reports a visible, recorded dependency/config issue. | Needs testing |
 | D5 | Test `Program\Magic.exe` directly from `Program\` or `C:\Shandalar\Program`. | Program Manalink path opens or reports a visible, recorded dependency/config issue. | Needs testing |
+
+Related bounded runtime evidence: a 2026-06-04 CrossOver `MTG` log for
+`C:\Shandalar\Shandalar.exe --e 0442 --p 0442` printed
+`Stand-alone duel: "decks/0442.dck" vs. "decks/0442.dck"`, opened root
+`Magic.exe`, and showed no targeted coin-flip or fatal strings. The process was
+killed after the alarm, so D1-D5 remain manual-visible tests.
 
 ## Regression Scenarios
 

@@ -236,14 +236,35 @@ create_alpha_xforms(Config* config)
 	}
 }
 
+static char*
+concat_cfg_key(const char* key1, const char* key2)
+{
+  size_t len1 = strlen(key1);
+  size_t len2 = strlen(key2);
+  if (len1 > (size_t)-1 - len2)
+	return NULL;
+
+  size_t total = len1 + len2;
+  if (total == (size_t)-1)
+	return NULL;
+
+  char* buf = (char*)malloc(total + 1);
+  if (!buf)
+	return NULL;
+
+  memcpy(buf, key1, len1);
+  memcpy(buf + len1, key2, len2 + 1);
+  return buf;
+}
+
 const char*
 get_pichandlename(PicHandleNames handle_name, int idx)
 {
   if (idx < 0 || idx > 2)
 	abort();
 
-  static char buf[3][160];
-  char* p = buf[idx];
+  enum { PIC_HANDLE_NAME_BUFSIZE = 2 * MAX_PATH + 1200 };
+  static char buf[3][PIC_HANDLE_NAME_BUFSIZE];
 
   if (handle_name <= FRAME_MAX_LOADED)
 	{
@@ -252,12 +273,12 @@ get_pichandlename(PicHandleNames handle_name, int idx)
 
 	  Config* cf = &configs[FRAMESET_OF_FRAMEPART(handle_name)];
 
-	  sprintf(p, "(%s) %s\\DuelArt\\%s: [Frames]%s", cf->option_name, base_dir, cf->configfile_name, cfg_pic_names[BASE_FRAMEPART(handle_name)]);
+	  snprintf(buf[idx], sizeof(buf[idx]), "(%s) %s\\DuelArt\\%s: [Frames]%s", cf->option_name, base_dir, cf->configfile_name, cfg_pic_names[BASE_FRAMEPART(handle_name)]);
 	}
   else
-	sprintf(p, "#%d", (int)handle_name);
+	snprintf(buf[idx], sizeof(buf[idx]), "#%d", (int)handle_name);
 
-  return p;
+  return buf[idx];
 }
 
 #define CFG_BASE_PTR(Typ, config, member) ((Typ*)((char*)&configs[CFG_BASE] + ((char*)member - (char*)config)))
@@ -279,10 +300,12 @@ get_cfg_int(Config* config, int* val, const char* section, const char* key, int 
 static int
 get_cfg_int2_raw(const char* section, const char* key1, const char* key2, int deflt)
 {
-  char buf[104];
-  strcpy(buf, key1);
-  strcat(buf, key2);
-  return GetPrivateProfileInt(section, buf, deflt, current_configfile_name);
+  char* key = concat_cfg_key(key1, key2);
+  if (!key)
+	return deflt;
+  int result = GetPrivateProfileInt(section, key, deflt, current_configfile_name);
+  free(key);
+  return result;
 }
 
 // Sets rectangle parameters from *Left, *Top, *Width, *Height, with defaults given as left/right/width/height.
@@ -400,10 +423,14 @@ cfg_font(const char* font_name, int italic)
   if (italic)
 	fnt.lfItalic = 1;
 
-  char buf[104];
-  strcpy(buf, "font");
-  strcat(buf, font_name);
-  GetPrivateProfileString(FONTSTXT, buf, "MS Sans Serif", fnt.lfFaceName, LF_FACESIZE, current_configfile_name);
+  char* key = concat_cfg_key("font", font_name);
+  if (key)
+	{
+	  GetPrivateProfileString(FONTSTXT, key, "MS Sans Serif", fnt.lfFaceName, LF_FACESIZE, current_configfile_name);
+	  free(key);
+	}
+  else
+	snprintf(fnt.lfFaceName, LF_FACESIZE, "%s", "MS Sans Serif");
   return &fnt;
 }
 

@@ -65,6 +65,6 @@ f7 46 08 04 00 00 00 0f 85 12 00 00 00
 | Check | Result |
 | --- | --- |
 | `objdump -Mintel -D --start-address=0x459bc8 --stop-address=0x459c12 Magic.exe` and `Program/Magic.exe` | Both caves jump to `0x459be7` for `STATE_ATTACKING`, preserve the original rejection jump to `0x43c56a`, continue normal candidates at `0x43c310`, clear only `STATE_ATTACKING`, and return to `0x43c56a`. |
-| `shasum -a 256 Magic.exe Program/Magic.exe` | Root patched hash is `5bf518d66342d79562efb1106449413ada06814a6c14818a1e3101fd470c82d1`; `Program/` patched hash is `0fb8b87fe35c8be037ae3419a9b9cd70a27df840ae6af6c7488c2685046a74fa`. |
+| `shasum -a 256 Magic.exe Program/Magic.exe` | Current root hash is `93a40ce2c96aafee1d858a71ed69eb8c539aa9851796eb54b1af58f0bb97aba0`; current `Program/` hash is `685669692634ec830fe228904e11b1b536bd4b20e52192863a6280c2dbff6b66`. These include the later coin-flip default patch as well as the declared-attacker undo patch. |
 | Copied into bottle `MTG` | Active bottle files at `C:\Shandalar\Magic.exe` and `C:\Shandalar\Program\Magic.exe` now match the patched repo hashes. |
 | Bottle backups | Previous bottle files were preserved as `C:\Shandalar\Magic.before-declared-attacker-undo-patch.exe` and `C:\Shandalar\Program\Magic.before-declared-attacker-undo-patch.exe`, with previous hashes `71609906df4d3e5f4aa004034b21cfa362fd2c5522d23c57c91d96d6ca7d7025` and `b36530d1244691b855df3ab6022b2587ddd0ec3b078b7389fb6e33f27fa482f0`. |

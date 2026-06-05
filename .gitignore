@@ -3,6 +3,8 @@
 Thumbs.db
 Desktop.ini
 .codex/
+__pycache__/
+*.pyc
 
 # Local security-scan handoff/report outputs.
 scan-targets.tsv

@@ -49,6 +49,9 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | [tooling-audit.md](tooling-audit.md) | Script/tool risks and safe maintenance-helper guidance. |
 | [bugs/create-dibsection-after-color.md](bugs/create-dibsection-after-color.md) | Start-color `CreateDIBSection` assertion and patch evidence. |
 | [bugs/duel-freeze-damage-prevention.md](bugs/duel-freeze-damage-prevention.md) | Femeref/Samite/Kithkin damage-prevention freeze investigation. |
+| [bugs/opponent-turn-ai-decision-time.md](bugs/opponent-turn-ai-decision-time.md) | AI speculation timer fallback and opponent-turn freeze hardening. |
+| [bugs/ai-raw-mana-snapshot.md](bugs/ai-raw-mana-snapshot.md) | AI speculation raw-mana snapshot restore fix. |
+| [bugs/duel-start-coinflip-animation.md](bugs/duel-start-coinflip-animation.md) | Duel-start coin-flip animation default and `MTG` registry setting. |
 | [bugs/declared-attacker-undo.md](bugs/declared-attacker-undo.md) | Declared-attacker undo patch notes. |
 | [adventure-map-movement.md](adventure-map-movement.md) | Same-arrow adventure-map stop patch notes. |
 

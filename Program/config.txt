@@ -34,7 +34,7 @@ DuhMode:0
 
 // Relative time to allow AI to think.  Default is 5405; lower numbers mean
 // quicker (and, to some extent, dumber) decisions.
-AiDecisionTime:540
+AiDecisionTime:270
 
 // Make equipment visually attach to the creature they're equipping, like auras
 // do.  This will make it difficult to see any counters on the equipment card

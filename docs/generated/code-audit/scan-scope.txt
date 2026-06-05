@@ -1,0 +1,3 @@
+scan-scope: focused
+inventory-files: 52146
+scan-files: 594
