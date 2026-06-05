@@ -13,6 +13,17 @@ int sub_499050(void);
 static int hack_gpf_player = -1;
 static int hack_gpf_card = -1;
 
+static int bounded_targets_active_cards_count(int player)
+{
+  return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], 150) : 0;
+}
+
+static int bounded_targets_max_active_cards_count(void)
+{
+  int active_count = MAX(active_cards_count[HUMAN], active_cards_count[AI]);
+  return MIN(active_count, 150);
+}
+
 int
 get_protections_from(int player, int card)
 {
@@ -464,15 +475,15 @@ validate_target_impl(int player, int card,	// Beware - these will both be -1 whe
 			  && (cards_data[tgt_instance->internal_card_id].type & (TYPE_ARTIFACT|TYPE_CREATURE)) != (TYPE_ARTIFACT|TYPE_CREATURE))
 			FAILURE(0x7398EC);//",artifact creature"
 
-			if (special & TARGET_SPECIAL_DAMAGE_PLAYER ){
-				if(	tgt_instance->damage_target_player != who_chooses ||
-					tgt_instance->damage_target_card != -1 ||
-					tgt_instance->targets[4].player > -1 || // Damaging planeswalker
-					tgt_instance->targets[4].card > -1 // Damaging planeswalker
-				  ){
-					FAILURE(0x786C30);//",target player"
-				}
+		  if (special & TARGET_SPECIAL_DAMAGE_PLAYER ){
+			if(	tgt_instance->damage_target_player != who_chooses ||
+				tgt_instance->damage_target_card != -1 ||
+				tgt_instance->targets[4].player > -1 || // Damaging planeswalker
+				tgt_instance->targets[4].card > -1 // Damaging planeswalker
+			  ){
+				FAILURE(0x786C30);//",target player"
 			}
+		  }
 
 		  if ((special & TARGET_SPECIAL_DAMAGE_ANY_PLAYER) && tgt_instance->damage_target_card != -1)
 			FAILURE(0x786C30);//",target player"
@@ -578,15 +589,18 @@ validate_target_impl(int player, int card,	// Beware - these will both be -1 whe
 			{
 			  int p, c;
 			  for (p = 0; p < 2; ++p)
-				for (c = 0; c < active_cards_count[p]; ++c)
-				  {
-					card_instance_t* aura_inst = get_card_instance(p, c);
-					if (aura_inst->internal_card_id != -1
-						&& is_what(p, c, TYPE_ENCHANTMENT)
-						&& aura_inst->damage_target_player == tgt_player
-						&& aura_inst->damage_target_card == tgt_card)
-					  goto is_enchanted;
-				  }
+				{
+				  int active_count = bounded_targets_active_cards_count(p);
+				  for (c = 0; c < active_count; ++c)
+					{
+					  card_instance_t* aura_inst = get_card_instance(p, c);
+					  if (aura_inst->internal_card_id != -1
+						  && is_what(p, c, TYPE_ENCHANTMENT)
+						  && aura_inst->damage_target_player == tgt_player
+						  && aura_inst->damage_target_card == tgt_card)
+						goto is_enchanted;
+					}
+				}
 			  //else
 			  FAILURE(0x739F60);//",enchanted"
 			is_enchanted:;
@@ -644,15 +658,18 @@ validate_target_impl(int player, int card,	// Beware - these will both be -1 whe
 			{
 			  int p, c;
 			  for (p = 0; p < 2; ++p)
-				for (c = 0; c < active_cards_count[p]; ++c)
-				  {
-					card_instance_t* aura_inst = get_card_instance(p, c);
-					if (aura_inst->internal_card_id != -1
-						&& is_what(p, c, TYPE_ENCHANTMENT)
-						&& aura_inst->damage_target_player == tgt_player
-						&& aura_inst->damage_target_card == tgt_card)
-					  FAILURE(0x739F60);//",enchanted"
-				  }
+				{
+				  int active_count = bounded_targets_active_cards_count(p);
+				  for (c = 0; c < active_count; ++c)
+					{
+					  card_instance_t* aura_inst = get_card_instance(p, c);
+					  if (aura_inst->internal_card_id != -1
+						  && is_what(p, c, TYPE_ENCHANTMENT)
+						  && aura_inst->damage_target_player == tgt_player
+						  && aura_inst->damage_target_card == tgt_card)
+						FAILURE(0x739F60);//",enchanted"
+					}
+				}
 			}
 
 		  if ((illegal_state & TARGET_STATE_JUST_CAST)
@@ -766,7 +783,7 @@ target_available_impl(int player, int card,
 
   for (i = 0; i < 2; ++i, p ^= 1)
 	{
-	  int c, actives = MIN(MAX(active_cards_count[0], active_cards_count[1]), 150);	// really!
+	  int c, actives = bounded_targets_max_active_cards_count();	// really!
 
 	  for (c = 0; c < actives; ++c)
 		{
@@ -1039,25 +1056,28 @@ select_target_impl(int player, int card,
 	  num_candidates = 0;
 
 	  for (p = 0; p < 2; ++p)
-		for (c = 0; c < active_cards_count[p]; ++c)
-		  {
-			card_instance_t* instance = get_card_instance(p, c);
-			if (instance->internal_card_id != -1
-				&& validate_target_impl(player, card,
-										p, c, NULL,
-										who_chooses, allowed_controller, preferred_controller, zone,
-										required_type, illegal_type, required_abilities, illegal_abilities,
-										required_color, illegal_color, extra, required_subtype,
-										power_requirement, toughness_requirement, special, required_state,
-										illegal_state))
-			  {
-				candidates[num_candidates].player = p;
-				candidates[num_candidates].card = c;
-				++num_candidates;
-				if (num_candidates >= 58)
-				  goto break2;
-			  }
-		  }
+		{
+		  int active_count = bounded_targets_active_cards_count(p);
+		  for (c = 0; c < active_count; ++c)
+			{
+			  card_instance_t* instance = get_card_instance(p, c);
+			  if (instance->internal_card_id != -1
+				  && validate_target_impl(player, card,
+										  p, c, NULL,
+										  who_chooses, allowed_controller, preferred_controller, zone,
+										  required_type, illegal_type, required_abilities, illegal_abilities,
+										  required_color, illegal_color, extra, required_subtype,
+										  power_requirement, toughness_requirement, special, required_state,
+										  illegal_state))
+				{
+				  candidates[num_candidates].player = p;
+				  candidates[num_candidates].card = c;
+				  ++num_candidates;
+				  if (num_candidates >= 58)
+					goto break2;
+				}
+			}
+		}
 	break2:
 
 	  if (can_target_player_1)
@@ -1330,7 +1350,8 @@ int choose_default_target(int player, int card, target_definition_t *td){
 		if( target_available(player, card, td) == 1 ){
 			int p;
 			for(p=0;p<2;p++){
-				for(i=-1;i<active_cards_count[p];i++){
+				int active_count = bounded_targets_active_cards_count(p);
+				for(i=-1;i<active_count;i++){
 					instance->targets[0].player = p;
 					instance->targets[0].card = i;
 					instance->number_of_targets = 0;
@@ -1506,9 +1527,12 @@ int mark_up_to_n_targets_noload(target_definition_t* td, const char* prompt, int
 	  }
 
   for (p = 0; p <= 1; ++p)
-	for (c = 0; c < active_cards_count[p]; ++c)
-	  if (marked[p][c])
-		get_card_instance(p, c)->state &= ~(STATE_TARGETTED | STATE_CANNOT_TARGET);
+	{
+	  int active_count = bounded_targets_active_cards_count(p);
+	  for (c = 0; c < active_count; ++c)
+		if (marked[p][c])
+		  get_card_instance(p, c)->state &= ~(STATE_TARGETTED | STATE_CANNOT_TARGET);
+	}
 
   if (picked_cancel)
 	{
