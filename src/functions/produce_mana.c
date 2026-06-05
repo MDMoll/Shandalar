@@ -137,6 +137,11 @@ int single_color_test_bit_to_color(color_test_t col){
 			: COLOR_COLORLESS);
 }
 
+static color_t apply_quarum_trench_gnomes_mana_replacement(int player, int card, color_t color){
+	return (card >= 0 && color == COLOR_WHITE && is_what(player, card, TYPE_LAND)
+			&& check_special_flags2(player, card, SF2_QUARUM_TRENCH_GNOMES)) ? COLOR_COLORLESS : color;
+}
+
 /* Produces the specified color/amount of mana (modified by Contamination if the card is a land) and taps card.  Only produces mana if card is < 0, though it'll
  * still set tapped_for_mana_color, so you probably don't want to do this. */
 void produce_mana_tapped(int player, int card, color_t color, int amount){
@@ -418,14 +423,11 @@ int produce_mana_tapped_any_combination_of_colors(int player, int card, color_te
 		if (cancel == 1){
 			return 0;
 		} else {
-			int white_produces_colorless = (card >= 0
-											&& is_what(player, card, TYPE_LAND)
-											&& check_special_flags2(player, card, SF2_QUARUM_TRENCH_GNOMES));
 			int i;
 			memset(tapped_for_mana, 0, sizeof(tapped_for_mana));
 			for (i = COLOR_COLORLESS; i <= COLOR_ARTIFACT; ++i){
 				if (cols[i] > 0){
-					color_t produced_color = white_produces_colorless && i == COLOR_WHITE ? COLOR_COLORLESS : i;
+					color_t produced_color = apply_quarum_trench_gnomes_mana_replacement(player, card, i);
 					produce_mana(player, produced_color, cols[i]);
 					chosen_colors |= 1 << produced_color;
 					tapped_for_mana[produced_color] += MAX(0, cols[i]);
@@ -572,24 +574,26 @@ int produce_mana_tapped_all_one_color_with_default(int player, int card, color_t
 			cancel = 1;
 			return 0;
 		} else {
+			color_t produced_color = apply_quarum_trench_gnomes_mana_replacement(player, card, choice);
 			// If trying to tap for 0 or less mana, still take notice of it (e.g., to trigger Overabundance), but don't add the mana
 			if (num_mana > 0){
-				produce_mana(player, choice, num_mana);
-				chosen_colors |= 1 << choice;
+				produce_mana(player, produced_color, num_mana);
+				chosen_colors |= 1 << produced_color;
 			}
 
 			color_t c;
 			for (c = COLOR_COLORLESS; c <= COLOR_ARTIFACT; ++c){
 				tapped_for_mana[c] = 0;
 			}
-			tapped_for_mana[choice] = num_mana;
-			tapped_for_mana_color = num_mana == 1 ? choice : 0x100;	// Special value that tells mana flare to inspect tapped_for_mana[]
+			tapped_for_mana[produced_color] = num_mana;
+			tapped_for_mana_color = num_mana == 1 ? produced_color : 0x100;	// Special value that tells mana flare to inspect tapped_for_mana[]
 			if (player == AI && !(trace_mode & 2) && ai_is_speculating != 1){
-				if (choice == COLOR_COLORLESS){
-					choice = COLOR_ARTIFACT;	// "to produce colorless mana"
+				int displayed_choice = produced_color;
+				if (displayed_choice == COLOR_COLORLESS){
+					displayed_choice = COLOR_ARTIFACT;	// "to produce colorless mana"
 				}
 				load_text(0, "FELLWAR_STONE");
-				do_dialog(player, player, card, -1, -1, text_lines[choice >= 1 && choice <= 6 ? choice : 6], 0);
+				do_dialog(player, player, card, -1, -1, text_lines[displayed_choice >= 1 && displayed_choice <= 6 ? displayed_choice : 6], 0);
 			}
 		}
 	}
