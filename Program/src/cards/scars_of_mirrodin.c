@@ -1842,8 +1842,8 @@ int card_arc_trail(int player, int card, event_t event){
 	default_target_definition(player, card, &td1, TYPE_CREATURE );
 	td1.zone = TARGET_ZONE_CREATURE_OR_PLAYER;
 	if( player == AI ){
-		td.allowed_controller = 1-player;
-		td.preferred_controller = 1-player;
+		td1.allowed_controller = 1-player;
+		td1.preferred_controller = 1-player;
 	}
 
 	card_instance_t *instance = get_card_instance( player, card );
