@@ -12070,8 +12070,8 @@ int land_animation2(int player, int card, int t_player, int t_card, int mode, in
 		leg->targets[5].player = this_test->subtype;
 		leg->targets[5].card = this_test->subtype_flag;
 		leg->targets[6].player = this_test->color;
-		leg->targets[6].player = this_test->color_flag;
-		leg->targets[7].card = this_test->cmc_flag;
+		leg->targets[6].card = this_test->color_flag;
+		leg->targets[7].player = this_test->cmc;
 		leg->targets[7].card = this_test->cmc_flag;
 	}
 	return legacy;
