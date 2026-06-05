@@ -3601,7 +3601,7 @@ int card_nullmage_shepherd(int player, int card, event_t event){
 
 	target_definition_t td1;
 	default_target_definition(player, card, &td1, TYPE_ARTIFACT | TYPE_ENCHANTMENT);
-	td.allow_cancel = 0;
+	td1.allow_cancel = 0;
 
 	card_instance_t *instance = get_card_instance(player, card);
 
