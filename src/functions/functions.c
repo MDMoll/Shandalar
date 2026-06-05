@@ -15,7 +15,8 @@ int get_attack_power(int player, int card){
 	int i;
 	for(i=0; i<2; i++){
 		int count;
-		for( count = 0; count < active_cards_count[i]; ++count ){
+		int active_count = MIN(active_cards_count[i], 150);
+		for( count = 0; count < active_count; ++count ){
 				if( (inst = in_play(i, count)) ){
 					switch(cards_data[inst->internal_card_id].id){
 						case CARD_ID_ASSAULT_FORMATION:

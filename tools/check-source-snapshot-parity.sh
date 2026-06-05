@@ -230,6 +230,7 @@ check_marker "cards/draft.c" "Invalid pick found: %d, pick=%d" "invalid-pick-log
 check_marker "cards/avacyn_restored.c" "td.allow_cancel = ! can_target(&td1) ? 0 : 1;" "descent-into-madness-hand-fallback"
 check_marker "functions/ai.c" "int block_count = MIN(EXE_DWORD(0x607D54), 150);" "bounded-ai-blocker-count"
 check_marker "functions/ai.c" "trigger_cause_controller = blocking_player;" "validated-ai-pay-to-block-trigger"
+check_marker "functions/functions.c" "int active_count = MIN(active_cards_count[i], 150);" "bounded-attack-power-scan"
 check_marker "functions/functions.c" "if (player < HUMAN || player > AI){" "count-subtype-player-guard"
 check_marker "functions/functions.c" "int active_count = MIN(active_cards_count[player], 150);" "bounded-count-subtype-in-hand"
 check_marker "drawcardlib/config.c" "concat_cfg_key(const char* key1, const char* key2)" "allocated-config-key-helper"
