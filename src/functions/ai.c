@@ -400,7 +400,13 @@ void ai_assign_blockers(int player)
 	  int blocking_player = EXE_DWORD(0x607C2C);	// TENTATIVE_ai_speculation_opponent
 	  int blocking_card = EXE_DWORD_PTR(0x608304)[i];	// WILDGUESS_ai_combat_block_card[i]
 
-	  card_instance_t* instance = get_card_instance(blocking_player, blocking_card);
+	  if (blocking_player < HUMAN || blocking_player > AI || blocking_card < 0 || blocking_card >= 150)
+		continue;
+
+	  card_instance_t* instance = in_play(blocking_player, blocking_card);
+	  if (!instance)
+		continue;
+
 	  // Begin additions
 	  if (instance->blocking != 255)	// Already during one of the two triggers dispatched from here
 		continue;
