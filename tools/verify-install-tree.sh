@@ -44,6 +44,17 @@ expect_hash() {
   [ "$actual" = "$expected" ] || fail "$path sha256 $actual != $expected"
 }
 
+expect_same_hash() {
+  local lhs="$1"
+  local rhs="$2"
+  expect_file "$lhs"
+  expect_file "$rhs"
+  local lhs_hash rhs_hash
+  lhs_hash="$(shasum -a 256 "$lhs" | awk '{print $1}')"
+  rhs_hash="$(shasum -a 256 "$rhs" | awk '{print $1}')"
+  [ "$lhs_hash" = "$rhs_hash" ] || fail "$lhs sha256 $lhs_hash != $rhs sha256 $rhs_hash"
+}
+
 expect_hex_prefix() {
   local path="$1"
   local offset="$2"
@@ -60,6 +71,32 @@ expect_text_match() {
   local pattern="$2"
   expect_file "$path"
   grep -Eq "$pattern" "$path" || fail "$path does not match $pattern"
+}
+
+expect_no_text_match() {
+  local path="$1"
+  local pattern="$2"
+  expect_file "$path"
+  ! grep -Eq "$pattern" "$path" || fail "$path unexpectedly matches $pattern"
+}
+
+expect_deck_card_total() {
+  local path="$1"
+  local expected="$2"
+  expect_file "$path"
+  local actual
+  actual="$(LC_ALL=C awk 'BEGIN{sum=0} /^\.[0-9]/{sum+=$2} END{print sum}' "$path")"
+  [ "$actual" = "$expected" ] || fail "$path has $actual deck cards, expected $expected"
+}
+
+expect_plain_summoned_wizard_deck_pair() {
+  local id="$1"
+  local expected_cards="$2"
+  expect_same_hash "decks/$id.dck" "Program/decks/$id.dck"
+  expect_no_text_match "decks/$id.dck" '^\.[vV]'
+  expect_no_text_match "Program/decks/$id.dck" '^\.[vV]'
+  expect_deck_card_total "decks/$id.dck" "$expected_cards"
+  expect_deck_card_total "Program/decks/$id.dck" "$expected_cards"
 }
 
 [ -d "$install_root" ] || fail "install root is not a directory: $install_root"
@@ -94,6 +131,11 @@ expect_hash DBInfo.dat 519ccecb98548c1a2e15fe8025951aafba9f116595b5775a0f2ab2bb3
 expect_hash Program/DBInfo.dat 519ccecb98548c1a2e15fe8025951aafba9f116595b5775a0f2ab2bb393e48c1
 expect_hash Rarity.dat e0c779a73f0ed780b0c689741805a4e40f7f4949420a8d27fa73137e528ae04f
 expect_hash Program/Rarity.dat e0c779a73f0ed780b0c689741805a4e40f7f4949420a8d27fa73137e528ae04f
+expect_plain_summoned_wizard_deck_pair 0016 60
+expect_plain_summoned_wizard_deck_pair 0283 60
+expect_plain_summoned_wizard_deck_pair 0150 60
+expect_plain_summoned_wizard_deck_pair 0076 56
+expect_plain_summoned_wizard_deck_pair 0102 60
 expect_hash Program/Manalink.ini 30153fd22c76b0c0751c538938af46fbf25b1b51d5b4bb2bd9a2eead1b9c2f2b
 expect_hash Program/DuelArt/Modern.dat 9a2d70be70b70ef27036a47550bc0d549437df0c032a4e0237a217e4731e1aee
 expect_hash Program/DuelArt/Planeswalker.dat 619e0b9780ec204b9fbf6f48b2eb541c9d8a6f19a73f27d4d76d25828db7d369
