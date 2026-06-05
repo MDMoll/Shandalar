@@ -1140,7 +1140,7 @@ When a nonblack creature enters the battlefield, sacrifice Grave Peril. If you d
 		test_definition_t test;
 		default_test_definition(&test, TYPE_CREATURE);
 		test.color = get_sleighted_color_test(player, card, COLOR_TEST_BLACK);
-		test.color = DOESNT_MATCH;
+		test.color_flag = DOESNT_MATCH;
 		if( new_specific_cip(player, card, event, ANYBODY, RESOLVE_TRIGGER_MANDATORY, &test) ){
 			if( ! check_special_flags2(player, card, SF2_CANNOT_BE_SACRIFICED) ){
 				int legacy = create_legacy_effect(player, card, &grave_peril_legacy);
