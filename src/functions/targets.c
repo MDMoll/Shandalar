@@ -766,7 +766,7 @@ target_available_impl(int player, int card,
 
   for (i = 0; i < 2; ++i, p ^= 1)
 	{
-	  int c, actives = MAX(active_cards_count[0], active_cards_count[1]);	// really!
+	  int c, actives = MIN(MAX(active_cards_count[0], active_cards_count[1]), 150);	// really!
 
 	  for (c = 0; c < actives; ++c)
 		{
