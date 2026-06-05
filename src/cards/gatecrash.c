@@ -5286,9 +5286,13 @@ int card_bioshift(int player, int card, event_t event){
 			if( pick_target(&td, "TARGET_CREATURE") ){
 				target_definition_t td1;
 				default_target_definition(player, card, &td1, TYPE_CREATURE);
-				td.allowed_controller = instance->targets[0].player;
-				td.preferred_controller = instance->targets[0].player;
-				new_pick_target(&td1, "TARGET_CREATURE", 1, 1);
+				td1.allowed_controller = instance->targets[0].player;
+				td1.preferred_controller = instance->targets[0].player;
+				state_untargettable(instance->targets[0].player, instance->targets[0].card, 1);
+				if( ! new_pick_target(&td1, "TARGET_CREATURE", 1, 1) ){
+					spell_fizzled = 1;
+				}
+				state_untargettable(instance->targets[0].player, instance->targets[0].card, 0);
 			}
 		}
 		else{
@@ -5297,6 +5301,8 @@ int card_bioshift(int player, int card, event_t event){
 	}
 
 	if( event == EVENT_RESOLVE_SPELL ){
+		td.allowed_controller = instance->targets[0].player;
+		td.preferred_controller = instance->targets[0].player;
 		if( validate_target(player, card, &td, 0) && validate_target(player, card, &td, 1) ){
 			int amount = count_1_1_counters(instance->targets[0].player, instance->targets[0].card);
 			if( amount > 0 ){
