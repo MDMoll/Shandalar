@@ -242,7 +242,7 @@ static int runemark(int player, int card, event_t event, int col_test1, int col_
 		if( event == EVENT_ABILITIES && affect_me(instance->damage_target_player, instance->damage_target_card) && ! is_humiliated(player, card) ){
 			test_definition_t this_test;
 			default_test_definition(&this_test, TYPE_PERMANENT);
-			this_test.color = get_sleighted_color_test(player, card, col_test1) | get_sleighted_color_test(player, card, col_test1);
+			this_test.color = get_sleighted_color_test(player, card, col_test1) | get_sleighted_color_test(player, card, col_test2);
 			if( check_battlefield_for_special_card(player, card, player, 0, &this_test) ){
 				if( key ){
 					event_result |= key;
@@ -1036,7 +1036,7 @@ int card_soulfire_grand_master(int player, int card, event_t event){
 		int c1 = get_cost_mod_for_activated_abilities(player, card, MANACOST_XU(2, 1));
 		if( charge_mana_hybrid(player, card, 2, COLOR_BLUE, COLOR_RED, c1) ){
 			instance->targets[0].player = card_on_stack_controller;
-			instance->targets[0].player = card_on_stack;
+			instance->targets[0].card = card_on_stack;
 			instance->number_of_targets = 1;
 		}
 	}
