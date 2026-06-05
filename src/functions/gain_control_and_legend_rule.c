@@ -327,21 +327,26 @@ static int effect_on_all_control_effects_attached_to_me(int player, int card, in
 // effect = 1 -> enable the "control legacy" with the highest timestamp (AKA the most recent)
 // effect = -1 -> disable all "control legacies"
 	int result = 0;
-	int legacies[100][3];
-	int lc = 0;
+	int best_timestamp = 0;
+	int best_player = -1;
+	int best_card = -1;
 	card_instance_t* inst;
 	int p, c;
 	for (p = 0; p <= 1; ++p){
-		for (c = active_cards_count[p]; c > -1; c--){
+		for (c = active_cards_count[p]-1; c > -1; c--){
 			if ( (inst = in_play(p, c)) && inst->damage_target_player == player && inst->damage_target_card == card ){
 				if( is_what(p, c, TYPE_EFFECT) && inst->info_slot == (int)generic_control_legacy ){
 					//STATE_POWER_STRUGGLE = This "control legacy" has stolen a permanent from someone, so it needs to be processed.
 					if( check_state(p, c, STATE_POWER_STRUGGLE) ){
+						if( effect == 0 ){
+							result = 1;
+						}
 						if( effect == 1 && ! check_status(p, c, STATUS_CONTROLLED) ){
-							legacies[lc][0] = inst->timestamp;
-							legacies[lc][1] = p;
-							legacies[lc][2] = c;
-							lc++;
+							if( best_player == -1 || inst->timestamp > best_timestamp ){
+								best_timestamp = inst->timestamp;
+								best_player = p;
+								best_card = c;
+							}
 							result = 1;
 						}
 						if( effect == -1 ){
@@ -353,17 +358,8 @@ static int effect_on_all_control_effects_attached_to_me(int player, int card, in
 			}
 		}
 	}
-	if( lc ){
-		int max_timestamp = 0;
-		int id_of_legacy_to_activate = 0;
-		int i;
-		for(i=0; i<lc; i++){
-			if( legacies[i][0] > max_timestamp ){
-				max_timestamp = legacies[i][0];
-			}
-			id_of_legacy_to_activate = i;
-		}
-		add_status(legacies[id_of_legacy_to_activate][1], legacies[id_of_legacy_to_activate][2], STATUS_CONTROLLED);
+	if( best_player != -1 ){
+		add_status(best_player, best_card, STATUS_CONTROLLED);
 	}
 	return result;
 }
@@ -534,4 +530,3 @@ void gain_control_until_source_is_in_play_and_tapped(int player, int card, int t
 		gain_control_until_clause(source_player, source_card, t_player, t_card, mode, 0, 0, 0, 0);
 	}
 }
-
