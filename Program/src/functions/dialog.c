@@ -627,7 +627,7 @@ dialog_impl(int player, int card, event_t event, ...)
 	}
 
   // Otherwise, event == EVENT_RESOLVE_SPELL || event == EVENT_RESOLVE_ACTIVATION.
-  if (choice[store_in[0]-1].td && !valid_target(choice[store_in[0]-1].td))
+  if (store_in[0] > 0 && store_in[0] <= choices && choice[store_in[0]-1].td && !valid_target(choice[store_in[0]-1].td))
 	return 0;
 
   if (second_choice)
