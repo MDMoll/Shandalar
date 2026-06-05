@@ -10,6 +10,13 @@ static int bounded_engine_active_cards_count(int player)
   return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], 150) : 0;
 }
 
+enum { GLOBAL_ALL_PURPOSE_BUFFER_SIZE = 1000 };
+
+static char* global_all_purpose_buffer_ptr(void)
+{
+  return (char*)0x60a690;
+}
+
 void count_colors_of_lands_in_play(void)
 {
   // 0x4725C0
@@ -952,9 +959,13 @@ void format_manacost_into_global_allpurpose_buffer(int ignored, int* mana_cost_a
 			append_to_mana_prompt(&p, end, "%s", mana_symbol);
 	  }
 
-  p = (char*)(0x60a690);	// global_all_purpose_buffer[]
-  p += sprintf(p, "%s, ", intro);
-  sprintf(p, EXE_STR(0x786B00)/*PROMPT_GRABMANA[0]*/, str);
+  p = global_all_purpose_buffer_ptr();	// global_all_purpose_buffer[]
+  int written = scnprintf(p, GLOBAL_ALL_PURPOSE_BUFFER_SIZE, "%s, ", intro);
+  if (written < 0)
+	written = 0;
+  else if (written >= GLOBAL_ALL_PURPOSE_BUFFER_SIZE)
+	written = GLOBAL_ALL_PURPOSE_BUFFER_SIZE - 1;
+  scnprintf(p + written, GLOBAL_ALL_PURPOSE_BUFFER_SIZE - written, EXE_STR(0x786B00)/*PROMPT_GRABMANA[0]*/, str);
 }
 
 void human_assign_blockers(int player)
@@ -1073,7 +1084,7 @@ void allow_response_to_activation(int player, int card)
   // originally part of 0x4346e0
 
   const char* name = EXE_FN(const char*, 0x439690, int, int)(player, card);	// get_displayable_cardname_from_player_card()
-  sprintf((char*)(0x60A690)/*global_all_purpose_buffer*/, EXE_STR(0x786264)/*PROMPT_CHECKFEPHASE[3]*/, name);
+  scnprintf(global_all_purpose_buffer_ptr(), GLOBAL_ALL_PURPOSE_BUFFER_SIZE, EXE_STR(0x786264)/*PROMPT_CHECKFEPHASE[3]*/, name);
 
   int a1 = (EXE_DWORD(0x60A54C) && (player == 0 || (trace_mode & 2))) ? -1 : -2;
   EXE_FN(int, 0x436A20, int, int, const char*, int)(a1, current_phase, EXE_STR(0x60A690), EVENT_ACTIVATE);	// allow_response()
@@ -1278,7 +1289,7 @@ int put_card_on_stack3(int player, int card)
 	  )
 	{
 	  const char* name = EXE_FN(const char*, 0x439690, int, int)(player, card);	// get_displayable_cardname_from_player_card()
-	  sprintf((char*)(0x60A690)/*global_all_purpose_buffer*/, EXE_STR(0x737bc0)/*PROMPT_CHECKFEPHASE[2]*/, name);
+	  scnprintf(global_all_purpose_buffer_ptr(), GLOBAL_ALL_PURPOSE_BUFFER_SIZE, EXE_STR(0x737bc0)/*PROMPT_CHECKFEPHASE[2]*/, name);
 	  EXE_FN(int, 0x436A20, int, int, const char*, int)(-2, current_phase, EXE_STR(0x60A690)/*global_all_purpose_buffer*/, EVENT_CAST_SPELL);	// allow_response()
 	}
   instance->state &= ~STATE_INVISIBLE;
