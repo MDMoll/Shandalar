@@ -333,9 +333,22 @@ int recorded_rand(int player, int upperbound)
 {
   // 0x401C60
 
+  if (upperbound <= 1)
+	{
+	  remember_ai_value(player, 0);
+	  return 0;
+	}
+
   // remember_ai_value() ignores value when replaying the real AI's stored speculative choice.
   if (player == AI && !(trace_mode & 2) && ai_is_speculating != 1)
-	return remember_ai_value(player, 0);
+	{
+	  int value = remember_ai_value(player, 0);
+	  if (value >= 0 && value < upperbound)
+		return value;
+
+	  // Sanity fallback, as in dialog choice replay, if speculation and execution drifted.
+	  return internal_rand(upperbound);
+	}
 
   return remember_ai_value(player, internal_rand(upperbound));
 }
