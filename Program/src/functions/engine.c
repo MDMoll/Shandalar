@@ -5,6 +5,10 @@
 #define push_affected_card_stack	EXE_FN(void, 0x435C80, void)
 #define pop_affected_card_stack		EXE_FN(void, 0x435CD0, void)
 
+static int bounded_engine_active_cards_count(int player)
+{
+  return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], 150) : 0;
+}
 
 void count_colors_of_lands_in_play(void)
 {
@@ -27,79 +31,82 @@ void count_colors_of_lands_in_play(void)
 
   int player, card;
   for (player = 0; player < 2; ++player)
-	for (card = 0; card < active_cards_count[player]; ++card)
-	  if (in_play(player, card) && is_what(player, card, TYPE_LAND))
-		{
-		  card_instance_t* instance = get_card_instance(player, card);
+	{
+	  int active_count = bounded_engine_active_cards_count(player);
+	  for (card = 0; card < active_count; ++card)
+		if (in_play(player, card) && is_what(player, card, TYPE_LAND))
+		  {
+			card_instance_t* instance = get_card_instance(player, card);
 
-		  int colors = instance->card_color;
-		  int basics;
+			int colors = instance->card_color;
+			int basics;
 
-		  ++landsofcolor_controlled[player][COLOR_ANY];
-		  ++basiclandtypes_controlled[player][COLOR_ANY];
+			++landsofcolor_controlled[player][COLOR_ANY];
+			++basiclandtypes_controlled[player][COLOR_ANY];
 
-		  if (check_special_flags2(player, card, SF2_PRISMATIC_OMEN))
-			{
-			  colors |= COLOR_TEST_ANY_COLORED;
-			  basics = COLOR_TEST_ANY_COLORED;
-			}
-		  else
-			{
-			  basics = 0;
+			if (check_special_flags2(player, card, SF2_PRISMATIC_OMEN))
+			  {
+				colors |= COLOR_TEST_ANY_COLORED;
+				basics = COLOR_TEST_ANY_COLORED;
+			  }
+			else
+			  {
+				basics = 0;
 
-			  if (has_subtype(player, card, SUBTYPE_SWAMP))
-				basics |= COLOR_TEST_BLACK;
-			  if (has_subtype(player, card, SUBTYPE_ISLAND))
-				basics |= COLOR_TEST_BLUE;
-			  if (has_subtype(player, card, SUBTYPE_FOREST))
-				basics |= COLOR_TEST_GREEN;
-			  if (has_subtype(player, card, SUBTYPE_MOUNTAIN))
-				basics |= COLOR_TEST_RED;
-			  if (has_subtype(player, card, SUBTYPE_PLAINS))
-				basics |= COLOR_TEST_WHITE;
+				if (has_subtype(player, card, SUBTYPE_SWAMP))
+				  basics |= COLOR_TEST_BLACK;
+				if (has_subtype(player, card, SUBTYPE_ISLAND))
+				  basics |= COLOR_TEST_BLUE;
+				if (has_subtype(player, card, SUBTYPE_FOREST))
+				  basics |= COLOR_TEST_GREEN;
+				if (has_subtype(player, card, SUBTYPE_MOUNTAIN))
+				  basics |= COLOR_TEST_RED;
+				if (has_subtype(player, card, SUBTYPE_PLAINS))
+				  basics |= COLOR_TEST_WHITE;
 
-			  colors |= basics;
-			}
+				colors |= basics;
+			  }
 
-		  if (check_special_flags2(player, card, SF2_CONTAMINATION))
-			colors = COLOR_TEST_BLACK;
+			if (check_special_flags2(player, card, SF2_CONTAMINATION))
+			  colors = COLOR_TEST_BLACK;
 
-		  if (colors & COLOR_TEST_BLACK)
-			++landsofcolor_controlled[player][COLOR_BLACK];
-		  if (basics & COLOR_TEST_BLACK)
-			++basiclandtypes_controlled[player][COLOR_BLACK];
+			if (colors & COLOR_TEST_BLACK)
+			  ++landsofcolor_controlled[player][COLOR_BLACK];
+			if (basics & COLOR_TEST_BLACK)
+			  ++basiclandtypes_controlled[player][COLOR_BLACK];
 
-		  if (colors & COLOR_TEST_BLUE)
-			++landsofcolor_controlled[player][COLOR_BLUE];
-		  if (basics & COLOR_TEST_BLUE)
-			++basiclandtypes_controlled[player][COLOR_BLUE];
+			if (colors & COLOR_TEST_BLUE)
+			  ++landsofcolor_controlled[player][COLOR_BLUE];
+			if (basics & COLOR_TEST_BLUE)
+			  ++basiclandtypes_controlled[player][COLOR_BLUE];
 
-		  if (colors & COLOR_TEST_GREEN)
-			++landsofcolor_controlled[player][COLOR_GREEN];
-		  if (basics & COLOR_TEST_GREEN)
-			++basiclandtypes_controlled[player][COLOR_GREEN];
+			if (colors & COLOR_TEST_GREEN)
+			  ++landsofcolor_controlled[player][COLOR_GREEN];
+			if (basics & COLOR_TEST_GREEN)
+			  ++basiclandtypes_controlled[player][COLOR_GREEN];
 
-		  if (colors & COLOR_TEST_RED)
-			++landsofcolor_controlled[player][COLOR_RED];
-		  if (basics & COLOR_TEST_RED)
-			++basiclandtypes_controlled[player][COLOR_RED];
+			if (colors & COLOR_TEST_RED)
+			  ++landsofcolor_controlled[player][COLOR_RED];
+			if (basics & COLOR_TEST_RED)
+			  ++basiclandtypes_controlled[player][COLOR_RED];
 
-		  if (colors & COLOR_TEST_WHITE)
-			++landsofcolor_controlled[player][COLOR_WHITE];
-		  if (basics & COLOR_TEST_WHITE)
-			++basiclandtypes_controlled[player][COLOR_WHITE];
+			if (colors & COLOR_TEST_WHITE)
+			  ++landsofcolor_controlled[player][COLOR_WHITE];
+			if (basics & COLOR_TEST_WHITE)
+			  ++basiclandtypes_controlled[player][COLOR_WHITE];
 
-		  if (colors & COLOR_TEST_ARTIFACT)
-			++landsofcolor_controlled[player][COLOR_ARTIFACT];
+			if (colors & COLOR_TEST_ARTIFACT)
+			  ++landsofcolor_controlled[player][COLOR_ARTIFACT];
 
-		  if (!(colors & (COLOR_TEST_ANY_COLORED | COLOR_TEST_ARTIFACT)))
-			++landsofcolor_controlled[player][COLOR_COLORLESS];
+			if (!(colors & (COLOR_TEST_ANY_COLORED | COLOR_TEST_ARTIFACT)))
+			  ++landsofcolor_controlled[player][COLOR_COLORLESS];
 
-		  if (!(basics & COLOR_TEST_ANY_COLORED))
-			++basiclandtypes_controlled[player][COLOR_COLORLESS];
+			if (!(basics & COLOR_TEST_ANY_COLORED))
+			  ++basiclandtypes_controlled[player][COLOR_COLORLESS];
 
-		  colors_of_lands_in_play[player] |= colors;
-		}
+			colors_of_lands_in_play[player] |= colors;
+		  }
+	}
 
   colors_of_lands_in_play[0] &= COLOR_TEST_ANY_COLORED;
   colors_of_lands_in_play[1] &= COLOR_TEST_ANY_COLORED;
@@ -136,7 +143,8 @@ void recalculate_all_cards_in_play(void)
   for (p = 0; p < 2; ++p)
 	{
 	  card_instance_t* instance = get_card_instance(p, 0);
-	  for (c = 0; c < active_cards_count[p]; ++c, ++instance)
+	  int active_count = bounded_engine_active_cards_count(p);
+	  for (c = 0; c < active_count; ++c, ++instance)
 		if (instance->internal_card_id != -1
 			&& (instance->state & (STATE_OUBLIETTED|STATE_IN_PLAY)) == STATE_IN_PLAY)	// These two (almost) equivalent to in_play(), which also excludes cards with STATE_INVISIBLE set
 		  {
@@ -158,31 +166,34 @@ void recalculate_all_cards_in_play(void)
 
   card_instance_t* instance;
   for (p = 0; p < 2; ++p)
-	for (c = 0; c < active_cards_count[p]; ++c)
-	  if ((instance = in_play(p, c)))
-		{
-		  if (is_what(p, c, TYPE_CREATURE))
-			{
-			  get_abilities(p, c, EVENT_TOUGHNESS, -1);
-			  if (instance->internal_card_id == -1)	// destroyed during get_abilities by lethal damage or toughness < 0
-				continue;
-			  get_abilities(p, c, EVENT_POWER, -1);
-			}
+	{
+	  int active_count = bounded_engine_active_cards_count(p);
+	  for (c = 0; c < active_count; ++c)
+		if ((instance = in_play(p, c)))
+		  {
+			if (is_what(p, c, TYPE_CREATURE))
+			  {
+				get_abilities(p, c, EVENT_TOUGHNESS, -1);
+				if (instance->internal_card_id == -1)	// destroyed during get_abilities by lethal damage or toughness < 0
+				  continue;
+				get_abilities(p, c, EVENT_POWER, -1);
+			  }
 
-		  /* 704.5r If a permanent has both a +1/+1 counter and a -1/-1 counter on it, N +1/+1 and N -1/-1 counters are removed from it, where N is the smaller
-		   * of the number of +1/+1 and -1/-1 counters on it. */
-		  if (instance->counters > 0 && instance->counters_m1m1 > 0 && is_what(p, c, TYPE_PERMANENT)
-			  && !(instance->toughness <= 0 && is_what(p, c, TYPE_CREATURE)))
-			{
-			  int n = MIN(instance->counters, instance->counters_m1m1);
-			  instance->counters -= n;
-			  instance->counters_m1m1 -= n;
-			}
+			/* 704.5r If a permanent has both a +1/+1 counter and a -1/-1 counter on it, N +1/+1 and N -1/-1 counters are removed from it, where N is the smaller
+			 * of the number of +1/+1 and -1/-1 counters on it. */
+			if (instance->counters > 0 && instance->counters_m1m1 > 0 && is_what(p, c, TYPE_PERMANENT)
+				&& !(instance->toughness <= 0 && is_what(p, c, TYPE_CREATURE)))
+			  {
+				int n = MIN(instance->counters, instance->counters_m1m1);
+				instance->counters -= n;
+				instance->counters_m1m1 -= n;
+			  }
 
-		  /* There may well be a better place for this.  recalculate_all_cards_in_play() is called, at least, after a card or effect card resolves, a turn
-		   * begins, at the end of untap, the start of the main phase, and when a permanent is killed. */
-		  dispatch_event_with_attacker_to_one_card(p, c, EVENT_STATIC_EFFECTS, 1-p, -1);
-		}
+			/* There may well be a better place for this.  recalculate_all_cards_in_play() is called, at least, after a card or effect card resolves, a turn
+			 * begins, at the end of untap, the start of the main phase, and when a permanent is killed. */
+			dispatch_event_with_attacker_to_one_card(p, c, EVENT_STATIC_EFFECTS, 1-p, -1);
+		  }
+	}
 
   if (ai_is_speculating == 0)	// Usually only checked for != 1.  Makes a difference during startup, I think.
 	{
@@ -246,18 +257,21 @@ int untap_phase(int player)
   int shimmering_lands = 0;
   int p, c;
   for (p = 0; p < 2; ++p)
-	for (c = 0; c < active_cards_count[p]; ++c)
-	  if ((instance = in_play(p, c)))
-		{
-		  if (instance->internal_card_id == LEGACY_EFFECT_CUSTOM && instance->info_slot == (int)target_player_skips_untap && instance->targets[0].player == player)
-			{
-			  kill_card(p, c, KILL_REMOVE);
-			  return 0;
+	{
+	  int active_count = bounded_engine_active_cards_count(p);
+	  for (c = 0; c < active_count; ++c)
+		if ((instance = in_play(p, c)))
+		  {
+			if (instance->internal_card_id == LEGACY_EFFECT_CUSTOM && instance->info_slot == (int)target_player_skips_untap && instance->targets[0].player == player)
+			  {
+				kill_card(p, c, KILL_REMOVE);
+				return 0;
+			  }
+			else if (cards_data[instance->internal_card_id].id == CARD_ID_SHIMMER){
+			  shimmering_lands |= instance->info_slot;
 			}
-		  else if (cards_data[instance->internal_card_id].id == CARD_ID_SHIMMER){
-			shimmering_lands |= instance->info_slot;
 		  }
-		}
+	}
 
   // Permanents that make everyone skip their untap phase
   if (check_battlefield_for_id(2, CARD_ID_STASIS)
@@ -270,7 +284,8 @@ int untap_phase(int player)
   EXE_FN(int, 0x43A700, int)(player);	// The original version (with the Stasis check removed from the start, and the parts below removed)
 
   int untapped[151] = {0};
-  for (c = 0; c < active_cards_count[player]; ++c)
+  int active_count = bounded_engine_active_cards_count(player);
+  for (c = 0; c < active_count; ++c)
 	if ((instance = in_play(player, c)))
 	  {
 		if ((instance->untap_status & 3) == 3)
@@ -289,7 +304,7 @@ int untap_phase(int player)
   count_colors_of_lands_in_play();
   count_mana();
 
-  for (c = 0; c < active_cards_count[player]; ++c)
+  for (c = 0; c < active_count; ++c)
 	if (untapped[c])
 	  {
 		if (player_bits[player] & PB_SEND_EVENT_UNTAP_CARD_TO_ALL)
@@ -415,23 +430,23 @@ int is_legal_block_impl(int blocking_player, int blocking_card, int blocked_play
 	  && (abils & KEYWORD_PROT_ARTIFACTS))
 	return 0;
 
-	if(abils & landwalks & KEYWORD_BASIC_LANDWALK ){
-		if( (abils & landwalks & KEYWORD_SWAMPWALK) && !(player_bits[blocked_player] & PB_SWAMPWALK_DISABLED) ){
-			return 0;
-		}
-		if( (abils & landwalks & KEYWORD_ISLANDWALK) && !(player_bits[blocked_player] & PB_ISLANDWALK_DISABLED) ){
-			return 0;
-		}
-		if( (abils & landwalks & KEYWORD_FORESTWALK) && !(player_bits[blocked_player] & PB_FORESTWALK_DISABLED) ){
-			return 0;
-		}
-		if( (abils & landwalks & KEYWORD_MOUNTAINWALK) && !(player_bits[blocked_player] & PB_MOUNTAINWALK_DISABLED) ){
-			return 0;
-		}
-		if( (abils & landwalks & KEYWORD_PLAINSWALK) && !(player_bits[blocked_player] & PB_PLAINSWALK_DISABLED) ){
-			return 0;
-		}
+  if(abils & landwalks & KEYWORD_BASIC_LANDWALK ){
+	if( (abils & landwalks & KEYWORD_SWAMPWALK) && !(player_bits[blocked_player] & PB_SWAMPWALK_DISABLED) ){
+	  return 0;
 	}
+	if( (abils & landwalks & KEYWORD_ISLANDWALK) && !(player_bits[blocked_player] & PB_ISLANDWALK_DISABLED) ){
+	  return 0;
+	}
+	if( (abils & landwalks & KEYWORD_FORESTWALK) && !(player_bits[blocked_player] & PB_FORESTWALK_DISABLED) ){
+	  return 0;
+	}
+	if( (abils & landwalks & KEYWORD_MOUNTAINWALK) && !(player_bits[blocked_player] & PB_MOUNTAINWALK_DISABLED) ){
+	  return 0;
+	}
+	if( (abils & landwalks & KEYWORD_PLAINSWALK) && !(player_bits[blocked_player] & PB_PLAINSWALK_DISABLED) ){
+	  return 0;
+	}
+  }
 
   // Begin additions
   card_instance_t* blocked_inst = get_card_instance(blocked_player, blocked_card);
@@ -498,22 +513,25 @@ static int check_attack_legality_if_enchanting_affected_card(int player, int car
   {
 	int p, c;
 	for (p = 0; p < 2; ++p)
-	  for (c = 0; c < active_cards_count[p]; ++c)
-		if (in_play(p, c))
-		  {
-			// Begin exe version of check_attack_legality_if_enchanting_affected_card()
-			card_instance_t* instance = get_card_instance(player, card);
-			if (affect_me(instance->damage_target_player, instance->damage_target_card) && affected_card != -1)
-			  {
-				call_card_function_i(instance, player, card, EVENT_ATTACK_LEGALITY);
-				if (cancel == 1)
-				  {
-					++event_result;
-					cancel = 0;
-				  }
-			  }
-			// End exe version of check_attack_legality_if_enchanting_affected_card()
-		  }
+	  {
+		int active_count = bounded_engine_active_cards_count(p);
+		for (c = 0; c < active_count; ++c)
+		  if (in_play(p, c))
+			{
+			  // Begin exe version of check_attack_legality_if_enchanting_affected_card()
+			  card_instance_t* instance = get_card_instance(player, card);
+			  if (affect_me(instance->damage_target_player, instance->damage_target_card) && affected_card != -1)
+				{
+				  call_card_function_i(instance, player, card, EVENT_ATTACK_LEGALITY);
+				  if (cancel == 1)
+					{
+					  ++event_result;
+					  cancel = 0;
+					}
+				}
+			  // End exe version of check_attack_legality_if_enchanting_affected_card()
+			}
+	  }
   }
   // End call_function_for_each_card_in_play()
 
@@ -637,17 +655,20 @@ int effect_asterisk(int player, int card, event_t event)
 		 *                           info_slot = (creature's internal_card_id) */
 		for (p = 0; p < 2; ++p)
 		  if (count_who & (p == tp ? ASTERISK_COUNT_CONTROLLER : ASTERISK_COUNT_OPPONENT))
-			for (c = 0; c < active_cards_count[p]; ++c)
-			  if (in_play(p, c))
-				{
-				  if (instance->eot_toughness & ASTERISK_TYPE_OF_INFO_SLOT__MUST_ALSO_SET_IID_OF_INFO_SLOT)
-					{
-					  if (is_what(p, c, instance->info_slot))
-						++modifier;
-					}
-				  else if (get_id(p, c) == cards_data[instance->info_slot].id)
-					++modifier;
-				}
+			{
+			  int active_count = bounded_engine_active_cards_count(p);
+			  for (c = 0; c < active_count; ++c)
+				if (in_play(p, c))
+				  {
+					if (instance->eot_toughness & ASTERISK_TYPE_OF_INFO_SLOT__MUST_ALSO_SET_IID_OF_INFO_SLOT)
+					  {
+						if (is_what(p, c, instance->info_slot))
+						  ++modifier;
+					  }
+					else if (get_id(p, c) == cards_data[instance->info_slot].id)
+					  ++modifier;
+				  }
+			}
 		break;
 
 	  case ASTERISK_NONWALL_CREATURES:
@@ -656,9 +677,12 @@ int effect_asterisk(int player, int card, event_t event)
 		 *                          |ASTERISK_COUNT_CONTROLLER */
 		for (p = 0; p < 2; ++p)
 		  if (count_who & (p == tp ? ASTERISK_COUNT_CONTROLLER : ASTERISK_COUNT_OPPONENT))
-			for (c = 0; c < active_cards_count[p]; ++c)
-			  if (in_play(p, c) && is_what(p, c, TYPE_CREATURE) && !has_subtype(p, c, SUBTYPE_WALL))
-				++modifier;
+			{
+			  int active_count = bounded_engine_active_cards_count(p);
+			  for (c = 0; c < active_count; ++c)
+				if (in_play(p, c) && is_what(p, c, TYPE_CREATURE) && !has_subtype(p, c, SUBTYPE_WALL))
+				  ++modifier;
+			}
 		break;
 
 	  case ASTERISK_CREATURES_IN_GRAVEYARD_PLUS_POWER_IN_BYTE0_TOUGHNESS_IN_BYTE1_OF_INFO_SLOT:
@@ -699,9 +723,12 @@ int effect_asterisk(int player, int card, event_t event)
 		 *                         info_slot = SUBTYPE_RAT */
 		for (p = 0; p < 2; ++p)
 		  if (count_who & (p == tp ? ASTERISK_COUNT_CONTROLLER : ASTERISK_COUNT_OPPONENT))
-			for (c = 0; c < active_cards_count[p]; ++c)
-			  if (in_play(p, c) && has_subtype(p, c, from_hardcodedsubtype_to_subtype(instance->info_slot)))
-				++modifier;
+			{
+			  int active_count = bounded_engine_active_cards_count(p);
+			  for (c = 0; c < active_count; ++c)
+				if (in_play(p, c) && has_subtype(p, c, from_hardcodedsubtype_to_subtype(instance->info_slot)))
+				  ++modifier;
+			}
 		break;
 
 	  case ASTERISK_POWER_IN_BYTE0_TOUGHNESS_IN_BYTE1_OF_INFO_SLOT:
