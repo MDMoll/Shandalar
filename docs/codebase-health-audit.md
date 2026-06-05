@@ -28,15 +28,15 @@ Generated evidence lives under
 | `docs/runtime-testing-policy.md` | GUI testing should stay bounded. | verified | This audit did no GUI testing. |
 | `docs/duplicate-audit.md` | Duplicate cleanup is install-root/layout-sensitive. | verified | No cleanup was performed here. |
 | `docs/troubleshooting.md` | Start-color, healer freeze, and attacker undo fixes still need manual gameplay verification. | verified | Manual gameplay gate remains incomplete. |
-| `docs/building.md` | Builds are not proven and have missing tool/header blockers. | verified | Current dry-runs reproduce/extend the blockers. |
+| `docs/building.md` | Builds are not fully proven and still need source/runtime provenance before replacing shipped binaries. | verified | Current preflight finds the MinGW/yasm/binutils tools, but dry-runs and snapshot divergence still leave full Manalink rebuild provenance unresolved. |
 | `docs/bugs/*` | Known patch areas have evidence but need gameplay retests. | verified | Included as high-risk patch areas. |
 
 ## Highest-Value Findings
 
 | ID | Finding | Evidence Label | Why It Matters |
 | --- | --- | --- | --- |
-| B001 | Top-level `src` now dry-runs to a `ManalinkEh.dll` build plan, but real builds remain blocked. | mitigated | Source fixes still cannot be assumed to affect runtime until missing tools and provenance are resolved. |
-| B002 | Required Windows DLL tools are unavailable locally. | verified | Full build is blocked. |
+| B001 | Top-level `src` now dry-runs to a `ManalinkEh.dll` build plan, but source-to-runtime provenance remains unresolved. | mitigated | Source fixes still cannot be assumed to affect runtime until an isolated full build is recorded and compared against the protected patched DLLs. |
+| B002 | Required Windows DLL tools are locally available, but non-DeckDLL runtime outputs remain unproven. | mitigated | Full rebuild claims still need target-specific build logs, hashes, and a decision about replacing protected runtime DLLs. |
 | B003 | `src` and `Program/src` still diverge, but current mirrored source-safety fixes now have parity checks. | guarded | There is still no single obvious source of truth or source-to-runtime proof. |
 | B006 | `CardArtLib` loader now checks file/read/allocation/name bounds. | mitigated source-level fix | Reduces a plausible crash path if data is missing or malformed; runtime proof still needs build/test support. |
 | B010 | Draft custom-set parser now uses bounded line parsing. | mitigated source-level fix | Reduces a plausible data-driven crash/corruption path; runtime proof still needs build/test support. |
@@ -75,7 +75,7 @@ Generated evidence lives under
 | Restored top-level card id header. | `src/card_id.h` | Text source header copied from tracked `Program/src/card_id.h`; no runtime file changed. | `shasum -a 256 Program/src/card_id.h src/card_id.h`; `(cd src && make -n)` |
 | Hardened Rotisserie custom-set draft parsing. | `src/cards/draft.c`; `Program/src/cards/draft.c` | Source-only parser fix mirrored across snapshots; no shipped binary changed. | `rg -n "fscanf\\([^\\n]*%\\[" src/cards/draft.c Program/src/cards/draft.c`; source dry-runs |
 | Guarded draft output file handling. | `src/cards/draft.c`; `Program/src/cards/draft.c` | Source-only guard for runtime-local draft logs/deck writes; paths unchanged and no shipped binary changed. | `cmp -s src/cards/draft.c Program/src/cards/draft.c`; static grep for `open_draft_output`; parity checker |
-| Hardened targeting parser and scans. | `src/functions/targets.c`; `Program/src/functions/targets.c`; `tools/check-source-snapshot-parity.sh` | Source-only parser fix and battlefield-scan hardening mirrored across snapshots; target validation, target availability, default target selection, AI candidate collection, and marked-target cleanup now cap active-card scans to the fixed 150 card-slot range; no shipped binary changed. | `rg -n "fscanf\\([^\\n]*%\\[" src/functions/targets.c Program/src/functions/targets.c`; source parity marker checks; `targets.c` object compile with legacy packed-member warnings disabled; source dry-runs |
+| Hardened targeting parser, scans, and messages. | `src/functions/targets.c`; `Program/src/functions/targets.c`; `tools/check-source-snapshot-parity.sh` | Source-only parser fix, battlefield-scan hardening, bounded target-message formatting, and local target-slot buffering mirrored across snapshots; target validation, target availability, default target selection, AI candidate collection, marked-target cleanup, illegal-target messages, and target-count prompts now use fixed bounds; no shipped binary changed. | Static grep for remaining `targets.c` `sprintf()`/`strcpy()`/`strcat()` calls and packed target pointers; source parity marker checks; strict `targets.c` object compile; source dry-runs |
 | Hardened CardArtLib data/art-name parsing. | `src/cardartlib/src/main.cpp`; `Program/src/cardartlib/src/main.cpp` | Source-only loader/path fix mirrored across snapshots; no shipped DLL changed. | CardArtLib make dry-runs; static inspection; syntax-only attempt blocked by missing Windows headers/local 32-bit assumptions. |
 | Hardened drawcardlib config formatting. | `src/drawcardlib/config.c`; `Program/src/drawcardlib/config.c` | Source-only config/diagnostic formatting fix mirrored across snapshots; no shipped DLL changed. | Targeted static grep; drawcardlib make dry-runs; long-path/runtime proof still needs build/test support. |
 | Added source snapshot parity guard. | `tools/check-source-snapshot-parity.sh`; `docs/generated/code-audit/source-snapshot-parity.tsv`; `docs/generated/code-audit/source-snapshot-parity-summary.txt` | Read-only source provenance evidence; enforces exact-match files and mirrored safety markers without flattening known historical source differences. | `bash -n tools/check-source-snapshot-parity.sh`; `tools/check-source-snapshot-parity.sh`; `tools/check-source-snapshot-parity.sh --report-dir docs/generated/code-audit --report-only` |
@@ -109,8 +109,8 @@ Generated evidence lives under
 
 | Area | Status | Evidence | Next Step |
 | --- | --- | --- | --- |
-| Top-level `src` build | partial | `make -n` now reaches full plan; preflight reports missing Windows DLL tools | controlled toolchain branch |
-| `Program/src` build | partial | dry-run plan exists but tools absent | controlled toolchain branch |
+| Top-level `src` build | partial | `make -n` now reaches full plan; preflight finds the MinGW/yasm/binutils tools, but source-to-runtime provenance is unresolved | controlled toolchain branch |
+| `Program/src` build | partial | dry-run plan exists; real Program-source output has not been isolated, hashed, or accepted as a runtime replacement | controlled toolchain branch |
 | `src/deploy.bat` | guarded historical | hardcoded `c:\magic2k` packaging paths behind explicit confirmation | keep documented; confirmed mode only in prepared Windows packaging copy |
 | `Manalink3/` | historical package snapshot | install-root docs | keep as evidence unless user approves archive move |
 | Generated reports | active evidence | `docs/generated/code-audit/` plus the source snapshot parity report | regenerate with helpers as needed |

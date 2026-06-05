@@ -24,6 +24,38 @@ static int bounded_targets_max_active_cards_count(void)
   return MIN(active_count, 150);
 }
 
+enum
+{
+  TARGET_ERROR_BUFFER_SIZE = 200,
+  TARGETS_GLOBAL_ALL_PURPOSE_BUFFER_SIZE = 1000
+};
+
+static char* targets_global_all_purpose_buffer_ptr(void)
+{
+  return (char*)0x60A690;
+}
+
+static void append_target_error(char* error_str, size_t error_str_size, const char* err_str)
+{
+  if (!error_str || error_str_size == 0 || !err_str || !*err_str)
+	return;
+
+  size_t len = strlen(error_str);
+  if (len >= error_str_size)
+	{
+	  error_str[error_str_size - 1] = 0;
+	  len = error_str_size - 1;
+	}
+
+  if (err_str[0] != ',' && len + 1 < error_str_size)
+	{
+	  error_str[len++] = ',';
+	  error_str[len] = 0;
+	}
+
+  scnprintf(error_str + len, error_str_size - len, "%s", err_str);
+}
+
 int
 get_protections_from(int player, int card)
 {
@@ -172,24 +204,22 @@ validate_target_impl(int player, int card,	// Beware - these will both be -1 whe
 					 int illegal_state)
 {
   int rval = 1;
-  char error_str[200];
+  char error_str[TARGET_ERROR_BUFFER_SIZE];
 
-#define FAIL_STR(err_str)				\
-  do									\
-	{									\
-	  rval = 0;							\
-	  if (err_str[0] != ',')			\
-		strcat(&error_str[0], ",");		\
-	  strcat(&error_str[0], err_str);	\
-	  goto epilog;						\
+#define FAIL_STR(err_str)										\
+  do															\
+	{															\
+	  rval = 0;													\
+	  append_target_error(error_str, sizeof(error_str), err_str);	\
+	  goto epilog;												\
 	} while (0)
 
-#define FAILURE(error_addr)							\
-	do												\
-	  {												\
-		rval = 0;									\
-		strcat(&error_str[0], EXE_STR(error_addr));	\
-		goto epilog;								\
+#define FAILURE(error_addr)											\
+	do																\
+	  {																\
+		rval = 0;													\
+		append_target_error(error_str, sizeof(error_str), EXE_STR(error_addr));	\
+		goto epilog;												\
 	  } while (0)
 
   if (tgt_player == -1
@@ -499,7 +529,7 @@ validate_target_impl(int player, int card,	// Beware - these will both be -1 whe
 			  && (tgt_instance->damage_target_card == -1 || ! has_subtype(tgt_instance->damage_target_player, tgt_instance->damage_target_card, required_subtype)))
 			{
 			  char buffer[100];
-			  strcpy(buffer, get_subtype_text("must damage %a", required_subtype));
+			  scnprintf(buffer, sizeof(buffer), "%s", get_subtype_text("must damage %a", required_subtype));
 			  FAIL_STR(buffer);
 			}
 
@@ -703,7 +733,7 @@ validate_target_impl(int player, int card,	// Beware - these will both be -1 whe
   if (return_error_str)
 	{
 	  if (error_str[0])
-		strcpy(return_error_str, &error_str[1]);		// skipping the initial comma
+		scnprintf(return_error_str, TARGET_ERROR_BUFFER_SIZE, "%s", &error_str[1]);		// skipping the initial comma
 	  else
 		*return_error_str = 0;
 	}
@@ -942,7 +972,7 @@ select_target_impl(int player, int card,
 
 	  if (prompt && hack_prepend_prompt && ai_is_speculating != 1)
 		{
-		  sprintf((char*)0x60A690, "%s: %s", hack_prepend_prompt, prompt);
+		  scnprintf(targets_global_all_purpose_buffer_ptr(), TARGETS_GLOBAL_ALL_PURPOSE_BUFFER_SIZE, "%s: %s", hack_prepend_prompt, prompt);
 		  prompt = EXE_STR(0x60A690);
 		}
 	  else if (!prompt)
@@ -981,7 +1011,7 @@ select_target_impl(int player, int card,
 					  if (*err_reason)
 						{
 						  char illegal_tgt[200];
-						  sprintf(illegal_tgt, EXE_STR(0x73940C)/*"Illegal target (%s)."*/, err_reason);
+						  scnprintf(illegal_tgt, sizeof(illegal_tgt), EXE_STR(0x73940C)/*"Illegal target (%s)."*/, err_reason);
 						  display_error_message(illegal_tgt);
 						}
 					  else
@@ -991,7 +1021,7 @@ select_target_impl(int player, int card,
 			  else if (ai_is_speculating != 1)
 				{
 				  char illegal_tgt[200];
-				  sprintf(illegal_tgt, EXE_STR(0x73940C)/*"Illegal target (%s)."*/, EXE_STR(0x728F6C)/*",type"*/);
+				  scnprintf(illegal_tgt, sizeof(illegal_tgt), EXE_STR(0x73940C)/*"Illegal target (%s)."*/, EXE_STR(0x728F6C)/*",type"*/);
 				  display_error_message(illegal_tgt);
 				}
 
@@ -1393,7 +1423,10 @@ int new_pick_target(target_definition_t *td, const char *prompt, int ret_locatio
 		load_text(0, prompt);
 		prompt = text_lines[0];
 	}
-	int result = select_target(td->player, td->card, td, prompt, &(instance->targets[ret_location]));
+	target_t picked = { -1, -1 };
+	int result = select_target(td->player, td->card, td, prompt, &picked);
+	if (result)
+		instance->targets[ret_location] = picked;
 	if( ! result && (mode & 1) ){
 		spell_fizzled = 1;
 	}
@@ -1404,7 +1437,11 @@ int new_pick_target(target_definition_t *td, const char *prompt, int ret_locatio
  * spell_fizzled if cancelled. */
 int pick_next_target_noload(target_definition_t *td, const char *prompt){
 	card_instance_t* instance = get_card_instance(td->player, td->card);
-	int result = select_target(td->player, td->card, td, prompt, &instance->targets[instance->number_of_targets]);
+	int target_slot = instance->number_of_targets;
+	target_t picked = { -1, -1 };
+	int result = select_target(td->player, td->card, td, prompt, &picked);
+	if (result)
+		instance->targets[target_slot] = picked;
 	if (!result){
 		spell_fizzled = 1;
 	}
@@ -1426,13 +1463,13 @@ int pick_up_to_n_targets_noload(target_definition_t* td, const char* prompt, int
 
   char fmt[100];
   if (IS_AI(td->who_chooses))
-	strcpy(fmt, "%s %d %d");
+	scnprintf(fmt, sizeof(fmt), "%s", "%s %d %d");
   else
 	{
 	  load_text(0, "TARGET_COUNT");
-	  strcpy(fmt, (td->allow_cancel & 2)
-			 ? text_lines[1]	// "%s (%d of up to %d)"
-			 : text_lines[0]);	// "%s (%d of %d)"
+	  scnprintf(fmt, sizeof(fmt), "%s", (td->allow_cancel & 2)
+				? text_lines[1]	// "%s (%d of up to %d)"
+				: text_lines[0]);	// "%s (%d of %d)"
 	}
 
   int already_chose_player[2] = {0};
@@ -1556,6 +1593,8 @@ int pick_next_target_arbitrary(target_definition_t *td, const char *prompt, int 
 int pick_next_target_noload_arbitrary(target_definition_t *td, const char *prompt, int player, int card)
 {
   card_instance_t* instance = get_card_instance(player, card);
+  int target_slot = instance->number_of_targets;
+  target_t picked = { -1, -1 };
 
   int result = select_target_maybe_force(td->player, td->card,
 										 td->who_chooses, td->allowed_controller, td->preferred_controller, td->zone,
@@ -1563,10 +1602,13 @@ int pick_next_target_noload_arbitrary(target_definition_t *td, const char *promp
 										 td->required_color, td->illegal_color, td->extra, td->required_subtype,
 										 td->power_requirement, td->toughness_requirement, td->special, td->required_state,
 										 td->illegal_state,
-										 prompt, td->allow_cancel, &instance->targets[instance->number_of_targets]);
+										 prompt, td->allow_cancel, &picked);
 
   if (result)
-	++instance->number_of_targets;
+	{
+	  instance->targets[target_slot] = picked;
+	  ++instance->number_of_targets;
+	}
   else
 	spell_fizzled = 1;
 
@@ -1577,6 +1619,8 @@ int pick_next_target_noload_arbitrary(target_definition_t *td, const char *promp
  * literally, not loaded from Text.res.  Never sets spell_fizzled. */
 int select_target(int player, int card, target_definition_t *td, const char *prompt, target_t *ret_location){
 	card_instance_t* instance;
+	target_t default_target = { -1, -1 };
+	int use_default_target_slot = 0;
 	if (card < -500){	// Tired of this mangling number_of_targets.
 		instance = NULL;
 		card += 1000;
@@ -1584,7 +1628,8 @@ int select_target(int player, int card, target_definition_t *td, const char *pro
 	} else {
 		instance = get_card_instance(player, card);
 		if (ret_location == NULL){
-			ret_location = &(instance->targets[0]);
+			ret_location = &default_target;
+			use_default_target_slot = 1;
 		}
 
 		if (choose_default_target(player, card, td)){
@@ -1601,6 +1646,8 @@ int select_target(int player, int card, target_definition_t *td, const char *pro
 										   prompt, td->allow_cancel, ret_location);
 	if (result){
 		if (instance){
+			if (use_default_target_slot)
+				instance->targets[0] = default_target;
 			instance->number_of_targets++;
 		}
 		return 1;

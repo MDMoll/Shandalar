@@ -19,7 +19,7 @@ the shipped game.
 
 | Build path | Expected output | Current status |
 | --- | --- | --- |
-| `src/Makefile` | `ManalinkEh.dll` | Not built; dry run now prints a full compile/link plan, but required Windows-oriented tools are absent. |
+| `src/Makefile` | `ManalinkEh.dll` | Not accepted as a runtime replacement; dry run now prints a full compile/link plan, and the local MinGW/yasm/binutils tools are present. |
 | `src/deck/Makefile` | `DeckDll.dll` | Built locally with Homebrew MinGW/yasm overrides and deployed to root plus `Program/`; SHA-256 `a9cea247d80fe457e72d94055bd3b1e8a191ce9d3389b9fd5d4d42f40cb1e0d8`. |
 | `src/drawcardlib/Makefile` | `Drawcardlib.dll` | Not attempted beyond inspection. |
 | `src/cardartlib/Makefile` | `CardArtLib.dll` | Not attempted beyond inspection. |
@@ -66,7 +66,7 @@ Program/src/card_id.h and src/card_id.h both hash to
 | Blocker | Evidence | Impact |
 | --- | --- | --- |
 | Generated/provenance of `src/card_id.h` is unresolved | `src/card_id.h` is restored as an exact copy of `Program/src/card_id.h`; no generator was found. | The dry-run blocker is mitigated, but source provenance remains unresolved. |
-| Missing or unproven Windows-oriented toolchain pieces for non-DeckDLL targets | Homebrew MinGW/yasm are present and were used for `src/deck`, but the other DLL targets have not been built with recorded outputs. | Do not infer full-runtime rebuild support from the DeckDLL-only proof. |
+| Missing or unproven Windows-oriented toolchain pieces for non-DeckDLL targets | Homebrew MinGW/yasm/binutils are present and were used for `src/deck`, but the other DLL targets have not been built with recorded, accepted runtime outputs. | Do not infer full-runtime rebuild support from the DeckDLL-only proof or a dry-run plan. |
 | Build files use generic `gcc`/`g++`, not a discovered MinGW compiler. | `src/Makefile-common`. | macOS system compilers are not enough for Windows DLL output. |
 | Historical helper scripts still know hard-coded Windows paths. | `src/build.pl` legacy copy targets and `src/deploy.bat` confirmed mode. | Use only opt-in/dry-run paths or a prepared Windows packaging copy. |
 
