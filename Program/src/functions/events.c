@@ -262,6 +262,11 @@ int dispatch_event_to_single_card_overriding_function(int player, int card, even
 xtrigger_t xtrigger_impl_value_dont_use_directly = 0;
 enable_xtrigger_flags_t enable_xtrigger_flags = 0;
 
+static int bounded_active_cards_count(int player)
+{
+  return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], 150) : 0;
+}
+
 static void dispatch_trigger_impl(int player, trigger_t trig, xtrigger_t xtrig, const char *prompt, int TENTATIVE_allow_response)
 {
   // Original at 0x4371E0
@@ -287,7 +292,8 @@ static void dispatch_trigger_impl(int player, trigger_t trig, xtrigger_t xtrig, 
 	  for (p = 0; p < 2; ++p)
 		{
 		  ASSERT(active_cards_count[p] <= 150);
-		  for (c = 0; c < active_cards_count[p]; ++c)
+		  int active_count = bounded_active_cards_count(p);
+		  for (c = 0; c < active_count; ++c)
 			{
 			  card_instance_t* instance = get_card_instance(p, c);
 			  if (instance->internal_card_id == -1)
@@ -307,7 +313,7 @@ static void dispatch_trigger_impl(int player, trigger_t trig, xtrigger_t xtrig, 
 				}
 			}
 
-		  for (c = active_cards_count[p]; c < 150; ++c)
+		  for (c = active_count; c < 150; ++c)
 			processing[p][c] = 2;
 		}
 	}
@@ -353,13 +359,16 @@ static void dispatch_trigger_impl(int player, trigger_t trig, xtrigger_t xtrig, 
   int old_aff_cc = affected_card_controller, old_aff_c = affected_card, old_ev = event_result;
   card_instance_t* inst;
   for (p = 0; p < 2; ++p)
-	for (c = 0; c < active_cards_count[p]; ++c)
-	  if ((inst = in_play(p, c)))
-		{
-		  affected_card_controller = p;
-		  affected_card = c;
-		  call_card_function_i(inst, p, c, EVENT_END_TRIGGER);
-		}
+	{
+	  int active_count = bounded_active_cards_count(p);
+	  for (c = 0; c < active_count; ++c)
+		if ((inst = in_play(p, c)))
+		  {
+			affected_card_controller = p;
+			affected_card = c;
+			call_card_function_i(inst, p, c, EVENT_END_TRIGGER);
+		  }
+	}
   affected_card_controller = old_aff_cc;
   affected_card = old_aff_c;
   event_result = old_ev;
@@ -373,8 +382,11 @@ static void dispatch_trigger_impl(int player, trigger_t trig, xtrigger_t xtrig, 
   if (TRIGGER_DEPTH == 0)
 	{
 	  for (p = 0; p < 2; ++p)
-		for (c = 0; c < active_cards_count[p]; ++c)
-		  get_card_instance(p, c)->state &= ~(STATE_PROCESSING | STATE_IS_TRIGGERING);
+		{
+		  int active_count = bounded_active_cards_count(p);
+		  for (c = 0; c < active_count; ++c)
+			get_card_instance(p, c)->state &= ~(STATE_PROCESSING | STATE_IS_TRIGGERING);
+		}
 
 	  if (!EXE_DWORD(0x7A31AC))
 		{
@@ -390,7 +402,8 @@ static void dispatch_trigger_impl(int player, trigger_t trig, xtrigger_t xtrig, 
 	  for (p = 0; p < 2; ++p)
 		{
 		  ASSERT(active_cards_count[p] <= 150);
-		  for (c = 0; c < active_cards_count[p]; ++c)
+		  int active_count = bounded_active_cards_count(p);
+		  for (c = 0; c < active_count; ++c)
 			{
 			  card_instance_t* instance = get_card_instance(p, c);
 
@@ -475,7 +488,7 @@ void resolve_trigger(int player, int card, int TENTATIVE_reason_for_trigger_cont
   if (trace_mode & 2)
 	{
 	  char buf[500];
-	  sprintf(buf, "%d: Player #%d is processing %s(%d).\n", EXE_DWORD(0x60EC40)++, player, cards_data[get_card_instance(player, card)->internal_card_id].name, card);
+	  scnprintf(buf, sizeof(buf), "%d: Player #%d is processing %s(%d).\n", EXE_DWORD(0x60EC40)++, player, cards_data[get_card_instance(player, card)->internal_card_id].name, card);
 	  EXE_FN(void, 0x4A7D80, const char*)(buf);	// append_to_trace_txt()
 	}
   EXE_DWORD(0x60E9F8) = 0;	// This is only ever written to, and only ever set to 0, but I'm leaving it in place just in case
@@ -495,14 +508,17 @@ void resolve_trigger(int player, int card, int TENTATIVE_reason_for_trigger_cont
 			{
 			  load_text(0, "PROMPT_PROC1");
 			  char buf[300];
-			  sprintf(buf, text_lines[0], opponent_name);
+			  scnprintf(buf, sizeof(buf), text_lines[0], opponent_name);
 			  EXE_FN(int, 0x471b60, int, int, int, int, const char*, int)(player, card, -1, -1, buf, 0);	// raw_do_dialog()
 			}
 
 		  int p, c;
 		  for (p = 0; p <= 1; ++p)
-			for (c = 0; c < active_cards_count[p]; ++c)
-			  get_card_instance(p, c)->state &= ~STATE_IS_TRIGGERING;
+			{
+			  int active_count = bounded_active_cards_count(p);
+			  for (c = 0; c < active_count; ++c)
+				get_card_instance(p, c)->state &= ~STATE_IS_TRIGGERING;
+			}
 		}
 
 	  card_instance_t* instance = get_card_instance(player, card);
@@ -828,15 +844,18 @@ int get_abilities(int player, int card, event_t event, int new_attacking_card)
 	{
 	  int p, c;
 	  for (p = 0; p <= 1; ++p)
-		for (c = 0; c < active_cards_count[p]; ++c)
-		  if (in_play(p, c))
-			{
-			  card_instance_t* inst = get_card_instance(p, c);
-			  if (inst->damage_target_player == player && inst->damage_target_card == card
-				  && (cards_data[inst->internal_card_id].type & TYPE_ENCHANTMENT)
-				  && cards_ptr[cards_data[inst->internal_card_id].id]->subtype1 == 44)
-				kill_card(p, c, KILL_STATE_BASED_ACTION);
-			}
+		{
+		  int active_count = bounded_active_cards_count(p);
+		  for (c = 0; c < active_count; ++c)
+			if (in_play(p, c))
+			  {
+				card_instance_t* inst = get_card_instance(p, c);
+				if (inst->damage_target_player == player && inst->damage_target_card == card
+					&& (cards_data[inst->internal_card_id].type & TYPE_ENCHANTMENT)
+					&& cards_ptr[cards_data[inst->internal_card_id].id]->subtype1 == 44)
+				  kill_card(p, c, KILL_STATE_BASED_ACTION);
+			  }
+		}
 	}
 
   if (instance->state & STATE_IN_PLAY)

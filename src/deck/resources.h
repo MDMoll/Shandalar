@@ -2,7 +2,7 @@
 #define RESOURCES_H 1
 // DeckDll: standalone and integrated deckbuilder.
 
-#define RES_ICON				101
+#define RES_DECKDLL_ICON			101
 #define RES_ACCEL				102
 
 #define RES_BUTTON_OK				1

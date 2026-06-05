@@ -1,7 +1,8 @@
 # Building
 
-This repo contains build files and source, but this pass did not prove an
-end-to-end rebuild of the shipped game.
+This repo contains build files and source, but only the DeckDLL path has a
+current local rebuild proof. This still does not prove an end-to-end rebuild of
+the shipped game.
 
 ## Build Surface
 
@@ -19,7 +20,7 @@ end-to-end rebuild of the shipped game.
 | Build path | Expected output | Current status |
 | --- | --- | --- |
 | `src/Makefile` | `ManalinkEh.dll` | Not built; dry run now prints a full compile/link plan, but required Windows-oriented tools are absent. |
-| `src/deck/Makefile` | `DeckDll.dll` | Not attempted beyond inspection. |
+| `src/deck/Makefile` | `DeckDll.dll` | Built locally with Homebrew MinGW/yasm overrides and deployed to root plus `Program/`; SHA-256 `a9cea247d80fe457e72d94055bd3b1e8a191ce9d3389b9fd5d4d42f40cb1e0d8`. |
 | `src/drawcardlib/Makefile` | `Drawcardlib.dll` | Not attempted beyond inspection. |
 | `src/cardartlib/Makefile` | `CardArtLib.dll` | Not attempted beyond inspection. |
 | `src/patches/*` | Patched binaries/DLLs in-place | Not run; patch scripts are potentially mutating. |
@@ -31,12 +32,13 @@ end-to-end rebuild of the shipped game.
 | `make` | Found at `/usr/bin/make`. |
 | `perl` | Found at `/usr/bin/perl`. |
 | `g++` | Found at `/usr/bin/g++`. |
-| `i686-w64-mingw32-gcc` | Not found. |
+| `i686-w64-mingw32-gcc` | Found at `/opt/homebrew/bin/i686-w64-mingw32-gcc`. |
+| `i686-w64-mingw32-g++` | Found at `/opt/homebrew/bin/i686-w64-mingw32-g++`. |
 | `i386-mingw32-gcc` | Not found. |
-| `yasm` | Not found. |
-| `objcopy` | Not found. |
-| `dlltool` | Not found. |
-| `windres` | Not found. |
+| `yasm` | Found at `/opt/homebrew/bin/yasm`. |
+| `i686-w64-mingw32-objcopy` | Found at `/opt/homebrew/bin/i686-w64-mingw32-objcopy`. |
+| `i686-w64-mingw32-dlltool` | Found at `/opt/homebrew/bin/i686-w64-mingw32-dlltool`. |
+| `i686-w64-mingw32-windres` | Found at `/opt/homebrew/bin/i686-w64-mingw32-windres`. |
 
 ## Tried
 
@@ -49,8 +51,8 @@ make -n
 
 Current result: after restoring `src/card_id.h` from `Program/src/card_id.h`,
 the dry run prints the full `ManalinkEh.dll` compile/link plan. It still does
-not prove a real build, because this machine lacks required Windows-oriented
-tools such as `yasm`, `dlltool`, `objcopy`, and `windres`.
+not prove a real Manalink build; only `src/deck/DeckDll.dll` has been rebuilt
+with explicit `i686-w64-mingw32-*` tool overrides.
 
 Header check:
 
@@ -64,7 +66,7 @@ Program/src/card_id.h and src/card_id.h both hash to
 | Blocker | Evidence | Impact |
 | --- | --- | --- |
 | Generated/provenance of `src/card_id.h` is unresolved | `src/card_id.h` is restored as an exact copy of `Program/src/card_id.h`; no generator was found. | The dry-run blocker is mitigated, but source provenance remains unresolved. |
-| Missing Windows-oriented toolchain pieces | `yasm`, `objcopy`, `dlltool`, and `windres` were not found. | DLL builds and resource builds cannot complete locally. |
+| Missing or unproven Windows-oriented toolchain pieces for non-DeckDLL targets | Homebrew MinGW/yasm are present and were used for `src/deck`, but the other DLL targets have not been built with recorded outputs. | Do not infer full-runtime rebuild support from the DeckDLL-only proof. |
 | Build files use generic `gcc`/`g++`, not a discovered MinGW compiler. | `src/Makefile-common`. | macOS system compilers are not enough for Windows DLL output. |
 | Historical helper scripts still know hard-coded Windows paths. | `src/build.pl` legacy copy targets and `src/deploy.bat` confirmed mode. | Use only opt-in/dry-run paths or a prepared Windows packaging copy. |
 

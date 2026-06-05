@@ -9,6 +9,7 @@ MV = mv -f
 CP = cp
 OBJCOPY = objcopy
 DLLTOOL = dlltool
+WINDRES = windres
 
 # Flags
 COMMONFLAGS = -O2 -ggdb2 -march=i586 -mpreferred-stack-boundary=2	\

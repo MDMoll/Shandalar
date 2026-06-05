@@ -24,8 +24,8 @@ scan, a license grant, or proof of gameplay stability.
 | `Program/Shandalar.dll` | `ebd4d8d5375fa05f8db8203e0069db347c062a0b1d48856bc6307190de225534` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `Shandalar.dll`; the old Program copy contained the Hornet `raw_cards_data` assert string and mismatched the current root card-data generation. |
 | `CardArtLib.dll` | `975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f6416457e510484` | PE32 DLL Intel 80386 | Root card-art helper generation. |
 | `Program/CardArtLib.dll` | `975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f6416457e510484` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `CardArtLib.dll` for direct Program-path Shandalar launches. |
-| `DeckDLL.dll` | `98a4d135e655b980f46e2e6a96843dfea459c6655d85d378bc46c6c744f64578` | PE32 DLL Intel 80386 | Root deck/card-data helper generation. |
-| `Program/Deckdll.dll` | `98a4d135e655b980f46e2e6a96843dfea459c6655d85d378bc46c6c744f64578` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `DeckDLL.dll` with the existing Program filename case preserved. |
+| `DeckDLL.dll` | `a9cea247d80fe457e72d94055bd3b1e8a191ce9d3389b9fd5d4d42f40cb1e0d8` | PE32 DLL Intel 80386 | Root deck/card-data helper rebuilt from `src/deck` with the Shandalar minimum-deck-size guard. |
+| `Program/Deckdll.dll` | `a9cea247d80fe457e72d94055bd3b1e8a191ce9d3389b9fd5d4d42f40cb1e0d8` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `DeckDLL.dll` with the existing Program filename case preserved. |
 | `Drawcardlib.dll` | `8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712` | PE32 DLL Intel 80386 | Root card-rendering helper generation. |
 | `Program/Drawcardlib.dll` | `8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `Drawcardlib.dll`; this generation imports `libgcc_s_dw2-1.dll`. |
 | `libgcc_s_dw2-1.dll` | `89f6147f5ed3f271d0b88f0586e079b9ac22e76c31221e5d5013aa273cc4694b` | PE32 DLL Intel 80386 | Root GCC runtime helper needed by the current drawcard helper. |

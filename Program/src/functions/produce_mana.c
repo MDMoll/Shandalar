@@ -367,34 +367,45 @@ static void choose_combination_of_colors_of_mana_to_produce_into_arr(int* cols, 
 					prompt = "What kind of mana?";
 					buf[0] = 0;
 				} else {
-					sprintf(buf, "%d mana left", num_left);
+					scnprintf(buf, sizeof(buf), "%d mana left", num_left);
 				}
 			} else {
-				char* p = buf + sprintf(buf, "%d mana left (producing ", num_left);
+				int pos = scnprintf(buf, sizeof(buf), "%d mana left (producing ", num_left);
 				int i;
+				if (pos < 0){
+					pos = 0;
+				}
 				if (cols[COLOR_COLORLESS] > 0){
-					p += sprintf(p, "%d", cols[COLOR_COLORLESS]);
+					pos += scnprintf(buf + pos, sizeof(buf) - pos, "%d", cols[COLOR_COLORLESS]);
 				}
-				for (i = 0; i < cols[COLOR_WHITE]; ++i){
-					*p++ = 'W';
+				if (pos < 0){
+					pos = 0;
 				}
-				for (i = 0; i < cols[COLOR_BLUE]; ++i){
-					*p++ = 'U';
+				if (pos >= (int)sizeof(buf)){
+					pos = (int)sizeof(buf) - 1;
 				}
-				for (i = 0; i < cols[COLOR_BLACK]; ++i){
-					*p++ = 'B';
+				for (i = 0; i < cols[COLOR_WHITE] && pos < (int)sizeof(buf) - 1; ++i){
+					buf[pos++] = 'W';
 				}
-				for (i = 0; i < cols[COLOR_RED]; ++i){
-					*p++ = 'R';
+				for (i = 0; i < cols[COLOR_BLUE] && pos < (int)sizeof(buf) - 1; ++i){
+					buf[pos++] = 'U';
 				}
-				for (i = 0; i < cols[COLOR_GREEN]; ++i){
-					*p++ = 'G';
+				for (i = 0; i < cols[COLOR_BLACK] && pos < (int)sizeof(buf) - 1; ++i){
+					buf[pos++] = 'B';
 				}
-				for (i = 0; i < cols[COLOR_ARTIFACT]; ++i){
-					*p++ = 'A';
+				for (i = 0; i < cols[COLOR_RED] && pos < (int)sizeof(buf) - 1; ++i){
+					buf[pos++] = 'R';
 				}
-				*p++ = ')';
-				*p = 0;
+				for (i = 0; i < cols[COLOR_GREEN] && pos < (int)sizeof(buf) - 1; ++i){
+					buf[pos++] = 'G';
+				}
+				for (i = 0; i < cols[COLOR_ARTIFACT] && pos < (int)sizeof(buf) - 1; ++i){
+					buf[pos++] = 'A';
+				}
+				if (pos < (int)sizeof(buf) - 1){
+					buf[pos++] = ')';
+				}
+				buf[pos] = 0;
 			}
 		}
 		int result = choose_combination_of_colors_of_mana_to_produce_onechoice(cols, player, available, num_left, prompt ? prompt : buf);
@@ -662,7 +673,7 @@ void produce_mana_of_any_type_tapped_for(int player, int card, int amount){
 				chosen_colors |= 1 << first_found;
 			} else {					// Tapped for more than one color of mana
 				char prompt[300];
-				sprintf(prompt, "%s (%s): What kind of mana?",
+				scnprintf(prompt, sizeof(prompt), "%s (%s): What kind of mana?",
 						cards_ptr[cards_at_7c7000[get_card_instance(player, card)->internal_card_id]->id]->full_name,
 						cards_ptr[cards_at_7c7000[get_card_instance(affected_card_controller, affected_card)->internal_card_id]->id]->full_name);
 

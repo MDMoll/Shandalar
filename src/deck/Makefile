@@ -19,7 +19,7 @@ ALLOBJFILES += DeckDll.res.obj
 include ../Makefile-targets
 
 DeckDll.res.obj: DeckDll.rc resources.h
-	windres --input=$< --output=$@ --output-format=coff
+	$(WINDRES) --input=$< --output=$@ --output-format=coff
 
 install: ../../DeckDll.dll
 

@@ -158,14 +158,14 @@ int exiledby_choose(int player, int card, int csvid, exiledby_choose_mode_t mode
   char buf[200];
   if (num_found == 0)
 	{
-	  sprintf(buf, "No %s%scards have been exiled by %s.", cardtype_txt ? cardtype_txt : "", cardtype_txt ? " " : "", cards_ptr[csvid]->name);
+	  scnprintf(buf, sizeof(buf), "No %s%scards have been exiled by %s.", cardtype_txt ? cardtype_txt : "", cardtype_txt ? " " : "", cards_ptr[csvid]->name);
 	  DIALOG(player, card, EVENT_ACTIVATE,
 			 DLG_FULLCARD_CSVID(csvid),
 			 DLG_MSG(buf));
 	  return 0;
 	}
 
-  sprintf(buf, "%s%scards exiled by %s", cardtype_txt ? cardtype_txt : "", cardtype_txt ? " " : "", cards_ptr[csvid]->name);
+  scnprintf(buf, sizeof(buf), "%s%scards exiled by %s", cardtype_txt ? cardtype_txt : "", cardtype_txt ? " " : "", cards_ptr[csvid]->name);
   buf[0] = toupper(buf[0]);
   int selected = show_deck(player, iids, num_found, buf, 0, 0x7375B0);
 

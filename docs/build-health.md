@@ -1,7 +1,8 @@
 # Build Health
 
-This audit used dry-run probes only. No shipped binaries were rebuilt or
-overwritten.
+This audit started with dry-run probes only. A later controlled pass rebuilt
+and deployed `DeckDLL.dll`; no other shipped binaries were rebuilt by this
+build-health pass.
 
 Generated evidence:
 [generated/code-audit/tool-availability.txt](generated/code-audit/tool-availability.txt),
@@ -24,17 +25,18 @@ Read-only preflights:
 | `make` | `/usr/bin/make` | verified |
 | `gcc`, `g++`, `clang`, `clang++` | present | verified |
 | `perl`, `python3` | present | verified |
-| `yasm`, `dlltool`, `objcopy`, `windres`, `nasm` | absent | verified |
+| `yasm`, `i686-w64-mingw32-dlltool`, `i686-w64-mingw32-objcopy`, `i686-w64-mingw32-windres` | present under `/opt/homebrew/bin` | verified for DeckDLL rebuild |
+| `nasm` | absent | verified |
 | `cppcheck`, `scan-build`, `clang-tidy`, `infer`, `semgrep` | absent | verified |
 
 ## Build Probe Results
 
 | Build Target | Command | Required Tools | Result | Missing Inputs | Output Expected | Risk |
 | --- | --- | --- | --- | --- | --- | --- |
-| `src/Makefile` | `(cd src && make -n)` | GNU make, gcc/g++, yasm, dlltool, objcopy | dry-run prints build plan | Windows DLL toolchain absent for real build | `ManalinkEh.dll` | low for dry-run; high for real build |
-| `Program/src/Makefile` | `(cd Program/src && make -n)` | GNU make, gcc/g++, yasm, dlltool, objcopy | dry-run prints build plan | Windows DLL toolchain absent for real build | `ManalinkEh.dll` | low for dry-run; high for real build |
-| `src/deck/Makefile` | `(cd src/deck && make -n)` | windres, gcc/g++, import libs | fails dry-run | rule for `File.obj` | `DeckDll.dll` | low for dry-run |
-| `src/drawcardlib/Makefile` | `(cd src/drawcardlib && make -n)` | dlltool, yasm, gcc -m32, objcopy | dry-run prints build plan | tools absent for real build | `Drawcardlib.dll` | low for dry-run |
+| `src/Makefile` | `(cd src && make -n)` | GNU make, gcc/g++, yasm, dlltool, objcopy | dry-run prints build plan | real top-level build not attempted with the current MinGW toolchain | `ManalinkEh.dll` | low for dry-run; high for real build |
+| `Program/src/Makefile` | `(cd Program/src && make -n)` | GNU make, gcc/g++, yasm, dlltool, objcopy | dry-run prints build plan | real Program-source build not attempted with the current MinGW toolchain | `ManalinkEh.dll` | low for dry-run; high for real build |
+| `src/deck/Makefile` | `(cd src/deck && make CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++ DLLTOOL=i686-w64-mingw32-dlltool OBJCOPY=i686-w64-mingw32-objcopy WINDRES=i686-w64-mingw32-windres)` | Homebrew MinGW/yasm plus local import libs | built and deployed | none for this target after compatibility fixes | `DeckDll.dll` | medium; output is a runtime DLL |
+| `src/drawcardlib/Makefile` | `(cd src/drawcardlib && make -n)` | dlltool, yasm, gcc -m32, objcopy | dry-run prints build plan | real build not attempted with the current MinGW toolchain | `Drawcardlib.dll` | low for dry-run |
 | `src/cardartlib/Makefile` | `(cd src/cardartlib && make -n)` | gcc/g++, Boost, Windows libs | dry-run prints build plan | Windows/Boost DLL toolchain absent for real build | `CardArtLib.dll` | low for dry-run; high for real build |
 | `Program/src/cardartlib/Makefile` | `(cd Program/src/cardartlib && make -n)` | gcc/g++, Boost, Windows libs | dry-run prints build plan | Windows/Boost DLL toolchain absent for real build | `CardArtLib.dll` | low for dry-run; high for real build |
 | `src/manalinkex/Makefile` | `(cd src/manalinkex && make -n)` | gcc -m32, objcopy | dry-run prints build plan | tools/libs not proven | `ManalinkEx.dll` | low for dry-run |
@@ -44,7 +46,7 @@ Read-only preflights:
 
 | Question | Answer |
 | --- | --- |
-| Can `src/` rebuild shipped binaries today? | no, not proven; top-level `src` dry-run now reaches a full build plan, but required Windows DLL tools are absent and no real build was attempted. |
+| Can `src/` rebuild shipped binaries today? | partially; `src/deck/DeckDll.dll` rebuilt successfully with explicit MinGW overrides, but the full top-level `src` runtime remains unproven. |
 | Can `Program/src/` rebuild shipped binaries today? | not proven; dry-run reaches further but required Windows tooling is absent. |
 | Are shipped binaries reproducible from source? | not tested and currently unsupported by evidence. |
 | Are outputs separated from checked-in runtime binaries? | not consistently; historical helpers can copy into runtime-style paths. |
@@ -55,7 +57,7 @@ Read-only preflights:
 | Blocker | Evidence | Fix Direction |
 | --- | --- | --- |
 | Missing/generated header in top-level `src` | mitigated; `src/card_id.h` was restored as an exact copy of `Program/src/card_id.h` (`22fd41e536d24d5bdbbcd5ef6b4003e420aed135066a033dc4c1d6dac24675c1`). | Keep the copied header until a true generator/provenance path is found. |
-| Missing Windows DLL tools | `tool-availability.txt` shows no `yasm`, `dlltool`, `objcopy`, or `windres`. | Document and install in controlled build environment, not during this audit. |
+| Missing or unproven Windows DLL tools for non-DeckDLL targets | Homebrew MinGW/yasm were used for DeckDLL; other targets have not been built and may require additional headers/libs or historical assumptions. | Keep target-specific build logs and hashes before replacing any additional runtime binaries. |
 | Divergent source snapshots | `tools/check-source-snapshot-parity.sh --report-dir docs/generated/code-audit --report-only` records 80 matching paths, 142 differing paths, and 100 paths missing from `Program/src`; current exact-match files and safety markers pass. | Keep the parity guard, then establish source provenance before claiming fixes affect shipped runtime. |
 | Mutating helper scripts | `src/build.pl` can rewrite `ManalinkEh.asm` when intentionally invoked with a card name; `src/deploy.bat` confirmed mode copies/deletes under `c:\magic2k`. | Use `--dry-run` or explicit confirmation only in controlled build/packaging copies. |
 

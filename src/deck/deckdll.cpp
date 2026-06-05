@@ -20,6 +20,13 @@ OP_BITWISE(color_test_t);
 typedef int (*Int_fn_int)(int);
 typedef int (*Int_fn_etc)(...);
 
+static Int_fn_int
+get_import_int_fn(const char* proc_name)
+{
+  return reinterpret_cast<Int_fn_int>(
+    reinterpret_cast<void*>(GetProcAddress(GetModuleHandle(NULL), proc_name)));
+}
+
 enum DBFlags
 {
   DBFLAGS_0			= 0,
@@ -28,6 +35,12 @@ enum DBFlags
   DBFLAGS_NOCARDCOUNTCHECK	= 4,
   DBFLAGS_GAUNTLET		= 8,
   DBFLAGS_EDITDECK		= 0x40,
+};
+
+enum
+{
+  SHANDALAR_MIN_DECK_SIZE = 40,
+  SHANDALAR_NUM_PLAYER_DECKS = 3,
 };
 
 enum DeckType
@@ -422,6 +435,17 @@ static bool global_deckname_set = false;
 
 static char global_deckname[32] = {0};
 static char* global_external_deckname = NULL;
+
+static void
+copy_short_deckname(const char* source)
+{
+  size_t len = strlen(source);
+  if (len > 12)
+    len = 12;
+
+  memcpy(global_deckname, source, len);
+  global_deckname[len] = '\0';
+}
 
 static char global_deck_author[81] = {0};
 static char global_deck_comments[404] = {0};
@@ -1659,6 +1683,46 @@ process_cue_cards(MSG* msg)
     }
 }
 
+static int
+count_cards_in_player_deck(int deck)
+{
+  int deck_bits = 1 << deck;
+  int count = 0;
+
+  for (int i = 0; i < global_deck_num_entries; ++i)
+    if (global_deck[i].GDE_DecksBits & deck_bits)
+      ++count;
+
+  return count;
+}
+
+static int
+find_underfilled_player_deck(void)
+{
+  if (!(global_db_flags_1 & (DBFLAGS_EDITDECK | DBFLAGS_SHANDALAR))
+      || (global_db_flags_1 & (DBFLAGS_GAUNTLET | DBFLAGS_STANDALONE | DBFLAGS_NOCARDCOUNTCHECK)))
+    return -1;
+
+  for (int deck = 0; deck < SHANDALAR_NUM_PLAYER_DECKS; ++deck)
+    {
+      int count = count_cards_in_player_deck(deck);
+      if (count < SHANDALAR_MIN_DECK_SIZE && (deck == 0 || count > 0))
+	return deck;
+    }
+
+  return -1;
+}
+
+static bool
+allow_leaving_player_deck(void)
+{
+  if (find_underfilled_player_deck() < 0)
+    return true;
+
+  popup_loaded(global_main_hwnd, "DECKBUILDER", "TOOFEWCARDS");
+  return false;
+}
+
 /* stdcall version, perversely required to be at _DeckBuilderMain instead of _DeckBuilderMain@12, which makes it inconvenient and error-prone call correctly
  * external to the dll except from assembly */
 WPARAM WINAPI
@@ -1685,9 +1749,9 @@ DeckBuilderMain(HWND parent_hwnd, int db_flags_1, int db_flags_2)
   SetCurrentDirectory(global_base_directory);
 
 #define GET_IMPORT(proc_name)	(GetProcAddress(GetModuleHandle(NULL), proc_name))
-  CardIDFromType = (Int_fn_int)GET_IMPORT("CardIDFromType");
-  SellPrice = (Int_fn_int)GET_IMPORT("SellPrice");
-  CardTypeFromID = (Int_fn_int)GET_IMPORT("CardTypeFromID");
+  CardIDFromType = get_import_int_fn("CardIDFromType");
+  SellPrice = get_import_int_fn("SellPrice");
+  CardTypeFromID = get_import_int_fn("CardTypeFromID");
   global_external_deck = (int*)GET_IMPORT("deck");
   Gold = (int*)GET_IMPORT("Gold");
   Scards = (shandalar_worldmagic_t*)GET_IMPORT("Scards");
@@ -1854,7 +1918,7 @@ register_classes(void)
 			 wndproc_MainClass,
 			 CS_OWNDC,
 			 0,
-			 LoadIcon(global_hinstance, MAKEINTRESOURCE(RES_ICON)),
+			 LoadIcon(global_hinstance, MAKEINTRESOURCE(RES_DECKDLL_ICON)),
 			 arrow_cursor)
 	  && register_class("DeckSurfaceClass",
 			    wndproc_DeckSurfaceClass,
@@ -2893,8 +2957,6 @@ check_basic(csvid_t csvid)
       case CARD_ID_SNOW_COVERED_FOREST:
       case CARD_ID_SNOW_COVERED_MOUNTAIN:
       case CARD_ID_SNOW_COVERED_PLAINS:
-      case CARD_ID_WASTES:
-
 	// not basic lands, but still basic
       case CARD_ID_RELENTLESS_RATS:
       case CARD_ID_SHADOWBORN_APOSTLE:
@@ -4465,7 +4527,7 @@ wndproc_HorzListClass(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 	      load_text("Menus", "PRICE");
 	      sprintf(buf, text_lines[0], *Gold);
-	      strncpy(global_deckname, buf, 12);
+	      copy_short_deckname(buf);
 
 	      InvalidateRect(global_title_hwnd, NULL, TRUE);
 	      TENTATIVE_remove_selected_from_horzlist(global_listbox_hwnd, global_horzlist_hwnd);
@@ -5355,7 +5417,7 @@ wndproc_CardClass(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	load_text("Menus", "PRICE");
 	char buf[500];
 	sprintf(buf, text_lines[0], *Gold);
-	strncpy(global_deckname, buf, 12);	// That's peculiar.
+	copy_short_deckname(buf);	// That's peculiar.
 	InvalidateRect(global_title_hwnd, NULL, TRUE);
 
 	if (global_dlg_result >= amt)
@@ -5702,7 +5764,8 @@ load_deck(char* filename)
   if (!f.ok())
     return false;
 
-  memset(global_edited_deck, 0, sizeof global_edited_deck);
+  for (size_t i = 0; i < sizeof global_edited_deck / sizeof global_edited_deck[0]; ++i)
+    global_edited_deck[i] = DeckEntry();
 
   global_deck_num_cards = global_edited_deck_num_entries = 0;
   if (global_db_flags_1 & DBFLAGS_GAUNTLET)
@@ -5870,7 +5933,7 @@ wndproc_MainClass(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	    load_text("Menus", "GOLDTITLE");
 	    char buf[160];
 	    sprintf(buf, text_lines[0], *Gold);
-	    strncpy(global_deckname, buf, 12);
+	    copy_short_deckname(buf);
 	  }
 	else if (global_db_flags_1 & DBFLAGS_EDITDECK)
 	  strcpy(global_deckname, " ");
@@ -6089,11 +6152,14 @@ wndproc_MainClass(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
       case WM_CLOSE:
 	if (global_db_flags_1 & (DBFLAGS_GAUNTLET|DBFLAGS_STANDALONE|DBFLAGS_NOCARDCOUNTCHECK))
 	  {
-	    if (!global_deck_was_edited || ask_about_saving_deck() != 2)
+	    if (!global_deck_was_edited || ask_about_saving_deck())
 	      DestroyWindow(global_main_hwnd);
 	  }
 	else
 	  {
+	    if (!allow_leaving_player_deck())
+	      return 0;
+
 	    int num_failed = 0;
 	    for (int i = 0; i < global_edited_deck_num_entries; ++i)
 	      {
@@ -6124,7 +6190,7 @@ wndproc_MainClass(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	return 0;
 
       case WM_QUERYENDSESSION:
-	return (!global_deck_was_edited || ask_about_saving_deck() != 2) ? 1 : 0;
+	return (!global_deck_was_edited || ask_about_saving_deck()) ? 1 : 0;
 
       case WM_SETFOCUS:
 	SetFocus(global_horzlist_hwnd);
@@ -6408,7 +6474,7 @@ wndproc_MainClass(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	      break;
 
 	    case RES_MAINMENU_LOADDECK:
-	      if ((!global_deck_was_edited || ask_about_saving_deck() != 2)
+	      if ((!global_deck_was_edited || ask_about_saving_deck())
 		  && show_dialog_loaddeck(global_deck_filename))
 		{
 		  if (load_deck(global_deck_filename))
@@ -6503,6 +6569,10 @@ wndproc_MainClass(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	    case RES_MAINMENU_BUTTON_DECK_2:
 	    case RES_MAINMENU_BUTTON_DECK_3:
 	      if (!(global_db_flags_2 & DBFLAGS_SHANDALAR))
+		break;
+
+	      if (LOWORD(wparam) - RES_MAINMENU_BUTTON_DECK_1 != global_current_deck
+		  && !allow_leaving_player_deck())
 		break;
 
 	      load_text("Menus", "DECKNUMBERS");

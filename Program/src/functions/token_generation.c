@@ -1,5 +1,10 @@
 #include "manalink.h"
 
+static int bounded_active_cards_count(int player)
+{
+	return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], 150) : 0;
+}
+
 void default_token_definition(int player, int card, int id, token_generation_t *token)
 {
   token->id = id;
@@ -195,20 +200,23 @@ static int get_updated_tokens_number(int player, int number)
   card_instance_t* instance;
   int p, c;
   for (p = 0; p <= 1; ++p)
-	for (c = 0; c < active_cards_count[p]; ++c)
-	  if ((instance = in_play(p, c)))
-		switch (cards_data[instance->internal_card_id].id)
-		  {
-			case CARD_ID_DOUBLING_SEASON:		// self only: doubles
-			case CARD_ID_PARALLEL_LIVES:
-			  if (p != player)
-				continue;
-			  // else fall through
-			case CARD_ID_SELESNYA_LOFT_GARDENS:	// everyone: doubles
-			case CARD_ID_PRIMAL_VIGOR:
-			  number *= 2;
-			  break;
-		  }
+	{
+	  int active_count = bounded_active_cards_count(p);
+	  for (c = 0; c < active_count; ++c)
+		if ((instance = in_play(p, c)))
+		  switch (cards_data[instance->internal_card_id].id)
+			{
+			  case CARD_ID_DOUBLING_SEASON:		// self only: doubles
+			  case CARD_ID_PARALLEL_LIVES:
+				if (p != player)
+				  continue;
+				// else fall through
+			  case CARD_ID_SELESNYA_LOFT_GARDENS:	// everyone: doubles
+			  case CARD_ID_PRIMAL_VIGOR:
+				number *= 2;
+				break;
+			}
+	}
   return number;
 }
 
@@ -393,7 +401,7 @@ void generate_token(token_generation_t *token){
 			int kill_me = 0;
 			int leg_id = get_id(token->t_player, card_added);
 			for(p=0;p<2;p++){
-				int c = active_cards_count[p]-1;
+				int c = bounded_active_cards_count(p)-1;
 				while( c > -1 ){
 						if( in_play(p, c) && ! (p==token->t_player && c==card_added) ){
 							if( get_id(p, c) == leg_id && get_special_infos(p, c) == 99 ){

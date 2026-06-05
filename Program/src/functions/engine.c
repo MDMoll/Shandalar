@@ -232,7 +232,7 @@ int untap_phase(int player)
   if (trace_mode & 2)
 	{
 	  char buf[200];
-	  sprintf(buf, "%d: Entering Untap Phase.\n", ++EXE_DWORD(0x60EC40));
+	  scnprintf(buf, sizeof(buf), "%d: Entering Untap Phase.\n", ++EXE_DWORD(0x60EC40));
 	  EXE_FN(void, 0x4A7D80, const char*)(buf);
 	}
 
@@ -324,7 +324,7 @@ int upkeep_phase(int player)
   if (trace_mode & 2)
 	{
 	  char str[100];
-	  sprintf(str, "%d: Entering UpKeep Phase.\n", EXE_DWORD(0x60EC40)++);
+	  scnprintf(str, sizeof(str), "%d: Entering UpKeep Phase.\n", EXE_DWORD(0x60EC40)++);
 	  EXE_FN(void, 0x4a7d80, const char*)(str);	// append_to_trace_txt(str)
 	}
 
@@ -835,6 +835,20 @@ int create_legacy_effect_from_iid(int player, int iid, int (*func_ptr)(int, int,
 }
 
 int hack_xx = 1;
+
+static void append_to_mana_prompt(char** cursor, char* end, const char* fmt, ...)
+{
+  if (*cursor >= end)
+	return;
+
+  va_list args;
+  va_start(args, fmt);
+  int written = vscnprintf(*cursor, end - *cursor, fmt, args);
+  va_end(args);
+  if (written > 0)
+	*cursor += written;
+}
+
 void format_manacost_into_global_allpurpose_buffer(int ignored, int* mana_cost_array, int x_so_far, int max_x)
 {
   // 0x42f1f0
@@ -850,6 +864,7 @@ void format_manacost_into_global_allpurpose_buffer(int ignored, int* mana_cost_a
   char str[100];
   str[0] = 0;
   char* p = str;
+  char* end = str + sizeof(str);
 
   if (mana_cost_array[COLOR_COLORLESS] == -1 || mana_cost_array[COLOR_ARTIFACT] == -1)
 	{
@@ -872,9 +887,9 @@ void format_manacost_into_global_allpurpose_buffer(int ignored, int* mana_cost_a
 	  // End additions
 
 	  if (max_x == -1)
-		p += sprintf(p, EXE_STR(0x728578)/*PROMPT_GRABMANA[1]*/, fmt, x_so_far / divisor);
+		append_to_mana_prompt(&p, end, EXE_STR(0x728578)/*PROMPT_GRABMANA[1]*/, fmt, x_so_far / divisor);
 	  else if (max_x > x_so_far)
-		p += sprintf(p, EXE_STR(0x62853C)/*PROMPT_GRABMANA[2]*/, fmt, x_so_far / divisor, max_x / divisor);
+		append_to_mana_prompt(&p, end, EXE_STR(0x62853C)/*PROMPT_GRABMANA[2]*/, fmt, x_so_far / divisor, max_x / divisor);
 	}
   else if (mana_cost_array[COLOR_COLORLESS] || mana_cost_array[COLOR_ARTIFACT])
 	{
@@ -882,12 +897,12 @@ void format_manacost_into_global_allpurpose_buffer(int ignored, int* mana_cost_a
 	  if (generic > 20)
 		while (generic >= 10)
 		  {
-			p += sprintf(p, "|10");
+			append_to_mana_prompt(&p, end, "|10");
 			generic -= 10;
 		  }
 
 	  if (generic)
-		p += sprintf(p, "|%d", generic);
+		append_to_mana_prompt(&p, end, "|%d", generic);
 	}
 
   char mana_symbol[3] = {'|', 'B', 0};
@@ -901,13 +916,13 @@ void format_manacost_into_global_allpurpose_buffer(int ignored, int* mana_cost_a
 		if (mana_cost_array[i] == -1)
 		  {
 			if (max_x == -1)
-			  p += sprintf(p, EXE_STR(0x728578)/*PROMPT_GRABMANA[1]*/, mana_symbol, x_so_far);
+			  append_to_mana_prompt(&p, end, EXE_STR(0x728578)/*PROMPT_GRABMANA[1]*/, mana_symbol, x_so_far);
 			else if (max_x > x_so_far)
-			  p += sprintf(p, EXE_STR(0x62853C)/*PROMPT_GRABMANA[2]*/, mana_symbol, x_so_far, max_x);
+			  append_to_mana_prompt(&p, end, EXE_STR(0x62853C)/*PROMPT_GRABMANA[2]*/, mana_symbol, x_so_far, max_x);
 		  }
 		else
 		  for (j = 0; mana_cost_array[i] > j; ++j)
-			p += sprintf(p, "%s", mana_symbol);
+			append_to_mana_prompt(&p, end, "%s", mana_symbol);
 	  }
 
   p = (char*)(0x60a690);	// global_all_purpose_buffer[]

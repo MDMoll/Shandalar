@@ -37,7 +37,7 @@ BEGIN
 END
 
 
-RES_ICON ICON "deckdll.ico"
+RES_DECKDLL_ICON ICON "deckdll.ico"
 
 
 RES_ACCEL ACCELERATORS

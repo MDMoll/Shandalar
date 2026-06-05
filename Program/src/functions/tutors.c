@@ -625,7 +625,7 @@ int reveal_top_cards_of_library_and_choose(int src_player, int src_card, int t_p
 			if (num_to_pick > 1)
 			  {
 				char buf[200];
-				sprintf(buf, "%s:%d\nillegal destination_chosen: %d with qty=%d", __FILE__, __LINE__, destination_chosen, num_to_pick);
+				scnprintf(buf, sizeof(buf), "%s:%d\nillegal destination_chosen: %d with qty=%d", __FILE__, __LINE__, destination_chosen, num_to_pick);
 				backtrace_and_abort(buf);
 				break;
 			  }
@@ -642,7 +642,7 @@ int reveal_top_cards_of_library_and_choose(int src_player, int src_card, int t_p
 
 		  case TUTOR_BOTTOM_OF_DECK_RANDOM:
 			;char buf[200];
-			sprintf(buf, "%s:%d\nillegal destination_chosen: %d", __FILE__, __LINE__, destination_chosen);
+			scnprintf(buf, sizeof(buf), "%s:%d\nillegal destination_chosen: %d", __FILE__, __LINE__, destination_chosen);
 			backtrace_and_abort(buf);
 			break;
 		}
@@ -676,7 +676,7 @@ int reveal_top_cards_of_library_and_choose(int src_player, int src_card, int t_p
 		case TUTOR_PLAY_ATTACKING:
 		case TUTOR_GET_POSITION:;
 		  char buf[200];
-		  sprintf(buf, "%s:%d\nillegal destination_rest: %d", __FILE__, __LINE__, destination_rest);
+		  scnprintf(buf, sizeof(buf), "%s:%d\nillegal destination_rest: %d", __FILE__, __LINE__, destination_rest);
 		  backtrace_and_abort(buf);
 		  break;
 	  }
@@ -718,7 +718,7 @@ int reveal_top_cards_of_library_and_choose(int src_player, int src_card, int t_p
 		default:
 		  // Should be impossible
 		  ;char buf[200];
-		  sprintf(buf, "%s:%d\nillegal destination_chosen: %d with num_chosen=%d", __FILE__, __LINE__, destination_chosen, num_chosen);
+		  scnprintf(buf, sizeof(buf), "%s:%d\nillegal destination_chosen: %d with num_chosen=%d", __FILE__, __LINE__, destination_chosen, num_chosen);
 		  backtrace_and_abort(buf);
 		  break;
 	  }
@@ -901,9 +901,9 @@ int select_multiple_cards_from_graveyard(int player, int targ_player, int must_s
 			if (max_targets == 1){
 				strcpy(default_test.message, "Select a card.");
 			} else if (must_select_all) {
-				sprintf(default_test.message, "Select %d cards.", max_targets);
+				scnprintf(default_test.message, sizeof(default_test.message), "Select %d cards.", max_targets);
 			} else {
-				sprintf(default_test.message, "Select up to %d cards.", max_targets);
+				scnprintf(default_test.message, sizeof(default_test.message), "Select up to %d cards.", max_targets);
 			}
 		}
 		default_test.id = 904;/*draw a card*/

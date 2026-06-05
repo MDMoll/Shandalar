@@ -4,6 +4,16 @@
 
 #define card_multiblocker	0x401010
 
+static int bounded_active_cards_count(int player)
+{
+  return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], 150) : 0;
+}
+
+static int valid_card_slot(int card)
+{
+  return card >= 0 && card < 150;
+}
+
 static int is_multiblocker_card(int player, int card)
 {
   return cards_at_7c7000[get_card_instance(player, card)->internal_card_id]->code_pointer == card_multiblocker;
@@ -139,13 +149,13 @@ void process_multiblock(int player, int card, uint16_t pow)
 {
   // 0x4B3850
   card_instance_t* instance = get_card_instance(player, card);
-  int c;
+  int c, active_count = bounded_active_cards_count(player);
 
   if (is_multiblocker_card(player, card))
 	{
 	  int dsp = instance->damage_source_player;
 	  int dsc = instance->damage_source_card;
-	  for (c = 0; c < active_cards_count[player]; ++c)
+	  for (c = 0; c < active_count; ++c)
 		if (c != card && is_multiblocker_card_copying(player, c, dsp, dsc))
 		  {
 			card_instance_t* inst = get_card_instance(player, c);
@@ -160,7 +170,7 @@ void process_multiblock(int player, int card, uint16_t pow)
 		|| has_attached_blaze_of_glory_legacy(player, card))
 #endif
 	{
-	  for (c = 0; c < active_cards_count[player]; ++c)
+	  for (c = 0; c < active_count; ++c)
 		if (is_multiblocker_card_copying(player, c, player, card))
 		  {
 			card_instance_t* inst = get_card_instance(player, c);
@@ -177,16 +187,18 @@ static void count_and_reap_multiblockers(int player, int card, int force_reap_me
   int dsp = instance->damage_source_player;
   int dsc = instance->damage_source_card;
   if (instance->blocking == 255
+	  || !valid_card_slot(instance->blocking)
 	  || force_reap_me
 	  || !in_play(1-player, instance->blocking))
 	kill_card(player, card, KILL_BURY);
 
-  int c, count = 0;
-  for (c = 0; c < active_cards_count[player]; ++c)
+  int c, count = 0, active_count = bounded_active_cards_count(player);
+  for (c = 0; c < active_count; ++c)
 	if (in_play(player, c) && is_multiblocker_card_copying(player, c, dsp, dsc))	// a multiblocker copy of the same card as this
 	  {
 		card_instance_t* inst = get_card_instance(player, c);
 		if (inst->blocking == 255
+			|| !valid_card_slot(inst->blocking)
 			|| !in_play(1-player, inst->blocking))
 		  kill_card(player, c, KILL_BURY);
 		else
@@ -198,7 +210,7 @@ static void count_and_reap_multiblockers(int player, int card, int force_reap_me
   if (count == 1)	// Only the original blocking (and possibly not him)
 	get_card_instance(dsp, dsc)->token_status &= ~STATUS_SPECIAL_BLOCKER;	// Don't prompt for amount of damage to deal to a single blocked creature, nor allow any to be left undealt
   else
-	for (c = 0; c < active_cards_count[player]; ++c)
+	for (c = 0; c < active_count; ++c)
 	  if (in_play(player, c) && is_multiblocker_card_copying(player, c, dsp, dsc))
 		get_card_instance(player, c)->info_slot = count;
 }
@@ -233,8 +245,8 @@ int card_multiblocker_hook(int player, int card, event_t event)
   if (event == EVENT_BLOCK_LEGALITY && affect_me(player, card))
 	{
 	  card_instance_t* aff;
-	  int c;
-	  for (c = 0; c < active_cards_count[player]; ++c)
+	  int c, active_count = bounded_active_cards_count(player);
+	  for (c = 0; c < active_count; ++c)
 		if (c != card
 			&& (aff = in_play(player, c))
 			&& ((c == instance->damage_source_card && player == instance->damage_source_player)
@@ -271,9 +283,11 @@ int is_unblocked(int player, int card){
 		return 0;
 	}
 	int count, band = instance->blocking;
-	for (count = 0; count < active_cards_count[1-player]; ++count){
-		if (in_play(1-player, count)){
-			instance = get_card_instance(1-player, count);
+	int opponent = 1-player;
+	int active_count = bounded_active_cards_count(opponent);
+	for (count = 0; count < active_count; ++count){
+		if (in_play(opponent, count)){
+			instance = get_card_instance(opponent, count);
 			if (instance->blocking == card
 				|| (band != 255 && instance->blocking == band)){
 				return 0;
@@ -287,8 +301,9 @@ int is_unblocked(int player, int card){
 int count_blockers(int player, int event){
   int result = 0;
   int count = 0;
+  int active_count = bounded_active_cards_count(player);
 
-  while( count < active_cards_count[player] ){
+  while( count < active_count ){
 		if( in_play(player, count) && is_what(player, count, TYPE_CREATURE) && blocking(player, count, event) ){
 			result++;
 		}
@@ -309,8 +324,11 @@ int blocking(int player, int card, event_t event){
 // Returns count of creatures being blocked by (player, card), dealing properly with both banding and multiblocker creatures.
 int count_creatures_this_is_blocking(int player, int card)
 {
+  int defending_player = 1-player;
+  int active_count = bounded_active_cards_count(player);
+  int defending_active_count = bounded_active_cards_count(defending_player);
   int c, d, count = 0;
-  for (c = 0; c < active_cards_count[player]; ++c)
+  for (c = 0; c < active_count; ++c)
 	if (in_play(player, c)
 		&& (c == card
 			|| is_multiblocker_card_copying(player, c, player, card)))
@@ -319,16 +337,18 @@ int count_creatures_this_is_blocking(int player, int card)
 		int directly_blocked = instance->blocking;
 		if (directly_blocked == 255)
 		  continue;
+		if (!valid_card_slot(directly_blocked))
+		  continue;
 
-		card_instance_t* instance_directly_blocked = get_card_instance(1-player, directly_blocked);
+		card_instance_t* instance_directly_blocked = get_card_instance(defending_player, directly_blocked);
 		int band = instance_directly_blocked->blocking;
 		if (band == 255)
-		  count += in_play(1-player, directly_blocked) ? 1 : 0;
+		  count += in_play(defending_player, directly_blocked) ? 1 : 0;
 		else
 		  {
-			for (d = 0; d < active_cards_count[1-player]; ++d)
-			  if (in_play(1-player, d)
-				  && get_card_instance(1-player, d)->blocking == band)
+			for (d = 0; d < defending_active_count; ++d)
+			  if (in_play(defending_player, d)
+				  && get_card_instance(defending_player, d)->blocking == band)
 				++count;
 		  }
 	  }
@@ -343,10 +363,12 @@ int count_my_blockers(int player, int card)
   if (band == 255)
 	band = card;
 
+  int opponent = 1-player;
+  int active_count = bounded_active_cards_count(opponent);
   card_instance_t* inst;
   int c, result = 0;
-  for (c = 0; c < active_cards_count[1-player]; ++c)
-	if ((inst = in_play(1-player, c)) && is_what(1-player, c, TYPE_CREATURE) && inst->blocking == band)
+  for (c = 0; c < active_count; ++c)
+	if ((inst = in_play(opponent, c)) && is_what(opponent, c, TYPE_CREATURE) && inst->blocking == band)
 	  ++result;
 
   return result;
@@ -356,15 +378,19 @@ int count_my_blockers(int player, int card)
 int is_blocking(int blocking_card, int attack_card)
 {
   int c, attacker_band = get_card_instance(current_turn, attack_card)->blocking;
+  int defending_player = 1-current_turn;
+  int active_count = bounded_active_cards_count(defending_player);
   card_instance_t* instance;
 
-  for (c = 0; c < active_cards_count[1-current_turn]; ++c)
-	if ((instance = in_play(1-current_turn, c))
+  for (c = 0; c < active_count; ++c)
+	if ((instance = in_play(defending_player, c))
 		&& (c == blocking_card
-			|| is_multiblocker_card_copying(1-current_turn, c, 1-current_turn, blocking_card)))
+			|| is_multiblocker_card_copying(defending_player, c, defending_player, blocking_card)))
 	  {
 		int directly_blocked = instance->blocking;
 		if (directly_blocked == 255)
+		  continue;
+		if (!valid_card_slot(directly_blocked))
 		  continue;
 
 		if (directly_blocked == attack_card)
@@ -395,8 +421,11 @@ int is_blocking_or_blocked_by(int player1, int card1, int player2, int card2)
  * fn() will be called with arguments arg1, arg2, blocked_controller, blocked_card for each (blocked_controller,blocked_card) blocked by (player,card). */
 void for_each_creature_blocked_by_me(int player, int card, void (*fn)(int, int, int, int), int arg1, int arg2)
 {
+  int defending_player = 1-player;
+  int active_count = bounded_active_cards_count(player);
+  int defending_active_count = bounded_active_cards_count(defending_player);
   int c, d;
-  for (c = 0; c < active_cards_count[player]; ++c)
+  for (c = 0; c < active_count; ++c)
 	if (in_play(player, c)
 		&& (c == card
 			|| is_multiblocker_card_copying(player, c, player, card)))
@@ -405,20 +434,22 @@ void for_each_creature_blocked_by_me(int player, int card, void (*fn)(int, int, 
 		int directly_blocked = instance->blocking;
 		if (directly_blocked == 255)
 		  continue;
+		if (!valid_card_slot(directly_blocked))
+		  continue;
 
-		card_instance_t* instance_directly_blocked = get_card_instance(1-player, directly_blocked);
+		card_instance_t* instance_directly_blocked = get_card_instance(defending_player, directly_blocked);
 		int band = instance_directly_blocked->blocking;
 		if (band == 255)
 		  {
-			if (in_play(1-player, directly_blocked))
-			  fn(arg1, arg2, 1-player, directly_blocked);
+			if (in_play(defending_player, directly_blocked))
+			  fn(arg1, arg2, defending_player, directly_blocked);
 		  }
 		else
 		  {
-			for (d = 0; d < active_cards_count[1-player]; ++d)
-			  if (in_play(1-player, d)
-				  && get_card_instance(1-player, d)->blocking == band)
-				fn(arg1, arg2, 1-player, d);
+			for (d = 0; d < defending_active_count; ++d)
+			  if (in_play(defending_player, d)
+				  && get_card_instance(defending_player, d)->blocking == band)
+				fn(arg1, arg2, defending_player, d);
 		  }
 	  }
 }
@@ -427,8 +458,11 @@ void for_each_creature_blocked_by_me(int player, int card, void (*fn)(int, int, 
  * marked[blocked_controller][blocked_card] will be set to 1. */
 void mark_each_creature_blocked_by_me(int player, int card, char (*marked)[151])
 {
+  int defending_player = 1-player;
+  int active_count = bounded_active_cards_count(player);
+  int defending_active_count = bounded_active_cards_count(defending_player);
   int c, d;
-  for (c = 0; c < active_cards_count[player]; ++c)
+  for (c = 0; c < active_count; ++c)
 	if (in_play(player, c)
 		&& (c == card
 			|| is_multiblocker_card_copying(player, c, player, card)))
@@ -437,20 +471,22 @@ void mark_each_creature_blocked_by_me(int player, int card, char (*marked)[151])
 		int directly_blocked = instance->blocking;
 		if (directly_blocked == 255)
 		  continue;
+		if (!valid_card_slot(directly_blocked))
+		  continue;
 
-		card_instance_t* instance_directly_blocked = get_card_instance(1-player, directly_blocked);
+		card_instance_t* instance_directly_blocked = get_card_instance(defending_player, directly_blocked);
 		int band = instance_directly_blocked->blocking;
 		if (band == 255)
 		  {
-			if (in_play(1-player, directly_blocked))
-			  marked[1-player][directly_blocked] = 1;
+			if (in_play(defending_player, directly_blocked))
+			  marked[defending_player][directly_blocked] = 1;
 		  }
 		else
 		  {
-			for (d = 0; d < active_cards_count[1-player]; ++d)
-			  if (in_play(1-player, d)
-				  && get_card_instance(1-player, d)->blocking == band)
-				marked[1-player][d] = 1;
+			for (d = 0; d < defending_active_count; ++d)
+			  if (in_play(defending_player, d)
+				  && get_card_instance(defending_player, d)->blocking == band)
+				marked[defending_player][d] = 1;
 		  }
 	  }
 }
@@ -460,22 +496,24 @@ void mark_each_creature_blocked_by_me(int player, int card, char (*marked)[151])
 void for_each_creature_blocking_me(int player, int card, void (*fn)(int, int, int, int), int arg1, int arg2)
 {
   int c, band = get_card_instance(player, card)->blocking;
+  int opponent = 1-player;
+  int active_count = bounded_active_cards_count(opponent);
   if (band == 255)
 	band = card;
 
-  for (c = 0; c < active_cards_count[1-player]; ++c)
+  for (c = 0; c < active_count; ++c)
 	{
-	  card_instance_t* blocking_inst = get_card_instance(1-player, c);
-	  if (blocking_inst->blocking == band && in_play(1-player, c))
+	  card_instance_t* blocking_inst = in_play(opponent, c);
+	  if (blocking_inst && blocking_inst->blocking == band)
 		{
-		  if (is_multiblocker_card(1-player, c))
+		  if (is_multiblocker_card(opponent, c))
 			{
 			  int dsc = blocking_inst->damage_source_card;
-			  if (in_play(1-player, dsc))
-				fn(arg1, arg2, 1-player, dsc);
+			  if (valid_card_slot(dsc) && in_play(opponent, dsc))
+				fn(arg1, arg2, opponent, dsc);
 			}
 		  else
-			fn(arg1, arg2, 1-player, c);
+			fn(arg1, arg2, opponent, c);
 		}
 	}
 }
@@ -485,22 +523,24 @@ void for_each_creature_blocking_me(int player, int card, void (*fn)(int, int, in
 void mark_each_creature_blocking_me(int player, int card, char (*marked)[151])
 {
   int c, band = get_card_instance(player, card)->blocking;
+  int opponent = 1-player;
+  int active_count = bounded_active_cards_count(opponent);
   if (band == 255)
 	band = card;
 
-  for (c = 0; c < active_cards_count[1-player]; ++c)
+  for (c = 0; c < active_count; ++c)
 	{
-	  card_instance_t* blocking_inst = get_card_instance(1-player, c);
-	  if (blocking_inst->blocking == band && in_play(1-player, c))
+	  card_instance_t* blocking_inst = in_play(opponent, c);
+	  if (blocking_inst && blocking_inst->blocking == band)
 		{
-		  if (is_multiblocker_card(1-player, c))
+		  if (is_multiblocker_card(opponent, c))
 			{
 			  int dsc = blocking_inst->damage_source_card;
-			  if (in_play(1-player, dsc))
-				marked[1-player][dsc] = 1;
+			  if (valid_card_slot(dsc) && in_play(opponent, dsc))
+				marked[opponent][dsc] = 1;
 			}
 		  else
-			marked[1-player][c] = 1;
+			marked[opponent][c] = 1;
 		}
 	}
 }

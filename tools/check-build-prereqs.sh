@@ -77,6 +77,31 @@ check_tool() {
   fi
 }
 
+check_tool_any() {
+  local label="$1"
+  local area="$2"
+  local requirement="$3"
+  shift 3
+
+  local tool path found
+  for tool in "$@"; do
+    path="$(command -v "$tool" 2>/dev/null || true)"
+    if [[ -n "$path" ]]; then
+      ok "$area" "$label" "$tool at $path"
+      found=1
+      break
+    fi
+  done
+
+  if [[ -z "${found:-}" ]]; then
+    if [[ "$requirement" == "required" ]]; then
+      fail "$area" "$label" "none found: $*"
+    else
+      warn "$area" "$label" "none found: $*"
+    fi
+  fi
+}
+
 check_file() {
   local path="$1"
   local area="$2"
@@ -117,12 +142,12 @@ check_same_file "src/card_id.h" "Program/src/card_id.h" "source-provenance" "top
 check_tool "make" "dry-run-build" "required"
 check_tool "perl" "tooling" "required"
 check_tool "python3" "tooling" "required"
-check_tool "gcc" "real-build-toolchain" "required"
-check_tool "g++" "real-build-toolchain" "required"
-check_tool "yasm" "real-build-toolchain" "required"
-check_tool "dlltool" "real-build-toolchain" "required"
-check_tool "objcopy" "real-build-toolchain" "required"
-check_tool "windres" "real-build-toolchain" "required"
+check_tool_any "mingw-gcc" "real-build-toolchain" "required" i686-w64-mingw32-gcc i386-mingw32-gcc
+check_tool_any "mingw-g++" "real-build-toolchain" "required" i686-w64-mingw32-g++ i386-mingw32-g++
+check_tool_any "yasm" "real-build-toolchain" "required" yasm
+check_tool_any "dlltool" "real-build-toolchain" "required" dlltool i686-w64-mingw32-dlltool i386-mingw32-dlltool
+check_tool_any "objcopy" "real-build-toolchain" "required" objcopy i686-w64-mingw32-objcopy i386-mingw32-objcopy
+check_tool_any "windres" "real-build-toolchain" "required" windres i686-w64-mingw32-windres i386-mingw32-windres
 
 if [[ -d src && -d Program/src ]]; then
   warn "source-provenance" "src-vs-Program/src" "both source snapshots exist; audit found divergence, so source-to-runtime claims need explicit provenance"

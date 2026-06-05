@@ -63,6 +63,15 @@ tools/verify-install-tree.sh .
 tools/verify-crossover-mtg-state.sh
 ```
 
+Use the save-deck inspector when the copied install is current but a specific
+playthrough still freezes during the world-map handoff:
+
+```sh
+tools/inspect-shandalar-save-decks.py MAGIC*.SVE
+tools/inspect-shandalar-save-decks.py --crossover-bottle MTG --check-nonempty-decks
+tools/inspect-shandalar-save-decks.py --crossover-bottle MTG --inactive-basics
+```
+
 On 2026-06-05, a bounded root direct-duel smoke used:
 
 ```sh
@@ -76,6 +85,54 @@ Hornet/card-data fatal, page fault, DIB assertion, unhandled-exception, or
 coin-flip dialog strings before manual cleanup. The cleanup tail includes
 `wineserver crashed`, so this remains bounded handoff evidence rather than
 visible first-turn proof.
+
+On a later 2026-06-05 recurrence after the deck-file sync, the local `MTG`
+install verifier still passed, ruling out stale installed summoned-wizard deck
+files. Direct `Magic.exe /start3,1` did not faithfully reproduce the world-map
+handoff and did not open `MAGIC3.SVE` in the bounded log, so that path is not a
+valid stand-alone reproduction.
+
+The live `MTG` `MAGIC3.SVE` did show a concrete save-state anomaly:
+
+```text
+/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/MAGIC3.SVE: entries=53 deck1=38 deck2=0 deck3=0 terminator=0x14f4 status=LOW(deck1=38) flags=0x01:38 0x08:15
+```
+
+The tracked repo save slots all had deck 1 at 40 or higher, and
+`PlayDeckAnalyser/PDAnalyser.ini` records `MinDeckSize = 40`, so the most
+concrete hypothesis is that this parked witch/knight save had a below-minimum
+campaign deck and the summoned-duel handoff did not recover cleanly.
+
+With no `Shandalar.exe` or `Magic.exe` process running, the live save was backed
+up to:
+
+```text
+/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/MAGIC3.before-dark-knight-under40-repair.SVE
+```
+
+Then exactly two existing inactive Plains flag bytes were changed from `0x08` to
+deck 1 `0x01`:
+
+```text
+0x1492: 08 -> 01
+0x1496: 08 -> 01
+```
+
+Post-repair verification:
+
+```text
+/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/MAGIC3.SVE: entries=53 deck1=40 deck2=0 deck3=0 terminator=0x14f4 status=OK flags=0x01:40 0x08:13
+```
+
+Follow-up source and runtime hardening now keeps this class of bad save from
+being written again through the integrated deckbuilder: `src/deck/deckdll.cpp`
+refuses to switch away from or close Shandalar/editor deck views while deck 1 is
+below 40, or while any nonempty alternate player deck is below 40. `DeckDLL.dll`
+and `Program/Deckdll.dll` were rebuilt and deployed in both the repo and local
+`MTG` bottle at SHA-256
+`a9cea247d80fe457e72d94055bd3b1e8a191ce9d3389b9fd5d4d42f40cb1e0d8`;
+`tools/verify-crossover-mtg-state.sh` also checks local `MTG` save slots for
+populated decks below the 40-card minimum.
 
 Manual proof still requires replaying the witch/undead-knight encounter from
 root `C:\Shandalar\Shandalar.exe` in CrossOver `MTG`, then recording whether the

@@ -300,7 +300,7 @@ card_instance_t* get_card_instance(int player, int card)
 	  && SetVoidptr_insert(&already_displayed, __builtin_return_address(0)))
 	{
 	  char buf[100];
-	  sprintf(buf, "get_card_instance(%d, %d)", player, card);
+	  scnprintf(buf, sizeof(buf), "get_card_instance(%d, %d)", player, card);
 	  show_backtrace("bad parameters", buf);
 	}
 
@@ -315,7 +315,7 @@ card_instance_t* get_displayed_card_instance(int player, int card)
 	  && SetVoidptr_insert(&already_displayed, __builtin_return_address(0)))
 	{
 	  char buf[100];
-	  sprintf(buf, "get_displayed_card_instance(%d, %d)", player, card);
+	  scnprintf(buf, sizeof(buf), "get_displayed_card_instance(%d, %d)", player, card);
 	  show_backtrace("bad parameters", buf);
 	}
 
@@ -329,7 +329,7 @@ card_instance_t* in_play(int player, int card)
 	  && SetVoidptr_insert(&already_displayed, __builtin_return_address(0)))
 	{
 	  char buf[100];
-	  sprintf(buf, "in_play(%d, %d)", player, card);
+	  scnprintf(buf, sizeof(buf), "in_play(%d, %d)", player, card);
 	  show_backtrace("bad parameters", buf);
 	}
 
@@ -689,7 +689,7 @@ int draw_a_card(int player)
 		  load_text(0, "PROMPT_DRAWACARD");
 
 		  static char buf[260];
-		  strcpy(buf, text_lines[player + 1]);	// Unclear that this is necessary.
+		  scnprintf(buf, sizeof(buf), "%s", text_lines[player + 1]);	// Unclear that this is necessary.
 		  set_centerwindow_txt(buf);
 
 		  EXE_STDCALL_FN(void, 0x4D5D32, int)(2500);	// Sleep(2500)
@@ -1293,7 +1293,7 @@ int counterspell_resolve_unless_pay_x(int player, int card, target_definition_t*
 		}
 
 		char options[40];
-		sprintf(options, " Pay %d\n Decline", x);
+		scnprintf(options, sizeof(options), " Pay %d\n Decline", x);
 
 		card_instance_t* instance = get_card_instance(player, card);
 

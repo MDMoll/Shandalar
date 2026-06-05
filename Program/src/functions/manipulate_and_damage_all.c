@@ -1,5 +1,10 @@
 #include "manalink.h"
 
+static int bounded_active_cards_count(int player)
+{
+	return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], 150) : 0;
+}
+
 static int action_on_card_impl(int player, int card, int p, int c, actions_t action, counter_t counter_type, int counter_num)
 {
   switch (action)
@@ -182,9 +187,9 @@ int action_on_target(int player, int card, unsigned int target_number, actions_t
 int new_manipulate_all(int player, int card, int t_player, test_definition_t* this_test, actions_t raw_action)
 {
 	int result = 0;
-	int marked[2][100];
+	int marked[2][150];
 	int mc[2] = {0, 0};
-	
+
 	// First step: mark the cards which passes the test.
 	int i, c;
 	for (i = 0; i < 2; i++){
@@ -197,8 +202,9 @@ int new_manipulate_all(int player, int card, int t_player, test_definition_t* th
 				return result;
 			else if (action == (actions_t)-2)	// action invalid for this player, maybe not for the other
 				continue;
-		  
-			for (c = active_cards_count[p] - 1; c >= 0; --c){
+
+			int active_count = bounded_active_cards_count(p);
+			for (c = active_count - 1; c >= 0; --c){
 				if(((this_test->zone == TARGET_ZONE_IN_PLAY && in_play(p, c) && is_what(p, c, TYPE_PERMANENT) && !check_state(p, c, STATE_CANNOT_TARGET))
 					|| (this_test->zone == TARGET_ZONE_HAND && in_hand(p, c)))
 					&& new_make_test_in_play(p, c, -1, this_test)
@@ -269,7 +275,8 @@ int manipulate_auras_enchanting_target(int player, int card, int t_player, int t
 
 	  card_instance_t* aura;
 
-	  for (c = active_cards_count[p] - 1; c >= 0; --c)
+	  int active_count = bounded_active_cards_count(p);
+	  for (c = active_count - 1; c >= 0; --c)
 		if ((aura = in_play(p, c))
 			&& aura->damage_target_player == t_player && aura->damage_target_card == t_card
 			&& is_what(p, c, TYPE_ENCHANTMENT) && has_subtype(p, c, SUBTYPE_AURA)
@@ -289,7 +296,8 @@ int new_damage_all(int player, int card, int targ_player, int dmg, int mode, tes
 	for (n = 0; n <= 1; ++n){
 		i = (n == 0 ? current_turn : 1-current_turn);
 		if( targ_player == 2 || i == targ_player ){
-			for( count = active_cards_count[i]-1; count >= 0; --count ){
+			int active_count = bounded_active_cards_count(i);
+			for( count = active_count-1; count >= 0; --count ){
 				if( in_play(i, count) &&
 					is_what(i, count, TYPE_CREATURE) &&
 					( ( mode & NDA_ALL_CREATURES ) || !this_test || new_make_test_in_play(i, count, score, this_test) ) &&

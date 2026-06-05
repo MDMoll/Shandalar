@@ -454,7 +454,7 @@ int ai_decision_phase(int player, int *phase_code_to_go_to, int *becomes_second_
   if (trace_mode & 2)
 	{
 	  char str[100];
-	  sprintf(str, "%d: Entering AI Decision Phase.\n", EXE_DWORD(0x60EC40)++);
+	  scnprintf(str, sizeof(str), "%d: Entering AI Decision Phase.\n", EXE_DWORD(0x60EC40)++);
 	  EXE_FN(void, 0x4a7d80, const char*)(str);	// append_to_trace_txt(str)
 	}
 

@@ -45,8 +45,8 @@ EXPECTED_HASHES = {
     "Program/Shandalar.dll": "ebd4d8d5375fa05f8db8203e0069db347c062a0b1d48856bc6307190de225534",
     "CardArtLib.dll": "975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f6416457e510484",
     "Program/CardArtLib.dll": "975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f6416457e510484",
-    "DeckDLL.dll": "98a4d135e655b980f46e2e6a96843dfea459c6655d85d378bc46c6c744f64578",
-    "Program/Deckdll.dll": "98a4d135e655b980f46e2e6a96843dfea459c6655d85d378bc46c6c744f64578",
+    "DeckDLL.dll": "a9cea247d80fe457e72d94055bd3b1e8a191ce9d3389b9fd5d4d42f40cb1e0d8",
+    "Program/Deckdll.dll": "a9cea247d80fe457e72d94055bd3b1e8a191ce9d3389b9fd5d4d42f40cb1e0d8",
     "Drawcardlib.dll": "8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712",
     "Program/Drawcardlib.dll": "8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712",
     "ManalinkEh.dll": "cd9709398eba57d12044dcb936c2e728619a6eac3f401156b155efc6f872e656",
@@ -220,6 +220,43 @@ def expect_summoned_wizard_deck_pair(deck_id: str, expected_cards: int) -> None:
     expect_deck_card_total(program_deck, expected_cards)
 
 
+def expect_save_decks_at_minimum(min_deck_size: int = 40) -> None:
+    saves = sorted(
+        path
+        for path in INSTALL.glob("MAGIC*.SVE")
+        if re.match(r"^MAGIC[0-9a-d]\.SVE$", path.name, re.IGNORECASE)
+    )
+    if not saves:
+        fail(f"no MAGIC*.SVE saves found under {INSTALL}")
+
+    for save in saves:
+        data = save.read_bytes()
+        offset = 0x1420
+        counts = {1: 0, 2: 0, 3: 0}
+        while offset + 4 <= len(data):
+            low = data[offset]
+            high = data[offset + 1]
+            if low == 0xFF and high == 0xFF:
+                break
+            deck_mask = data[offset + 2]
+            for deck, mask in ((1, 0x01), (2, 0x02), (3, 0x04)):
+                if deck_mask & mask:
+                    counts[deck] += 1
+            offset += 4
+        else:
+            fail(f"{save.name} deck table terminator not found")
+
+        low_decks = [
+            f"deck{deck}={count}"
+            for deck, count in sorted(counts.items())
+            if count and count < min_deck_size
+        ]
+        if counts[1] == 0:
+            low_decks.insert(0, "deck1=0")
+        if low_decks:
+            fail(f"{save.name} has under-minimum campaign deck count(s): {', '.join(low_decks)}")
+
+
 def expect_shortcut_target(path: Path, target: str) -> None:
     expect_file(path)
     data = path.read_bytes()
@@ -272,6 +309,9 @@ ok("FaceMaker support files are present in root and Program paths")
 for deck_id, expected_cards in EXPECTED_SUMMONED_WIZARD_DECKS.items():
     expect_summoned_wizard_deck_pair(deck_id, expected_cards)
 ok("patched bottle summoned-wizard deck handoff files match docs")
+
+expect_save_decks_at_minimum()
+ok("MTG save decks have no populated deck below the 40-card minimum")
 
 expect_shortcut_target(START_MENU_SHORTCUT, r"C:\Shandalar\Shandalar.exe")
 ok("MTG Start Menu shortcut targets root Shandalar.exe")
