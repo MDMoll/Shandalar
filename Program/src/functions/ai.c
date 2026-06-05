@@ -379,14 +379,21 @@ void ai_assign_blockers(int player)
 	}
   // End additions
 
-  for (i = 0; i < EXE_DWORD(0x607D54); ++i)
+  int block_count = MIN(EXE_DWORD(0x607D54), 150);
+  for (i = 0; i < block_count; ++i)
 	{
-      forbid_attack = 0;
+	  int blocking_player = EXE_DWORD(0x607C2C);	// TENTATIVE_ai_speculation_opponent
+	  int blocking_card = EXE_DWORD_PTR(0x608304)[i];	// WILDGUESS_ai_combat_block_card[i]
+
+	  if (blocking_player < HUMAN || blocking_player > AI || blocking_card < 0 || blocking_card >= 150)
+		continue;
+
+	  forbid_attack = 0;
 	  if (event_flags & EA_PAID_BLOCK)
 		{
 		  EXE_FN(void, 0x435C80, void)();	//push_affected_card_stack()
-		  trigger_cause_controller = EXE_DWORD(0x607C2C);	//TENTATIVE_ai_speculation_opponent
-		  trigger_cause = EXE_DWORD_PTR(0x608304)[i];		//WILDGUESS_ai_combat_block_card[i]
+		  trigger_cause_controller = blocking_player;
+		  trigger_cause = blocking_card;
 		  dispatch_trigger(1 - current_turn, TRIGGER_PAY_TO_BLOCK, EXE_STR(0x790248)/*PROMPT_TURNSEQUENCE[0]*/, 1);
 		  EXE_FN(void, 0x435CD0, void)();	//pop_affected_card_stack()
 		  if (forbid_attack)
@@ -397,11 +404,6 @@ void ai_assign_blockers(int player)
 		}
 
 	  uint8_t blk = BYTE0(EXE_DWORD_PTR(0x60775C)[i]);
-	  int blocking_player = EXE_DWORD(0x607C2C);	// TENTATIVE_ai_speculation_opponent
-	  int blocking_card = EXE_DWORD_PTR(0x608304)[i];	// WILDGUESS_ai_combat_block_card[i]
-
-	  if (blocking_player < HUMAN || blocking_player > AI || blocking_card < 0 || blocking_card >= 150)
-		continue;
 
 	  card_instance_t* instance = in_play(blocking_player, blocking_card);
 	  if (!instance)
