@@ -418,19 +418,18 @@ int produce_mana_tapped_any_combination_of_colors(int player, int card, color_te
 		if (cancel == 1){
 			return 0;
 		} else {
+			int white_produces_colorless = (card >= 0
+											&& is_what(player, card, TYPE_LAND)
+											&& check_special_flags2(player, card, SF2_QUARUM_TRENCH_GNOMES));
 			int i;
+			memset(tapped_for_mana, 0, sizeof(tapped_for_mana));
 			for (i = COLOR_COLORLESS; i <= COLOR_ARTIFACT; ++i){
 				if (cols[i] > 0){
-					if( i == COLOR_WHITE && check_special_flags2(player, card, SF2_QUARUM_TRENCH_GNOMES) ){
-						produce_mana(player, COLOR_COLORLESS, cols[COLOR_COLORLESS]);
-						chosen_colors |= 1 << COLOR_COLORLESS;
-					}
-					else{
-						produce_mana(player, i, cols[i]);
-						chosen_colors |= 1 << i;
-					}
+					color_t produced_color = white_produces_colorless && i == COLOR_WHITE ? COLOR_COLORLESS : i;
+					produce_mana(player, produced_color, cols[i]);
+					chosen_colors |= 1 << produced_color;
+					tapped_for_mana[produced_color] += MAX(0, cols[i]);
 				}
-				tapped_for_mana[i] = MAX(0, cols[i]);
 			}
 			tapped_for_mana_color = 0x100;	// Special value that tells mana flare to inspect tapped_for_mana[]
 		}
