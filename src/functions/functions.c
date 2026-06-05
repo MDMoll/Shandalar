@@ -12721,7 +12721,7 @@ int generic_spell(int player, int card, event_t event, int flags, target_definit
 							//Dealing with the only two cases of "can't be the target of Aura spells"
 							int p, c;
 							for(p=0; p<2; p++){
-								for(c=0; c<active_cards_count[c]; c++){
+								for(c=0; c<active_cards_count[p]; c++){
 									if( in_play(p, c) && is_what(p, c, TYPE_PERMANENT) ){
 										if( would_validate_arbitrary_target(td, p, c) ){
 											if( ! is_humiliated(p, c) ){
