@@ -425,7 +425,8 @@ int check_for_cip_effects_removal(int player, int card){
 	if (is_what(player, card, TYPE_CREATURE) ){
 		int i, k;
 		for(i=0; i<2; i++){
-			for(k=0; k<active_cards_count[i]; k++){
+			int active_count = MIN(active_cards_count[i], 150);
+			for(k=0; k<active_count; k++){
 				if( in_play(i, k) && ! is_humiliated(i, k) ){
 					if( get_id(i, k) == CARD_ID_TORPOR_ORB || get_id(i, k) == CARD_ID_HUSHWING_GRYFF ){
 						return 1;
