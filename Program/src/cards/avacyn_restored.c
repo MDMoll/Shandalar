@@ -2418,20 +2418,17 @@ int card_descent_into_madness(int player, int card, event_t event){
 
 			int sacrifices = 0;
 			while( sacrifices < amount ){
+					instance->number_of_targets = 0;
 					if( can_target(&td) ){
-						if( ! can_target(&td1) ){
-							td.allow_cancel = 0;
-						}
-						if( pick_target(&td, "TARGET_PERMANENT") ){
-							instance->number_of_targets = 1;
+						td.allow_cancel = ! can_target(&td1) ? 0 : 1;
+						if( new_pick_target(&td, "Select a permanent you control to exile.", 0, GS_LITERAL_PROMPT) ){
 							kill_card(i, instance->targets[0].card, KILL_REMOVE);
 							sacrifices++;
 						}
 						else{
 							if( can_target(&td1) ){
 								td1.allow_cancel = 0;
-								if( pick_target(&td1, "TARGET_CARD") ){
-									instance->number_of_targets = 1;
+								if( new_pick_target(&td1, "Select a card in your hand to exile.", 0, GS_LITERAL_PROMPT) ){
 									rfg_card_in_hand(i, instance->targets[0].card);
 									sacrifices++;
 								}
@@ -2441,8 +2438,7 @@ int card_descent_into_madness(int player, int card, event_t event){
 					else{
 						if( can_target(&td1) ){
 							td1.allow_cancel = 0;
-							if( pick_target(&td1, "TARGET_CARD") ){
-								instance->number_of_targets = 1;
+							if( new_pick_target(&td1, "Select a card in your hand to exile.", 0, GS_LITERAL_PROMPT) ){
 								rfg_card_in_hand(i, instance->targets[0].card);
 								sacrifices++;
 							}

@@ -107,7 +107,7 @@ is_exact_match_path() {
 is_marker_checked_path() {
   local relpath="$1"
   case "$relpath" in
-    cards/draft.c|functions/functions.c|functions/targets.c|drawcardlib/config.c)
+    cards/avacyn_restored.c|cards/draft.c|functions/functions.c|functions/targets.c|drawcardlib/config.c)
       return 0
       ;;
     *)
@@ -227,6 +227,7 @@ check_marker "cards/draft.c" "FILE *file = open_draft_output(\"picks.txt\", \"w\
 check_marker "cards/draft.c" "FILE *file2 = open_draft_output(\"packs.txt\", \"a+\");" "guarded-packs-log"
 check_marker "cards/draft.c" "FILE *file = open_draft_output(buffer, \"w\");" "guarded-playdeck-output"
 check_marker "cards/draft.c" "Invalid pick found: %d, pick=%d" "invalid-pick-log"
+check_marker "cards/avacyn_restored.c" "td.allow_cancel = ! can_target(&td1) ? 0 : 1;" "descent-into-madness-hand-fallback"
 check_marker "drawcardlib/config.c" "concat_cfg_key(const char* key1, const char* key2)" "allocated-config-key-helper"
 check_marker "drawcardlib/config.c" "enum { PIC_HANDLE_NAME_BUFSIZE = 2 * MAX_PATH + 1200 };" "larger-diagnostic-buffer"
 check_marker "drawcardlib/config.c" "snprintf(buf[idx], sizeof(buf[idx])," "bounded-frame-diagnostic"
