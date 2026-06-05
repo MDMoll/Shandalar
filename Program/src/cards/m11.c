@@ -520,13 +520,13 @@ int card_captivating_vampire(int player, int card, event_t event){
 	default_target_definition(player, card, &td1, TYPE_CREATURE);
 	td1.allowed_controller = 1-player;
 	td1.preferred_controller = 1-player;
-	td.allow_cancel = 0;
+	td1.allow_cancel = 0;
 
 	card_instance_t *instance = get_card_instance( player, card );
 
 	if( event == EVENT_CAN_ACTIVATE ){
-		if( target_available(player, card, &td) > 4 ){
-			return generic_activated_ability(player, card, event, GAA_CAN_TARGET, MANACOST0, 0, &td, NULL);
+		if( can_use_activated_abilities(player, card) && target_available(player, card, &td) > 4 && can_target(&td1) ){
+			return 1;
 		}
 	}
 
