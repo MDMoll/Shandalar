@@ -1079,10 +1079,12 @@ select_target_impl(int player, int card,
 
 	  EXE_DWORD(0x4ED954) = 3;
 
+	  int chosen;
 	  if (ai_is_speculating == 1)
 		{
-		  EXE_DWORD(0x7A2FE4) = internal_rand(num_candidates);
-		  EXE_DWORD(0x78FA30) = (candidates[EXE_DWORD(0x7A2FE4)].player < 1 ? 0 : 0x100) | (candidates[EXE_DWORD(0x7A2FE4)].card & 0xff) | 0x4000;
+		  chosen = internal_rand(num_candidates);
+		  EXE_DWORD(0x7A2FE4) = chosen;
+		  EXE_DWORD(0x78FA30) = (candidates[chosen].player < 1 ? 0 : 0x100) | (candidates[chosen].card & 0xff) | 0x4000;
 
 		  sub_498F20();
 		}
@@ -1090,12 +1092,16 @@ select_target_impl(int player, int card,
 		{
 		  sub_499050();
 
-		  if (EXE_DWORD(0x7A2FE4) == 99 || num_candidates <= EXE_DWORD(0x7A2FE4))
-			EXE_DWORD(0x7A2FE4) = internal_rand(num_candidates);
+		  chosen = EXE_DWORD(0x7A2FE4);
+		  if (chosen < 0 || chosen == 99 || num_candidates <= chosen)
+			{
+			  chosen = internal_rand(num_candidates);
+			  EXE_DWORD(0x7A2FE4) = chosen;
+			}
 		}
 
-	  EXE_DWORD(0x60A550) = candidates[EXE_DWORD(0x7A2FE4)].player;
-	  *ret_tgt = candidates[EXE_DWORD(0x7A2FE4)];
+	  EXE_DWORD(0x60A550) = candidates[chosen].player;
+	  *ret_tgt = candidates[chosen];
 	  return 1;
 	}
 }
