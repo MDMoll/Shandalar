@@ -4826,7 +4826,7 @@ int card_panic_spellbomb(int player, int card, event_t event){
 	default_target_definition(player, card, &td, TYPE_CREATURE );
 	if( player == AI ){
 		td.allowed_controller = 1-player;
-		td.allowed_controller = 1-player;
+		td.preferred_controller = 1-player;
 	}
 
 	if( event == EVENT_CAN_ACTIVATE && can_use_activated_abilities(player, card) && has_mana_for_activated_ability(player, card, 0, 0, 0, 0, 0, 0) &&
@@ -4884,7 +4884,7 @@ int card_prototype_portal(int player, int card, event_t event){
 	target_definition_t td;
 	default_target_definition(player, card, &td, TYPE_ARTIFACT );
 	td.allowed_controller = player;
-	td.allowed_controller = player;
+	td.preferred_controller = player;
 	td.zone = TARGET_ZONE_HAND;
 	td.illegal_abilities = 0;
 
