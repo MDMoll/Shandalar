@@ -3396,7 +3396,7 @@ int card_helvault(int player, int card, event_t event){
 	td1.allowed_controller = player;
 	td1.preferred_controller = player;
 	if( player == AI ){
-		td.required_state = TARGET_STATE_DESTROYED;
+		td1.required_state = TARGET_STATE_DESTROYED;
 	}
 
 	target_definition_t td2;
