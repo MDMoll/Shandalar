@@ -120,7 +120,7 @@ dialog_ai(int who_chooses, choice_t* choice, int choices, int omit_illegal, dlg_
 	{
 	  int value = remember_ai_value(who_chooses, 0);	// Just retrieve, since AI is definitely not speculating
 	  // Sanity check, in case the remembered values got out of sync, perhaps by uncontrolled calls to internal_rand()
-	  if (value >= 0 && value < choices && choice[value].legality)
+	  if (value >= 0 && value < choices && choice[value].legality && choice[value].ai_priority > 0)
 		{
 		  displayed_idx = real_to_displayed(choice, choices, omit_illegal, value);
 		  if (displayed_idx != ai_choice1)
