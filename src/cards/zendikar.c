@@ -637,17 +637,8 @@ int card_piranha_marsh(int player, int card, event_t event){
 
 	comes_into_play_tapped(player, card, event);
 
-	if (comes_into_play(player, card, event)){
-		target_definition_t td;
-		default_target_definition(player, card, &td, 0);
-		td.allow_cancel = 0;
-		td.zone = TARGET_ZONE_PLAYERS;
-
-		card_instance_t* instance = get_card_instance(player, card);
-		instance->number_of_targets = 0;
-		if( can_target(&td) && pick_target(&td, "TARGET_PLAYER" ) ){
-			lose_life(instance->targets[0].player, 1);
-		}
+	if (comes_into_play(player, card, event) && pick_player_duh(player, card, 1-player, 0)){
+		lose_life(get_card_instance(player, card)->targets[0].player, 1);
 	}
 
 	return mana_producer(player, card, event);

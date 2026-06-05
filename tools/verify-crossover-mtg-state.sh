@@ -49,8 +49,8 @@ EXPECTED_HASHES = {
     "Program/Deckdll.dll": "5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0",
     "Drawcardlib.dll": "8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712",
     "Program/Drawcardlib.dll": "8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712",
-    "ManalinkEh.dll": "cd9709398eba57d12044dcb936c2e728619a6eac3f401156b155efc6f872e656",
-    "Program/ManalinkEh.dll": "6832a01eb11ae8872e4a00f8e8916e918a8538be865cf4bb43a9929cc690f07c",
+    "ManalinkEh.dll": "74bd5a2ce59f17ef2f6bcdd267e9e42f55fc049086dd9ba5ca288f1e2ac99a3b",
+    "Program/ManalinkEh.dll": "56e600222fd6d551667b8f256f671fb620ffe050c5d75e6fb67b962620364a7a",
     "zlib.dll": "9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90",
     "Program/zlib.dll": "9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90",
     "libgcc_s_dw2-1.dll": "89f6147f5ed3f271d0b88f0586e079b9ac22e76c31221e5d5013aa273cc4694b",
@@ -102,6 +102,7 @@ EXPECTED_HEX_PREFIXES = {
         (0x495A60, bytes.fromhex("89c385c07e0881fb0e0100007e05bb0e010000e9746af7ff")),
         (0x40DB84, bytes.fromhex("e9078b0800")),
         (0x495A90, bytes.fromhex("8d7db431c08b0c85c0f34e00890c874083f81075f0ba010000002b5508c1e20531c08b8c82a0f44e00898c82c0f34e004083f80875ece9eb74f7ff")),
+        (0x3FE7A0, bytes.fromhex("c744240c00000000b80100000029d88944240889742404891c24e881cd060085c00f84bfffffff89742404891c24e89dec0100c7442404010000008b4074890424e88aea0300e99bffffff")),
     ],
     "Program/ManalinkEh.dll": [
         (0x381A25, bytes.fromhex("f60590f14e00040f84ae000000e90100")),
@@ -112,6 +113,7 @@ EXPECTED_HEX_PREFIXES = {
         (0x452C60, bytes.fromhex("89c385c07e0881fb0e0100007e05bb0e010000e934f7f7ff")),
         (0x3D3844, bytes.fromhex("e947fe0700")),
         (0x452C90, bytes.fromhex("8d7db431c08b0c85c0f34e00890c874083f81075f0ba010000002b5508c1e20531c08b8c82a0f44e00898c82c0f34e004083f80875ece9ab01f8ff")),
+        (0x3C4930, bytes.fromhex("c744240c00000000b80100000029d88944240889742404891c24e8c16a060085c00f84bfffffff89742404891c24e80dd60100c7442404010000008b4074890424e80aaf0300e99bffffff")),
     ],
 }
 

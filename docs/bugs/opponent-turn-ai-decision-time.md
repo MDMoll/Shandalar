@@ -43,8 +43,11 @@ nonpositive or higher values use `270`.
 
 | File | Patch site | Expected bytes | New SHA-256 |
 | --- | --- | --- | --- |
-| `ManalinkEh.dll` | Hook at file offset `0x40d0e1`, function VMA `0x0240dad0`; cave at `0x495a60` / VMA `0x02497060` | Hook `e9 7a 95 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 74 6a f7 ff` | `cd9709398eba57d12044dcb936c2e728619a6eac3f401156b155efc6f872e656` |
-| `Program/ManalinkEh.dll` | Hook at file offset `0x3d2da1`, function VMA `0x023d3790`; cave at `0x452c60` / VMA `0x02454060` | Hook `e9 ba 08 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 34 f7 f7 ff` | `6832a01eb11ae8872e4a00f8e8916e918a8538be865cf4bb43a9929cc690f07c` |
+| `ManalinkEh.dll` | Hook at file offset `0x40d0e1`, function VMA `0x0240dad0`; cave at `0x495a60` / VMA `0x02497060` | Hook `e9 7a 95 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 74 6a f7 ff` | `74bd5a2ce59f17ef2f6bcdd267e9e42f55fc049086dd9ba5ca288f1e2ac99a3b` |
+| `Program/ManalinkEh.dll` | Hook at file offset `0x3d2da1`, function VMA `0x023d3790`; cave at `0x452c60` / VMA `0x02454060` | Hook `e9 ba 08 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 34 f7 f7 ff` | `56e600222fd6d551667b8f256f671fb620ffe050c5d75e6fb67b962620364a7a` |
+
+The current hashes above also include the later AI raw-mana snapshot and Piranha
+Marsh trigger-target patches in the same DLLs.
 
 Expected disassembly shape:
 
@@ -100,9 +103,9 @@ uv run python tools/patch-ai-decision-clamp.py --apply --backup-suffix .before-a
 The same helper was run again with backup suffix `.before-ai-decision-270-patch`
 when lowering the active fallback from 540 to 270.
 
-The repo DLL hashes above include the later AI raw-mana snapshot patch. The
-local CrossOver `MTG` copied install was also updated with that raw-mana patch
-and now matches the repo Manalink hashes.
+The repo DLL hashes above include the later AI raw-mana snapshot and Piranha
+Marsh trigger-target patches. The local CrossOver `MTG` copied install was also
+updated with those later patches and now matches the repo Manalink hashes.
 
 ## Verification Commands
 

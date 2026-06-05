@@ -107,7 +107,7 @@ is_exact_match_path() {
 is_marker_checked_path() {
   local relpath="$1"
   case "$relpath" in
-    cards/avacyn_restored.c|cards/draft.c|functions/deck.c|functions/exiledby.c|functions/functions.c|functions/manipulate_and_damage_all.c|functions/show_backtrace.c|functions/targets.c|functions/produce_mana.c|functions/token_generation.c|functions/tutors.c|drawcardlib/config.c)
+    cards/avacyn_restored.c|cards/draft.c|cards/zendikar.c|functions/deck.c|functions/exiledby.c|functions/functions.c|functions/manipulate_and_damage_all.c|functions/show_backtrace.c|functions/targets.c|functions/produce_mana.c|functions/token_generation.c|functions/tutors.c|drawcardlib/config.c)
       return 0
       ;;
     *)
@@ -238,6 +238,7 @@ check_marker "cards/draft.c" "FILE *file2 = open_draft_output(\"packs.txt\", \"a
 check_marker "cards/draft.c" "FILE *file = open_draft_output(buffer, \"w\");" "guarded-playdeck-output"
 check_marker "cards/draft.c" "Invalid pick found: %d, pick=%d" "invalid-pick-log"
 check_marker "cards/avacyn_restored.c" "td.allow_cancel = ! can_target(&td1) ? 0 : 1;" "descent-into-madness-hand-fallback"
+check_marker "cards/zendikar.c" "pick_player_duh(player, card, 1-player, 0)" "piranha-marsh-ai-target"
 check_marker "functions/ai.c" "int block_count = MIN(EXE_DWORD(0x607D54), 150);" "bounded-ai-blocker-count"
 check_marker "functions/ai.c" "trigger_cause_controller = blocking_player;" "validated-ai-pay-to-block-trigger"
 check_marker "functions/ai.c" "scnprintf(str, sizeof(str), \"%d: Entering AI Decision Phase.\\n\", EXE_DWORD(0x60EC40)++);" "bounded-ai-trace-prompt"
