@@ -243,6 +243,8 @@ check_marker "functions/deck.c" "scnprintf(buf, sizeof(buf), \"get_card_instance
 check_marker "functions/deck.c" "scnprintf(buf, sizeof(buf), \"%s\", text_lines[player + 1]);" "bounded-deck-draw-loss-prompt"
 check_marker "functions/exiledby.c" "scnprintf(buf, sizeof(buf), \"No %s%scards have been exiled by %s.\"," "bounded-exiledby-empty-message"
 check_marker "functions/exiledby.c" "scnprintf(buf, sizeof(buf), \"%s%scards exiled by %s\"," "bounded-exiledby-title"
+check_marker "functions/exiledby.c" "static int bounded_exiledby_active_cards_count(int player)" "bounded-exiledby-active-count-helper"
+check_marker "functions/exiledby.c" "int active_count = bounded_exiledby_active_cards_count(player);" "bounded-exiledby-legacy-scan"
 check_marker "functions/functions.c" "int active_count = MIN(active_cards_count[i], 150);" "bounded-attack-power-scan"
 check_marker "functions/functions.c" "for(k=0; k<active_count; k++){" "bounded-cip-removal-scan"
 check_marker "functions/functions.c" "if (player < HUMAN || player > AI){" "count-subtype-player-guard"

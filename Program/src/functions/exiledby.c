@@ -14,6 +14,11 @@ static int exiledby_legacy(int player, int card, event_t event)
   return 0;
 }
 
+static int bounded_exiledby_active_cards_count(int player)
+{
+  return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], 150) : 0;
+}
+
 static int exiledby_legacymatches(card_instance_t* instance, int player, int card)
 {
   if (instance->internal_card_id != LEGACY_EFFECT_CUSTOM)
@@ -59,7 +64,8 @@ int exiledby_choose(int player, int card, int csvid, exiledby_choose_mode_t mode
   int i, leg, field, ai_choice = -1, highest_value = INT_MIN, can_cast = 0;
   /* We look at all cards each call, so if a card's no longer exiled, we remove it immediately.  Not quite as good as we'd like - if you exile two Atogs, then
    * Pull From Reality one, it'll still be listed twice. */
-  for (leg = 0; leg < active_cards_count[player]; ++leg)
+  int active_count = bounded_exiledby_active_cards_count(player);
+  for (leg = 0; leg < active_count; ++leg)
 	{
 	  instance = get_card_instance(player, leg);
 	  if (exiledby_legacymatches(instance, p, card))
@@ -186,7 +192,8 @@ int* exiledby_find_any(int player, int card, int* ret_leg, int* ret_idx)
   if (player < 0)
 	player += 2;
 
-  for (; leg < active_cards_count[player]; ++leg)
+  int active_count = bounded_exiledby_active_cards_count(player);
+  for (; leg < active_count; ++leg)
 	{
 	  instance = get_card_instance(player, leg);
 	  if (exiledby_legacymatches(instance, p, card))
@@ -230,7 +237,8 @@ int* exiledby_find(int player, int card, int needle, int* ret_leg, int* ret_idx)
   if (player < 0)
 	player += 2;
 
-  for (; leg < active_cards_count[player]; ++leg)
+  int active_count = bounded_exiledby_active_cards_count(player);
+  for (; leg < active_count; ++leg)
 	{
 	  instance = get_card_instance(player, leg);
 	  if (exiledby_legacymatches(instance, p, card))
@@ -342,7 +350,8 @@ int exiledby_detach(int player, int card)
   int leg, detach_id = 0;
 
   // First, find an unused detach_id.
-  for (leg = 0; leg < active_cards_count[player]; ++leg)
+  int active_count = bounded_exiledby_active_cards_count(player);
+  for (leg = 0; leg < active_count; ++leg)
 	{
 	  instance = get_card_instance(player, leg);
 	  if (instance->internal_card_id == LEGACY_EFFECT_CUSTOM
@@ -354,7 +363,7 @@ int exiledby_detach(int player, int card)
   ++detach_id;
 
   // Now detach all exiledby legacies attached to player/card and set their detach_id.
-  for (leg = 0; leg < active_cards_count[player]; ++leg)
+  for (leg = 0; leg < active_count; ++leg)
 	{
 	  instance = get_card_instance(player, leg);
 	  if (exiledby_legacymatches(instance, player, card))
@@ -371,7 +380,8 @@ int exiledby_detach(int player, int card)
 void exiledby_destroy_detached(int player, int detach_id)
 {
   int leg;
-  for (leg = 0; leg < active_cards_count[player]; ++leg)
+  int active_count = bounded_exiledby_active_cards_count(player);
+  for (leg = 0; leg < active_count; ++leg)
 	if (exiledby_legacymatches(get_card_instance(player, leg), player - 2, detach_id))
 	  kill_card(player, leg, KILL_REMOVE);
 }
@@ -423,7 +433,8 @@ static void return_auras_and_counters_to_play(int player, int card){
 			 * to the original card before putting it into play. */
 			card_instance_t* leg;
 			int count;
-			for (count = 0; count < active_cards_count[player]; ++count ){
+			int active_count = bounded_exiledby_active_cards_count(player);
+			for (count = 0; count < active_count; ++count ){
 				if ((leg = in_play(player, count)) && leg->internal_card_id == LEGACY_EFFECT_CUSTOM && leg->info_slot == (int)store_counters_legacy &&
 					leg->targets[17].card == instance->targets[18].card
 				   ){
@@ -540,7 +551,7 @@ int exile_permanent_and_auras_attached(int player, int card, int t_player, int t
 		int p, count;
 		card_instance_t* aura;
 		for(p=0; p<2; p++){
-			for (count = active_cards_count[p]-1; count >= 0; --count){
+			for (count = bounded_exiledby_active_cards_count(p)-1; count >= 0; --count){
 				if( (aura = in_play(p, count)) && is_what(p, count, TYPE_ENCHANTMENT) && has_subtype(p, count, SUBTYPE_AURA) &&
 					aura->damage_target_player == t_player && aura->damage_target_card == t_card
 				  ){
