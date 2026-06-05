@@ -103,6 +103,14 @@ EXPECTED_HEX_PREFIXES = {
     ],
 }
 
+EXPECTED_SUMMONED_WIZARD_DECKS = {
+    "0016": 60,
+    "0283": 60,
+    "0150": 60,
+    "0076": 56,
+    "0102": 60,
+}
+
 FACE_SUPPORT = [
     "FaceData.txt",
     "FaceButtons.txt",
@@ -149,6 +157,17 @@ def expect_hash(rel_path: str, expected: str) -> None:
         fail(f"{rel_path} sha256 {actual} != {expected}")
 
 
+def expect_same_hash(lhs_rel_path: str, rhs_rel_path: str) -> None:
+    lhs = INSTALL / lhs_rel_path
+    rhs = INSTALL / rhs_rel_path
+    expect_file(lhs)
+    expect_file(rhs)
+    lhs_hash = sha256_file(lhs)
+    rhs_hash = sha256_file(rhs)
+    if lhs_hash != rhs_hash:
+        fail(f"{lhs_rel_path} sha256 {lhs_hash} != {rhs_rel_path} sha256 {rhs_hash}")
+
+
 def expect_hex_prefix(rel_path: str, offset: int, expected: bytes) -> None:
     path = INSTALL / rel_path
     expect_file(path)
@@ -159,6 +178,34 @@ def expect_hex_prefix(rel_path: str, offset: int, expected: bytes) -> None:
         fail(
             f"{rel_path} hex at 0x{offset:x} {actual.hex()} != {expected.hex()}"
         )
+
+
+def expect_no_variant_markers(rel_path: str) -> None:
+    text = read_text(INSTALL / rel_path)
+    for line_number, line in enumerate(text.splitlines(), 1):
+        if re.match(r"^\.[vV]", line):
+            fail(f"{rel_path}:{line_number} has summoned-wizard unsafe variant marker {line!r}")
+
+
+def expect_deck_card_total(rel_path: str, expected_cards: int) -> None:
+    text = read_text(INSTALL / rel_path)
+    actual = 0
+    for line in text.splitlines():
+        match = re.match(r"^\.[0-9]+\s+(-?[0-9]+)\b", line)
+        if match:
+            actual += int(match.group(1))
+    if actual != expected_cards:
+        fail(f"{rel_path} has {actual} deck cards, expected {expected_cards}")
+
+
+def expect_summoned_wizard_deck_pair(deck_id: str, expected_cards: int) -> None:
+    root_deck = f"decks/{deck_id}.dck"
+    program_deck = f"Program/decks/{deck_id}.dck"
+    expect_same_hash(root_deck, program_deck)
+    expect_no_variant_markers(root_deck)
+    expect_no_variant_markers(program_deck)
+    expect_deck_card_total(root_deck, expected_cards)
+    expect_deck_card_total(program_deck, expected_cards)
 
 
 def section_has_value(text: str, section: str, raw_value: str) -> bool:
@@ -200,6 +247,10 @@ ok("patched bottle representative byte checks match docs")
 for rel_path in FACE_SUPPORT:
     expect_file(INSTALL / rel_path)
 ok("FaceMaker support files are present in root and Program paths")
+
+for deck_id, expected_cards in EXPECTED_SUMMONED_WIZARD_DECKS.items():
+    expect_summoned_wizard_deck_pair(deck_id, expected_cards)
+ok("patched bottle summoned-wizard deck handoff files match docs")
 
 for rel_path in ["Shandalar.ini", "Program/Shandalar.ini"]:
     text = read_text(INSTALL / rel_path)

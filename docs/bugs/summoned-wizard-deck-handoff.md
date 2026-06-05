@@ -50,12 +50,17 @@ their existing `Program/decks/` legacy copies:
 `Program/decks/` counterpart, contains no `.v...` markers, and has the expected
 legacy card count.
 
+`tools/verify-crossover-mtg-state.sh` also checks the local CrossOver `MTG`
+copied install for the same five root/`Program` deck pairs, so a stale installed
+copy of `decks/0016.dck` cannot pass the normal bottle-state verifier.
+
 ## Verification
 
 Run the static install-tree check from the repo root or a copied install:
 
 ```sh
 tools/verify-install-tree.sh .
+tools/verify-crossover-mtg-state.sh
 ```
 
 Manual proof still requires replaying the witch/undead-knight encounter from
