@@ -432,7 +432,7 @@ int dispatch_trigger(int player, trigger_t trig, const char *prompt, int TENTATI
 
 int dispatch_trigger2(int player, trigger_t trig, const char *prompt, int TENTATIVE_allow_response, int new_trigger_cause_controller, int new_trigger_cause)
 {
-  int old_trigger_cause = trigger_cause_controller;
+  int old_trigger_cause = trigger_cause;
   int old_trigger_cause_controller = trigger_cause_controller;
   xtrigger_t old_xtrigger = xtrigger_impl_value_dont_use_directly;
 
@@ -442,7 +442,7 @@ int dispatch_trigger2(int player, trigger_t trig, const char *prompt, int TENTAT
   dispatch_trigger_impl(  player, trig, 0, prompt, TENTATIVE_allow_response);
   dispatch_trigger_impl(1-player, trig, 0, prompt, TENTATIVE_allow_response);
 
-  trigger_cause_controller = old_trigger_cause;
+  trigger_cause = old_trigger_cause;
   trigger_cause_controller = old_trigger_cause_controller;
   xtrigger_impl_value_dont_use_directly = old_xtrigger;
 
@@ -451,7 +451,7 @@ int dispatch_trigger2(int player, trigger_t trig, const char *prompt, int TENTAT
 
 int dispatch_xtrigger2(int player, xtrigger_t xtrig, const char *prompt, int TENTATIVE_allow_response, int new_trigger_cause_controller, int new_trigger_cause)
 {
-  int old_trigger_cause = trigger_cause_controller;
+  int old_trigger_cause = trigger_cause;
   int old_trigger_cause_controller = trigger_cause_controller;
   xtrigger_t old_xtrigger = xtrigger_impl_value_dont_use_directly;
 
@@ -461,7 +461,7 @@ int dispatch_xtrigger2(int player, xtrigger_t xtrig, const char *prompt, int TEN
   dispatch_trigger_impl(  player, TRIGGER_XTRIGGER, xtrig, prompt, TENTATIVE_allow_response);
   dispatch_trigger_impl(1-player, TRIGGER_XTRIGGER, xtrig, prompt, TENTATIVE_allow_response);
 
-  trigger_cause_controller = old_trigger_cause;
+  trigger_cause = old_trigger_cause;
   trigger_cause_controller = old_trigger_cause_controller;
   xtrigger_impl_value_dont_use_directly = old_xtrigger;
 
