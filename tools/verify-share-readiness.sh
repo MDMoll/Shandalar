@@ -358,34 +358,46 @@ branch_delta="$(tools/list-branch-delta.sh)"
 branch_delta_header="$(printf '%s\n' "$branch_delta" | sed -n '1p')"
 [ "$branch_delta_header" = $'status\tpath\told_path\tkind\tbytes\tsha256' ] || fail "unexpected branch-delta header: $branch_delta_header"
 branch_delta_count="$(printf '%s\n' "$branch_delta" | awk 'NR > 1 {count++} END {print count+0}')"
-[ "$branch_delta_count" -ge "100" ] || fail "expected at least 100 branch-delta rows, found $branch_delta_count"
+on_base_branch=0
+if [ "$(git rev-parse HEAD)" = "$(git rev-parse master)" ]; then
+  on_base_branch=1
+fi
+if [ "$on_base_branch" = "1" ]; then
+  [ "$branch_delta_count" = "0" ] || fail "expected no branch-delta rows on master, found $branch_delta_count"
+else
+  [ "$branch_delta_count" -ge "100" ] || fail "expected at least 100 branch-delta rows, found $branch_delta_count"
+fi
 branch_delta_other_count="$(printf '%s\n' "$branch_delta" | awk -F '\t' 'NR > 1 && $4 == "other" {count++} END {print count+0}')"
 [ "$branch_delta_other_count" = "0" ] || fail "branch-delta inventory has $branch_delta_other_count rows classified as other"
 branch_delta_summary="$(tools/list-branch-delta.sh --summary)"
 printf '%s\n' "$branch_delta_summary" | grep -q "# Branch Delta Summary" || fail "branch-delta summary missing heading"
 printf '%s\n' "$branch_delta_summary" | grep -q "| Changed paths | $branch_delta_count |" || fail "branch-delta summary does not report $branch_delta_count changed paths"
-for expected in \
-  $'README.md\tdocumentation' \
-  $'.gitattributes\trepo-metadata' \
-  $'tools/create-security-scan-results-template.sh\tshell-tool' \
-  $'tools/check-security-scanner-availability.sh\tshell-tool' \
-  $'Magic.exe\tpe-executable' \
-  $'Program/FaceArt/fb1\tart-resource' \
-  $'archive/backups/Rogues_Org_BAK.csv\tarchive-evidence' \
-  $'src/cards/unlimited.c\tsource' \
-  $'tools/create-patch-package.sh\tshell-tool' \
-  $'tools/list-branch-delta.sh\tshell-tool' \
-  $'tools/print-share-status.sh\tshell-tool' \
-  $'tools/record-manual-gameplay-result.sh\tshell-tool' \
-  $'tools/record-security-scan-result.sh\tshell-tool' \
-  $'tools/verify-final-share-gates.sh\tshell-tool' \
-  $'tools/verify-handoff-artifacts.sh\tshell-tool'
-do
-  path="${expected%$'\t'*}"
-  kind="${expected#*$'\t'}"
-  printf '%s\n' "$branch_delta" | awk -F '\t' -v p="$path" -v k="$kind" 'NR > 1 && $2 == p && $4 == k {found=1} END {exit found ? 0 : 1}' || fail "branch-delta inventory is missing $path as $kind"
-done
-pass "branch-delta inventory is reviewable ($branch_delta_count checked)"
+if [ "$on_base_branch" = "1" ]; then
+  pass "branch-delta inventory is empty on master"
+else
+  for expected in \
+    $'README.md\tdocumentation' \
+    $'.gitattributes\trepo-metadata' \
+    $'tools/create-security-scan-results-template.sh\tshell-tool' \
+    $'tools/check-security-scanner-availability.sh\tshell-tool' \
+    $'Magic.exe\tpe-executable' \
+    $'Program/FaceArt/fb1\tart-resource' \
+    $'archive/backups/Rogues_Org_BAK.csv\tarchive-evidence' \
+    $'src/cards/unlimited.c\tsource' \
+    $'tools/create-patch-package.sh\tshell-tool' \
+    $'tools/list-branch-delta.sh\tshell-tool' \
+    $'tools/print-share-status.sh\tshell-tool' \
+    $'tools/record-manual-gameplay-result.sh\tshell-tool' \
+    $'tools/record-security-scan-result.sh\tshell-tool' \
+    $'tools/verify-final-share-gates.sh\tshell-tool' \
+    $'tools/verify-handoff-artifacts.sh\tshell-tool'
+  do
+    path="${expected%$'\t'*}"
+    kind="${expected#*$'\t'}"
+    printf '%s\n' "$branch_delta" | awk -F '\t' -v p="$path" -v k="$kind" 'NR > 1 && $2 == p && $4 == k {found=1} END {exit found ? 0 : 1}' || fail "branch-delta inventory is missing $path as $kind"
+  done
+  pass "branch-delta inventory is reviewable ($branch_delta_count checked)"
+fi
 
 patch_dry_run="$(tools/create-patch-package.sh --dry-run --skip-verify --dest /private/tmp/shandalar-patch-package-dryrun.patch)"
 printf '%s\n' "$patch_dry_run" | grep -q "Receiver checksum command" || fail "patch dry-run missing receiver checksum command"
