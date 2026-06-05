@@ -1300,7 +1300,7 @@ int has_any_counters(int player, counter_t counter_type, type_t type)
   int p, c;
   for (p = 0; p <= 1; ++p)
 	if (p == player || player == ANYBODY)
-	  for (c = 0; c <= active_cards_count[p]; ++c)
+	  for (c = 0; c < active_cards_count[p]; ++c)
 		if (in_play(p, c) && is_what(p, c, type) && count_counters(p, c, counter_type))
 		  return 1;
 

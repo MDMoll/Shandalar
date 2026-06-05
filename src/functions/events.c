@@ -895,7 +895,7 @@ int get_abilities(int player, int card, event_t event, int new_attacking_card)
 	{
 	  int p, c;
 	  for (p = 0; p <= 1; ++p)
-		for (c = 0; c <= active_cards_count[p]; ++c)
+		for (c = 0; c < active_cards_count[p]; ++c)
 		  if (in_play(p, c))
 			{
 			  card_instance_t* inst = get_card_instance(p, c);
