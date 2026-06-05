@@ -1689,7 +1689,7 @@ int card_grixis_charm(int player, int card, event_t event){
 	target_definition_t td1;
 	default_target_definition(player, card, &td1, TYPE_CREATURE);
 	if( player == AI ){
-		td.toughness_requirement = 4 | TARGET_PT_LESSER_OR_EQUAL;
+		td1.toughness_requirement = 4 | TARGET_PT_LESSER_OR_EQUAL;
 	}
 
 	card_instance_t *instance = get_card_instance(player, card);
