@@ -63,6 +63,20 @@ tools/verify-install-tree.sh .
 tools/verify-crossover-mtg-state.sh
 ```
 
+On 2026-06-05, a bounded root direct-duel smoke used:
+
+```sh
+/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" --cx-log /tmp/shandalar-mtg-root-ep0016-dark-knight-cx.log --debugmsg +seh,+file,+process "C:\Shandalar\Shandalar.exe" --e 0016 --p 0016
+```
+
+It printed `Stand-alone duel: "decks/0016.dck" vs. "decks/0016.dck"`, opened
+root `C:\Shandalar\Magic.exe`, and opened `C:\Shandalar\decks\0016.dck` after
+normal fallback misses for bare `0016` paths. Targeted scans found no
+Hornet/card-data fatal, page fault, DIB assertion, unhandled-exception, or
+coin-flip dialog strings before manual cleanup. The cleanup tail includes
+`wineserver crashed`, so this remains bounded handoff evidence rather than
+visible first-turn proof.
+
 Manual proof still requires replaying the witch/undead-knight encounter from
 root `C:\Shandalar\Shandalar.exe` in CrossOver `MTG`, then recording whether the
 duel reaches the first interactive turn without freezing before the coin flip.

@@ -20,6 +20,18 @@ BOTTLE = os.environ["CROSSOVER_BOTTLE_NAME"]
 BOTTLES_DIR = Path(os.environ["CROSSOVER_BOTTLES_DIR"])
 BASE = BOTTLES_DIR / BOTTLE
 INSTALL = BASE / "drive_c" / "Shandalar"
+START_MENU_SHORTCUT = (
+    BASE
+    / "drive_c"
+    / "users"
+    / "crossover"
+    / "AppData"
+    / "Roaming"
+    / "Microsoft"
+    / "Windows"
+    / "Start Menu"
+    / "Shandalar.lnk"
+)
 WINE = Path("/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine")
 
 EXPECTED_HASHES = {
@@ -208,6 +220,15 @@ def expect_summoned_wizard_deck_pair(deck_id: str, expected_cards: int) -> None:
     expect_deck_card_total(program_deck, expected_cards)
 
 
+def expect_shortcut_target(path: Path, target: str) -> None:
+    expect_file(path)
+    data = path.read_bytes()
+    ascii_target = target.encode("ascii")
+    utf16_target = target.encode("utf-16le")
+    if ascii_target not in data and utf16_target not in data:
+        fail(f"{path} does not point at {target}")
+
+
 def section_has_value(text: str, section: str, raw_value: str) -> bool:
     in_section = False
     section_header = f"[{section}]"
@@ -251,6 +272,9 @@ ok("FaceMaker support files are present in root and Program paths")
 for deck_id, expected_cards in EXPECTED_SUMMONED_WIZARD_DECKS.items():
     expect_summoned_wizard_deck_pair(deck_id, expected_cards)
 ok("patched bottle summoned-wizard deck handoff files match docs")
+
+expect_shortcut_target(START_MENU_SHORTCUT, r"C:\Shandalar\Shandalar.exe")
+ok("MTG Start Menu shortcut targets root Shandalar.exe")
 
 for rel_path in ["Shandalar.ini", "Program/Shandalar.ini"]:
     text = read_text(INSTALL / rel_path)
