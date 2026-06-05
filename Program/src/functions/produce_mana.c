@@ -1277,7 +1277,8 @@ int get_color_of_mana_produced_by_id(int csvid, int info_slot, int player){
 
 			// check the colors for all lands we have in play
 			int count, color = 0;
-			for (count = 0; count < active_cards_count[player] && (color & 0x3F) != 0x3F; ++count){
+			int active_count = MIN(active_cards_count[player], 150);
+			for (count = 0; count < active_count && (color & 0x3F) != 0x3F; ++count){
 				card_data_t* card_d = get_card_data(player, count);
 				if ((card_d->type & TYPE_LAND) && in_play(player, count) && card_d->id != CARD_ID_REFLECTING_POOL){
 					if( csvid != CARD_ID_STAR_COMPASS || (csvid == CARD_ID_STAR_COMPASS && has_subtype(player, count, SUBTYPE_BASIC)) ){
@@ -1351,9 +1352,12 @@ int all_lands_are_basiclandtype(int player, int card, int event, int whose_lands
 	  int subt = get_hacked_subtype(player, card, land_subtype);
 	  for (p = 0; p < 2; ++p)
 		if (p == whose_lands || whose_lands == ANYBODY)
-		  for (c = 0; c < active_cards_count[p]; ++c)
-			if (in_play(p, c) && is_what(p, c, TYPE_LAND))
-			  add_a_subtype(p, c, subt);
+		  {
+			int active_count = MIN(active_cards_count[p], 150);
+			for (c = 0; c < active_count; ++c)
+			  if (in_play(p, c) && is_what(p, c, TYPE_LAND))
+				add_a_subtype(p, c, subt);
+		  }
 
 	  get_card_instance(player, card)->info_slot = 1 << get_hacked_color(player, card, land_color);
 	}
@@ -1408,9 +1412,10 @@ void mana_burn(void)
 	restart:;
 	  int c;
 	  card_instance_t* instance;
+	  int active_count = MIN(active_cards_count[AI], 150);
 	  if (mana_in_pool[AI][7] && current_phase > PHASE_NORMAL_COMBAT_DAMAGE
-		  && active_cards_count[AI] < 150)
-		for (c = 0; c < active_cards_count[AI]; ++c)
+		  && active_count > 0)
+		for (c = 0; c < active_count; ++c)
 		  if ((instance = in_play(AI, c))
 			  && dispatch_event_with_attacker_to_one_card(AI, c, EVENT_CAN_WASTE_MANA, 1-AI, -1))
 			{

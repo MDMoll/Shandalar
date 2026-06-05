@@ -107,7 +107,7 @@ is_exact_match_path() {
 is_marker_checked_path() {
   local relpath="$1"
   case "$relpath" in
-    cards/avacyn_restored.c|cards/draft.c|functions/functions.c|functions/targets.c|drawcardlib/config.c)
+    cards/avacyn_restored.c|cards/draft.c|functions/functions.c|functions/targets.c|functions/produce_mana.c|drawcardlib/config.c)
       return 0
       ;;
     *)
@@ -234,6 +234,8 @@ check_marker "functions/functions.c" "int active_count = MIN(active_cards_count[
 check_marker "functions/functions.c" "for(k=0; k<active_count; k++){" "bounded-cip-removal-scan"
 check_marker "functions/functions.c" "if (player < HUMAN || player > AI){" "count-subtype-player-guard"
 check_marker "functions/functions.c" "int active_count = MIN(active_cards_count[player], 150);" "bounded-count-subtype-in-hand"
+check_marker "functions/produce_mana.c" "for (count = 0; count < active_count && (color & 0x3F) != 0x3F; ++count){" "bounded-mana-color-scan"
+check_marker "functions/produce_mana.c" "int active_count = MIN(active_cards_count[AI], 150);" "bounded-ai-mana-burn-scan"
 check_marker "drawcardlib/config.c" "concat_cfg_key(const char* key1, const char* key2)" "allocated-config-key-helper"
 check_marker "drawcardlib/config.c" "enum { PIC_HANDLE_NAME_BUFSIZE = 2 * MAX_PATH + 1200 };" "larger-diagnostic-buffer"
 check_marker "drawcardlib/config.c" "snprintf(buf[idx], sizeof(buf[idx])," "bounded-frame-diagnostic"
