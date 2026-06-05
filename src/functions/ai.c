@@ -468,8 +468,8 @@ int ai_decision_phase(int player, int *phase_code_to_go_to, int *becomes_second_
 	  dispatch_event_raw(EVENT_SHOULD_AI_PLAY);
 
 	  card_instance_t* inst;
-	  int c;
-	  for (c = 0; c < active_cards_count[AI]; ++c)
+	  int c, active_count = MIN(active_cards_count[AI], 150);
+	  for (c = 0; c < active_count; ++c)
 		if ((inst = get_card_instance(AI, c))->internal_card_id != -1)
 		  call_card_function_i(inst, AI, c, EVENT_CAN_COUNTER);
 
