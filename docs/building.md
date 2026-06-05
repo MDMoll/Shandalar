@@ -20,7 +20,7 @@ the shipped game.
 | Build path | Expected output | Current status |
 | --- | --- | --- |
 | `src/Makefile` | `ManalinkEh.dll` | Not accepted as a runtime replacement; dry run now prints a full compile/link plan, and the local MinGW/yasm/binutils tools are present. |
-| `src/deck/Makefile` | `DeckDll.dll` | Built locally with Homebrew MinGW/yasm overrides and deployed to root plus `Program/`; SHA-256 `a9cea247d80fe457e72d94055bd3b1e8a191ce9d3389b9fd5d4d42f40cb1e0d8`. |
+| `src/deck/Makefile` | `DeckDll.dll` | Built locally with Homebrew MinGW/yasm overrides plus legacy-safe startup flags, then deployed to root plus `Program/`; SHA-256 `5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0`. |
 | `src/drawcardlib/Makefile` | `Drawcardlib.dll` | Not attempted beyond inspection. |
 | `src/cardartlib/Makefile` | `CardArtLib.dll` | Not attempted beyond inspection. |
 | `src/patches/*` | Patched binaries/DLLs in-place | Not run; patch scripts are potentially mutating. |

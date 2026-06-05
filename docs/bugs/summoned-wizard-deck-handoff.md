@@ -130,9 +130,13 @@ refuses to switch away from or close Shandalar/editor deck views while deck 1 is
 below 40, or while any nonempty alternate player deck is below 40. `DeckDLL.dll`
 and `Program/Deckdll.dll` were rebuilt and deployed in both the repo and local
 `MTG` bottle at SHA-256
-`a9cea247d80fe457e72d94055bd3b1e8a191ce9d3389b9fd5d4d42f40cb1e0d8`;
+`5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0`;
 `tools/verify-crossover-mtg-state.sh` also checks local `MTG` save slots for
-populated decks below the 40-card minimum.
+populated decks below the 40-card minimum. The first rebuilt DLL used current
+MinGW startup defaults that crashed during `DECKDLL.dll` `PROCESS_ATTACH` under
+CrossOver; the accepted rebuild keeps the guard but disables dynamic base and
+aliases `___ImageBase` to `__image_base__`, matching the legacy loader
+assumptions.
 
 Manual proof still requires replaying the witch/undead-knight encounter from
 root `C:\Shandalar\Shandalar.exe` in CrossOver `MTG`, then recording whether the

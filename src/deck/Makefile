@@ -6,7 +6,7 @@ include ../Makefile-common
 BASEDIR = ..
 LOCAL_LIBS = Drawcardlib image
 LIBS = comctl32 gdi32 shlwapi
-LFLAGS += -Wl,--enable-stdcall-fixup
+LFLAGS += -Wl,--enable-stdcall-fixup -Wl,--defsym,___ImageBase=__image_base__ -Wl,--disable-dynamicbase -Wl,--disable-nxcompat
 
 # Output files
 OUTPUT = DeckDll.dll
