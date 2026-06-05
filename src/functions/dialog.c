@@ -103,7 +103,8 @@ dialog_ai(int who_chooses, choice_t* choice, int choices, int omit_illegal, dlg_
 
   if (highest_priority <= 0 || highest_priority >= 1000000)
 	{
-	  remember_ai_value(who_chooses, real_highest_idx);
+	  if (random == RND_SPECULATE)
+		remember_ai_value(who_chooses, real_highest_idx);
 	  return displayed_highest_idx;
 	}
 
