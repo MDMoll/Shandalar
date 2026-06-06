@@ -36,6 +36,16 @@ static int bounded_targets_number_of_targets(card_instance_t* instance)
   return instance ? MIN(instance->number_of_targets, CARD_INSTANCE_TARGET_CAPACITY) : 0;
 }
 
+static int target_slot_is_valid(int slot)
+{
+  return slot >= 0 && slot < CARD_INSTANCE_TARGET_CAPACITY;
+}
+
+static int can_record_another_target(card_instance_t* instance)
+{
+  return instance && instance->number_of_targets < CARD_INSTANCE_TARGET_CAPACITY;
+}
+
 static char* targets_global_all_purpose_buffer_ptr(void)
 {
   return (char*)0x60A690;
@@ -1431,6 +1441,12 @@ int new_pick_target(target_definition_t *td, const char *prompt, int ret_locatio
 	if( ret_location == -1 ){
 		ret_location = instance->number_of_targets;
 	}
+	if (!target_slot_is_valid(ret_location) || !can_record_another_target(instance)){
+		if (mode & 1){
+			spell_fizzled = 1;
+		}
+		return 0;
+	}
 	if( !(mode & GS_LITERAL_PROMPT) ){
 		load_text(0, prompt);
 		prompt = text_lines[0];
@@ -1450,6 +1466,10 @@ int new_pick_target(target_definition_t *td, const char *prompt, int ret_locatio
 int pick_next_target_noload(target_definition_t *td, const char *prompt){
 	card_instance_t* instance = get_card_instance(td->player, td->card);
 	int target_slot = instance->number_of_targets;
+	if (!target_slot_is_valid(target_slot) || !can_record_another_target(instance)){
+		spell_fizzled = 1;
+		return 0;
+	}
 	target_t picked = { -1, -1 };
 	int result = select_target(td->player, td->card, td, prompt, &picked);
 	if (result)
@@ -1465,6 +1485,7 @@ int pick_up_to_n_targets_noload(target_definition_t* td, const char* prompt, int
 {
   if (num <= 0)
 	return 0;
+  num = MIN(num, CARD_INSTANCE_TARGET_CAPACITY);
 
   card_instance_t* instance = get_card_instance(td->player, td->card);
   instance->number_of_targets = 0;
@@ -1606,6 +1627,11 @@ int pick_next_target_noload_arbitrary(target_definition_t *td, const char *promp
 {
   card_instance_t* instance = get_card_instance(player, card);
   int target_slot = instance->number_of_targets;
+  if (!target_slot_is_valid(target_slot) || !can_record_another_target(instance))
+	{
+	  spell_fizzled = 1;
+	  return 0;
+	}
   target_t picked = { -1, -1 };
 
   int result = select_target_maybe_force(td->player, td->card,
@@ -1647,6 +1673,8 @@ int select_target(int player, int card, target_definition_t *td, const char *pro
 		if (choose_default_target(player, card, td)){
 			return 1;
 		}
+		if (!can_record_another_target(instance))
+			return 0;
 	}
 
 	int result = select_target_maybe_force(player, card,
