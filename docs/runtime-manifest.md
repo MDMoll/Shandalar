@@ -1,6 +1,6 @@
 # Runtime Manifest
 
-Generated from local inspection on 2026-05-31 and updated on 2026-06-05 in
+Generated from local inspection on 2026-05-31 and updated on 2026-06-06 in
 `/Users/mdmoll/Shandalar/Shandalar`.
 
 This manifest is for identity, review, and scan handoff. It is not a malware
@@ -16,8 +16,8 @@ scan, a license grant, or proof of gameplay stability.
 | `Program/Magic.exe` | `685669692634ec830fe228904e11b1b536bd4b20e52192863a6280c2dbff6b66` | PE32 GUI Intel 80386 | Manalink launcher target; patched for declared-attacker undo and `ShowCoinFlips` default-off behavior. |
 | `FaceMaker.exe` | `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246` | PE32 GUI Intel 80386 | Active patched FaceMaker helper. |
 | `Program/FaceMaker.exe` | `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246` | PE32 GUI Intel 80386 | Same bytes as root active FaceMaker helper. |
-| `ManalinkEh.dll` | `63f03a0863b43c603b48d7ff20b9606dba247c27c0ae2f07a00cff237309fef1` | PE32 DLL Intel 80386 | Root DLL patched for Samite-family damage-prevention activation, generic activated damage-prevention gating, AI decision-time clamping, AI raw-mana speculation snapshot restore safety, Piranha Marsh/Bojuka Bog AI trigger targeting, and generic AI player-only target selection. |
-| `Program/ManalinkEh.dll` | `70ae3f0ed9c76fea6cf715982a26882656a38d89467ec47ef93d3709f4ac1796` | PE32 DLL Intel 80386 | Program DLL patched at its own offsets for Samite-family damage-prevention activation, generic activated damage-prevention gating, AI clamping, AI raw-mana speculation snapshot restore safety, Piranha Marsh/Bojuka Bog AI trigger targeting, and generic AI player-only target selection. |
+| `ManalinkEh.dll` | `b9db52eacd267a81aed47977d6e43b935deda77b96bc431585ea093b5179fd4a` | PE32 DLL Intel 80386 | Root DLL patched for Samite-family damage-prevention activation, generic activated damage-prevention gating, AI decision-time clamping, AI raw-mana speculation snapshot restore safety, Piranha Marsh/Bojuka Bog AI trigger targeting, generic AI player-only target selection, and AI ETB player-target preselection before Spell Chain priority. |
+| `Program/ManalinkEh.dll` | `e51b36eb74ff46a760f8ba8af3c382d3344050ee9912511c9a12f92202f4d61f` | PE32 DLL Intel 80386 | Program DLL patched at its own offsets for Samite-family damage-prevention activation, generic activated damage-prevention gating, AI clamping, AI raw-mana speculation snapshot restore safety, Piranha Marsh/Bojuka Bog AI trigger targeting, generic AI player-only target selection, and AI ETB player-target preselection before Spell Chain priority. |
 | `zlib.dll` | `9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90` | PE32 DLL Intel 80386 | Root image/decompression support DLL. |
 | `Program/zlib.dll` | `9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `zlib.dll` added to close the adjacent Program loader gap in this checkout. |
 | `Shandalar.dll` | `ebd4d8d5375fa05f8db8203e0069db347c062a0b1d48856bc6307190de225534` | PE32 DLL Intel 80386 | Root Shandalar helper generation; copied to `Program/Shandalar.dll` after a visible Program-path Hornet fatal recurred from the older Program helper. |

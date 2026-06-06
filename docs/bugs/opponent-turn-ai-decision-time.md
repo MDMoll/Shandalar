@@ -43,12 +43,13 @@ nonpositive or higher values use `270`.
 
 | File | Patch site | Expected bytes | New SHA-256 |
 | --- | --- | --- | --- |
-| `ManalinkEh.dll` | Hook at file offset `0x40d0e1`, function VMA `0x0240dad0`; cave at `0x495a60` / VMA `0x02497060` | Hook `e9 7a 95 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 74 6a f7 ff` | `63f03a0863b43c603b48d7ff20b9606dba247c27c0ae2f07a00cff237309fef1` |
-| `Program/ManalinkEh.dll` | Hook at file offset `0x3d2da1`, function VMA `0x023d3790`; cave at `0x452c60` / VMA `0x02454060` | Hook `e9 ba 08 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 34 f7 f7 ff` | `70ae3f0ed9c76fea6cf715982a26882656a38d89467ec47ef93d3709f4ac1796` |
+| `ManalinkEh.dll` | Hook at file offset `0x40d0e1`, function VMA `0x0240dad0`; cave at `0x495a60` / VMA `0x02497060` | Hook `e9 7a 95 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 74 6a f7 ff` | `b9db52eacd267a81aed47977d6e43b935deda77b96bc431585ea093b5179fd4a` |
+| `Program/ManalinkEh.dll` | Hook at file offset `0x3d2da1`, function VMA `0x023d3790`; cave at `0x452c60` / VMA `0x02454060` | Hook `e9 ba 08 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 34 f7 f7 ff` | `e51b36eb74ff46a760f8ba8af3c382d3344050ee9912511c9a12f92202f4d61f` |
 
 The current hashes above also include the later AI raw-mana snapshot,
-Piranha Marsh trigger-target, Bojuka Bog trigger-target, and generic AI
-player-target selector patches in the same DLLs.
+Piranha Marsh trigger-target, Bojuka Bog trigger-target, generic AI
+player-target selector, and AI ETB player-target preselection patches in the
+same DLLs.
 
 Expected disassembly shape:
 
@@ -67,18 +68,19 @@ done:
 jmp  original_time_division
 ```
 
-The executable cave section virtual size is now `0x100` in both DLLs; the
+The executable cave section virtual size is now `0x200` in both DLLs; the
 preceding damage-prevention cave uses the same mapped section at offset `+0x30`,
 this AI clamp cave uses offset `+0x60`, and the later raw-mana snapshot patch
-uses offset `+0x90`.
+uses offset `+0x90`. Later player-target caves use offsets `+0xd0` and
+`+0x100`.
 
 ## Patch Helper
 
 `tools/patch-ai-decision-fallback.py` validates the older immediate-only patch.
 `tools/patch-ai-decision-clamp.py` validates the exact setup preimage bytes,
 the empty cave, and the executable section virtual size before writing. It
-accepts the later `0x100` section size used by the raw-mana snapshot patch and
-reports already-patched DLLs as a no-op.
+accepts the later `0x100` and `0x200` section sizes used by subsequent cave
+patches and reports already-patched DLLs as a no-op.
 
 Dry-run:
 
@@ -105,8 +107,8 @@ The same helper was run again with backup suffix `.before-ai-decision-270-patch`
 when lowering the active fallback from 540 to 270.
 
 The repo DLL hashes above include the later AI raw-mana snapshot,
-Piranha Marsh trigger-target, Bojuka Bog trigger-target, and generic AI
-player-target selector patches. The local
+Piranha Marsh trigger-target, Bojuka Bog trigger-target, generic AI
+player-target selector, and AI ETB player-target preselection patches. The local
 CrossOver `MTG` copied install was also updated with those later patches and
 now matches the repo Manalink hashes.
 

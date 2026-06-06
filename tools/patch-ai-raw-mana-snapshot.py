@@ -19,6 +19,7 @@ from pathlib import Path
 
 
 PATCHED_SECTION_VIRTUAL_SIZE = 0x100
+ACCEPTED_SECTION_VIRTUAL_SIZES = (0x80, PATCHED_SECTION_VIRTUAL_SIZE, 0x200)
 PREIMAGE = bytes.fromhex(
     "8b4508"
     "ba01000000"
@@ -146,10 +147,10 @@ def find_section_virtual_size_offset(data: bytes, spec: PatchSpec) -> int:
             required_raw = spec.cave_offset - spec.section_raw + PATCHED_SECTION_VIRTUAL_SIZE
             if raw_size < required_raw:
                 raise SystemExit("FAIL: executable cave section raw size is smaller than expected")
-            if virtual_size not in (0x80, PATCHED_SECTION_VIRTUAL_SIZE):
+            if virtual_size not in ACCEPTED_SECTION_VIRTUAL_SIZES:
                 raise SystemExit(
                     f"FAIL: executable cave section virtual size is 0x{virtual_size:x}, "
-                    "expected 0x80 or 0x100"
+                    "expected 0x80, 0x100, or 0x200"
                 )
             return section_offset + 8
 
@@ -170,7 +171,7 @@ def patch_file(path: Path, spec: PatchSpec, apply: bool, backup_suffix: str | No
     if (
         current_site == jump
         and current_cave == cave
-        and current_virtual_size == PATCHED_SECTION_VIRTUAL_SIZE
+        and current_virtual_size >= PATCHED_SECTION_VIRTUAL_SIZE
     ):
         print(f"ok: {label} already patched; sha256 {sha256_file(path)}")
         return

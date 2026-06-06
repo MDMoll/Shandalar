@@ -18,7 +18,7 @@ from pathlib import Path
 
 
 PATCHED_SECTION_VIRTUAL_SIZE = 0x80
-ACCEPTED_SECTION_VIRTUAL_SIZES = (0x30, PATCHED_SECTION_VIRTUAL_SIZE, 0x100)
+ACCEPTED_SECTION_VIRTUAL_SIZES = (0x30, PATCHED_SECTION_VIRTUAL_SIZE, 0x100, 0x200)
 MAX_AI_DECISION_TIME = 270
 NOP = b"\x90"
 
@@ -126,7 +126,7 @@ def find_section_virtual_size_offset(data: bytes, spec: PatchSpec) -> int:
             if virtual_size not in ACCEPTED_SECTION_VIRTUAL_SIZES:
                 raise SystemExit(
                     f"FAIL: executable cave section virtual size is 0x{virtual_size:x}, "
-                    "expected 0x30, 0x80, or 0x100"
+                    "expected 0x30, 0x80, 0x100, or 0x200"
                 )
             return section_offset + 8
 

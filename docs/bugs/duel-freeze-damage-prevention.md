@@ -98,8 +98,8 @@ The runtime fix is in `ManalinkEh.dll`, not `Shandalar.exe`.
 
 | File | Patch site | New SHA-256 |
 | --- | --- | --- |
-| `ManalinkEh.dll` | Samite-family guard at file offset `0x3bb035`, function VMA `0x023bba20`; generic helper jump at `0x44cb23`; helper cave at `0x495a30` / VMA `0x02497030` | `63f03a0863b43c603b48d7ff20b9606dba247c27c0ae2f07a00cff237309fef1` |
-| `Program/ManalinkEh.dll` | Samite-family guard at file offset `0x381a25`, function VMA `0x02382410`; generic helper jump at `0x40f115`; helper cave at `0x452c30` / VMA `0x02454030` | `70ae3f0ed9c76fea6cf715982a26882656a38d89467ec47ef93d3709f4ac1796` |
+| `ManalinkEh.dll` | Samite-family guard at file offset `0x3bb035`, function VMA `0x023bba20`; generic helper jump at `0x44cb23`; helper cave at `0x495a30` / VMA `0x02497030` | `b9db52eacd267a81aed47977d6e43b935deda77b96bc431585ea093b5179fd4a` |
+| `Program/ManalinkEh.dll` | Samite-family guard at file offset `0x381a25`, function VMA `0x02382410`; generic helper jump at `0x40f115`; helper cave at `0x452c30` / VMA `0x02454030` | `e51b36eb74ff46a760f8ba8af3c382d3344050ee9912511c9a12f92202f4d61f` |
 
 Expected bytes at both patch sites:
 
@@ -131,17 +131,17 @@ jmp  existing_return_zero
 
 The helper cave then replays the original `GAA_CAN_TARGET` test before returning
 to the original branch body. The generic helper patch originally bumped the
-executable cave section virtual size from `0x30` to `0x80`; the later AI
-raw-mana snapshot patch grows the same section to `0x100` in both DLLs so all
-three current caves are mapped.
+executable cave section virtual size from `0x30` to `0x80`; later AI and
+player-target patches grow the same section to `0x200` in both DLLs so all
+current caves are mapped.
 
 The same DLLs also contain the later AI decision-time clamp patch documented
 in [opponent-turn-ai-decision-time.md](opponent-turn-ai-decision-time.md).
 They also contain the AI raw-mana speculation snapshot patch documented in
 [ai-raw-mana-snapshot.md](ai-raw-mana-snapshot.md).
 Current hashes also include the later inline Piranha Marsh and Bojuka Bog
-trigger-target patches plus the generic AI player-target selector patch
-documented in
+trigger-target patches plus the generic AI player-target selector and AI ETB
+preselection patches documented in
 [ai-etb-player-target-spell-chain-freeze.md](ai-etb-player-target-spell-chain-freeze.md).
 
 ## Verification Commands

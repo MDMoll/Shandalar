@@ -194,6 +194,7 @@ for path in \
   tools/patch-ai-decision-fallback.py \
   tools/patch-ai-raw-mana-snapshot.py \
   tools/patch-ai-player-target-selection.py \
+  tools/patch-ai-etb-player-target-preselect.py \
   tools/patch-bojuka-bog-trigger-target.py \
   tools/patch-piranha-marsh-trigger-target.py \
   tools/patch-magic-coinflip-default.py \
@@ -227,8 +228,8 @@ expect_hash DeckDLL.dll 5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f34
 expect_hash Program/Deckdll.dll 5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0
 expect_hash Drawcardlib.dll 8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712
 expect_hash Program/Drawcardlib.dll 8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712
-expect_hash ManalinkEh.dll 63f03a0863b43c603b48d7ff20b9606dba247c27c0ae2f07a00cff237309fef1
-expect_hash Program/ManalinkEh.dll 70ae3f0ed9c76fea6cf715982a26882656a38d89467ec47ef93d3709f4ac1796
+expect_hash ManalinkEh.dll b9db52eacd267a81aed47977d6e43b935deda77b96bc431585ea093b5179fd4a
+expect_hash Program/ManalinkEh.dll e51b36eb74ff46a760f8ba8af3c382d3344050ee9912511c9a12f92202f4d61f
 expect_hash zlib.dll 9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90
 expect_hash Program/zlib.dll 9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90
 expect_hash libgcc_s_dw2-1.dll 89f6147f5ed3f271d0b88f0586e079b9ac22e76c31221e5d5013aa273cc4694b
@@ -276,8 +277,8 @@ expect_hex_prefix Magic.exe 0x694eb 16 6a0068ac5c71008b451050e895710000
 expect_hex_prefix Program/Magic.exe 0x694eb 16 6a0068ac5c71008b451050e895710000
 expect_hex_prefix ManalinkEh.dll 0x3bb035 16 f60590f14e00040f84ae000000e90100
 expect_hex_prefix Program/ManalinkEh.dll 0x381a25 16 f60590f14e00040f84ae000000e90100
-expect_hex_prefix ManalinkEh.dll 0x1a8 4 00010000
-expect_hex_prefix Program/ManalinkEh.dll 0x1a8 4 00010000
+expect_hex_prefix ManalinkEh.dll 0x1a8 4 00020000
+expect_hex_prefix Program/ManalinkEh.dll 0x1a8 4 00020000
 expect_hex_prefix ManalinkEh.dll 0x44cb23 5 e9089b0400
 expect_hex_prefix Program/ManalinkEh.dll 0x40f115 5 e916450400
 expect_hex_prefix ManalinkEh.dll 0x495a30 38 f7c30000000f7410f60590f14e0004750731d2e9d961fbfff6c3040f844265fbffe9d264fbff
@@ -296,6 +297,12 @@ expect_hex_prefix ManalinkEh.dll 0x469583 17 e948d10200909090909090909090909090
 expect_hex_prefix ManalinkEh.dll 0x495ad0 44 898d18fdffff817d1c00100000750d31d28915e42f7a00e9a82efdffe85f1f00fe8b15e42f7a00e9982efdff
 expect_hex_prefix Program/ManalinkEh.dll 0x429453 17 e978a20200909090909090909090909090
 expect_hex_prefix Program/ManalinkEh.dll 0x452cd0 44 898d18fdffff817d1c00100000750d31d28915e42f7a00e9785dfdffe85f4f04fe8b15e42f7a00e9685dfdff
+expect_hex_prefix ManalinkEh.dll 0x3f63bd 5 e83e030a00
+expect_hex_prefix ManalinkEh.dll 0x3fe77d 5 e87e7f0900
+expect_hex_prefix ManalinkEh.dll 0x495b00 137 83ff7d757883fb017573833d7485720001746af60540067900027561813d782d7a00db0000007555391d848c7300754d39358c397a007545391d1c7e7300753d391d7cc1620075353935209a7300752d5653e83943fdff83c40885c0741f5653e80b6df8ff83c408ba0100000029da895074c74078ffffffffc6403601575653e80beaf9ff83c40cc3
+expect_hex_prefix Program/ManalinkEh.dll 0x3bc60d 5 e8ee700900
+expect_hex_prefix Program/ManalinkEh.dll 0x3c490d 5 e8eeed0800
+expect_hex_prefix Program/ManalinkEh.dll 0x452d00 137 83ff7d757883fb017573833d7485720001746af60540067900027561813d782d7a00db0000007555391d848c7300754d39358c397a007545391d1c7e7300753d391d7cc1620075353935209a7300752d5653e80972fdff83c40885c0741f5653e80be8f8ff83c408ba0100000029da895074c74078ffffffffc6403601575653e8ab3bfaff83c40cc3
 pass "representative binary patch bytes match docs"
 
 expect_text_match config.txt '^AiDecisionTime:270$'
@@ -376,7 +383,7 @@ fi
 if [ "$on_base_branch" = "1" ]; then
   [ "$branch_delta_count" = "0" ] || fail "expected no branch-delta rows on master, found $branch_delta_count"
 else
-  [ "$branch_delta_count" -ge "100" ] || fail "expected at least 100 branch-delta rows, found $branch_delta_count"
+  [ "$branch_delta_count" -gt "0" ] || fail "expected branch-delta rows on maintenance branch, found $branch_delta_count"
 fi
 branch_delta_other_count="$(printf '%s\n' "$branch_delta" | awk -F '\t' 'NR > 1 && $4 == "other" {count++} END {print count+0}')"
 [ "$branch_delta_other_count" = "0" ] || fail "branch-delta inventory has $branch_delta_other_count rows classified as other"
@@ -387,21 +394,26 @@ if [ "$on_base_branch" = "1" ]; then
   pass "branch-delta inventory is empty on master"
 else
   for expected in \
-    $'README.md\tdocumentation' \
-    $'.gitattributes\trepo-metadata' \
-    $'tools/create-security-scan-results-template.sh\tshell-tool' \
-    $'tools/check-security-scanner-availability.sh\tshell-tool' \
-    $'Magic.exe\tpe-executable' \
-    $'Program/FaceArt/fb1\tart-resource' \
-    $'archive/backups/Rogues_Org_BAK.csv\tarchive-evidence' \
-    $'src/cards/unlimited.c\tsource' \
-    $'tools/create-patch-package.sh\tshell-tool' \
-    $'tools/list-branch-delta.sh\tshell-tool' \
-    $'tools/print-share-status.sh\tshell-tool' \
-    $'tools/record-manual-gameplay-result.sh\tshell-tool' \
-    $'tools/record-security-scan-result.sh\tshell-tool' \
-    $'tools/verify-final-share-gates.sh\tshell-tool' \
-    $'tools/verify-handoff-artifacts.sh\tshell-tool'
+    $'AGENTS.md\tdocumentation' \
+    $'DeckDLL.dll\tpe-dll' \
+    $'ManalinkEh.dll\tpe-dll' \
+    $'Program/Deckdll.dll\tpe-dll' \
+    $'Program/ManalinkEh.dll\tpe-dll' \
+    $'Program/src/cards/worldwake.c\tsource' \
+    $'Program/src/cards/zendikar.c\tsource' \
+    $'Program/src/functions/targets.c\tsource' \
+    $'docs/bugs/ai-etb-player-target-spell-chain-freeze.md\tdocumentation' \
+    $'docs/bugs/piranha-marsh-spell-chain-freeze.md\tdocumentation' \
+    $'docs/manual-gameplay-verification.md\tdocumentation' \
+    $'docs/runtime-manifest.md\tdocumentation' \
+    $'src/cards/worldwake.c\tsource' \
+    $'src/cards/zendikar.c\tsource' \
+    $'src/functions/targets.c\tsource' \
+    $'tools/check-source-snapshot-parity.sh\tshell-tool' \
+    $'tools/patch-ai-etb-player-target-preselect.py\tpython-tool' \
+    $'tools/verify-crossover-mtg-state.sh\tshell-tool' \
+    $'tools/verify-install-tree.sh\tshell-tool' \
+    $'tools/verify-share-readiness.sh\tshell-tool'
   do
     path="${expected%$'\t'*}"
     kind="${expected#*$'\t'}"

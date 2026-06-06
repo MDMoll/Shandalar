@@ -1692,6 +1692,24 @@ int pick_player_duh(int player, int card, int preferred_controller, int allow_ca
   return can_target(&td) && pick_target(&td, "TARGET_PLAYER");
 }
 
+int ai_preselect_player_target_for_cip(int player, int card, event_t event, int preferred_controller, int allow_cancel)
+{
+  if (event == EVENT_TRIGGER
+	  && player == AI
+	  && !(trace_mode & 2)
+	  && ai_is_speculating != 1
+	  && trigger_condition == TRIGGER_COMES_INTO_PLAY
+	  && affect_me(player, card)
+	  && player == reason_for_trigger_controller
+	  && player == trigger_cause_controller
+	  && card == trigger_cause
+	  && !is_humiliated(player, card)
+	  && !check_for_cip_effects_removal(player, card))
+	return pick_player_duh(player, card, preferred_controller, allow_cancel);
+
+  return 0;
+}
+
 // (player/card) targets 1-player in its targets[0] and returns nonzero, else returns 0.
 int target_opponent(int player, int card)
 {

@@ -661,6 +661,8 @@ int card_piranha_marsh(int player, int card, event_t event){
 
 	comes_into_play_tapped(player, card, event);
 
+	ai_preselect_player_target_for_cip(player, card, event, 1-player, 0);
+
 	if (comes_into_play(player, card, event) && pick_player_duh(player, card, 1-player, 0)){
 		lose_life(get_card_instance(player, card)->targets[0].player, 1);
 	}

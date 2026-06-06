@@ -19,7 +19,7 @@ from pathlib import Path
 
 IMAGE_BASE = 0x02000000
 PATCHED_SECTION_VIRTUAL_SIZE = 0x80
-ACCEPTED_SECTION_VIRTUAL_SIZES = (0x30, PATCHED_SECTION_VIRTUAL_SIZE, 0x100)
+ACCEPTED_SECTION_VIRTUAL_SIZES = (0x30, PATCHED_SECTION_VIRTUAL_SIZE, 0x100, 0x200)
 PREIMAGE = bytes.fromhex("f6c304746b")
 PATCH_LENGTH = len(PREIMAGE)
 MASK_GAA_DAMAGE_PREVENTION_FAMILY = 0x0F000000
@@ -135,7 +135,7 @@ def find_section_virtual_size_offset(data: bytes, spec: PatchSpec) -> int:
             if virtual_size not in ACCEPTED_SECTION_VIRTUAL_SIZES:
                 raise SystemExit(
                     f"FAIL: executable cave section virtual size is 0x{virtual_size:x}, "
-                    "expected 0x30, 0x80, or 0x100"
+                    "expected 0x30, 0x80, 0x100, or 0x200"
                 )
             return section_offset + 8
 

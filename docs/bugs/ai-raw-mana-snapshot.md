@@ -46,16 +46,17 @@ temporary opponent-row replacement.
 
 | File | Patch site | Expected bytes | New SHA-256 |
 | --- | --- | --- | --- |
-| `ManalinkEh.dll` | Hook at file offset `0x40db84`, function VMA `0x0240e584`; cave at `0x495a90` / VMA `0x02497090` | Hook starts `e9 07 8b 08 00`; cave starts `8d 7d b4 31 c0 8b 0c 85 c0 f3 4e 00` and ends `e9 eb 74 f7 ff` | `63f03a0863b43c603b48d7ff20b9606dba247c27c0ae2f07a00cff237309fef1` |
-| `Program/ManalinkEh.dll` | Hook at file offset `0x3d3844`, function VMA `0x023d4244`; cave at `0x452c90` / VMA `0x02454090` | Hook starts `e9 47 fe 07 00`; cave starts `8d 7d b4 31 c0 8b 0c 85 c0 f3 4e 00` and ends `e9 ab 01 f8 ff` | `70ae3f0ed9c76fea6cf715982a26882656a38d89467ec47ef93d3709f4ac1796` |
+| `ManalinkEh.dll` | Hook at file offset `0x40db84`, function VMA `0x0240e584`; cave at `0x495a90` / VMA `0x02497090` | Hook starts `e9 07 8b 08 00`; cave starts `8d 7d b4 31 c0 8b 0c 85 c0 f3 4e 00` and ends `e9 eb 74 f7 ff` | `b9db52eacd267a81aed47977d6e43b935deda77b96bc431585ea093b5179fd4a` |
+| `Program/ManalinkEh.dll` | Hook at file offset `0x3d3844`, function VMA `0x023d4244`; cave at `0x452c90` / VMA `0x02454090` | Hook starts `e9 47 fe 07 00`; cave starts `8d 7d b4 31 c0 8b 0c 85 c0 f3 4e 00` and ends `e9 ab 01 f8 ff` | `e51b36eb74ff46a760f8ba8af3c382d3344050ee9912511c9a12f92202f4d61f` |
 
-The shared executable cave section virtual size is now `0x100`, leaving the
+The shared executable cave section virtual size is now `0x200`, leaving the
 existing generic damage-prevention cave at `+0x30`, the AI decision-time cave at
-`+0x60`, and this raw-mana snapshot cave at `+0x90`.
+`+0x60`, this raw-mana snapshot cave at `+0x90`, the generic AI player-target
+cave at `+0xd0`, and the AI ETB preselection cave at `+0x100`.
 
 The current hashes above also include the later Piranha Marsh and Bojuka Bog
-trigger-target patches plus the generic AI player-target selector patch in the
-same DLLs.
+trigger-target patches, the generic AI player-target selector patch, and the AI
+ETB player-target preselection patch in the same DLLs.
 
 ## Patch Helper
 
