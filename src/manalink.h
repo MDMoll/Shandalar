@@ -237,10 +237,6 @@ int pick_next_target_arbitrary(target_definition_t *td, const char *prompt, int 
 int pick_next_target_noload_arbitrary(target_definition_t *td, const char *prompt, int player, int card);	// Selects a target into next (player, card)'s unused target slot (counting by instance->number_of_targets), while using (td->player, td->card) as the targeting source.  prompt is used literally, not loaded from Text.res.  Sets spell_fizzled if cancelled.
 int select_target(int player, int card, target_definition_t *td, const char *prompt, target_t *ret_location);	// Selects a target into ret_location, or (player, card)->targets[0] if NULL.  Targeting source is player/card instead of td->player/td->card.  prompt is used literally, not loaded from Text.res.  Never sets spell_fizzled.
 int pick_player_duh(int player, int card, int preferred_controller, int allow_cancel);	// If duh mode is on, pick preferred_controller if he's a valid target, or else cancel if that's allowed.  Otherwise, forwards to pick_target(td, "TARGET_PLAYER").
-#define AI_PLAYER_TARGET_CIP_NONE 0
-#define AI_PLAYER_TARGET_CIP_SUPPRESS_TRIGGER 1
-#define AI_PLAYER_TARGET_CIP_RESOLVE 2
-int ai_preselect_player_target_for_cip(int player, int card, event_t event, int preferred_controller, int allow_cancel);
 int target_opponent(int player, int card);	// (player/card) targets 1-player in its targets[0] and returns nonzero, else returns 0.
 int opponent_is_valid_target(int player, int card);	// Returns nonzero if (player/card) can target 1-player, else 0.  The difference from target_opponent() is that it doesn't assign the target, increase number_of_targets, or set cancel.
 // Should be used only when actually validating an already-chosen target, i.e. during EVENT_RESOLVE_SPELL, EVENT_RESOLVE_ACTIVATION, resolution of a trigger, etc.

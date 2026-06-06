@@ -15,7 +15,7 @@ manual Bojuka testing showed the selector-side and preselection-only mitigations
 were not enough. See
 [ai-etb-player-target-spell-chain-freeze.md](ai-etb-player-target-spell-chain-freeze.md)
 for the broader investigation, failed trigger-time mitigation, and newer
-end-trigger-resolution patch.
+trigger-mode patch.
 
 ## Finding
 
@@ -41,39 +41,37 @@ card, 1-player, 0)`. In AI or Duh mode, that directly targets the opponent; in
 ordinary human play, `pick_player_duh()` still falls back to the regular target
 choice UI.
 
-A later mitigation also calls `ai_preselect_player_target_for_cip()` during the
-AI land's CIP trigger. It stores the opponent target and suppresses Spell Chain
-during `EVENT_TRIGGER`, then resolves this exact land ETB effect during
-`EVENT_END_TRIGGER`.
+A later mitigation changed this trigger to use
+`comes_into_play_mode(player, card, event, RESOLVE_TRIGGER_AI(player))`, relying
+on the engine's normal AI/Duh trigger handling instead of a custom Spell Chain
+suppression path. The resolving block still uses `pick_player_duh()`.
 
 | Path | Change |
 | --- | --- |
 | `src/cards/zendikar.c` | Piranha Marsh ETB trigger uses `pick_player_duh()`. |
 | `Program/src/cards/zendikar.c` | Mirrored source snapshot change. |
-| `src/functions/targets.c` | Shared `ai_preselect_player_target_for_cip()` helper. |
-| `Program/src/functions/targets.c` | Mirrored source snapshot helper. |
 | `ManalinkEh.dll` | Runtime patch at file offset `0x3fe7a0`, VMA `0x023ff1a0`. |
 | `Program/ManalinkEh.dll` | Runtime patch at file offset `0x3c4930`, VMA `0x023c5330`. |
-| `ManalinkEh.dll` | AI ETB end-trigger hook at `0x3fe77d`, cave `0x495b00`. |
-| `Program/ManalinkEh.dll` | AI ETB end-trigger hook at `0x3c490d`, cave `0x452d00`. |
+| `ManalinkEh.dll` | AI ETB trigger-mode hook at `0x3fe77d`, cave `0x495b00`. |
+| `Program/ManalinkEh.dll` | AI ETB trigger-mode hook at `0x3c490d`, cave `0x452d00`. |
 | `tools/patch-piranha-marsh-trigger-target.py` | Guarded patch helper for repo and copied installs. |
-| `tools/patch-ai-etb-player-target-preselect.py` | Guarded patch helper for the ETB trigger-suppression/end-trigger wrapper. |
+| `tools/patch-ai-etb-player-target-preselect.py` | Guarded patch helper for the ETB trigger-mode wrapper. |
 
 The local `MTG` copied install was patched too, with backups preserved as
 `ManalinkEh.before-piranha-marsh-target-patch.dll` and
-`ManalinkEh.before-ai-etb-target-end-trigger-patch.dll` in the root and Program
+`ManalinkEh.before-ai-etb-trigger-mode-patch.dll` in the root and Program
 install folders.
 
 ## Current Hashes
 
 | File | SHA-256 |
 | --- | --- |
-| `ManalinkEh.dll` | `7cb25032ee48c973b6e5ce17195607b5e3472ea457d60cc9421c320becadd927` |
-| `Program/ManalinkEh.dll` | `f0a399ae7a8d65144f0d9bafff5a9287140c7c056fa0468d1cd9b5b07f3404d4` |
+| `ManalinkEh.dll` | `752b6deb941cf75dfc846c023b78000766b7c79b7ef7c35505f5de830f08fd22` |
+| `Program/ManalinkEh.dll` | `5dc6724b13b0ac3817561d4cad3e30a6f67fb6a2d45f2e259c715c46f08bcb9d` |
 
 These hashes include the earlier damage-prevention, AI decision-time, raw-mana
 snapshot patches, the later Bojuka Bog trigger-target patch, the generic AI
-player-target selector patch, and the AI ETB player-target end-trigger patch.
+player-target selector patch, and the AI ETB player-target trigger-mode patch.
 
 ## Verification
 
@@ -106,7 +104,7 @@ The Program bytes should be:
 c744240c00000000b80100000029d88944240889742404891c24e8c16a060085c00f84bfffffff89742404891c24e80dd60100c7442404010000008b4074890424e80aaf0300e99bffffff
 ```
 
-The AI ETB end-trigger Piranha hooks should be:
+The AI ETB trigger-mode Piranha hooks should be:
 
 ```text
 e87e7f0900

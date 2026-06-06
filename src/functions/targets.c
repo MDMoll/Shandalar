@@ -1735,54 +1735,6 @@ int pick_player_duh(int player, int card, int preferred_controller, int allow_ca
   return can_target(&td) && pick_target(&td, "TARGET_PLAYER");
 }
 
-static int set_preferred_player_target_if_valid(int player, int card, int preferred_controller, int allow_cancel)
-{
-  card_instance_t* instance = get_card_instance(player, card);
-
-  target_definition_t td;
-  default_target_definition(player, card, &td, 0);
-  td.zone = TARGET_ZONE_PLAYERS;
-  td.preferred_controller = preferred_controller;
-  td.allow_cancel = allow_cancel;
-
-  instance->targets[0].player = preferred_controller;
-  instance->targets[0].card = -1;
-  instance->number_of_targets = 1;
-
-  if (would_valid_target(&td))
-	return 1;
-
-  instance->targets[0].player = -1;
-  instance->number_of_targets = 0;
-  if (allow_cancel & 1)
-	cancel = 1;
-
-  return 0;
-}
-
-int ai_preselect_player_target_for_cip(int player, int card, event_t event, int preferred_controller, int allow_cancel)
-{
-  if ((event == EVENT_TRIGGER || event == EVENT_END_TRIGGER)
-	  && player == AI
-	  && !(trace_mode & 2)
-	  && ai_is_speculating != 1
-	  && trigger_condition == TRIGGER_COMES_INTO_PLAY
-	  && affect_me(player, card)
-	  && player == reason_for_trigger_controller
-	  && player == trigger_cause_controller
-	  && card == trigger_cause
-	  && !is_humiliated(player, card)
-	  && !check_for_cip_effects_removal(player, card))
-	{
-	  if (!set_preferred_player_target_if_valid(player, card, preferred_controller, allow_cancel))
-		return AI_PLAYER_TARGET_CIP_NONE;
-
-	  return event == EVENT_END_TRIGGER ? AI_PLAYER_TARGET_CIP_RESOLVE : AI_PLAYER_TARGET_CIP_SUPPRESS_TRIGGER;
-	}
-
-  return AI_PLAYER_TARGET_CIP_NONE;
-}
-
 // (player/card) targets 1-player in its targets[0] and returns nonzero, else returns 0.
 int target_opponent(int player, int card)
 {

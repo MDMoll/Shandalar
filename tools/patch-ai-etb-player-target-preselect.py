@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-"""Patch AI ETB player-target triggers around stack priority.
+"""Patch AI ETB player-target land triggers to use engine AI trigger mode.
 
 Piranha Marsh and Bojuka Bog are mandatory AI-controlled enters-the-battlefield
 triggers that target a player. Their resolving code already uses
-pick_player_duh(), but manual Bojuka Bog testing showed the duel can still stop
-with the Spell Chain box open before resolution. A later preselection-only cave
-and a trigger-time immediate-resolution cave also failed manual Bojuka Bog
-testing.
+pick_player_duh(), but manual Bojuka Bog testing showed that selector-side,
+preselection-only, trigger-time immediate-resolution, and EVENT_END_TRIGGER
+suppression caves still let the duel stop with the Spell Chain box open.
 
 This helper replaces each land's call to comes_into_play() with a shared cave
-that stores a valid AI-only player target during the matching EVENT_TRIGGER,
-suppresses the Spell Chain stack item, then lets the card's existing small
-effect run during EVENT_END_TRIGGER after trigger dispatch finishes. If the cave
-is not in that exact AI trigger context, it calls the original comes_into_play()
-and returns with the same result.
+that calls comes_into_play_mode(player, card, event, RESOLVE_TRIGGER_AI(player)).
+That uses the trigger engine's normal AI/Duh trigger handling instead of a
+custom Spell Chain suppression path. The existing per-card resolving block then
+uses pick_player_duh() to choose the opponent without opening a human target
+prompt.
 """
 
 from __future__ import annotations
@@ -57,6 +56,8 @@ class PatchSpec:
     cave_offset: int
     cave_vma: int
     comes_into_play_vma: int
+    comes_into_play_mode_vma: int
+    duh_mode_vma: int
     get_card_instance_vma: int
     opponent_is_valid_target_vma: int
     rfg_whole_graveyard_vma: int
@@ -69,6 +70,8 @@ KNOWN_PATCHES = {
         cave_offset=0x495B00,
         cave_vma=0x02497100,
         comes_into_play_vma=0x02435B90,
+        comes_into_play_mode_vma=0x02435AD0,
+        duh_mode_vma=0x0242D940,
         get_card_instance_vma=0x0241DE70,
         opponent_is_valid_target_vma=0x0246B490,
         rfg_whole_graveyard_vma=0x024205E0,
@@ -82,6 +85,8 @@ KNOWN_PATCHES = {
         cave_offset=0x452D00,
         cave_vma=0x02454100,
         comes_into_play_vma=0x023F7D30,
+        comes_into_play_mode_vma=0x023F7C70,
+        duh_mode_vma=0x023F06A0,
         get_card_instance_vma=0x023E2970,
         opponent_is_valid_target_vma=0x0242B360,
         rfg_whole_graveyard_vma=0x023E4D50,
@@ -333,7 +338,7 @@ def build_immediate_cave(spec: PatchSpec) -> bytes:
     return cave.finish()
 
 
-def build_cave(spec: PatchSpec) -> bytes:
+def build_end_trigger_cave(spec: PatchSpec) -> bytes:
     cave = CaveBuilder(spec.cave_vma)
 
     cave.add(cmp_edi_imm8(EVENT_TRIGGER))
@@ -398,6 +403,29 @@ def build_cave(spec: PatchSpec) -> bytes:
     return cave.finish()
 
 
+def build_cave(spec: PatchSpec) -> bytes:
+    cave = CaveBuilder(spec.cave_vma)
+
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.duh_mode_vma)
+    cave.add(b"\x83\xc4\x04")  # add esp, 4
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.add(b"\xb8\x01\x00\x00\x00")  # mov eax, RESOLVE_TRIGGER_OPTIONAL
+    cave.je("call_mode")
+    cave.add(b"\xb8\x02\x00\x00\x00")  # mov eax, RESOLVE_TRIGGER_MANDATORY
+
+    cave.mark("call_mode")
+    cave.add(b"\x50")  # push eax
+    cave.add(b"\x57")  # push edi
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.comes_into_play_mode_vma)
+    cave.add(b"\x83\xc4\x10")  # add esp, 16
+    cave.add(b"\xc3")  # ret
+
+    return cave.finish()
+
+
 def known_key(path: Path) -> str:
     key = path.as_posix()
     if key in KNOWN_PATCHES:
@@ -451,6 +479,7 @@ def ensure_cave_is_mapped(data: bytearray, spec: PatchSpec) -> bool:
 def patch_file(path: Path, spec: PatchSpec, apply: bool, backup_suffix: str | None) -> None:
     data = bytearray(path.read_bytes())
     cave = build_cave(spec)
+    end_trigger_cave = build_end_trigger_cave(spec)
     immediate_cave = build_immediate_cave(spec)
     preselect_cave = build_preselect_cave(spec)
     current_cave = bytes(data[spec.cave_offset : spec.cave_offset + CAVE_LENGTH])
@@ -470,10 +499,16 @@ def patch_file(path: Path, spec: PatchSpec, apply: bool, backup_suffix: str | No
         print(f"ok: {path} already patched; sha256 {sha256_file(path)}")
         return
 
-    if current_cave != cave and current_cave != preselect_cave and current_cave != immediate_cave and not all_zeroes(current_cave):
+    if (
+        current_cave != cave
+        and current_cave != end_trigger_cave
+        and current_cave != preselect_cave
+        and current_cave != immediate_cave
+        and not all_zeroes(current_cave)
+    ):
         raise SystemExit(
             f"FAIL: {path} cave @ 0x{spec.cave_offset:x} has {current_cave.hex()}, "
-            f"expected zero-filled cave, previous preselection cave, previous immediate cave, or patched {cave.hex()}"
+            f"expected zero-filled cave, previous preselection/immediate/end-trigger cave, or patched {cave.hex()}"
         )
 
     if not apply:

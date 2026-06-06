@@ -53,11 +53,11 @@ The environment rows below are filled from the automated baseline generated on
 identify the current local `MTG` CrossOver test target and hashes, but they are
 not visible gameplay results. The local `MTG` Manalink DLLs now include the
 raw-mana snapshot, Piranha Marsh trigger-target, Bojuka Bog trigger-target,
-generic AI player-target selector, and AI ETB player-target end-trigger resolution
+generic AI player-target selector, and AI ETB player-target trigger-mode handling
 patches, but this remains static copied-install evidence only. A manual Bojuka
 Bog retest failed after the selector-side, preselection-only, and trigger-time
-immediate mitigations, so only a fresh retest against the end-trigger patch can
-close that case.
+immediate mitigations, and later after the end-trigger suppression candidate,
+so only a fresh retest against the trigger-mode patch can close that case.
 
 | Field | Value |
 | --- | --- |
@@ -73,8 +73,8 @@ close that case.
 | Command or shortcut target | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\Shandalar.exe"` |
 | `Shandalar.exe` SHA-256 | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` |
 | `Magic.exe` SHA-256 | `93a40ce2c96aafee1d858a71ed69eb8c539aa9851796eb54b1af58f0bb97aba0` |
-| `ManalinkEh.dll` SHA-256 | `7cb25032ee48c973b6e5ce17195607b5e3472ea457d60cc9421c320becadd927` |
-| Repo `ManalinkEh.dll` SHA-256 | `7cb25032ee48c973b6e5ce17195607b5e3472ea457d60cc9421c320becadd927` |
+| `ManalinkEh.dll` SHA-256 | `752b6deb941cf75dfc846c023b78000766b7c79b7ef7c35505f5de830f08fd22` |
+| Repo `ManalinkEh.dll` SHA-256 | `752b6deb941cf75dfc846c023b78000766b7c79b7ef7c35505f5de830f08fd22` |
 
 ## CrossOver `MTG` Baseline
 
