@@ -395,17 +395,8 @@ int card_bojuka_bog(int player, int card, event_t event){
 
 	comes_into_play_tapped(player, card, event);
 
-	if (comes_into_play(player, card, event)){
-		target_definition_t td;
-		default_target_definition(player, card, &td, 0);
-		td.zone = TARGET_ZONE_PLAYERS;
-		td.allow_cancel = 0;
-
-		card_instance_t *instance = get_card_instance(player, card);
-		instance->number_of_targets = 0;
-		if( can_target(&td) && pick_target(&td, "TARGET_PLAYER") ){
-			rfg_whole_graveyard(instance->targets[0].player);
-		}
+	if (comes_into_play(player, card, event) && pick_player_duh(player, card, 1-player, 0)){
+		rfg_whole_graveyard(get_card_instance(player, card)->targets[0].player);
 	}
 
 	return mana_producer(player, card, event);

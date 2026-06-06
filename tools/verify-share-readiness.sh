@@ -183,6 +183,7 @@ for path in \
   Program/CardArt/Planeswalker/LoyaltyPlus.png \
   Program/CardArt/Planeswalker/LoyaltyZero.png \
   docs/bugs/ai-raw-mana-snapshot.md \
+  docs/bugs/ai-etb-player-target-spell-chain-freeze.md \
   docs/bugs/piranha-marsh-spell-chain-freeze.md \
   docs/bugs/opponent-turn-ai-decision-time.md \
   docs/bugs/duel-start-coinflip-animation.md \
@@ -192,6 +193,7 @@ for path in \
   tools/patch-ai-decision-clamp.py \
   tools/patch-ai-decision-fallback.py \
   tools/patch-ai-raw-mana-snapshot.py \
+  tools/patch-bojuka-bog-trigger-target.py \
   tools/patch-piranha-marsh-trigger-target.py \
   tools/patch-magic-coinflip-default.py \
   tools/patch-manalink-generic-damage-prevention-guard.py \
@@ -224,8 +226,8 @@ expect_hash DeckDLL.dll 5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f34
 expect_hash Program/Deckdll.dll 5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0
 expect_hash Drawcardlib.dll 8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712
 expect_hash Program/Drawcardlib.dll 8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712
-expect_hash ManalinkEh.dll 74bd5a2ce59f17ef2f6bcdd267e9e42f55fc049086dd9ba5ca288f1e2ac99a3b
-expect_hash Program/ManalinkEh.dll 56e600222fd6d551667b8f256f671fb620ffe050c5d75e6fb67b962620364a7a
+expect_hash ManalinkEh.dll c5e34db93b28bfc1552782f2035814cb847b9ca76d8dd7abe8b3770070bfa32e
+expect_hash Program/ManalinkEh.dll 1de106b5f8d62cd7942c8da2086a60ba96932501f97fc363e0f51878ef4bdf47
 expect_hash zlib.dll 9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90
 expect_hash Program/zlib.dll 9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90
 expect_hash libgcc_s_dw2-1.dll 89f6147f5ed3f271d0b88f0586e079b9ac22e76c31221e5d5013aa273cc4694b

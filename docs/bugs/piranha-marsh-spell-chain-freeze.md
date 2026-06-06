@@ -10,6 +10,10 @@ This note records a targeted mitigation for one plausible cause. It is static
 source/runtime evidence plus copied-install parity; it is not yet a visible
 gameplay proof that the exact scenario is fixed.
 
+Bojuka Bog later exposed the same player-targeted ETB trigger pattern. See
+[ai-etb-player-target-spell-chain-freeze.md](ai-etb-player-target-spell-chain-freeze.md)
+for the broader investigation and second runtime patch.
+
 ## Finding
 
 `card_piranha_marsh()` used a normal player-target prompt during its
@@ -50,11 +54,11 @@ install folders.
 
 | File | SHA-256 |
 | --- | --- |
-| `ManalinkEh.dll` | `74bd5a2ce59f17ef2f6bcdd267e9e42f55fc049086dd9ba5ca288f1e2ac99a3b` |
-| `Program/ManalinkEh.dll` | `56e600222fd6d551667b8f256f671fb620ffe050c5d75e6fb67b962620364a7a` |
+| `ManalinkEh.dll` | `c5e34db93b28bfc1552782f2035814cb847b9ca76d8dd7abe8b3770070bfa32e` |
+| `Program/ManalinkEh.dll` | `1de106b5f8d62cd7942c8da2086a60ba96932501f97fc363e0f51878ef4bdf47` |
 
-These hashes include the earlier damage-prevention, AI decision-time, and
-raw-mana snapshot patches.
+These hashes include the earlier damage-prevention, AI decision-time, raw-mana
+snapshot patches, and the later Bojuka Bog trigger-target patch.
 
 ## Verification
 
