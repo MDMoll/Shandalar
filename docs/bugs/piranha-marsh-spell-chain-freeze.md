@@ -54,11 +54,12 @@ install folders.
 
 | File | SHA-256 |
 | --- | --- |
-| `ManalinkEh.dll` | `c5e34db93b28bfc1552782f2035814cb847b9ca76d8dd7abe8b3770070bfa32e` |
-| `Program/ManalinkEh.dll` | `1de106b5f8d62cd7942c8da2086a60ba96932501f97fc363e0f51878ef4bdf47` |
+| `ManalinkEh.dll` | `63f03a0863b43c603b48d7ff20b9606dba247c27c0ae2f07a00cff237309fef1` |
+| `Program/ManalinkEh.dll` | `70ae3f0ed9c76fea6cf715982a26882656a38d89467ec47ef93d3709f4ac1796` |
 
 These hashes include the earlier damage-prevention, AI decision-time, raw-mana
-snapshot patches, and the later Bojuka Bog trigger-target patch.
+snapshot patches, the later Bojuka Bog trigger-target patch, and the generic AI
+player-target selector patch.
 
 ## Verification
 

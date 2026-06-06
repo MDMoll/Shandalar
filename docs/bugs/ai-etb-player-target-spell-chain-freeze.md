@@ -8,7 +8,8 @@ player. The first reported case was Piranha Marsh; Bojuka Bog exposed the same
 pattern.
 
 This note records static source/runtime evidence plus copied-install parity. It
-is not yet a visible gameplay proof that the exact Bojuka Bog scenario is fixed.
+is not yet a visible gameplay proof that every affected ETB player-target
+scenario is fixed.
 
 ## Finding
 
@@ -17,66 +18,81 @@ a player through the generic selector. Piranha Marsh and Bojuka Bog used
 card-local target definitions plus `pick_target(&td, "TARGET_PLAYER")` during
 automatic trigger resolution.
 
-The target engine has an AI selection branch, but it still enters the normal
-target-selection machinery and side effects. For simple mandatory player-only
-triggers, the existing safer helper is `pick_player_duh(player, card, 1-player,
-0)`: AI and Duh mode target the opponent directly, while ordinary human play
-still falls through to the regular target UI.
+The deeper issue was not unique to those two card bodies. In
+`select_target_impl()`, the AI branch already builds a candidate list and orders
+player candidates according to `preferred_controller`, but non-speculating AI
+selection still called `sub_499050()`, the generic target selector. That generic
+selector path is the risky Spell Chain side-effect surface for automatic
+AI-controlled player-only triggers.
 
-This was intentionally kept narrow. A global `pick_target()` rewrite would alter
-ordinary AI decisions for many cards that target players, creatures, spells, or
-mixed zones.
+A source scan found many mandatory ETB-style card functions that use
+`TARGET_ZONE_PLAYERS` plus `pick_target()` or `TARGET_PLAYER`; examples include
+Kessig Malcontents, Angel of Finality, Geralf's Mindcrusher, Sage's Row Denizen,
+Balustrade Spy, Returned Centaur, Gatekeeper of Malakir, and Halimar Excavator.
+Rather than inline-patching each card body, the shared selector now
+short-circuits only the AI, non-speculating, pure `TARGET_ZONE_PLAYERS` case.
+Human targeting, AI speculation, and mixed creature/player targets keep the
+existing generic selector behavior.
 
 ## Remediation
 
-| Card | Source paths | Runtime paths |
+| Area | Source paths | Runtime paths |
 | --- | --- | --- |
 | Piranha Marsh | `src/cards/zendikar.c`; `Program/src/cards/zendikar.c` | `ManalinkEh.dll` at `0x3fe7a0`; `Program/ManalinkEh.dll` at `0x3c4930` |
 | Bojuka Bog | `src/cards/worldwake.c`; `Program/src/cards/worldwake.c` | `ManalinkEh.dll` at `0x3f63e0`; `Program/ManalinkEh.dll` at `0x3bc630` |
+| Generic AI player-only selector | `src/functions/targets.c`; `Program/src/functions/targets.c` | hook/cave `0x469583`/`0x495ad0`; Program hook/cave `0x429453`/`0x452cd0` |
 
 The local `MTG` copied install was patched too, with backups preserved as
-`ManalinkEh.before-bojuka-bog-target-patch.dll` in the root and Program install
-folders.
+`ManalinkEh.before-ai-player-target-selection-patch.dll` in the root and
+Program install folders.
 
 ## Current Hashes
 
 | File | SHA-256 |
 | --- | --- |
-| `ManalinkEh.dll` | `c5e34db93b28bfc1552782f2035814cb847b9ca76d8dd7abe8b3770070bfa32e` |
-| `Program/ManalinkEh.dll` | `1de106b5f8d62cd7942c8da2086a60ba96932501f97fc363e0f51878ef4bdf47` |
+| `ManalinkEh.dll` | `63f03a0863b43c603b48d7ff20b9606dba247c27c0ae2f07a00cff237309fef1` |
+| `Program/ManalinkEh.dll` | `70ae3f0ed9c76fea6cf715982a26882656a38d89467ec47ef93d3709f4ac1796` |
 
 These hashes include the earlier damage-prevention, AI decision-time, raw-mana
-snapshot, Piranha Marsh, and Bojuka Bog patches.
+snapshot, Piranha Marsh, Bojuka Bog, and generic AI player-target selector
+patches.
 
 ## Verification
 
 ```sh
 python3 tools/patch-piranha-marsh-trigger-target.py
 python3 tools/patch-bojuka-bog-trigger-target.py
+python3 tools/patch-ai-player-target-selection.py
 tools/check-source-snapshot-parity.sh
 tools/verify-install-tree.sh
 tools/verify-crossover-mtg-state.sh
 shasum -a 256 ManalinkEh.dll Program/ManalinkEh.dll
 ```
 
-Representative Bojuka Bog byte checks:
+Representative generic selector byte checks:
 
 ```sh
-xxd -p -l 117 -s $((0x3f63e0)) ManalinkEh.dll
-xxd -p -l 117 -s $((0x3bc630)) Program/ManalinkEh.dll
+xxd -p -l 17 -s $((0x469583)) ManalinkEh.dll
+xxd -p -l 44 -s $((0x495ad0)) ManalinkEh.dll
+xxd -p -l 17 -s $((0x429453)) Program/ManalinkEh.dll
+xxd -p -l 44 -s $((0x452cd0)) Program/ManalinkEh.dll
 ```
 
-The root bytes should be:
+The root hook and cave bytes should be:
 
 ```text
-c744240c00000000b80100000029d88944240889742404891c24e84151070085c00f84bfffffff89742404891c24e85d7002008b4074890424e8c2970200e9a3ffffff9090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090
+e948d10200909090909090909090909090
+898d18fdffff817d1c00100000750d31d28915e42f7a00e9a82efdffe85f1f00fe8b15e42f7a00e9982efdff
 ```
 
-The Program bytes should be:
+The Program hook and cave bytes should be:
 
 ```text
-c744240c00000000b80100000029d88944240889742404891c24e8c1ed060085c00f84bfffffff89742404891c24e80d5902008b4074890424e8e27c0200e9a3ffffff9090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090
+e978a20200909090909090909090909090
+898d18fdffff817d1c00100000750d31d28915e42f7a00e9785dfdffe85f4f04fe8b15e42f7a00e9685dfdff
 ```
 
-Manual proof still requires replaying a duel where the opponent plays Bojuka Bog
-and confirming that the trigger resolves and the duel remains interactive.
+Manual proof still requires replaying duels where opponents resolve the reported
+Piranha Marsh and Bojuka Bog triggers, plus at least one additional mandatory
+AI-controlled ETB player-target trigger, and confirming the duel remains
+interactive.

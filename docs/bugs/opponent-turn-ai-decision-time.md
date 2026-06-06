@@ -43,12 +43,12 @@ nonpositive or higher values use `270`.
 
 | File | Patch site | Expected bytes | New SHA-256 |
 | --- | --- | --- | --- |
-| `ManalinkEh.dll` | Hook at file offset `0x40d0e1`, function VMA `0x0240dad0`; cave at `0x495a60` / VMA `0x02497060` | Hook `e9 7a 95 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 74 6a f7 ff` | `c5e34db93b28bfc1552782f2035814cb847b9ca76d8dd7abe8b3770070bfa32e` |
-| `Program/ManalinkEh.dll` | Hook at file offset `0x3d2da1`, function VMA `0x023d3790`; cave at `0x452c60` / VMA `0x02454060` | Hook `e9 ba 08 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 34 f7 f7 ff` | `1de106b5f8d62cd7942c8da2086a60ba96932501f97fc363e0f51878ef4bdf47` |
+| `ManalinkEh.dll` | Hook at file offset `0x40d0e1`, function VMA `0x0240dad0`; cave at `0x495a60` / VMA `0x02497060` | Hook `e9 7a 95 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 74 6a f7 ff` | `63f03a0863b43c603b48d7ff20b9606dba247c27c0ae2f07a00cff237309fef1` |
+| `Program/ManalinkEh.dll` | Hook at file offset `0x3d2da1`, function VMA `0x023d3790`; cave at `0x452c60` / VMA `0x02454060` | Hook `e9 ba 08 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 34 f7 f7 ff` | `70ae3f0ed9c76fea6cf715982a26882656a38d89467ec47ef93d3709f4ac1796` |
 
 The current hashes above also include the later AI raw-mana snapshot,
-Piranha Marsh trigger-target, and Bojuka Bog trigger-target patches in the same
-DLLs.
+Piranha Marsh trigger-target, Bojuka Bog trigger-target, and generic AI
+player-target selector patches in the same DLLs.
 
 Expected disassembly shape:
 
@@ -105,7 +105,8 @@ The same helper was run again with backup suffix `.before-ai-decision-270-patch`
 when lowering the active fallback from 540 to 270.
 
 The repo DLL hashes above include the later AI raw-mana snapshot,
-Piranha Marsh trigger-target, and Bojuka Bog trigger-target patches. The local
+Piranha Marsh trigger-target, Bojuka Bog trigger-target, and generic AI
+player-target selector patches. The local
 CrossOver `MTG` copied install was also updated with those later patches and
 now matches the repo Manalink hashes.
 

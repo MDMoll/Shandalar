@@ -1138,6 +1138,12 @@ select_target_impl(int player, int card,
 
 		  sub_498F20();
 		}
+	  else if (zone == TARGET_ZONE_PLAYERS)
+		{
+		  // Player-only AI targets are already constrained by preferred_controller; avoid generic selector side effects.
+		  chosen = 0;
+		  EXE_DWORD(0x7A2FE4) = chosen;
+		}
 	  else
 		{
 		  sub_499050();

@@ -49,15 +49,16 @@ tools/verify-manual-gameplay-results.sh
 ## Test Environment Record
 
 The environment rows below are filled from the automated baseline generated on
-2026-05-31 and refreshed for later runtime patch hashes on 2026-06-05. They
+2026-05-31 and refreshed for later runtime patch hashes on 2026-06-06. They
 identify the current local `MTG` CrossOver test target and hashes, but they are
 not visible gameplay results. The local `MTG` Manalink DLLs now include the
-raw-mana snapshot, Piranha Marsh trigger-target, and Bojuka Bog trigger-target
-patches, but this remains static copied-install evidence only.
+raw-mana snapshot, Piranha Marsh trigger-target, Bojuka Bog trigger-target, and
+generic AI player-target selector patches, but this remains static copied-install
+evidence only.
 
 | Field | Value |
 | --- | --- |
-| Date | 2026-05-31 19:52:00; runtime hashes refreshed 2026-06-05 |
+| Date | 2026-05-31 19:52:00; runtime hashes refreshed 2026-06-06 |
 | Tester | Codex visible macOS screenshot run with Wine SendKeys; later hash refresh was static verification, not a full human gameplay pass |
 | Platform | macOS 15.7.5 arm64 via CrossOver |
 | CrossOver or Wine version | CrossOver 26.1.0.39808 |
@@ -69,8 +70,8 @@ patches, but this remains static copied-install evidence only.
 | Command or shortcut target | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\Shandalar.exe"` |
 | `Shandalar.exe` SHA-256 | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` |
 | `Magic.exe` SHA-256 | `93a40ce2c96aafee1d858a71ed69eb8c539aa9851796eb54b1af58f0bb97aba0` |
-| `ManalinkEh.dll` SHA-256 | `c5e34db93b28bfc1552782f2035814cb847b9ca76d8dd7abe8b3770070bfa32e` |
-| Repo `ManalinkEh.dll` SHA-256 | `c5e34db93b28bfc1552782f2035814cb847b9ca76d8dd7abe8b3770070bfa32e` |
+| `ManalinkEh.dll` SHA-256 | `63f03a0863b43c603b48d7ff20b9606dba247c27c0ae2f07a00cff237309fef1` |
+| Repo `ManalinkEh.dll` SHA-256 | `63f03a0863b43c603b48d7ff20b9606dba247c27c0ae2f07a00cff237309fef1` |
 
 ## CrossOver `MTG` Baseline
 

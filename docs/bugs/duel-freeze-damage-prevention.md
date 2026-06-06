@@ -98,8 +98,8 @@ The runtime fix is in `ManalinkEh.dll`, not `Shandalar.exe`.
 
 | File | Patch site | New SHA-256 |
 | --- | --- | --- |
-| `ManalinkEh.dll` | Samite-family guard at file offset `0x3bb035`, function VMA `0x023bba20`; generic helper jump at `0x44cb23`; helper cave at `0x495a30` / VMA `0x02497030` | `c5e34db93b28bfc1552782f2035814cb847b9ca76d8dd7abe8b3770070bfa32e` |
-| `Program/ManalinkEh.dll` | Samite-family guard at file offset `0x381a25`, function VMA `0x02382410`; generic helper jump at `0x40f115`; helper cave at `0x452c30` / VMA `0x02454030` | `1de106b5f8d62cd7942c8da2086a60ba96932501f97fc363e0f51878ef4bdf47` |
+| `ManalinkEh.dll` | Samite-family guard at file offset `0x3bb035`, function VMA `0x023bba20`; generic helper jump at `0x44cb23`; helper cave at `0x495a30` / VMA `0x02497030` | `63f03a0863b43c603b48d7ff20b9606dba247c27c0ae2f07a00cff237309fef1` |
+| `Program/ManalinkEh.dll` | Samite-family guard at file offset `0x381a25`, function VMA `0x02382410`; generic helper jump at `0x40f115`; helper cave at `0x452c30` / VMA `0x02454030` | `70ae3f0ed9c76fea6cf715982a26882656a38d89467ec47ef93d3709f4ac1796` |
 
 Expected bytes at both patch sites:
 
@@ -140,7 +140,8 @@ in [opponent-turn-ai-decision-time.md](opponent-turn-ai-decision-time.md).
 They also contain the AI raw-mana speculation snapshot patch documented in
 [ai-raw-mana-snapshot.md](ai-raw-mana-snapshot.md).
 Current hashes also include the later inline Piranha Marsh and Bojuka Bog
-trigger-target patches documented in
+trigger-target patches plus the generic AI player-target selector patch
+documented in
 [ai-etb-player-target-spell-chain-freeze.md](ai-etb-player-target-spell-chain-freeze.md).
 
 ## Verification Commands

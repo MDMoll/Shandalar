@@ -230,6 +230,8 @@ check_marker "functions/targets.c" "scnprintf(targets_global_all_purpose_buffer_
 check_marker "functions/targets.c" "scnprintf(illegal_tgt, sizeof(illegal_tgt), EXE_STR(0x73940C)" "bounded-target-illegal-message"
 check_marker "functions/targets.c" "scnprintf(fmt, sizeof(fmt), \"%s\", \"%s %d %d\");" "bounded-target-count-format"
 check_marker "functions/targets.c" "instance->targets[target_slot] = picked;" "local-target-slot-buffer"
+check_marker "functions/targets.c" "else if (zone == TARGET_ZONE_PLAYERS)" "ai-player-target-short-circuit"
+check_marker "functions/targets.c" "avoid generic selector side effects" "ai-player-target-selector-comment"
 check_marker "functions/targets.c" "for(i=-1;i<active_count;i++){" "bounded-default-target-scan"
 check_marker "functions/targets.c" "if (marked[p][c])" "bounded-marked-target-cleanup-scan"
 check_marker "cards/draft.c" "static FILE* open_draft_output(const char* path, const char* mode)" "guarded-draft-output-helper"
