@@ -27,6 +27,7 @@ static int bounded_targets_max_active_cards_count(void)
 enum
 {
   CARD_INSTANCE_TARGET_CAPACITY = 19,
+  TARGET_MARKED_CARD_CAPACITY = 151,
   TARGET_ERROR_BUFFER_SIZE = 200,
   TARGETS_GLOBAL_ALL_PURPOSE_BUFFER_SIZE = 1000
 };
@@ -44,6 +45,11 @@ static int target_slot_is_valid(int slot)
 static int can_record_another_target(card_instance_t* instance)
 {
   return instance && instance->number_of_targets < CARD_INSTANCE_TARGET_CAPACITY;
+}
+
+static int target_mark_slot_is_valid(target_t target)
+{
+  return target.player >= HUMAN && target.player <= AI && target.card >= 0 && target.card < TARGET_MARKED_CARD_CAPACITY;
 }
 
 static char* targets_global_all_purpose_buffer_ptr(void)
@@ -1586,6 +1592,9 @@ int mark_up_to_n_targets_noload(target_definition_t* td, const char* prompt, int
   for (i = 0; i < num && can_target(td); ++i)
 	if (select_target(td->player, td->card - 1000, td, prompt, &tgt))
 	  {
+		if (!target_mark_slot_is_valid(tgt))
+		  break;
+
 		++num_tgts;
 		marked[tgt.player][tgt.card] = 1;
 		get_card_instance(tgt.player, tgt.card)->state |= STATE_TARGETTED | STATE_CANNOT_TARGET;

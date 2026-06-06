@@ -231,6 +231,8 @@ check_marker "functions/targets.c" "scnprintf(illegal_tgt, sizeof(illegal_tgt), 
 check_marker "functions/targets.c" "scnprintf(fmt, sizeof(fmt), \"%s\", \"%s %d %d\");" "bounded-target-count-format"
 check_marker "functions/targets.c" "static int target_slot_is_valid(int slot)" "bounded-target-slot-helper"
 check_marker "functions/targets.c" "num = MIN(num, CARD_INSTANCE_TARGET_CAPACITY);" "bounded-multi-target-count"
+check_marker "functions/targets.c" "TARGET_MARKED_CARD_CAPACITY = 151" "bounded-marked-target-capacity"
+check_marker "functions/targets.c" "static int target_mark_slot_is_valid(target_t target)" "bounded-marked-target-helper"
 check_marker "functions/targets.c" "instance->targets[target_slot] = picked;" "local-target-slot-buffer"
 check_marker "functions/targets.c" "else if (zone == TARGET_ZONE_PLAYERS)" "ai-player-target-short-circuit"
 check_marker "functions/targets.c" "avoid generic selector side effects" "ai-player-target-selector-comment"
