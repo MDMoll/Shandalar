@@ -10,7 +10,14 @@ static int bounded_engine_active_cards_count(int player)
   return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], 150) : 0;
 }
 
+enum { ENGINE_STACK_CAPACITY = 32 };
+
 enum { GLOBAL_ALL_PURPOSE_BUFFER_SIZE = 1000 };
+
+static int engine_stack_index_is_valid(int index)
+{
+  return index >= 0 && index < ENGINE_STACK_CAPACITY;
+}
 
 static char* global_all_purpose_buffer_ptr(void)
 {
@@ -1121,7 +1128,7 @@ void put_card_or_activation_onto_stack(int player, int card, event_t event, int 
 {
   // 0x436550
 
-  if (stack_size >= 32)
+  if (!engine_stack_index_is_valid(stack_size))
 	return;
 
   card_instance_t* instance = get_card_instance(player, card);
@@ -1175,7 +1182,8 @@ void put_card_or_activation_onto_stack(int player, int card, event_t event, int 
 	EXE_DWORD_PTR(0x628674)[stack_size] = a5;
 
   ++stack_size;
-  stack_cards[stack_size].player = -1;
+  if (engine_stack_index_is_valid(stack_size))
+	stack_cards[stack_size].player = -1;
 
   if (totally_bletcherous_hack_dont_reset_x_value.player >= 0 && event == EVENT_RESOLVE_SPELL
 	  && totally_bletcherous_hack_dont_reset_x_value.player == player
@@ -1191,6 +1199,8 @@ void recopy_card_onto_stack(int a1)
   // 0x436450
 
   int pos = stack_size - 1;
+  if (!engine_stack_index_is_valid(pos))
+	return;
 
   card_instance_t* stack_inst = get_card_instance(stack_cards[pos].player, stack_cards[pos].card);
   if (stack_inst->internal_card_id == activation_card)

@@ -43,12 +43,12 @@ nonpositive or higher values use `270`.
 
 | File | Patch site | Expected bytes | New SHA-256 |
 | --- | --- | --- | --- |
-| `ManalinkEh.dll` | Hook at file offset `0x40d0e1`, function VMA `0x0240dad0`; cave at `0x495a60` / VMA `0x02497060` | Hook `e9 7a 95 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 74 6a f7 ff` | `98e067759a5c76f486e67c197d6522be570f717e449ae274e954a8fe99bf023f` |
-| `Program/ManalinkEh.dll` | Hook at file offset `0x3d2da1`, function VMA `0x023d3790`; cave at `0x452c60` / VMA `0x02454060` | Hook `e9 ba 08 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 34 f7 f7 ff` | `86c733876b85029e489e69add6ff923322653670423214ccfcc544fc4ee871ba` |
+| `ManalinkEh.dll` | Hook at file offset `0x40d0e1`, function VMA `0x0240dad0`; cave at `0x495a60` / VMA `0x02497060` | Hook `e9 7a 95 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 74 6a f7 ff` | `7cb25032ee48c973b6e5ce17195607b5e3472ea457d60cc9421c320becadd927` |
+| `Program/ManalinkEh.dll` | Hook at file offset `0x3d2da1`, function VMA `0x023d3790`; cave at `0x452c60` / VMA `0x02454060` | Hook `e9 ba 08 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 34 f7 f7 ff` | `f0a399ae7a8d65144f0d9bafff5a9287140c7c056fa0468d1cd9b5b07f3404d4` |
 
 The current hashes above also include the later AI raw-mana snapshot,
 Piranha Marsh trigger-target, Bojuka Bog trigger-target, generic AI
-player-target selector, and AI ETB player-target immediate resolution patches in the
+player-target selector, and AI ETB player-target end-trigger resolution patches in the
 same DLLs.
 
 Expected disassembly shape:
@@ -108,7 +108,7 @@ when lowering the active fallback from 540 to 270.
 
 The repo DLL hashes above include the later AI raw-mana snapshot,
 Piranha Marsh trigger-target, Bojuka Bog trigger-target, generic AI
-player-target selector, and AI ETB player-target immediate resolution patches. The local
+player-target selector, and AI ETB player-target end-trigger resolution patches. The local
 CrossOver `MTG` copied install was also updated with those later patches and
 now matches the repo Manalink hashes.
 

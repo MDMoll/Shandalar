@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""Patch AI ETB player-target triggers before stack priority.
+"""Patch AI ETB player-target triggers around stack priority.
 
 Piranha Marsh and Bojuka Bog are mandatory AI-controlled enters-the-battlefield
 triggers that target a player. Their resolving code already uses
 pick_player_duh(), but manual Bojuka Bog testing showed the duel can still stop
 with the Spell Chain box open before resolution. A later preselection-only cave
-also failed manual Bojuka Bog testing.
+and a trigger-time immediate-resolution cave also failed manual Bojuka Bog
+testing.
 
 This helper replaces each land's call to comes_into_play() with a shared cave
-that resolves the tiny AI-only player-target effect immediately during the
-matching EVENT_TRIGGER. If the cave is not in that exact AI trigger context, it
-calls the original comes_into_play() and returns with the same result.
+that stores a valid AI-only player target during the matching EVENT_TRIGGER,
+suppresses the Spell Chain stack item, then lets the card's existing small
+effect run during EVENT_END_TRIGGER after trigger dispatch finishes. If the cave
+is not in that exact AI trigger context, it calls the original comes_into_play()
+and returns with the same result.
 """
 
 from __future__ import annotations
@@ -29,6 +32,7 @@ CAVE_VIRTUAL_SIZE = 0x200
 
 IMAGE_BASE = 0x02000000
 EVENT_TRIGGER = 0x7D
+EVENT_END_TRIGGER = 0xB00
 TRIGGER_COMES_INTO_PLAY = 0xDB
 
 AI_IS_SPECULATING = 0x00728574
@@ -178,6 +182,10 @@ def cmp_edi_imm8(value: int) -> bytes:
     return b"\x83\xff" + bytes([value])
 
 
+def cmp_edi_imm32(value: int) -> bytes:
+    return b"\x81\xff" + u32(value)
+
+
 def cmp_ebx_imm8(value: int) -> bytes:
     return b"\x83\xfb" + bytes([value])
 
@@ -258,7 +266,7 @@ def build_preselect_cave(spec: PatchSpec) -> bytes:
     return cave.finish()
 
 
-def build_cave(spec: PatchSpec) -> bytes:
+def build_immediate_cave(spec: PatchSpec) -> bytes:
     cave = CaveBuilder(spec.cave_vma)
     bojuka_return_vma = spec.hooks[0].vma + HOOK_LENGTH
     piranha_return_vma = spec.hooks[1].vma + HOOK_LENGTH
@@ -325,6 +333,71 @@ def build_cave(spec: PatchSpec) -> bytes:
     return cave.finish()
 
 
+def build_cave(spec: PatchSpec) -> bytes:
+    cave = CaveBuilder(spec.cave_vma)
+
+    cave.add(cmp_edi_imm8(EVENT_TRIGGER))
+    cave.je32("check_context")
+    cave.add(cmp_edi_imm32(EVENT_END_TRIGGER))
+    cave.jne32("call_original")
+
+    cave.mark("check_context")
+    cave.add(cmp_ebx_imm8(1))
+    cave.jne32("call_original")
+    cave.add(cmp_dword_abs_imm8(AI_IS_SPECULATING, 1))
+    cave.je32("call_original")
+    cave.add(b"\xf6\x05" + u32(TRACE_MODE) + b"\x02")  # test byte [trace_mode], 2
+    cave.jne32("call_original")
+    cave.add(cmp_dword_abs_imm32(TRIGGER_CONDITION, TRIGGER_COMES_INTO_PLAY))
+    cave.jne32("call_original")
+    cave.add(cmp_dword_abs_ebx(AFFECTED_CARD_CONTROLLER))
+    cave.jne32("call_original")
+    cave.add(cmp_dword_abs_esi(AFFECTED_CARD))
+    cave.jne32("call_original")
+    cave.add(cmp_dword_abs_ebx(REASON_FOR_TRIGGER_CONTROLLER))
+    cave.jne32("call_original")
+    cave.add(cmp_dword_abs_ebx(TRIGGER_CAUSE_CONTROLLER))
+    cave.jne32("call_original")
+    cave.add(cmp_dword_abs_esi(TRIGGER_CAUSE))
+    cave.jne32("call_original")
+
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.opponent_is_valid_target_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.je32("call_original")
+
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.get_card_instance_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.add(b"\xba\x01\x00\x00\x00")  # mov edx, 1
+    cave.add(b"\x29\xda")  # sub edx, ebx
+    cave.add(b"\x89\x50\x74")  # mov [eax+0x74], edx
+    cave.add(b"\xc7\x40\x78\xff\xff\xff\xff")  # mov dword [eax+0x78], -1
+    cave.add(b"\xc6\x40\x36\x01")  # mov byte [eax+0x36], 1
+
+    cave.add(cmp_edi_imm32(EVENT_END_TRIGGER))
+    cave.je("return_resolve")
+    cave.add(b"\x31\xc0")  # xor eax, eax
+    cave.add(b"\xc3")  # ret
+
+    cave.mark("return_resolve")
+    cave.add(b"\xb8\x01\x00\x00\x00")  # mov eax, 1
+    cave.add(b"\xc3")  # ret
+
+    cave.mark("call_original")
+    cave.add(b"\x57")  # push edi
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.comes_into_play_vma)
+    cave.add(b"\x83\xc4\x0c")  # add esp, 12
+    cave.add(b"\xc3")  # ret
+
+    return cave.finish()
+
+
 def known_key(path: Path) -> str:
     key = path.as_posix()
     if key in KNOWN_PATCHES:
@@ -378,6 +451,7 @@ def ensure_cave_is_mapped(data: bytearray, spec: PatchSpec) -> bool:
 def patch_file(path: Path, spec: PatchSpec, apply: bool, backup_suffix: str | None) -> None:
     data = bytearray(path.read_bytes())
     cave = build_cave(spec)
+    immediate_cave = build_immediate_cave(spec)
     preselect_cave = build_preselect_cave(spec)
     current_cave = bytes(data[spec.cave_offset : spec.cave_offset + CAVE_LENGTH])
     expected_hooks = [build_hook(hook, spec.cave_vma) for hook in spec.hooks]
@@ -396,10 +470,10 @@ def patch_file(path: Path, spec: PatchSpec, apply: bool, backup_suffix: str | No
         print(f"ok: {path} already patched; sha256 {sha256_file(path)}")
         return
 
-    if current_cave != cave and current_cave != preselect_cave and not all_zeroes(current_cave):
+    if current_cave != cave and current_cave != preselect_cave and current_cave != immediate_cave and not all_zeroes(current_cave):
         raise SystemExit(
             f"FAIL: {path} cave @ 0x{spec.cave_offset:x} has {current_cave.hex()}, "
-            f"expected zero-filled cave, previous preselection cave, or patched {cave.hex()}"
+            f"expected zero-filled cave, previous preselection cave, previous immediate cave, or patched {cave.hex()}"
         )
 
     if not apply:
@@ -430,7 +504,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--backup-suffix",
         default=None,
-        help="preserve a sibling backup before writing, e.g. .before-ai-etb-target-immediate-patch",
+        help="preserve a sibling backup before writing, e.g. .before-ai-etb-target-end-trigger-patch",
     )
     parser.add_argument(
         "paths",

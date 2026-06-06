@@ -661,8 +661,12 @@ int card_piranha_marsh(int player, int card, event_t event){
 
 	comes_into_play_tapped(player, card, event);
 
-	if (ai_preselect_player_target_for_cip(player, card, event, 1-player, 0)){
+	int ai_cip = ai_preselect_player_target_for_cip(player, card, event, 1-player, 0);
+	if (ai_cip == AI_PLAYER_TARGET_CIP_RESOLVE){
 		lose_life(get_card_instance(player, card)->targets[0].player, 1);
+		return mana_producer(player, card, event);
+	}
+	if (ai_cip == AI_PLAYER_TARGET_CIP_SUPPRESS_TRIGGER){
 		return mana_producer(player, card, event);
 	}
 

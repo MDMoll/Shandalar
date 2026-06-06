@@ -46,17 +46,17 @@ temporary opponent-row replacement.
 
 | File | Patch site | Expected bytes | New SHA-256 |
 | --- | --- | --- | --- |
-| `ManalinkEh.dll` | Hook at file offset `0x40db84`, function VMA `0x0240e584`; cave at `0x495a90` / VMA `0x02497090` | Hook starts `e9 07 8b 08 00`; cave starts `8d 7d b4 31 c0 8b 0c 85 c0 f3 4e 00` and ends `e9 eb 74 f7 ff` | `98e067759a5c76f486e67c197d6522be570f717e449ae274e954a8fe99bf023f` |
-| `Program/ManalinkEh.dll` | Hook at file offset `0x3d3844`, function VMA `0x023d4244`; cave at `0x452c90` / VMA `0x02454090` | Hook starts `e9 47 fe 07 00`; cave starts `8d 7d b4 31 c0 8b 0c 85 c0 f3 4e 00` and ends `e9 ab 01 f8 ff` | `86c733876b85029e489e69add6ff923322653670423214ccfcc544fc4ee871ba` |
+| `ManalinkEh.dll` | Hook at file offset `0x40db84`, function VMA `0x0240e584`; cave at `0x495a90` / VMA `0x02497090` | Hook starts `e9 07 8b 08 00`; cave starts `8d 7d b4 31 c0 8b 0c 85 c0 f3 4e 00` and ends `e9 eb 74 f7 ff` | `7cb25032ee48c973b6e5ce17195607b5e3472ea457d60cc9421c320becadd927` |
+| `Program/ManalinkEh.dll` | Hook at file offset `0x3d3844`, function VMA `0x023d4244`; cave at `0x452c90` / VMA `0x02454090` | Hook starts `e9 47 fe 07 00`; cave starts `8d 7d b4 31 c0 8b 0c 85 c0 f3 4e 00` and ends `e9 ab 01 f8 ff` | `f0a399ae7a8d65144f0d9bafff5a9287140c7c056fa0468d1cd9b5b07f3404d4` |
 
 The shared executable cave section virtual size is now `0x200`, leaving the
 existing generic damage-prevention cave at `+0x30`, the AI decision-time cave at
 `+0x60`, this raw-mana snapshot cave at `+0x90`, the generic AI player-target
-cave at `+0xd0`, and the AI ETB immediate-resolution cave at `+0x100`.
+cave at `+0xd0`, and the AI ETB end-trigger cave at `+0x100`.
 
 The current hashes above also include the later Piranha Marsh and Bojuka Bog
 trigger-target patches, the generic AI player-target selector patch, and the AI
-ETB player-target immediate-resolution patch in the same DLLs.
+ETB player-target end-trigger patch in the same DLLs.
 
 ## Patch Helper
 
