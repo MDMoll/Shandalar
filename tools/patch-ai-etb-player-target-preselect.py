@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""Patch AI ETB player-target triggers to choose targets before stack priority.
+"""Patch AI ETB player-target triggers before stack priority.
 
 Piranha Marsh and Bojuka Bog are mandatory AI-controlled enters-the-battlefield
 triggers that target a player. Their resolving code already uses
 pick_player_duh(), but manual Bojuka Bog testing showed the duel can still stop
-with the Spell Chain box open before resolution. This helper replaces each
-land's call to comes_into_play() with a call to a shared cave that preselects
-the opponent as a valid AI target during EVENT_TRIGGER, then calls the original
-comes_into_play() and returns with the same result.
+with the Spell Chain box open before resolution. A later preselection-only cave
+also failed manual Bojuka Bog testing.
+
+This helper replaces each land's call to comes_into_play() with a shared cave
+that resolves the tiny AI-only player-target effect immediately during the
+matching EVENT_TRIGGER. If the cave is not in that exact AI trigger context, it
+calls the original comes_into_play() and returns with the same result.
 """
 
 from __future__ import annotations
@@ -52,6 +55,8 @@ class PatchSpec:
     comes_into_play_vma: int
     get_card_instance_vma: int
     opponent_is_valid_target_vma: int
+    rfg_whole_graveyard_vma: int
+    lose_life_vma: int
     hooks: tuple[HookSpec, ...]
 
 
@@ -62,6 +67,8 @@ KNOWN_PATCHES = {
         comes_into_play_vma=0x02435B90,
         get_card_instance_vma=0x0241DE70,
         opponent_is_valid_target_vma=0x0246B490,
+        rfg_whole_graveyard_vma=0x024205E0,
+        lose_life_vma=0x0243DC70,
         hooks=(
             HookSpec(0x3F63BD, 0x023F6DBD, bytes.fromhex("e8ceed0300")),  # Bojuka Bog
             HookSpec(0x3FE77D, 0x023FF17D, bytes.fromhex("e80e6a0300")),  # Piranha Marsh
@@ -73,6 +80,8 @@ KNOWN_PATCHES = {
         comes_into_play_vma=0x023F7D30,
         get_card_instance_vma=0x023E2970,
         opponent_is_valid_target_vma=0x0242B360,
+        rfg_whole_graveyard_vma=0x023E4D50,
+        lose_life_vma=0x02400280,
         hooks=(
             HookSpec(0x3BC60D, 0x023BD00D, bytes.fromhex("e81ead0300")),  # Bojuka Bog
             HookSpec(0x3C490D, 0x023C530D, bytes.fromhex("e81e2a0300")),  # Piranha Marsh
@@ -103,6 +112,7 @@ class CaveBuilder:
         self.buf = bytearray()
         self.labels: dict[str, int] = {}
         self.pending_jcc8: list[tuple[int, str]] = []
+        self.pending_rel32: list[tuple[int, str]] = []
 
     def pos(self) -> int:
         return len(self.buf)
@@ -124,6 +134,18 @@ class CaveBuilder:
         self.buf += b"\x74\x00"
         self.pending_jcc8.append((self.pos() - 1, label))
 
+    def jne32(self, label: str) -> None:
+        self.buf += b"\x0f\x85\x00\x00\x00\x00"
+        self.pending_rel32.append((self.pos() - 4, label))
+
+    def je32(self, label: str) -> None:
+        self.buf += b"\x0f\x84\x00\x00\x00\x00"
+        self.pending_rel32.append((self.pos() - 4, label))
+
+    def jmp32(self, label: str) -> None:
+        self.buf += b"\xe9\x00\x00\x00\x00"
+        self.pending_rel32.append((self.pos() - 4, label))
+
     def call(self, to_vma: int) -> None:
         self.add(call_rel32(self.vma(), to_vma))
 
@@ -135,6 +157,12 @@ class CaveBuilder:
             if rel < -128 or rel > 127:
                 raise AssertionError(f"short jump to {label} out of range: {rel}")
             self.buf[offset] = rel & 0xFF
+
+        for offset, label in self.pending_rel32:
+            if label not in self.labels:
+                raise AssertionError(f"missing label {label}")
+            rel = self.labels[label] - (offset + 4)
+            struct.pack_into("<i", self.buf, offset, rel)
 
         if len(self.buf) > CAVE_LENGTH:
             raise AssertionError(f"cave length is {len(self.buf)}, exceeds {CAVE_LENGTH}")
@@ -170,11 +198,15 @@ def cmp_dword_abs_esi(addr: int) -> bytes:
     return b"\x39\x35" + u32(addr)
 
 
+def cmp_dword_ptr_esp_imm32(value: int) -> bytes:
+    return b"\x81\x3c\x24" + u32(value)
+
+
 def build_hook(hook: HookSpec, cave_vma: int) -> bytes:
     return call_rel32(hook.vma, cave_vma)
 
 
-def build_cave(spec: PatchSpec) -> bytes:
+def build_preselect_cave(spec: PatchSpec) -> bytes:
     cave = CaveBuilder(spec.cave_vma)
 
     cave.add(cmp_edi_imm8(EVENT_TRIGGER))
@@ -226,6 +258,73 @@ def build_cave(spec: PatchSpec) -> bytes:
     return cave.finish()
 
 
+def build_cave(spec: PatchSpec) -> bytes:
+    cave = CaveBuilder(spec.cave_vma)
+    bojuka_return_vma = spec.hooks[0].vma + HOOK_LENGTH
+    piranha_return_vma = spec.hooks[1].vma + HOOK_LENGTH
+
+    cave.add(cmp_edi_imm8(EVENT_TRIGGER))
+    cave.jne32("call_original")
+    cave.add(cmp_ebx_imm8(1))
+    cave.jne32("call_original")
+    cave.add(cmp_dword_abs_imm8(AI_IS_SPECULATING, 1))
+    cave.je32("call_original")
+    cave.add(b"\xf6\x05" + u32(TRACE_MODE) + b"\x02")  # test byte [trace_mode], 2
+    cave.jne32("call_original")
+    cave.add(cmp_dword_abs_imm32(TRIGGER_CONDITION, TRIGGER_COMES_INTO_PLAY))
+    cave.jne32("call_original")
+    cave.add(cmp_dword_abs_ebx(AFFECTED_CARD_CONTROLLER))
+    cave.jne32("call_original")
+    cave.add(cmp_dword_abs_esi(AFFECTED_CARD))
+    cave.jne32("call_original")
+    cave.add(cmp_dword_abs_ebx(REASON_FOR_TRIGGER_CONTROLLER))
+    cave.jne32("call_original")
+    cave.add(cmp_dword_abs_ebx(TRIGGER_CAUSE_CONTROLLER))
+    cave.jne32("call_original")
+    cave.add(cmp_dword_abs_esi(TRIGGER_CAUSE))
+    cave.jne32("call_original")
+
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.opponent_is_valid_target_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.je32("call_original")
+
+    cave.add(b"\xb8\x01\x00\x00\x00")  # mov eax, 1
+    cave.add(b"\x29\xd8")  # sub eax, ebx
+    cave.add(cmp_dword_ptr_esp_imm32(bojuka_return_vma))
+    cave.je("resolve_bojuka")
+    cave.add(cmp_dword_ptr_esp_imm32(piranha_return_vma))
+    cave.je("resolve_piranha")
+    cave.jmp32("call_original")
+
+    cave.mark("resolve_bojuka")
+    cave.add(b"\x50")  # push eax
+    cave.call(spec.rfg_whole_graveyard_vma)
+    cave.add(b"\x83\xc4\x04")  # add esp, 4
+    cave.add(b"\x31\xc0")  # xor eax, eax
+    cave.add(b"\xc3")  # ret
+
+    cave.mark("resolve_piranha")
+    cave.add(b"\x6a\x01")  # push 1
+    cave.add(b"\x50")  # push eax
+    cave.call(spec.lose_life_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.add(b"\x31\xc0")  # xor eax, eax
+    cave.add(b"\xc3")  # ret
+
+    cave.mark("call_original")
+    cave.add(b"\x57")  # push edi
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.comes_into_play_vma)
+    cave.add(b"\x83\xc4\x0c")  # add esp, 12
+    cave.add(b"\xc3")  # ret
+
+    return cave.finish()
+
+
 def known_key(path: Path) -> str:
     key = path.as_posix()
     if key in KNOWN_PATCHES:
@@ -236,7 +335,7 @@ def known_key(path: Path) -> str:
         candidate = Path(*parts[index:]).as_posix()
         if candidate in KNOWN_PATCHES:
             return candidate
-    raise SystemExit(f"FAIL: no known AI ETB preselect patch site for {path}")
+    raise SystemExit(f"FAIL: no known AI ETB player-target patch site for {path}")
 
 
 def all_zeroes(data: bytes) -> bool:
@@ -279,6 +378,7 @@ def ensure_cave_is_mapped(data: bytearray, spec: PatchSpec) -> bool:
 def patch_file(path: Path, spec: PatchSpec, apply: bool, backup_suffix: str | None) -> None:
     data = bytearray(path.read_bytes())
     cave = build_cave(spec)
+    preselect_cave = build_preselect_cave(spec)
     current_cave = bytes(data[spec.cave_offset : spec.cave_offset + CAVE_LENGTH])
     expected_hooks = [build_hook(hook, spec.cave_vma) for hook in spec.hooks]
 
@@ -296,10 +396,10 @@ def patch_file(path: Path, spec: PatchSpec, apply: bool, backup_suffix: str | No
         print(f"ok: {path} already patched; sha256 {sha256_file(path)}")
         return
 
-    if current_cave != cave and not all_zeroes(current_cave):
+    if current_cave != cave and current_cave != preselect_cave and not all_zeroes(current_cave):
         raise SystemExit(
             f"FAIL: {path} cave @ 0x{spec.cave_offset:x} has {current_cave.hex()}, "
-            f"expected zero-filled cave or patched {cave.hex()}"
+            f"expected zero-filled cave, previous preselection cave, or patched {cave.hex()}"
         )
 
     if not apply:
@@ -330,7 +430,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--backup-suffix",
         default=None,
-        help="preserve a sibling backup before writing, e.g. .before-ai-etb-target-preselect-patch",
+        help="preserve a sibling backup before writing, e.g. .before-ai-etb-target-immediate-patch",
     )
     parser.add_argument(
         "paths",

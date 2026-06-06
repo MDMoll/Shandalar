@@ -26,9 +26,15 @@ static int bounded_targets_max_active_cards_count(void)
 
 enum
 {
+  CARD_INSTANCE_TARGET_CAPACITY = 19,
   TARGET_ERROR_BUFFER_SIZE = 200,
   TARGETS_GLOBAL_ALL_PURPOSE_BUFFER_SIZE = 1000
 };
+
+static int bounded_targets_number_of_targets(card_instance_t* instance)
+{
+  return instance ? MIN(instance->number_of_targets, CARD_INSTANCE_TARGET_CAPACITY) : 0;
+}
 
 static char* targets_global_all_purpose_buffer_ptr(void)
 {
@@ -1965,8 +1971,8 @@ void give_hexproof_to_player(int player, int card, event_t event){
 int target_me(int t_player, int t_card, int player, int card)
 {
   card_instance_t* instance = get_card_instance(player, card);
-  int i;
-  for (i = 0; i < instance->number_of_targets; ++i)
+  int i, num_targets = bounded_targets_number_of_targets(instance);
+  for (i = 0; i < num_targets; ++i)
 	if (instance->targets[i].player == t_player && instance->targets[i].card == t_card)
 	  return 1;
 
@@ -2032,8 +2038,8 @@ const target_t* becomes_target_of_spell_or_effect(int player, int card, event_t 
 static int is_targeting_type(int player, int card, int controller_of_target, int or_player, type_t targeted_type, int subtype)
 {
   card_instance_t* instance = get_card_instance(player, card);
-  int i;
-  for (i = 0; i < instance->number_of_targets; ++i)
+  int i, num_targets = bounded_targets_number_of_targets(instance);
+  for (i = 0; i < num_targets; ++i)
 	if ((controller_of_target != ANYBODY ? instance->targets[i].player == controller_of_target
 		 : (instance->targets[i].player == 0 || instance->targets[i].player == 1))
 		&& (instance->targets[i].card == -1 ? or_player
@@ -2049,9 +2055,9 @@ static int is_targeting_type(int player, int card, int controller_of_target, int
 static target_t* fill_arr(int player, int card, int controller_of_target, int or_player, type_t targeted_type, int subtype, target_t* arr)
 {
   card_instance_t* instance = get_card_instance(player, card);
-  ASSERT(instance->number_of_targets < 20);
   int i, j, last = -1;
-  for (i = 0; i < instance->number_of_targets; ++i)
+  int num_targets = bounded_targets_number_of_targets(instance);
+  for (i = 0; i < num_targets; ++i)
 	if ((controller_of_target != ANYBODY ? instance->targets[i].player == controller_of_target
 		 : (instance->targets[i].player == 0 || instance->targets[i].player == 1))
 		&& (instance->targets[i].card == -1 ? or_player
