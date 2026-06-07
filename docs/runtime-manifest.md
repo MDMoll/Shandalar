@@ -28,6 +28,8 @@ scan, a license grant, or proof of gameplay stability.
 | `Program/Deckdll.dll` | `5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `DeckDLL.dll` with the existing Program filename case preserved. |
 | `Drawcardlib.dll` | `8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712` | PE32 DLL Intel 80386 | Root card-rendering helper generation. |
 | `Program/Drawcardlib.dll` | `8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `Drawcardlib.dll`; this generation imports `libgcc_s_dw2-1.dll`. |
+| `Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` | PE32 DLL Intel 80386 | Root status/video-adjacent helper; patched at VA `0x10003610` / file offset `0x2a10` so the dynamic MagVid loader returns video-unavailable before loading `magvid.dll`. |
+| `Program/Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `Statwin.dll`; includes the same MagVid loader-disable compatibility patch. |
 | `libgcc_s_dw2-1.dll` | `89f6147f5ed3f271d0b88f0586e079b9ac22e76c31221e5d5013aa273cc4694b` | PE32 DLL Intel 80386 | Root GCC runtime helper needed by the current drawcard helper. |
 | `Program/libgcc_s_dw2-1.dll` | `89f6147f5ed3f271d0b88f0586e079b9ac22e76c31221e5d5013aa273cc4694b` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `libgcc_s_dw2-1.dll` added after the first helper-DLL sync retest showed the newer Program `DrawCardLib.dll` could not load it. |
 

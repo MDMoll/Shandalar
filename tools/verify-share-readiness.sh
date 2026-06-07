@@ -182,6 +182,8 @@ for path in \
   Program/CardArt/Planeswalker/LoyaltyMinus.png \
   Program/CardArt/Planeswalker/LoyaltyPlus.png \
   Program/CardArt/Planeswalker/LoyaltyZero.png \
+  Statwin.dll \
+  Program/Statwin.dll \
   docs/bugs/ai-raw-mana-snapshot.md \
   docs/bugs/ai-etb-player-target-spell-chain-freeze.md \
   docs/bugs/piranha-marsh-spell-chain-freeze.md \
@@ -196,6 +198,7 @@ for path in \
   tools/patch-ai-player-target-selection.py \
   tools/patch-ai-etb-player-target-preselect.py \
   tools/patch-ai-land-cip-trigger-stack-bypass.py \
+  tools/patch-statwin-disable-magvid-loader.py \
   tools/patch-shandalar-disable-magsnd-init.py \
   tools/patch-shandalar-magsnd-update-callback.py \
   tools/patch-shandalar-winmm-tick-callback.py \
@@ -232,6 +235,8 @@ expect_hash DeckDLL.dll 5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f34
 expect_hash Program/Deckdll.dll 5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0
 expect_hash Drawcardlib.dll 8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712
 expect_hash Program/Drawcardlib.dll 8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712
+expect_hash Statwin.dll f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf
+expect_hash Program/Statwin.dll f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf
 expect_hash ManalinkEh.dll 68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5
 expect_hash Program/ManalinkEh.dll 619ce5d3f80f4ac951418e8a1b2ec803b3b9aa0128e01b827e744b80e63962fc
 expect_hash zlib.dll 9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90
@@ -276,6 +281,8 @@ expect_hex_prefix Shandalar.exe 0xcdd3f 5 9090909090
 expect_hex_prefix Program/Shandalar.exe 0xcdd3f 5 9090909090
 expect_hex_prefix Shandalar.exe 0x16c320 6 b804000000c3
 expect_hex_prefix Program/Shandalar.exe 0x16c320 6 b804000000c3
+expect_hex_prefix Statwin.dll 0x2a10 6 b807000000c3
+expect_hex_prefix Program/Statwin.dll 0x2a10 6 b807000000c3
 expect_hex_prefix FaceMaker.exe 0x5f40 11 6a0057508b4d1051ff7504
 expect_hex_prefix Program/FaceMaker.exe 0x5f40 11 6a0057508b4d1051ff7504
 expect_hex_prefix Magic.exe 0x3c303 13 e9c0d801009090909090909090
@@ -420,6 +427,7 @@ else
     $'AGENTS.md\tdocumentation' \
     $'DeckDLL.dll\tpe-dll' \
     $'ManalinkEh.dll\tpe-dll' \
+    $'Program/Statwin.dll\tpe-dll' \
     $'Program/Deckdll.dll\tpe-dll' \
     $'Program/ManalinkEh.dll\tpe-dll' \
     $'Program/Shandalar.exe\tpe-executable' \
@@ -427,6 +435,7 @@ else
     $'Program/src/cards/zendikar.c\tsource' \
     $'Program/src/functions/targets.c\tsource' \
     $'Shandalar.exe\tpe-executable' \
+    $'Statwin.dll\tpe-dll' \
     $'docs/bugs/ai-etb-player-target-spell-chain-freeze.md\tdocumentation' \
     $'docs/bugs/piranha-marsh-spell-chain-freeze.md\tdocumentation' \
     $'docs/manual-gameplay-verification.md\tdocumentation' \
@@ -436,6 +445,7 @@ else
     $'src/functions/targets.c\tsource' \
     $'tools/check-source-snapshot-parity.sh\tshell-tool' \
     $'tools/patch-ai-etb-player-target-preselect.py\tpython-tool' \
+    $'tools/patch-statwin-disable-magvid-loader.py\tpython-tool' \
     $'tools/patch-shandalar-disable-magsnd-init.py\tpython-tool' \
     $'tools/patch-shandalar-magsnd-update-callback.py\tpython-tool' \
     $'tools/patch-shandalar-winmm-tick-callback.py\tpython-tool' \

@@ -49,6 +49,8 @@ EXPECTED_HASHES = {
     "Program/Deckdll.dll": "5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0",
     "Drawcardlib.dll": "8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712",
     "Program/Drawcardlib.dll": "8435515e46b3abd02c756002225aae9554da149865bd24ae30befd3eafe12712",
+    "Statwin.dll": "f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf",
+    "Program/Statwin.dll": "f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf",
     "ManalinkEh.dll": "68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5",
     "Program/ManalinkEh.dll": "619ce5d3f80f4ac951418e8a1b2ec803b3b9aa0128e01b827e744b80e63962fc",
     "zlib.dll": "9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90",
@@ -109,6 +111,12 @@ EXPECTED_HEX_PREFIXES = {
         (0xCDA2E, bytes.fromhex("9090909090")),
         (0xCDD3F, bytes.fromhex("9090909090")),
         (0x16C320, bytes.fromhex("b804000000c3")),
+    ],
+    "Statwin.dll": [
+        (0x2A10, bytes.fromhex("b807000000c3")),
+    ],
+    "Program/Statwin.dll": [
+        (0x2A10, bytes.fromhex("b807000000c3")),
     ],
     "Shandalar.dll": [
         (0x94D34, bytes.fromhex("e9c776cc0090909090")),
