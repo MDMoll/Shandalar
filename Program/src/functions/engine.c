@@ -10,6 +10,23 @@ static int bounded_engine_active_cards_count(int player)
   return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], 150) : 0;
 }
 
+enum { ENGINE_CARD_INSTANCE_CAPACITY = 151 };
+
+static int engine_player_is_valid(int player)
+{
+  return player >= HUMAN && player <= AI;
+}
+
+static int engine_card_slot_is_valid(int card)
+{
+  return card >= 0 && card < ENGINE_CARD_INSTANCE_CAPACITY;
+}
+
+static int engine_csvid_is_valid(int csvid)
+{
+  return csvid >= 0 && csvid < available_slots;
+}
+
 enum { ENGINE_STACK_CAPACITY = 32 };
 
 enum { GLOBAL_ALL_PURPOSE_BUFFER_SIZE = 1000 };
@@ -424,6 +441,10 @@ int upkeep_phase(int player)
 int is_legal_block_impl(int blocking_player, int blocking_card, int blocked_player, int blocked_card, keyword_t abils, int landwalks)
 {
   // 0x434f90
+  if (!engine_player_is_valid(blocking_player) || !engine_player_is_valid(blocked_player)
+	  || !engine_card_slot_is_valid(blocking_card) || !engine_card_slot_is_valid(blocked_card))
+	return 0;
+
   card_instance_t* blocking_inst = get_card_instance(blocking_player, blocking_card);
   if (blocking_inst->internal_card_id < 0
 	  || !((cards_data[blocking_inst->internal_card_id].type & TYPE_CREATURE) || (blocking_inst->state & STATE_NONCREATURE_CAN_BLOCK))
@@ -464,6 +485,9 @@ int is_legal_block_impl(int blocking_player, int blocking_card, int blocked_play
 
   // Begin additions
   card_instance_t* blocked_inst = get_card_instance(blocked_player, blocked_card);
+  if (blocked_inst->internal_card_id < 0)
+	return 0;
+
   int sp_keywords_blocked = (blocked_inst->targets[16].card < 0 || is_humiliated(blocked_player, blocked_card)) ? 0 : blocked_inst->targets[16].card;
   int sp_keywords_blocking = (blocking_inst->targets[16].card < 0 || is_humiliated(blocking_player, blocking_card)) ? 0 : blocking_inst->targets[16].card;
 
@@ -500,6 +524,10 @@ int is_legal_block(int blocking_player, int blocking_card, int blocked_player, i
    * checking multiple blocking_card's against blocked_card.
    *
    * landwalks_controlled() is based on basiclandtypes_controlled[][], which is set in count_colors_of_lands_in_play(), overridden above. */
+
+  if (!engine_player_is_valid(blocking_player) || !engine_player_is_valid(blocked_player)
+	  || !engine_card_slot_is_valid(blocking_card) || !engine_card_slot_is_valid(blocked_card))
+	return 0;
 
   int abils = get_abilities(blocked_player, blocked_card, EVENT_ABILITIES, -1);
 
@@ -823,7 +851,7 @@ int create_legacy_effect_exe(int player, int card, int iid, int t_player, int t_
 	  return leg;
 	}
 
-  if (csvid == CARD_ID_FACE_DOWN_CREATURE && instance->targets[12].player >= 0 && instance->targets[12].player <= available_slots)
+  if (csvid == CARD_ID_FACE_DOWN_CREATURE && engine_csvid_is_valid(instance->targets[12].player))
 	{
 	  int leg = EXE_FN(int, 0x4a09a0, int, int, int, int, int)(player, card, iid, t_player, t_card);
 	  if (leg != -1)

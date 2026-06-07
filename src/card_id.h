@@ -15641,7 +15641,8 @@ typedef enum
   CARD_ID_ZOMBIE                        =15714,
   CARD_ID_ZOMBIE_GIANT                  =15715,
   CARD_ID_ZOMBIE_HORROR                 =15716,
-  CARD_ID_ZOMBIE_WIZARD                 =15717
+  CARD_ID_ZOMBIE_WIZARD                 =15717,
+  CARD_ID_BURN_FROM_WITHIN              =15759
 } card_id_t;
 
 #endif

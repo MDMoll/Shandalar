@@ -42,6 +42,16 @@ static int target_slot_is_valid(int slot)
   return slot >= 0 && slot < CARD_INSTANCE_TARGET_CAPACITY;
 }
 
+static int target_player_is_valid(int player)
+{
+  return player >= HUMAN && player <= AI;
+}
+
+static int target_card_slot_is_valid(int card)
+{
+  return card >= 0 && card < TARGET_MARKED_CARD_CAPACITY;
+}
+
 static int can_record_another_target(card_instance_t* instance)
 {
   return instance && instance->number_of_targets < CARD_INSTANCE_TARGET_CAPACITY;
@@ -244,9 +254,10 @@ validate_target_impl(int player, int card,	// Beware - these will both be -1 whe
 		goto epilog;												\
 	  } while (0)
 
-  if (tgt_player == -1
+  if (!target_player_is_valid(tgt_player)
 	  || (tgt_card != -1
-		  && get_card_instance(tgt_player, tgt_card)->internal_card_id == -1))
+		  && (!target_card_slot_is_valid(tgt_card)
+			  || get_card_instance(tgt_player, tgt_card)->internal_card_id == -1)))
 	{
 	  if (return_error_str)
 		*return_error_str = 0;
@@ -1825,8 +1836,13 @@ int validate_target(int player, int card, target_definition_t *td, int target_nu
 int would_validate_target(int player, int card, target_definition_t *td, int target_number){
 
 	card_instance_t *instance = get_card_instance(player, card);
+	int num_targets = bounded_targets_number_of_targets(instance);
 
-	if(target_number > instance->number_of_targets - 1){
+	if( num_targets <= 0 ){
+		return 0;
+	}
+
+	if(target_number < 0 || target_number >= num_targets){
 		target_number = 0;
 	}
 

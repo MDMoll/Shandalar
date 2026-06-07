@@ -395,8 +395,9 @@ int card_bojuka_bog(int player, int card, event_t event){
 
 	comes_into_play_tapped(player, card, event);
 
-	if (comes_into_play_mode(player, card, event, RESOLVE_TRIGGER_AI(player)) && pick_player_duh(player, card, 1-player, 0)){
-		rfg_whole_graveyard(get_card_instance(player, card)->targets[0].player);
+	card_instance_t* instance = get_card_instance(player, card);
+	if (comes_into_play(player, card, event) && pick_player_duh(player, card, 1-player, 0)){
+		rfg_whole_graveyard(instance->targets[0].player);
 	}
 
 	return mana_producer(player, card, event);

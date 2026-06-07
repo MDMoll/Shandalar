@@ -1,6 +1,6 @@
 # Runtime Manifest
 
-Generated from local inspection on 2026-05-31 and updated on 2026-06-06 in
+Generated from local inspection on 2026-05-31 and updated on 2026-06-07 in
 `/Users/mdmoll/Shandalar/Shandalar`.
 
 This manifest is for identity, review, and scan handoff. It is not a malware
@@ -16,12 +16,12 @@ scan, a license grant, or proof of gameplay stability.
 | `Program/Magic.exe` | `685669692634ec830fe228904e11b1b536bd4b20e52192863a6280c2dbff6b66` | PE32 GUI Intel 80386 | Manalink launcher target; patched for declared-attacker undo and `ShowCoinFlips` default-off behavior. |
 | `FaceMaker.exe` | `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246` | PE32 GUI Intel 80386 | Active patched FaceMaker helper. |
 | `Program/FaceMaker.exe` | `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246` | PE32 GUI Intel 80386 | Same bytes as root active FaceMaker helper. |
-| `ManalinkEh.dll` | `752b6deb941cf75dfc846c023b78000766b7c79b7ef7c35505f5de830f08fd22` | PE32 DLL Intel 80386 | Root DLL patched for Samite-family damage-prevention activation, generic activated damage-prevention gating, AI decision-time clamping, AI raw-mana speculation snapshot restore safety, Piranha Marsh/Bojuka Bog AI trigger targeting, generic AI player-only target selection, and AI ETB player-target trigger-mode land handling. |
-| `Program/ManalinkEh.dll` | `5dc6724b13b0ac3817561d4cad3e30a6f67fb6a2d45f2e259c715c46f08bcb9d` | PE32 DLL Intel 80386 | Program DLL patched at its own offsets for Samite-family damage-prevention activation, generic activated damage-prevention gating, AI clamping, AI raw-mana speculation snapshot restore safety, Piranha Marsh/Bojuka Bog AI trigger targeting, generic AI player-only target selection, and AI ETB player-target trigger-mode land handling. |
+| `ManalinkEh.dll` | `68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5` | PE32 DLL Intel 80386 | Root DLL patched for Samite-family damage-prevention activation, generic activated damage-prevention gating, AI decision-time clamping, AI raw-mana speculation snapshot restore safety, Piranha Marsh/Bojuka Bog AI trigger targeting, generic AI player-only target selection, and AI land CIP resolver stack-bypass land handling. |
+| `Program/ManalinkEh.dll` | `619ce5d3f80f4ac951418e8a1b2ec803b3b9aa0128e01b827e744b80e63962fc` | PE32 DLL Intel 80386 | Program DLL patched at its own offsets for Samite-family damage-prevention activation, generic activated damage-prevention gating, AI clamping, AI raw-mana speculation snapshot restore safety, Piranha Marsh/Bojuka Bog AI trigger targeting, generic AI player-only target selection, and AI land CIP resolver stack-bypass land handling. |
 | `zlib.dll` | `9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90` | PE32 DLL Intel 80386 | Root image/decompression support DLL. |
 | `Program/zlib.dll` | `9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `zlib.dll` added to close the adjacent Program loader gap in this checkout. |
-| `Shandalar.dll` | `ebd4d8d5375fa05f8db8203e0069db347c062a0b1d48856bc6307190de225534` | PE32 DLL Intel 80386 | Root Shandalar helper generation; copied to `Program/Shandalar.dll` after a visible Program-path Hornet fatal recurred from the older Program helper. |
-| `Program/Shandalar.dll` | `ebd4d8d5375fa05f8db8203e0069db347c062a0b1d48856bc6307190de225534` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `Shandalar.dll`; the old Program copy contained the Hornet `raw_cards_data` assert string and mismatched the current root card-data generation. |
+| `Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` | PE32 DLL Intel 80386 | Root Shandalar helper generation; contains `.cdxai` hooks for the AI land CIP resolver stack-bypass at `0x94d34`/`0x1174800` and the AI player-only target selector at `0xcb16`/`0x1174920`. |
+| `Program/Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `Shandalar.dll`; includes the same `.cdxai` AI land CIP resolver and AI player-only target selector patches. |
 | `CardArtLib.dll` | `975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f6416457e510484` | PE32 DLL Intel 80386 | Root card-art helper generation. |
 | `Program/CardArtLib.dll` | `975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f6416457e510484` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `CardArtLib.dll` for direct Program-path Shandalar launches. |
 | `DeckDLL.dll` | `5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0` | PE32 DLL Intel 80386 | Root deck/card-data helper rebuilt from `src/deck` with the Shandalar minimum-deck-size guard and legacy-safe startup flags: no dynamic base/NX compatibility bits, plus `___ImageBase=__image_base__`. |

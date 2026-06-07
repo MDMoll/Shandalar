@@ -1,5 +1,10 @@
 #include "manalink.h"
 
+static int bounded_damage_active_cards_count(int player)
+{
+  return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], 150) : 0;
+}
+
 void damage_effects(int player, int card, event_t event){
 
 	/* Nothing left here needs to be here; it can all move into the individual card functions, replacing the call to damage_effects().  Most, maybe all, of the
@@ -619,25 +624,28 @@ void after_damage(void)
 
   int player, card;
   for (player = 0; player <= 1; ++player)
-	for (card = 0; card < active_cards_count[player]; ++card)
-	  if (in_play(player, card) && is_what(player, card, TYPE_CREATURE))
-		{
-		  int kill_mode = 0;
-		  int flags = check_special_flags(player, card, SF_LETHAL_DAMAGE_DESTROY | SF_LETHAL_DAMAGE_BURY | SF_LETHAL_DAMAGE_EXILE);
-		  if (flags)	// Prevent them from retriggering if this gets regenerated
-			remove_special_flags(player, card, SF_LETHAL_DAMAGE_DESTROY | SF_LETHAL_DAMAGE_BURY | SF_LETHAL_DAMAGE_EXILE);
+	{
+	  int active_count = bounded_damage_active_cards_count(player);
+	  for (card = 0; card < active_count; ++card)
+		if (in_play(player, card) && is_what(player, card, TYPE_CREATURE))
+		  {
+			int kill_mode = 0;
+			int flags = check_special_flags(player, card, SF_LETHAL_DAMAGE_DESTROY | SF_LETHAL_DAMAGE_BURY | SF_LETHAL_DAMAGE_EXILE);
+			if (flags)	// Prevent them from retriggering if this gets regenerated
+			  remove_special_flags(player, card, SF_LETHAL_DAMAGE_DESTROY | SF_LETHAL_DAMAGE_BURY | SF_LETHAL_DAMAGE_EXILE);
 
-		  if (flags & SF_LETHAL_DAMAGE_EXILE)			// Pit Spawn/Sword of Kaldra
-			kill_mode = KILL_REMOVE;
-		  else if (flags & SF_LETHAL_DAMAGE_BURY)		// Phage the Untouchable
-			kill_mode = KILL_BURY;
-		  else if ((flags & SF_LETHAL_DAMAGE_DESTROY)	// Deathtouch
-				   || (int)get_card_instance(player, card)->damage_on_card >= get_toughness(player, card))
-			kill_mode = KILL_DESTROY;
+			if (flags & SF_LETHAL_DAMAGE_EXILE)			// Pit Spawn/Sword of Kaldra
+			  kill_mode = KILL_REMOVE;
+			else if (flags & SF_LETHAL_DAMAGE_BURY)		// Phage the Untouchable
+			  kill_mode = KILL_BURY;
+			else if ((flags & SF_LETHAL_DAMAGE_DESTROY)	// Deathtouch
+					 || (int)get_card_instance(player, card)->damage_on_card >= get_toughness(player, card))
+			  kill_mode = KILL_DESTROY;
 
-		  if (kill_mode)
-			kill_card(player, card, kill_mode);
-		}
+			if (kill_mode)
+			  kill_card(player, card, kill_mode);
+		  }
+	}
 
   /* The original exe version did this in one pass, calling the code_pointer of instance->original_internal_card_id if the card was no longer in play after the
    * call to kill_card() (such as from an exile-if-destroyed effect).  That's problematic on a couple levels.  Whatever removed the destroyed card from play
@@ -648,9 +656,12 @@ void after_damage(void)
    * The exe version also only dispatched EVENT_AFTER_DAMAGE to creature cards.  This was sufficient for Fungusaur, but isn't for Fungus Sliver. */
 
   for (player = 0; player <= 1; ++player)
-	for (card = 0; card < active_cards_count[player]; ++card)
-	  if (in_play(player, card))
-		dispatch_event_with_attacker_to_one_card(player, card, EVENT_AFTER_DAMAGE, 1-player, -1);
+	{
+	  int active_count = bounded_damage_active_cards_count(player);
+	  for (card = 0; card < active_count; ++card)
+		if (in_play(player, card))
+		  dispatch_event_with_attacker_to_one_card(player, card, EVENT_AFTER_DAMAGE, 1-player, -1);
+	}
 }
 
 // Returns a damage card during EVENT_PREVENT_DAMAGE if it's combat damage and doing more than 0.

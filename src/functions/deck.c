@@ -367,7 +367,11 @@ static int get_internal_card_id_from_csv_id_impl(int csvid)
 
 	  int i;
 	  for (i = 0; i < max_csvid && cards_data[i].id != (uint16_t)(-1); ++i)
-		csvid_to_iid[cards_data[i].id] = i;
+		{
+		  int id = cards_data[i].id;
+		  if (id >= 0 && id < max_csvid)
+			csvid_to_iid[id] = i;
+		}
 	}
 
   if (csvid_to_iid[csvid] == -1)
@@ -377,7 +381,7 @@ static int get_internal_card_id_from_csv_id_impl(int csvid)
 	  ASSERT(end < max_csvid);
 	  int i;
 	  for (i = 0; i < end; ++i)
-		if (cards_data[i].id != csvid)
+		if (cards_data[i].id == csvid)
 		  {
 			csvid_to_iid[csvid] = i;
 			break;
@@ -395,9 +399,9 @@ static int get_internal_card_id_from_csv_id_impl(int csvid)
 
 int get_internal_card_id_from_csv_id(int csvid)
 {
-  if (csvid == -1)
+  if (csvid < 0)
 	return -1;
-  else if (csvid_to_iid && csvid < max_csvid && csvid_to_iid[csvid] >= 0)
+  else if (csvid_to_iid && csvid >= 0 && csvid < max_csvid && csvid_to_iid[csvid] >= 0)
 	return csvid_to_iid[csvid];
   else
 	return get_internal_card_id_from_csv_id_impl(csvid);
@@ -1538,11 +1542,19 @@ int ante_top_card_of_library(int player)
 
 // Exiles the card at position pos in deck to player's exile zone.
 static int rfg_card_from_deck_impl(int player, int* deck, int pos){
+	if (player < HUMAN || player > AI || !deck || pos < 0 || pos >= 500){
+		return -1;
+	}
 	if (deck[pos] == -1){
 		return -1;
 	}
 
-	int id = rfg_ptr[player][count_rfg(player)] = deck[pos];
+	int rfg_pos = count_rfg(player);
+	if (rfg_pos < 0 || rfg_pos >= 500){
+		return -1;
+	}
+
+	int id = rfg_ptr[player][rfg_pos] = deck[pos];
 
 	obliterate_card_from_deck_impl(deck, pos);
 
@@ -1554,13 +1566,14 @@ static int rfg_card_from_deck_impl(int player, int* deck, int pos){
 // Exile the card at position grave_id in player's graveyard.
 int rfg_card_from_grave(int player, int grave_id)
 {
-	if (grave_id < 0 || grave_id >= 500){
+	if (player < HUMAN || player > AI || grave_id < 0 || grave_id >= 500){
 		return -1;
 	}
 
 	// Rakshasa Vizier effect.
 	int c;
-	for(c=0; c<active_cards_count[player]; c++){
+	int active_count = MIN(active_cards_count[player], 150);
+	for(c=0; c<active_count; c++){
 		if( in_play(player, c) && get_id(player, c) == CARD_ID_RAKSHASA_VIZIER && ! is_humiliated(player, c) ){
 			add_1_1_counter(player, c);
 		}
@@ -1588,10 +1601,14 @@ int rfg_card_in_deck(int player, int pos){
 
 // Exiles every card in the 500-card array deck to player's exile zone.
 static int rfg_whole_deck_impl(int player, int* deck){
+	if (player < HUMAN || player > AI || !deck){
+		return 0;
+	}
+
 	int* rfg = rfg_ptr[player];
 	int deck_pos, rfg_pos = 0, num_exiled = 0;
 	for (deck_pos = 0; deck_pos < 500 && deck[deck_pos] != -1; ++deck_pos){
-		while (rfg[rfg_pos] != -1){
+		while (rfg_pos < 500 && rfg[rfg_pos] != -1){
 			++rfg_pos;
 		}
 		if (rfg_pos >= 500){
@@ -1610,11 +1627,16 @@ static int rfg_whole_deck_impl(int player, int* deck){
 // Exile player's entire graveyard.
 int rfg_whole_graveyard(int player)
 {
-	memset(graveyard_source, -1, sizeof(graveyard_source));
+	if (player < HUMAN || player > AI){
+		return 0;
+	}
+
+	memset(graveyard_source[player], -1, sizeof(graveyard_source[player]));
 	int result = rfg_whole_deck_impl(player, graveyard_ptr_mutable[player]);
 	// Rakshasa Vizier effect.
 	int c;
-	for(c=0; c<active_cards_count[player]; c++){
+	int active_count = MIN(active_cards_count[player], 150);
+	for(c=0; c<active_count; c++){
 		if( in_play(player, c) && get_id(player, c) == CARD_ID_RAKSHASA_VIZIER && ! is_humiliated(player, c) ){
 			add_1_1_counters(player, c, result);
 		}

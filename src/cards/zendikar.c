@@ -637,8 +637,9 @@ int card_piranha_marsh(int player, int card, event_t event){
 
 	comes_into_play_tapped(player, card, event);
 
-	if (comes_into_play_mode(player, card, event, RESOLVE_TRIGGER_AI(player)) && pick_player_duh(player, card, 1-player, 0)){
-		lose_life(get_card_instance(player, card)->targets[0].player, 1);
+	card_instance_t* instance = get_card_instance(player, card);
+	if (comes_into_play(player, card, event) && pick_player_duh(player, card, 1-player, 0)){
+		lose_life(instance->targets[0].player, 1);
 	}
 
 	return mana_producer(player, card, event);

@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
-"""Patch AI ETB player-target land triggers to use engine AI trigger mode.
+"""Patch AI ETB player-target land triggers to avoid the Spell Chain stall.
 
 Piranha Marsh and Bojuka Bog are mandatory AI-controlled enters-the-battlefield
 triggers that target a player. Their resolving code already uses
 pick_player_duh(), but manual Bojuka Bog testing showed that selector-side,
 preselection-only, trigger-time immediate-resolution, and EVENT_END_TRIGGER
-suppression caves still let the duel stop with the Spell Chain box open.
+suppression caves still let the duel stop with the Spell Chain box open. A
+later engine-native trigger-mode wrapper also failed manual Bojuka testing.
 
-This helper replaces each land's call to comes_into_play() with a shared cave
-that calls comes_into_play_mode(player, card, event, RESOLVE_TRIGGER_AI(player)).
-That uses the trigger engine's normal AI/Duh trigger handling instead of a
-custom Spell Chain suppression path. The existing per-card resolving block then
-uses pick_player_duh() to choose the opponent without opening a human target
-prompt.
+This helper replaces each land's call to comes_into_play()/comes_into_play_mode()
+with a shared cave. For raw AI-owned or Duh-mode lands, the cave leaves trigger
+discovery on the normal engine path, but directly applies the mandatory
+target-player effect during EVENT_RESOLVE_TRIGGER and returns 0 so the compiled
+card body never calls the generic player-target selection helper. Raw AI
+ownership is treated as mandatory before consulting duh_mode(), since manual
+Bojuka testing showed the older duh_mode()-guarded resolve path was not enough.
+Human-owned non-Duh lands keep optional trigger discovery and target-selection
+behavior.
 """
 
 from __future__ import annotations
@@ -30,7 +34,10 @@ CAVE_LENGTH = 0x100
 CAVE_VIRTUAL_SIZE = 0x200
 
 IMAGE_BASE = 0x02000000
+EVENT_CLEANUP = 0x22
+EVENT_RESOLVE_SPELL = 0x71
 EVENT_TRIGGER = 0x7D
+EVENT_RESOLVE_TRIGGER = 0x7E
 EVENT_END_TRIGGER = 0xB00
 TRIGGER_COMES_INTO_PLAY = 0xDB
 
@@ -213,6 +220,10 @@ def cmp_dword_abs_esi(addr: int) -> bytes:
 
 def cmp_dword_ptr_esp_imm32(value: int) -> bytes:
     return b"\x81\x3c\x24" + u32(value)
+
+
+def cmp_dword_ptr_eax_imm8(offset: int, value: int) -> bytes:
+    return b"\x83\x78" + bytes([offset, value])
 
 
 def build_hook(hook: HookSpec, cave_vma: int) -> bytes:
@@ -403,7 +414,7 @@ def build_end_trigger_cave(spec: PatchSpec) -> bytes:
     return cave.finish()
 
 
-def build_cave(spec: PatchSpec) -> bytes:
+def build_trigger_mode_cave(spec: PatchSpec) -> bytes:
     cave = CaveBuilder(spec.cave_vma)
 
     cave.add(b"\x53")  # push ebx
@@ -421,6 +432,364 @@ def build_cave(spec: PatchSpec) -> bytes:
     cave.add(b"\x53")  # push ebx
     cave.call(spec.comes_into_play_mode_vma)
     cave.add(b"\x83\xc4\x10")  # add esp, 16
+    cave.add(b"\xc3")  # ret
+
+    return cave.finish()
+
+
+def build_resolve_spell_cave(spec: PatchSpec) -> bytes:
+    cave = CaveBuilder(spec.cave_vma)
+    bojuka_return_vma = spec.hooks[0].vma + HOOK_LENGTH
+    piranha_return_vma = spec.hooks[1].vma + HOOK_LENGTH
+
+    cave.add(cmp_edi_imm8(EVENT_CLEANUP))
+    cave.je32("cleanup")
+    cave.add(cmp_edi_imm8(EVENT_RESOLVE_SPELL))
+    cave.je32("maybe_immediate")
+    cave.add(cmp_edi_imm8(EVENT_TRIGGER))
+    cave.jne32("call_mode")
+
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.get_card_instance_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.add(cmp_dword_ptr_eax_imm8(0x7C, 66))  # targets[1].player == handled
+    cave.je32("return_zero")
+    cave.jmp32("call_mode")
+
+    cave.mark("maybe_immediate")
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.duh_mode_vma)
+    cave.add(b"\x83\xc4\x04")  # add esp, 4
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.je32("call_mode")
+
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.opponent_is_valid_target_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.je32("call_mode")
+
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.get_card_instance_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.add(b"\xba\x01\x00\x00\x00")  # mov edx, 1
+    cave.add(b"\x29\xda")  # sub edx, ebx
+    cave.add(b"\x89\x50\x74")  # mov [eax+0x74], edx
+    cave.add(b"\xc7\x40\x78\xff\xff\xff\xff")  # mov dword [eax+0x78], -1
+    cave.add(b"\xc6\x40\x36\x01")  # mov byte [eax+0x36], 1
+    cave.add(b"\xc7\x40\x7c\x42\x00\x00\x00")  # mov dword [eax+0x7c], 66
+
+    cave.add(cmp_dword_ptr_esp_imm32(bojuka_return_vma))
+    cave.je("resolve_bojuka")
+    cave.add(cmp_dword_ptr_esp_imm32(piranha_return_vma))
+    cave.je("resolve_piranha")
+    cave.jmp32("return_zero")
+
+    cave.mark("resolve_bojuka")
+    cave.add(b"\x52")  # push edx
+    cave.call(spec.rfg_whole_graveyard_vma)
+    cave.add(b"\x83\xc4\x04")  # add esp, 4
+    cave.jmp32("return_zero")
+
+    cave.mark("resolve_piranha")
+    cave.add(b"\x6a\x01")  # push 1
+    cave.add(b"\x52")  # push edx
+    cave.call(spec.lose_life_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.jmp32("return_zero")
+
+    cave.mark("cleanup")
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.get_card_instance_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.add(b"\xc7\x40\x7c\x00\x00\x00\x00")  # mov dword [eax+0x7c], 0
+    cave.jmp32("return_zero")
+
+    cave.mark("call_mode")
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.duh_mode_vma)
+    cave.add(b"\x83\xc4\x04")  # add esp, 4
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.add(b"\xb8\x01\x00\x00\x00")  # mov eax, RESOLVE_TRIGGER_OPTIONAL
+    cave.je("call_comes_into_play_mode")
+    cave.add(b"\xb8\x02\x00\x00\x00")  # mov eax, RESOLVE_TRIGGER_MANDATORY
+
+    cave.mark("call_comes_into_play_mode")
+    cave.add(b"\x50")  # push eax
+    cave.add(b"\x57")  # push edi
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.comes_into_play_mode_vma)
+    cave.add(b"\x83\xc4\x10")  # add esp, 16
+    cave.add(b"\xc3")  # ret
+
+    cave.mark("return_zero")
+    cave.add(b"\x31\xc0")  # xor eax, eax
+    cave.add(b"\xc3")  # ret
+
+    return cave.finish()
+
+
+def build_resolve_trigger_cave_without_etb_guard(spec: PatchSpec) -> bytes:
+    cave = CaveBuilder(spec.cave_vma)
+    bojuka_return_vma = spec.hooks[0].vma + HOOK_LENGTH
+    piranha_return_vma = spec.hooks[1].vma + HOOK_LENGTH
+
+    cave.add(cmp_edi_imm8(EVENT_RESOLVE_TRIGGER))
+    cave.je32("maybe_resolve_trigger")
+
+    cave.mark("call_mode")
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.duh_mode_vma)
+    cave.add(b"\x83\xc4\x04")  # add esp, 4
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.add(b"\xb8\x01\x00\x00\x00")  # mov eax, RESOLVE_TRIGGER_OPTIONAL
+    cave.je("call_comes_into_play_mode")
+    cave.add(b"\xb8\x02\x00\x00\x00")  # mov eax, RESOLVE_TRIGGER_MANDATORY
+
+    cave.mark("call_comes_into_play_mode")
+    cave.add(b"\x50")  # push eax
+    cave.add(b"\x57")  # push edi
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.comes_into_play_mode_vma)
+    cave.add(b"\x83\xc4\x10")  # add esp, 16
+    cave.add(b"\xc3")  # ret
+
+    cave.mark("maybe_resolve_trigger")
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.duh_mode_vma)
+    cave.add(b"\x83\xc4\x04")  # add esp, 4
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.je32("call_mode")
+
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.opponent_is_valid_target_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.je32("call_mode")
+
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.get_card_instance_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.add(b"\xba\x01\x00\x00\x00")  # mov edx, 1
+    cave.add(b"\x29\xda")  # sub edx, ebx
+    cave.add(b"\x89\x50\x74")  # mov [eax+0x74], edx
+    cave.add(b"\xc7\x40\x78\xff\xff\xff\xff")  # mov dword [eax+0x78], -1
+    cave.add(b"\xc6\x40\x36\x01")  # mov byte [eax+0x36], 1
+
+    cave.add(cmp_dword_ptr_esp_imm32(bojuka_return_vma))
+    cave.je("resolve_bojuka")
+    cave.add(cmp_dword_ptr_esp_imm32(piranha_return_vma))
+    cave.je("resolve_piranha")
+    cave.jmp32("return_zero")
+
+    cave.mark("resolve_bojuka")
+    cave.add(b"\x52")  # push edx
+    cave.call(spec.rfg_whole_graveyard_vma)
+    cave.add(b"\x83\xc4\x04")  # add esp, 4
+    cave.jmp32("return_zero")
+
+    cave.mark("resolve_piranha")
+    cave.add(b"\x6a\x01")  # push 1
+    cave.add(b"\x52")  # push edx
+    cave.call(spec.lose_life_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.jmp32("return_zero")
+
+    cave.mark("return_zero")
+    cave.add(b"\x31\xc0")  # xor eax, eax
+    cave.add(b"\xc3")  # ret
+
+    return cave.finish()
+
+
+def build_resolve_trigger_cave_duh_guard(spec: PatchSpec) -> bytes:
+    cave = CaveBuilder(spec.cave_vma)
+    bojuka_return_vma = spec.hooks[0].vma + HOOK_LENGTH
+    piranha_return_vma = spec.hooks[1].vma + HOOK_LENGTH
+
+    cave.add(cmp_edi_imm8(EVENT_RESOLVE_TRIGGER))
+    cave.je32("maybe_resolve_trigger")
+
+    cave.mark("call_mode")
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.duh_mode_vma)
+    cave.add(b"\x83\xc4\x04")  # add esp, 4
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.add(b"\xb8\x01\x00\x00\x00")  # mov eax, RESOLVE_TRIGGER_OPTIONAL
+    cave.je("call_comes_into_play_mode")
+    cave.add(b"\xb8\x02\x00\x00\x00")  # mov eax, RESOLVE_TRIGGER_MANDATORY
+
+    cave.mark("call_comes_into_play_mode")
+    cave.add(b"\x50")  # push eax
+    cave.add(b"\x57")  # push edi
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.comes_into_play_mode_vma)
+    cave.add(b"\x83\xc4\x10")  # add esp, 16
+    cave.add(b"\xc3")  # ret
+
+    cave.mark("maybe_resolve_trigger")
+    cave.add(b"\x6a\x02")  # push RESOLVE_TRIGGER_MANDATORY; ignored while resolving
+    cave.add(b"\x57")  # push edi
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.comes_into_play_mode_vma)
+    cave.add(b"\x83\xc4\x10")  # add esp, 16
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.je32("return_zero")
+
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.duh_mode_vma)
+    cave.add(b"\x83\xc4\x04")  # add esp, 4
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.je("return_one")
+
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.opponent_is_valid_target_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.je("return_one")
+
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.get_card_instance_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.add(b"\xba\x01\x00\x00\x00")  # mov edx, 1
+    cave.add(b"\x29\xda")  # sub edx, ebx
+    cave.add(b"\x89\x50\x74")  # mov [eax+0x74], edx
+    cave.add(b"\xc7\x40\x78\xff\xff\xff\xff")  # mov dword [eax+0x78], -1
+    cave.add(b"\xc6\x40\x36\x01")  # mov byte [eax+0x36], 1
+
+    cave.add(cmp_dword_ptr_esp_imm32(bojuka_return_vma))
+    cave.je("resolve_bojuka")
+    cave.add(cmp_dword_ptr_esp_imm32(piranha_return_vma))
+    cave.je("resolve_piranha")
+    cave.jmp32("return_zero")
+
+    cave.mark("resolve_bojuka")
+    cave.add(b"\x52")  # push edx
+    cave.call(spec.rfg_whole_graveyard_vma)
+    cave.add(b"\x83\xc4\x04")  # add esp, 4
+    cave.jmp32("return_zero")
+
+    cave.mark("resolve_piranha")
+    cave.add(b"\x6a\x01")  # push 1
+    cave.add(b"\x52")  # push edx
+    cave.call(spec.lose_life_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.jmp32("return_zero")
+
+    cave.mark("return_one")
+    cave.add(b"\xb8\x01\x00\x00\x00")  # mov eax, 1
+    cave.add(b"\xc3")  # ret
+
+    cave.mark("return_zero")
+    cave.add(b"\x31\xc0")  # xor eax, eax
+    cave.add(b"\xc3")  # ret
+
+    return cave.finish()
+
+
+def build_cave(spec: PatchSpec) -> bytes:
+    cave = CaveBuilder(spec.cave_vma)
+    bojuka_return_vma = spec.hooks[0].vma + HOOK_LENGTH
+    piranha_return_vma = spec.hooks[1].vma + HOOK_LENGTH
+
+    cave.add(cmp_edi_imm8(EVENT_RESOLVE_TRIGGER))
+    cave.je32("maybe_resolve_trigger")
+
+    cave.mark("call_mode")
+    cave.add(cmp_ebx_imm8(1))
+    cave.je("mandatory_trigger")
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.duh_mode_vma)
+    cave.add(b"\x83\xc4\x04")  # add esp, 4
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.add(b"\xb8\x01\x00\x00\x00")  # mov eax, RESOLVE_TRIGGER_OPTIONAL
+    cave.je("call_comes_into_play_mode")
+
+    cave.mark("mandatory_trigger")
+    cave.add(b"\xb8\x02\x00\x00\x00")  # mov eax, RESOLVE_TRIGGER_MANDATORY
+
+    cave.mark("call_comes_into_play_mode")
+    cave.add(b"\x50")  # push eax
+    cave.add(b"\x57")  # push edi
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.comes_into_play_mode_vma)
+    cave.add(b"\x83\xc4\x10")  # add esp, 16
+    cave.add(b"\xc3")  # ret
+
+    cave.mark("maybe_resolve_trigger")
+    cave.add(b"\x6a\x02")  # push RESOLVE_TRIGGER_MANDATORY; ignored while resolving
+    cave.add(b"\x57")  # push edi
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.comes_into_play_mode_vma)
+    cave.add(b"\x83\xc4\x10")  # add esp, 16
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.je32("return_zero")
+
+    cave.add(cmp_ebx_imm8(1))
+    cave.je("auto_resolve")
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.duh_mode_vma)
+    cave.add(b"\x83\xc4\x04")  # add esp, 4
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.je("return_one")
+
+    cave.mark("auto_resolve")
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.opponent_is_valid_target_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.add(b"\x85\xc0")  # test eax, eax
+    cave.je("return_zero")
+
+    cave.add(b"\x56")  # push esi
+    cave.add(b"\x53")  # push ebx
+    cave.call(spec.get_card_instance_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.add(b"\xba\x01\x00\x00\x00")  # mov edx, 1
+    cave.add(b"\x29\xda")  # sub edx, ebx
+    cave.add(b"\x89\x50\x74")  # mov [eax+0x74], edx
+    cave.add(b"\xc7\x40\x78\xff\xff\xff\xff")  # mov dword [eax+0x78], -1
+    cave.add(b"\xc6\x40\x36\x01")  # mov byte [eax+0x36], 1
+
+    cave.add(cmp_dword_ptr_esp_imm32(bojuka_return_vma))
+    cave.je("resolve_bojuka")
+    cave.add(cmp_dword_ptr_esp_imm32(piranha_return_vma))
+    cave.je("resolve_piranha")
+    cave.jmp32("return_zero")
+
+    cave.mark("resolve_bojuka")
+    cave.add(b"\x52")  # push edx
+    cave.call(spec.rfg_whole_graveyard_vma)
+    cave.add(b"\x83\xc4\x04")  # add esp, 4
+    cave.jmp32("return_zero")
+
+    cave.mark("resolve_piranha")
+    cave.add(b"\x6a\x01")  # push 1
+    cave.add(b"\x52")  # push edx
+    cave.call(spec.lose_life_vma)
+    cave.add(b"\x83\xc4\x08")  # add esp, 8
+    cave.jmp32("return_zero")
+
+    cave.mark("return_one")
+    cave.add(b"\xb8\x01\x00\x00\x00")  # mov eax, 1
+    cave.add(b"\xc3")  # ret
+
+    cave.mark("return_zero")
+    cave.add(b"\x31\xc0")  # xor eax, eax
     cave.add(b"\xc3")  # ret
 
     return cave.finish()
@@ -479,9 +848,13 @@ def ensure_cave_is_mapped(data: bytearray, spec: PatchSpec) -> bool:
 def patch_file(path: Path, spec: PatchSpec, apply: bool, backup_suffix: str | None) -> None:
     data = bytearray(path.read_bytes())
     cave = build_cave(spec)
+    resolve_trigger_duh_guard_cave = build_resolve_trigger_cave_duh_guard(spec)
+    resolve_trigger_without_etb_guard_cave = build_resolve_trigger_cave_without_etb_guard(spec)
+    trigger_mode_cave = build_trigger_mode_cave(spec)
     end_trigger_cave = build_end_trigger_cave(spec)
     immediate_cave = build_immediate_cave(spec)
     preselect_cave = build_preselect_cave(spec)
+    resolve_spell_cave = build_resolve_spell_cave(spec)
     current_cave = bytes(data[spec.cave_offset : spec.cave_offset + CAVE_LENGTH])
     expected_hooks = [build_hook(hook, spec.cave_vma) for hook in spec.hooks]
 
@@ -501,14 +874,18 @@ def patch_file(path: Path, spec: PatchSpec, apply: bool, backup_suffix: str | No
 
     if (
         current_cave != cave
+        and current_cave != resolve_trigger_duh_guard_cave
+        and current_cave != resolve_trigger_without_etb_guard_cave
+        and current_cave != trigger_mode_cave
         and current_cave != end_trigger_cave
         and current_cave != preselect_cave
         and current_cave != immediate_cave
+        and current_cave != resolve_spell_cave
         and not all_zeroes(current_cave)
     ):
         raise SystemExit(
             f"FAIL: {path} cave @ 0x{spec.cave_offset:x} has {current_cave.hex()}, "
-            f"expected zero-filled cave, previous preselection/immediate/end-trigger cave, or patched {cave.hex()}"
+            f"expected zero-filled cave, previous preselection/immediate/end-trigger/resolve-spell/resolve-trigger cave, or patched {cave.hex()}"
         )
 
     if not apply:

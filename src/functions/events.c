@@ -548,6 +548,66 @@ int dispatch_xtrigger2(int player, xtrigger_t xtrig, const char *prompt, int TEN
   return 0;
 }
 
+static int should_resolve_ai_land_cip_trigger_without_stack(int player, int card)
+{
+  if (ai_is_speculating == 1 || (trace_mode & 2) || player != AI)
+	return 0;
+
+  if (trigger_condition != TRIGGER_COMES_INTO_PLAY
+	  || reason_for_trigger_controller != player
+	  || trigger_cause_controller != player
+	  || trigger_cause != card)
+	return 0;
+
+  return in_play(player, card) && is_what(player, card, TYPE_LAND);
+}
+
+static void clear_is_triggering_on_all_cards(void)
+{
+  int p, c;
+  for (p = 0; p <= 1; ++p)
+	{
+	  int active_count = bounded_active_cards_count(p);
+	  for (c = 0; c < active_count; ++c)
+		get_card_instance(p, c)->state &= ~STATE_IS_TRIGGERING;
+	}
+}
+
+static void dispatch_resolve_trigger_to_one_card_without_stack(int player, int card)
+{
+  dispatch_event_with_attacker_to_one_card(player, card, EVENT_RESOLVE_TRIGGER, 1-player, -1);
+}
+
+static void resolve_ai_land_cip_trigger_without_stack(int player, int card)
+{
+  clear_is_triggering_on_all_cards();
+
+  card_instance_t* instance = get_card_instance(player, card);
+  instance->state |= STATE_PROCESSING | STATE_IS_TRIGGERING;
+
+  int old_tcond = trigger_condition;
+  int old_xtcond = xtrigger_impl_value_dont_use_directly;
+  int old_tcc = trigger_cause_controller;
+  int old_tc = trigger_cause;
+
+  dispatch_resolve_trigger_to_one_card_without_stack(player, card);
+
+  trigger_condition = old_tcond;
+  xtrigger_impl_value_dont_use_directly = old_xtcond;
+  trigger_cause = old_tc;
+  trigger_cause_controller = old_tcc;
+  instance->state &= ~(STATE_PROCESSING | STATE_IS_TRIGGERING);
+
+  EXE_DWORD(0x60E9F8) = 0;
+
+  dispatch_event(player, card, EVENT_TRIGGER_RESOLVED);
+
+  trigger_condition = old_tcond;
+  xtrigger_impl_value_dont_use_directly = old_xtcond;
+  trigger_cause = old_tc;
+  trigger_cause_controller = old_tcc;
+}
+
 void resolve_trigger(int player, int card, int TENTATIVE_reason_for_trigger_controller)
 {
   // Original at 434800
@@ -559,6 +619,12 @@ void resolve_trigger(int player, int card, int TENTATIVE_reason_for_trigger_cont
 	  EXE_FN(void, 0x4A7D80, const char*)(buf);	// append_to_trace_txt()
 	}
   EXE_DWORD(0x60E9F8) = 0;	// This is only ever written to, and only ever set to 0, but I'm leaving it in place just in case
+
+  if (should_resolve_ai_land_cip_trigger_without_stack(player, card))
+	{
+	  resolve_ai_land_cip_trigger_without_stack(player, card);
+	  return;
+	}
 
   put_card_or_activation_onto_stack(player, card, EVENT_RESOLVE_TRIGGER, TENTATIVE_reason_for_trigger_controller, 0);
   if (cancel == 1)
@@ -579,16 +645,10 @@ void resolve_trigger(int player, int card, int TENTATIVE_reason_for_trigger_cont
 			  EXE_FN(int, 0x471b60, int, int, int, int, const char*, int)(player, card, -1, -1, buf, 0);	// raw_do_dialog()
 			}
 
-		  int p, c;
-		  for (p = 0; p <= 1; ++p)
-			{
-			  int active_count = bounded_active_cards_count(p);
-			  for (c = 0; c < active_count; ++c)
-				get_card_instance(p, c)->state &= ~STATE_IS_TRIGGERING;
+			  clear_is_triggering_on_all_cards();
 			}
-		}
 
-	  card_instance_t* instance = get_card_instance(player, card);
+		  card_instance_t* instance = get_card_instance(player, card);
 	  instance->state |= STATE_PROCESSING | STATE_IS_TRIGGERING;	// STATE_IS_TRIGGERING added
 
 	  // Begin additions

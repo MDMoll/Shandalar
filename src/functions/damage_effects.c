@@ -1,5 +1,10 @@
 #include "manalink.h"
 
+static int bounded_damage_active_cards_count(int player)
+{
+  return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], 150) : 0;
+}
+
 void damage_effects(int player, int card, event_t event){
 
 	/* Nothing left here needs to be here; it can all move into the individual card functions, replacing the call to damage_effects().  Most, maybe all, of the
@@ -364,8 +369,8 @@ int damage_creature(int tgt_player, int tgt_card, int32_t amt, int src_player, i
 	  ){
 		// Check for a non-humiliated Soulfire Grand Master
 		int sgm_flag = 0;
-		int i;
-		for(i=0; i<active_cards_count[src_player]; i++){
+		int i, active_count = bounded_damage_active_cards_count(src_player);
+		for(i=0; i<active_count; i++){
 			if( in_play(src_player, i) && get_id(src_player, i) == CARD_ID_SOULFIRE_GRAND_MASTER && ! is_humiliated(src_player, i) ){
 				sgm_flag = 1;
 				break;
@@ -719,13 +724,15 @@ void after_damage(void)
 
   int player, card;
   for (player = 0; player <= 1; ++player)
-	for (card = 0; card < active_cards_count[player]; ++card)
-	  if (in_play(player, card) && is_what(player, card, TYPE_CREATURE))
-		{
-		  int kill_mode = 0;
-		  int flags = check_special_flags(player, card, SF_LETHAL_DAMAGE_DESTROY | SF_LETHAL_DAMAGE_BURY | SF_LETHAL_DAMAGE_EXILE|SF_EXILE_IF_DAMAGED);
-		  if (flags)	// Prevent them from retriggering if this gets regenerated
-			remove_special_flags(player, card, SF_LETHAL_DAMAGE_DESTROY | SF_LETHAL_DAMAGE_BURY | SF_LETHAL_DAMAGE_EXILE|SF_EXILE_IF_DAMAGED);
+	{
+	  int active_count = bounded_damage_active_cards_count(player);
+	  for (card = 0; card < active_count; ++card)
+		if (in_play(player, card) && is_what(player, card, TYPE_CREATURE))
+		  {
+			int kill_mode = 0;
+			int flags = check_special_flags(player, card, SF_LETHAL_DAMAGE_DESTROY | SF_LETHAL_DAMAGE_BURY | SF_LETHAL_DAMAGE_EXILE|SF_EXILE_IF_DAMAGED);
+			if (flags)	// Prevent them from retriggering if this gets regenerated
+			  remove_special_flags(player, card, SF_LETHAL_DAMAGE_DESTROY | SF_LETHAL_DAMAGE_BURY | SF_LETHAL_DAMAGE_EXILE|SF_EXILE_IF_DAMAGED);
 
 			if ((flags & SF_EXILE_IF_DAMAGED) // Pit Spawn/Sword of Kaldra
 				|| ((flags & SF_LETHAL_DAMAGE_EXILE) && (int)get_card_instance(player, card)->damage_on_card >= get_toughness(player, card))
@@ -733,12 +740,12 @@ void after_damage(void)
 				kill_mode = KILL_REMOVE;
 			}
 			else if (flags & SF_LETHAL_DAMAGE_BURY){		// Phage the Untouchable
-					kill_mode = KILL_BURY;
+				kill_mode = KILL_BURY;
 			}
 			else if ((flags & SF_LETHAL_DAMAGE_DESTROY)	// Deathtouch
-						|| (int)get_card_instance(player, card)->damage_on_card >= get_toughness(player, card)
+					 || (int)get_card_instance(player, card)->damage_on_card >= get_toughness(player, card)
 				   ){
-						kill_mode = KILL_DESTROY;
+				kill_mode = KILL_DESTROY;
 			}
 
 			if (kill_mode){
@@ -753,7 +760,8 @@ void after_damage(void)
 					}
 				}
 			}
-		}
+		  }
+	}
 
   /* The original exe version did this in one pass, calling the code_pointer of instance->original_internal_card_id if the card was no longer in play after the
    * call to kill_card() (such as from an exile-if-destroyed effect).  That's problematic on a couple levels.  Whatever removed the destroyed card from play
@@ -764,9 +772,12 @@ void after_damage(void)
    * The exe version also only dispatched EVENT_AFTER_DAMAGE to creature cards.  This was sufficient for Fungusaur, but isn't for Fungus Sliver. */
 
   for (player = 0; player <= 1; ++player)
-	for (card = 0; card < active_cards_count[player]; ++card)
-	  if (in_play(player, card))
-		dispatch_event_with_attacker_to_one_card(player, card, EVENT_AFTER_DAMAGE, 1-player, -1);
+	{
+	  int active_count = bounded_damage_active_cards_count(player);
+	  for (card = 0; card < active_count; ++card)
+		if (in_play(player, card))
+		  dispatch_event_with_attacker_to_one_card(player, card, EVENT_AFTER_DAMAGE, 1-player, -1);
+	}
 }
 
 // Returns a damage card during EVENT_PREVENT_DAMAGE if it's combat damage and doing more than 0.
@@ -996,4 +1007,3 @@ void if_a_creature_damaged_by_me_dies_do_something(int player, int card, event_t
 		instance->info_slot = 0;
 	}
 }
-

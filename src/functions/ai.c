@@ -1,5 +1,17 @@
 #include "manalink.h"
 
+enum { AI_BATTLEFIELD_CARD_CAPACITY = 150 };
+
+static int ai_player_is_valid(int player)
+{
+	return player >= HUMAN && player <= AI;
+}
+
+static int ai_battlefield_card_slot_is_valid(int card)
+{
+	return card >= 0 && card < AI_BATTLEFIELD_CARD_CAPACITY;
+}
+
 int get_usertime_of_current_thread_in_ms(void);	// exe
 extern int start_usertime_of_current_thread_in_ms;
 
@@ -255,7 +267,14 @@ int save_or_load_supplement(int status)
 
 static int check_destroys_if_blocked_oneside(int lethal_player, int lethal_card, int other_player, int other_card)
 {
-  card_instance_t* instance = get_card_instance(lethal_player, lethal_card);
+  if (!ai_player_is_valid(lethal_player) || !ai_player_is_valid(other_player)
+	  || !ai_battlefield_card_slot_is_valid(lethal_card) || !ai_battlefield_card_slot_is_valid(other_card))
+	return 0;
+
+  card_instance_t* instance = in_play(lethal_player, lethal_card);
+  if (!instance || !in_play(other_player, other_card))
+	return 0;
+
   int lethal = instance->destroys_if_blocked;
   int result = 0;
   if (lethal)

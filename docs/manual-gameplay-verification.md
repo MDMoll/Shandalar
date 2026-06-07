@@ -49,15 +49,19 @@ tools/verify-manual-gameplay-results.sh
 ## Test Environment Record
 
 The environment rows below are filled from the automated baseline generated on
-2026-05-31 and refreshed for later runtime patch hashes on 2026-06-06. They
+2026-05-31 and refreshed for later runtime patch hashes on 2026-06-07. They
 identify the current local `MTG` CrossOver test target and hashes, but they are
-not visible gameplay results. The local `MTG` Manalink DLLs now include the
-raw-mana snapshot, Piranha Marsh trigger-target, Bojuka Bog trigger-target,
-generic AI player-target selector, and AI ETB player-target trigger-mode handling
-patches, but this remains static copied-install evidence only. A manual Bojuka
-Bog retest failed after the selector-side, preselection-only, and trigger-time
-immediate mitigations, and later after the end-trigger suppression candidate,
-so only a fresh retest against the trigger-mode patch can close that case.
+not visible gameplay results. The local `MTG` Manalink and Shandalar DLLs now
+include the raw-mana snapshot, Piranha Marsh trigger-target, Bojuka Bog
+trigger-target, generic AI player-target selector, and AI land CIP resolver
+stack-bypass handling patches, but this remains static copied-install evidence
+only. A manual Bojuka Bog retest failed after the selector-side,
+preselection-only, trigger-time immediate, end-trigger suppression,
+engine-native trigger-mode, and `duh_mode()`-guarded resolve-trigger candidates.
+Piranha Marsh later failed after the strict card-callsite wrapper candidate, and
+Augur of Skulls later froze at the Shandalar `Witch activates...` announcement,
+so only fresh retests against the combined Shandalar player-target and
+land-resolver candidates can close those cases.
 
 | Field | Value |
 | --- | --- |
@@ -73,8 +77,8 @@ so only a fresh retest against the trigger-mode patch can close that case.
 | Command or shortcut target | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\Shandalar.exe"` |
 | `Shandalar.exe` SHA-256 | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` |
 | `Magic.exe` SHA-256 | `93a40ce2c96aafee1d858a71ed69eb8c539aa9851796eb54b1af58f0bb97aba0` |
-| `ManalinkEh.dll` SHA-256 | `752b6deb941cf75dfc846c023b78000766b7c79b7ef7c35505f5de830f08fd22` |
-| Repo `ManalinkEh.dll` SHA-256 | `752b6deb941cf75dfc846c023b78000766b7c79b7ef7c35505f5de830f08fd22` |
+| `ManalinkEh.dll` SHA-256 | `68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5` |
+| Repo `ManalinkEh.dll` SHA-256 | `68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5` |
 
 ## CrossOver `MTG` Baseline
 

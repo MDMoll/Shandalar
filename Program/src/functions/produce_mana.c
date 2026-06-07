@@ -8,6 +8,22 @@ char always_prompt_for_color = 0;
  * inspect them before inspecting this. */
 color_test_t chosen_colors = 0;
 
+static const char* mana_prompt_card_full_name(int player, int card)
+{
+  if (player < HUMAN || player > AI || card < 0 || card >= MIN(active_cards_count[player], 150))
+	return "Unknown";
+
+  card_instance_t* instance = get_card_instance(player, card);
+  if (!instance || instance->internal_card_id < 0 || !cards_at_7c7000[instance->internal_card_id])
+	return "Unknown";
+
+  int csvid = cards_at_7c7000[instance->internal_card_id]->id;
+  if (csvid < 0 || csvid >= available_slots || !cards_ptr[csvid] || !cards_ptr[csvid]->full_name)
+	return "Unknown";
+
+  return cards_ptr[csvid]->full_name;
+}
+
 /* Forwards to either declare_mana_available() or declare_mana_available_hex(), depending on whether more than one bit is set in colors.
  * declare_mana_available() is always preferable to declare_mana_available_hex(), which has limited slots and is much slower in has_mana(), charge_mana(), etc.
  * Calling declare_mana_available() directly instead of this is preferable too when the combination of colors is known. */
@@ -674,8 +690,8 @@ void produce_mana_of_any_type_tapped_for(int player, int card, int amount){
 			} else {					// Tapped for more than one color of mana
 				char prompt[300];
 				scnprintf(prompt, sizeof(prompt), "%s (%s): What kind of mana?",
-						cards_ptr[cards_at_7c7000[get_card_instance(player, card)->internal_card_id]->id]->full_name,
-						cards_ptr[cards_at_7c7000[get_card_instance(affected_card_controller, affected_card)->internal_card_id]->id]->full_name);
+						mana_prompt_card_full_name(player, card),
+						mana_prompt_card_full_name(affected_card_controller, affected_card));
 
 				produce_mana_any_combination_of_colors(player, colors, amount, prompt);
 				if (cancel == 1){
@@ -1447,34 +1463,39 @@ void mana_burn(void)
 	  int amt_drained = 0, amt_left = 0;
 	  int clr;
 	  if (mana_in_pool[p][COLOR_ANY] > 0)
-		for (clr = COLOR_ARTIFACT; clr >= COLOR_COLORLESS; --clr)
-		  if (mana_doesnt_drain_from_pool[p][clr] & MANADRAIN_DOESNT_DRAIN)
-			amt_left += mana_in_pool[p][clr];
-		  else
+		{
+		  for (clr = COLOR_ARTIFACT; clr >= COLOR_COLORLESS; --clr)
 			{
-			  uint8_t nondraining;
-			  if ((nondraining = (mana_doesnt_drain_from_pool[p][clr] & MANADRAIN_AMT_MASK)))
-				{
-				  if (nondraining > mana_in_pool[p][clr])
-					{	// more flagged as not-draining than is actually in pool
-					  nondraining = mana_in_pool[p][clr];
-					  mana_doesnt_drain_from_pool[p][clr] &= ~MANADRAIN_AMT_MASK;
-					  mana_doesnt_drain_from_pool[p][clr] |= nondraining;
-					}
-				  mana_in_pool[p][clr] -= nondraining;
-				}
-
-			  if (mana_doesnt_drain_from_pool[p][clr] & MANADRAIN_BECOMES_COLORLESS)
-				{
-				  amt_left += mana_in_pool[p][clr];
-				  mana_in_pool[p][COLOR_COLORLESS] += mana_in_pool[p][clr];
-				}
+			  if (mana_doesnt_drain_from_pool[p][clr] & MANADRAIN_DOESNT_DRAIN)
+				amt_left += mana_in_pool[p][clr];
 			  else
-				amt_drained += mana_in_pool[p][clr];
+				{
+				  uint8_t nondraining;
+				  if ((nondraining = (mana_doesnt_drain_from_pool[p][clr] & MANADRAIN_AMT_MASK)))
+					{
+					  if (nondraining > mana_in_pool[p][clr])
+						{
+						  // more flagged as not-draining than is actually in pool
+						  nondraining = mana_in_pool[p][clr];
+						  mana_doesnt_drain_from_pool[p][clr] &= ~MANADRAIN_AMT_MASK;
+						  mana_doesnt_drain_from_pool[p][clr] |= nondraining;
+						}
+					  mana_in_pool[p][clr] -= nondraining;
+					}
 
-			  mana_in_pool[p][clr] = nondraining;
-			  amt_left += nondraining;
+				  if (mana_doesnt_drain_from_pool[p][clr] & MANADRAIN_BECOMES_COLORLESS)
+					{
+					  amt_left += mana_in_pool[p][clr];
+					  mana_in_pool[p][COLOR_COLORLESS] += mana_in_pool[p][clr];
+					}
+				  else
+					amt_drained += mana_in_pool[p][clr];
+
+				  mana_in_pool[p][clr] = nondraining;
+				  amt_left += nondraining;
+				}
 			}
+		}
 
 	  mana_in_pool[p][COLOR_ANY] = amt_left;
 
