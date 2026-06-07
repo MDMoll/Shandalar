@@ -92,6 +92,8 @@ Parent parent;
 
 HDC screendc = 0;
 ULONG_PTR gdiplus_token = 0;
+static ULONG_PTR gdiplus_bg_thread_token = 0;
+static GdiplusStartupOutput gdiplus_startup_output;
 CRITICAL_SECTION* critical_section_for_drawing = NULL;
 CRITICAL_SECTION* critical_section_for_display = NULL;
 HDC* spare_hdc = NULL;
@@ -173,10 +175,14 @@ init_gdiplus(void)
 	  GdiplusStartupInput input;
 	  input.GdiplusVersion = 1;
 	  input.DebugEventCallback = NULL;
-	  input.SuppressBackgroundThread = 0;
+	  input.SuppressBackgroundThread = 1;
 	  input.SuppressExternalCodecs = 0;
 
-	  GdiplusStartup(&gdiplus_token, &input, NULL);
+	  if (GdiplusStartup(&gdiplus_token, &input, &gdiplus_startup_output) != Ok || !gdiplus_token)
+		return 0;
+
+	  if (gdiplus_startup_output.NotificationHook)
+		gdiplus_startup_output.NotificationHook(&gdiplus_bg_thread_token);
 
 	  int i;
 	  for (i = 0; i <= MAX_CFG; ++i)
@@ -198,7 +204,17 @@ close_gdiplus(void)
 		gpics[i] = NULL;
 	  }
 
-  GdiplusShutdown(gdiplus_token);
+  if (gdiplus_bg_thread_token && gdiplus_startup_output.NotificationUnhook)
+	{
+	  gdiplus_startup_output.NotificationUnhook(gdiplus_bg_thread_token);
+	  gdiplus_bg_thread_token = 0;
+	}
+
+  if (gdiplus_token)
+	{
+	  GdiplusShutdown(gdiplus_token);
+	  gdiplus_token = 0;
+	}
 }
 
 void

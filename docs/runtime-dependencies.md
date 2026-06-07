@@ -32,7 +32,7 @@ a runtime package is actually needed.
 | `Program/Shandalar.dll` | `Cardartlib.dll`, `Deckdll.dll`, `Drawcardlib.dll`, `ADVAPI32.DLL`, `GDI32.dll`, `KERNEL32.dll`, `msvcrt.dll`, `MSIMG32.DLL`, `USER32.dll`, `WINMM.DLL` | `CardArtLib.dll`, `Deckdll.dll`, `Drawcardlib.dll` | Uses `MSIMG32.DLL`; Windows/Wine usually provide it. Program copy now matches root after the stale helper generation caused a visible Hornet fatal. |
 | `Program/ManalinkEh.dll` | `kernel32.dll`, `KERNEL32.dll`, `msvcrt.dll`, `USER32.dll` | none beyond system DLLs | Root `ManalinkEh.dll` imports more DLLs than the Program copy. |
 | `Program/ManalinkEx.dll` | `kernel32.dll`, `user32.dll`, `advapi32.dll` | none beyond system DLLs | Loaded by `Magic.exe`; root copy has a different import table. |
-| `Program/Drawcardlib.dll` | `Cardartlib.dll`, `image.dll`, `GDI32.dll`, `GDIPLUS.DLL`, `KERNEL32.dll`, `msvcrt.dll`, `MSIMG32.DLL`, `SHLWAPI.DLL`, `USER32.dll`, `libgcc_s_dw2-1.dll` | `CardArtLib.dll`, `Image.dll`, `libgcc_s_dw2-1.dll` | Card rendering helper. Program copy now matches root and requires adjacent `libgcc_s_dw2-1.dll` in the direct Program path. |
+| `Program/Drawcardlib.dll` | `Cardartlib.dll`, `image.dll`, `GDI32.dll`, `gdiplus.dll`, `KERNEL32.dll`, `MSIMG32.DLL`, `api-ms-win-crt-convert-l1-1-0.dll`, `api-ms-win-crt-heap-l1-1-0.dll`, `api-ms-win-crt-private-l1-1-0.dll`, `api-ms-win-crt-runtime-l1-1-0.dll`, `api-ms-win-crt-stdio-l1-1-0.dll`, `api-ms-win-crt-string-l1-1-0.dll`, `SHLWAPI.dll`, `USER32.dll` | `CardArtLib.dll`, `Image.dll` | Card rendering helper. Program copy now matches root and is rebuilt so Drawcardlib uses GDI+ notification hooks instead of allowing GDI+ to create its own background thread. |
 
 CrossOver `MTG` note: direct logged launch of
 `C:\Shandalar\Program\Shandalar.exe` previously failed before gameplay because
@@ -59,11 +59,13 @@ Program-path fatals exposed older Program card-data files too; `Program/Cards.da
 `Program/DBInfo.dat`, and `Program/Rarity.dat` now match root. A later visible
 Hornet recurrence was traced to stale Program helper DLLs, so
 `Program/Shandalar.dll`, `Program/CardArtLib.dll`, `Program/Deckdll.dll`, and
-`Program/Drawcardlib.dll` now match root. The newer `Program/Drawcardlib.dll`
-imports `libgcc_s_dw2-1.dll`, so `Program/libgcc_s_dw2-1.dll` now matches root
-too. The latest bounded log opened the Program helper DLLs and card-data files
-without the earlier fatal strings. An exact-path visible retest is still needed
-before the Program Shandalar path can be treated as supported.
+`Program/Drawcardlib.dll` now match root. A newer `Program/Drawcardlib.dll`
+previously required adjacent `libgcc_s_dw2-1.dll`, so that file remains present
+in both root and Program layouts. The current rebuilt Drawcardlib generation
+uses Wine-provided `api-ms-win-crt-*` imports and suppresses the GDI+ background
+thread. The latest bounded log opened the Program helper DLLs and card-data
+files without the earlier fatal strings. An exact-path visible retest is still
+needed before the Program Shandalar path can be treated as supported.
 Root `C:\Shandalar\Shandalar.exe` remains the current copied-bottle Shandalar
 path.
 
@@ -74,14 +76,14 @@ path.
 | `Program/Shandalar.exe` | PE32 GUI Intel 80386 | Win32 UI/system DLLs, `WINMM.dll`, `MSVFW32.dll`, `MSVCRT.dll`, local `DrawCardLib.dll`, `DECKDLL.dll`, `CdTools.dll`, `CardArtLib.dll` | No direct `VCRUNTIME`, `MSVCP`, `MFC`, `DDRAW`, or `D3D` imports found. | Use x86 runtimes only if a missing-DLL dialog/log points to them. |
 | `Program/Magic.exe` | PE32 GUI Intel 80386 | Win32 UI/system DLLs, `MSVFW32.dll`, `WINMM.dll`, local `deckdll.dll`, `drawcardlib.dll`, `manalinkeh.dll`, `manalinkex.dll` | No direct `VCRUNTIME`, `MSVCP`, `MFC`, `DDRAW`, or `D3D` imports found. | `ManalinkEh.dll` and `ManalinkEx.dll` must be available from the working directory/load path. |
 | `Program/Shandalar.dll` | PE32 DLL Intel 80386 | Local card/deck/rendering DLLs, `MSIMG32.DLL`, `WINMM.DLL`, `msvcrt.dll` | No direct `VCRUNTIME`, `MSVCP`, `MFC`, `DDRAW`, or `D3D` imports found. | Keep root and Program helper generations synced with the active card-data trio. |
-| `Program/Drawcardlib.dll` | PE32 DLL Intel 80386 | `Cardartlib.dll`, `image.dll`, GDI/GDI+, `MSIMG32.DLL`, `SHLWAPI.DLL`, `msvcrt.dll`, `libgcc_s_dw2-1.dll` | GDI+ support may matter in older bottles if `GDIPLUS.DLL` is absent or incomplete. | Preserve `CardArtLib.dll`, `Image.dll`, `libgcc_s_dw2-1.dll`, and top-level `Program/CardArt` rendering assets nearby. |
+| `Program/Drawcardlib.dll` | PE32 DLL Intel 80386 | `Cardartlib.dll`, `image.dll`, GDI/GDI+, `MSIMG32.DLL`, `SHLWAPI.DLL`, `api-ms-win-crt-*` | GDI+ support may matter in older bottles if `GDIPLUS.DLL` is absent or incomplete. | Preserve `CardArtLib.dll`, `Image.dll`, and top-level `Program/CardArt` rendering assets nearby. |
 
 ## Supporting DLL Imports
 
 | DLL | Imported DLLs from this checkout | Notes |
 | --- | --- | --- |
 | `Program/CardArtLib.dll` | `GDIPLUS.DLL`, `KERNEL32.dll`, `msvcrt.dll` | GDI+ image helper. |
-| `Program/Drawcardlib.dll` | `Cardartlib.dll`, `image.dll`, `GDI32.dll`, `GDIPLUS.DLL`, `KERNEL32.dll`, `msvcrt.dll`, `MSIMG32.DLL`, `SHLWAPI.DLL`, `USER32.dll`, `libgcc_s_dw2-1.dll` | Card rendering helper; current Program copy matches root and needs adjacent `Program/libgcc_s_dw2-1.dll`. |
+| `Program/Drawcardlib.dll` | `Cardartlib.dll`, `image.dll`, `GDI32.dll`, `gdiplus.dll`, `KERNEL32.dll`, `MSIMG32.DLL`, `api-ms-win-crt-convert-l1-1-0.dll`, `api-ms-win-crt-heap-l1-1-0.dll`, `api-ms-win-crt-private-l1-1-0.dll`, `api-ms-win-crt-runtime-l1-1-0.dll`, `api-ms-win-crt-stdio-l1-1-0.dll`, `api-ms-win-crt-string-l1-1-0.dll`, `SHLWAPI.dll`, `USER32.dll` | Card rendering helper; current Program copy matches root and suppresses the GDI+ background thread. |
 | `Program/CdTools.dll` | `KERNEL32.dll`, `USER32.dll`, `ADVAPI32.dll` | CD/autoplay helper imported by `Shandalar.exe`. |
 | `Program/Statwin.dll` | `KERNEL32.dll`, `USER32.dll`, `GDI32.dll`, `MSVFW32.dll`, `MSVCRT.dll` | UI/video-adjacent helper. Current root and Program copies match and are patched so Statwin reports MagVid video unavailable before loading `magvid.dll`; old StatWin/AVI video behavior may be unavailable. |
 | `Program/ManalinkEh.dll` | `kernel32.dll`, `KERNEL32.dll`, `msvcrt.dll`, `USER32.dll` | Manalink extension DLL imported by `Magic.exe`; patched for Samite-family and generic activated damage-prevention prompt freezes, AI decision-time clamping, AI raw-mana speculation snapshot restore safety, Piranha Marsh/Bojuka Bog trigger targeting, generic AI player-only target selection, and AI land CIP resolver stack-bypass handling. |
@@ -90,7 +92,7 @@ path.
 | `Program/Image.dll` | No `DLL Name:` lines were emitted by local `objdump -p`; binary strings include `zlib.dll`. | Keep nearby because it is imported by `Deckdll.dll`/`Drawcardlib.dll` and participates in the Program image/decompression path. |
 | `Program/zlib.dll` | Same SHA-256 as root `zlib.dll`: `9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90`. | Adjacent support DLL for the Program image/decompression path. |
 | `Program/Shandalar.dll`, `Program/CardArtLib.dll`, `Program/Deckdll.dll`, `Program/Drawcardlib.dll` | Same SHA-256 as their root helper DLL counterparts. | Synced after a visible Program-path Hornet fatal recurred from the stale Program helper generation. Preserve `Program/Deckdll.dll` filename case. |
-| `Program/libgcc_s_dw2-1.dll` | Same SHA-256 as root `libgcc_s_dw2-1.dll`: `89f6147f5ed3f271d0b88f0586e079b9ac22e76c31221e5d5013aa273cc4694b`. | Adjacent GCC runtime helper imported by the current Program `Drawcardlib.dll`. |
+| `Program/libgcc_s_dw2-1.dll` | Same SHA-256 as root `libgcc_s_dw2-1.dll`: `89f6147f5ed3f271d0b88f0586e079b9ac22e76c31221e5d5013aa273cc4694b`. | Preserved adjacent GCC runtime helper from the previous Drawcardlib generation and Program-path loader fix. |
 | `Program/Manalink.ini` | Same SHA-256 as active root `Manalink.ini`: `30153fd22c76b0c0751c538938af46fbf25b1b51d5b4bb2bd9a2eead1b9c2f2b`. | `Deckdll` builds this path from the executable directory during direct Program-path launch. |
 | `Program/DuelArt/Modern.dat` | Same SHA-256 as the preserved Program-style `Mods/Art/_undo/.../DuelArt/Modern.dat`: `9a2d70be70b70ef27036a47550bc0d549437df0c032a4e0237a217e4731e1aee`. | Modern frame config opened relative to Program `DuelArt` by logged direct Program-path launch. |
 | `Program/DuelArt/Planeswalker.dat` | Same SHA-256 as the preserved Program-style `Mods/Art/_undo/.../DuelArt/Planeswalker.dat`: `619e0b9780ec204b9fbf6f48b2eb541c9d8a6f19a73f27d4d76d25828db7d369`. | Planeswalker frame config opened relative to Program `DuelArt` by logged direct Program-path launch. |

@@ -108,6 +108,21 @@ The current executable mitigation rewrites the callback entry at file offset
 removing the extra callback-thread bookkeeping. Fresh visible duel-start and
 prompt/button stability retesting remains required.
 
+A later Thorn Thallid activation froze when Spell Chain appeared after the AI
+targeted the player with the three-spore-counter damage ability. This moved the
+failure out of the ETB-land-only path. Live `lsof` evidence from the frozen
+`C:\Shandalar\Shandalar.exe` process showed `MagSnd.dll` and `magvid.dll` were
+still absent, `Drawcardlib.dll`, `CardArtLib.dll`, and GDI+ were loaded, and
+`CardArtManalink/Thorn Thallid.jpg` was open. A macOS sample showed the UI
+thread idle in the host event loop while a Wine thread repeatedly sampled in
+`ntdll.so`; Wine Debugger again reported the same invalid execution target,
+`EIP == EDX == 0xfff50de4`. Static inspection then found Drawcardlib's
+`GdiplusStartup()` used `SuppressBackgroundThread = 0`, unlike CardArtLib,
+which already used explicit notification hooks. The current Drawcardlib source
+and rebuilt root/Program DLLs now set `SuppressBackgroundThread = 1`, call
+`NotificationHook()`, and unhook before `GdiplusShutdown()`. Fresh visible
+Spell Chain/card-rendering retesting remains required.
+
 ## Finding
 
 Piranha Marsh and Bojuka Bog have mandatory enters-the-battlefield triggers that
@@ -160,6 +175,7 @@ change in this pass is the resolver cave described above.
 | Shandalar minimal WinMM timer callback | n/a binary compatibility patch | root and Program `Shandalar.exe` callback entry at VA `0x4ce8cd` / file offset `0xcdccd` |
 | Shandalar MagSnd initialization disable | n/a binary compatibility patch | root and Program `Shandalar.exe` wrapper at VA `0x56cf20` / file offset `0x16c320` |
 | Statwin MagVid loader disable | n/a binary compatibility patch | root and Program `Statwin.dll` wrapper at VA `0x10003610` / file offset `0x2a10` |
+| Drawcardlib GDI+ background-thread suppression | `src/drawcardlib/drawcardlib.c`; `Program/src/drawcardlib/drawcardlib.c` | rebuilt root and Program `Drawcardlib.dll`; root and local `MTG` copied-install copies hash to `79096fd15ef22ed50f84aee681e48c6c3e678690c48e71f5430a03beee5cb7d1` |
 | Source-only exile helper hardening | `src/functions/deck.c`; `Program/src/functions/deck.c` | source snapshots only; no shipped DLL helper patch |
 
 The Shandalar `.cdxai` section is shared. The land-CIP resolver cave owns
@@ -184,6 +200,8 @@ Program Shandalar helper DLLs.
 | `Program/Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` |
 | `Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` |
 | `Program/Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` |
+| `Drawcardlib.dll` | `79096fd15ef22ed50f84aee681e48c6c3e678690c48e71f5430a03beee5cb7d1` |
+| `Program/Drawcardlib.dll` | `79096fd15ef22ed50f84aee681e48c6c3e678690c48e71f5430a03beee5cb7d1` |
 | `ManalinkEh.dll` | `68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5` |
 | `Program/ManalinkEh.dll` | `619ce5d3f80f4ac951418e8a1b2ec803b3b9aa0128e01b827e744b80e63962fc` |
 

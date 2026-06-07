@@ -92,10 +92,12 @@ because the older Program `DBInfo.dat` still had 15718 records. `Program/Cards.d
 checkout and the local copied install. A later visible recurrence of the
 Hornet fatal came from stale Program helper DLLs rather than the card-data trio:
 `Program/Shandalar.dll`, `Program/CardArtLib.dll`, `Program/Deckdll.dll`, and
-`Program/Drawcardlib.dll` now match root, and the newer Program drawcard helper
-also has adjacent `Program/libgcc_s_dw2-1.dll`. The latest bounded log loaded
-those Program helper DLLs and data files without the earlier fatal strings. The
-exact Program path still needs visible retesting.
+`Program/Drawcardlib.dll` now match root. The current rebuilt Drawcardlib has
+explicit GDI+ notification hooks and imports Wine-provided `api-ms-win-crt-*`
+DLLs rather than `libgcc_s_dw2-1.dll` directly; the adjacent Program libgcc
+helper remains preserved from the earlier Program-path loader fix. The latest
+bounded log loaded those Program helper DLLs and data files without the earlier
+fatal strings. The exact Program path still needs visible retesting.
 
 Backup note: bottle-local originals were saved as
 `Shandalar.before-hsection-null-patch.exe` and
