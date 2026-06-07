@@ -95,6 +95,19 @@ VA `0x10003610` / file offset `0x2a10` to return video-unavailable
 visible Augur/prompt retesting remains required; this is static/bottle evidence,
 not gameplay proof, and old StatWin/AVI video behavior may be unavailable.
 
+The later priestess pre-card duel-start freeze showed the same poisoned
+callback fault could still happen after both sound and video helper DLLs were
+out of the process. Live inspection of the frozen `C:\Shandalar\Shandalar.exe`
+process found `MagSnd.dll` absent and `magvid.dll` absent, while Wine Debugger
+again reported `EIP == EDX == 0xfff50de4` in a worker thread. The remaining
+Shandalar-owned recurring async path was the `timeSetEvent()` callback at
+VA `0x4ce8cd`, whose required role is only to increment the tick counter at
+`0x589df0`, but whose first-run block also touched thread handles and priority.
+The current executable mitigation rewrites the callback entry at file offset
+`0xcdccd` to `inc dword [0x589df0]; ret 0x14`, preserving timer waits while
+removing the extra callback-thread bookkeeping. Fresh visible duel-start and
+prompt/button stability retesting remains required.
+
 ## Finding
 
 Piranha Marsh and Bojuka Bog have mandatory enters-the-battlefield triggers that
@@ -144,6 +157,7 @@ change in this pass is the resolver cave described above.
 | Generic AI player-only selector | `src/functions/targets.c`; `Program/src/functions/targets.c` | ManalinkEh hook/cave `0x469583`/`0x495ad0`; Program `0x429453`/`0x452cd0`; Shandalar.dll C++ targeter hook/cave `0xcb16`/`0x1174920` in root and Program |
 | AI land CIP resolver stack-bypass | `src/functions/events.c`; `Program/src/functions/events.c` | ManalinkEh resolver hook/cave `0x429acf`/`0x495b00`; Program `0x3ec7cf`/`0x452d00`; restored Piranha/Bojuka calls at `0x3fe77d`/`0x3f63bd` and Program `0x3c490d`/`0x3bc60d`; Shandalar.dll resolver hook `.cdxai` `0x94d34`/`0x1174800` in root and Program |
 | Shandalar MagSnd update-message callback | n/a binary compatibility patch | root and Program `Shandalar.exe` call at VA `0x4ce62e` / file offset `0xcda2e` |
+| Shandalar minimal WinMM timer callback | n/a binary compatibility patch | root and Program `Shandalar.exe` callback entry at VA `0x4ce8cd` / file offset `0xcdccd` |
 | Shandalar MagSnd initialization disable | n/a binary compatibility patch | root and Program `Shandalar.exe` wrapper at VA `0x56cf20` / file offset `0x16c320` |
 | Statwin MagVid loader disable | n/a binary compatibility patch | root and Program `Statwin.dll` wrapper at VA `0x10003610` / file offset `0x2a10` |
 | Source-only exile helper hardening | `src/functions/deck.c`; `Program/src/functions/deck.c` | source snapshots only; no shipped DLL helper patch |
@@ -164,8 +178,8 @@ Program Shandalar helper DLLs.
 
 | File | SHA-256 |
 | --- | --- |
-| `Shandalar.exe` | `c0d3607d991c976a2302880fb3cb341c096b570935bf0f27b91a732b45119a2b` |
-| `Program/Shandalar.exe` | `c0d3607d991c976a2302880fb3cb341c096b570935bf0f27b91a732b45119a2b` |
+| `Shandalar.exe` | `17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6` |
+| `Program/Shandalar.exe` | `17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6` |
 | `Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` |
 | `Program/Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` |
 | `Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` |
@@ -190,6 +204,7 @@ python3 tools/patch-ai-land-cip-trigger-stack-bypass.py --apply
 python3 tools/patch-statwin-disable-magvid-loader.py
 python3 tools/patch-shandalar-disable-magsnd-init.py
 python3 tools/patch-shandalar-magsnd-update-callback.py
+python3 tools/patch-shandalar-minimal-winmm-timer-callback.py
 tools/check-source-snapshot-parity.sh
 tools/verify-install-tree.sh
 tools/verify-crossover-mtg-state.sh
@@ -201,6 +216,8 @@ Representative AI land CIP resolver byte checks:
 ```sh
 xxd -p -l 5 -s $((0xcda2e)) Shandalar.exe
 xxd -p -l 5 -s $((0xcda2e)) Program/Shandalar.exe
+xxd -p -l 16 -s $((0xcdccd)) Shandalar.exe
+xxd -p -l 16 -s $((0xcdccd)) Program/Shandalar.exe
 xxd -p -l 6 -s $((0x16c320)) Shandalar.exe
 xxd -p -l 6 -s $((0x16c320)) Program/Shandalar.exe
 xxd -p -l 6 -s $((0x2a10)) Statwin.dll

@@ -190,7 +190,7 @@ Patched files after the first Shandalar hSection-only patch:
 Current active files have additional name-entry seed, name-editor bypass/fallback,
 same-arrow movement-stop, WinMM timer-callback, MagSnd update-message, and
 MagSnd init-disable compatibility patches and now hash to
-`c0d3607d991c976a2302880fb3cb341c096b570935bf0f27b91a732b45119a2b`.
+`17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6`.
 
 Original hash for both files before this patch:
 `82c9b659dd131097b29931f0ed266c91d560103bc864d7eb6b806691d0dc9739`.
@@ -241,7 +241,7 @@ WinMM-only local `MTG` bottle copies hashed to
 later MagSnd update-message compatibility patch. Current local `MTG` bottle
 copies have the follow-up name-editor bypass/fallback, movement-stop, WinMM
 timer-callback, MagSnd update-message, and MagSnd init-disable patches and hash to
-`c0d3607d991c976a2302880fb3cb341c096b570935bf0f27b91a732b45119a2b`.
+`17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6`.
 
 ## Shandalar Name-Entry Patches
 
@@ -265,8 +265,8 @@ Patched files:
 
 | Path | SHA-256 after current combined patch |
 | --- | --- |
-| `Shandalar.exe` | `c0d3607d991c976a2302880fb3cb341c096b570935bf0f27b91a732b45119a2b` |
-| `Program/Shandalar.exe` | `c0d3607d991c976a2302880fb3cb341c096b570935bf0f27b91a732b45119a2b` |
+| `Shandalar.exe` | `17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6` |
+| `Program/Shandalar.exe` | `17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6` |
 
 Patch bytes:
 
@@ -302,8 +302,8 @@ into both local CrossOver bottle installs:
 
 | Bottle path | Recorded SHA-256 |
 | --- | --- |
-| `/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Shandalar.exe` | `c0d3607d991c976a2302880fb3cb341c096b570935bf0f27b91a732b45119a2b` |
-| `/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Program/Shandalar.exe` | `c0d3607d991c976a2302880fb3cb341c096b570935bf0f27b91a732b45119a2b` |
+| `/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Shandalar.exe` | `17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6` |
+| `/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Program/Shandalar.exe` | `17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6` |
 | `/Users/mdmoll/Library/Application Support/CrossOver/Bottles/Shandalar-Win8-Test/drive_c/Shandalar/Shandalar.exe` | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` |
 | `/Users/mdmoll/Library/Application Support/CrossOver/Bottles/Shandalar-Win8-Test/drive_c/Shandalar/Program/Shandalar.exe` | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` |
 
