@@ -75,7 +75,7 @@ land-resolver candidates can close those cases.
 | DuelOptions ShowCoinFlips | `0` |
 | Working directory | `C:\Shandalar` |
 | Command or shortcut target | `/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" "C:\Shandalar\Shandalar.exe"` |
-| `Shandalar.exe` SHA-256 | `92cca05b493c28f6c29c0cc4bd0018499acd9a8cbdce06f9230da59d5be0a0ef` |
+| `Shandalar.exe` SHA-256 | `bec1dd2bba524618529d674e3a927f4aa93f53a39a444dd3d6d425856f8c1b32` |
 | `Magic.exe` SHA-256 | `93a40ce2c96aafee1d858a71ed69eb8c539aa9851796eb54b1af58f0bb97aba0` |
 | `ManalinkEh.dll` SHA-256 | `68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5` |
 | Repo `ManalinkEh.dll` SHA-256 | `68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5` |
@@ -124,7 +124,7 @@ Expected repo hashes are listed in [runtime-manifest.md](runtime-manifest.md).
 | --- | --- | --- | --- |
 | D1 | Enter a duel from Shandalar and play at least five turns. | `Done`, `Trigger`, and `Decline` remain clickable. | Needs testing |
 | D2 | Reach the post-combat main phase and click `Done`. | Phase advances; button does not freeze. | Needs testing |
-| D3 | Trigger an optional creature or ability prompt and choose both available responses across repeated tests. | Prompt accepts input and resolves. | Needs testing |
+| D3 | Trigger an optional creature or ability prompt and choose both available responses across repeated tests, including the human Glowing Anemone target-land `Trigger` and `Decline` path. | Prompt accepts input and resolves. | Needs testing |
 | D4 | Test root `Magic.exe` directly from root or `C:\Shandalar`. | Duel shell opens or reports a visible, recorded dependency/config issue. | Needs testing |
 | D5 | Test `Program\Magic.exe` directly from `Program\` or `C:\Shandalar\Program`. | Program Manalink path opens or reports a visible, recorded dependency/config issue. | Needs testing |
 

@@ -13,6 +13,11 @@ ability path with `TARGET_ZONE_PLAYERS`. That retest showed the problem class
 also includes AI-controlled player-only activated abilities in Shandalar
 adventure duels.
 
+Another manual test on 2026-06-07 froze after the human player cast Glowing
+Anemone, selected a target land, and reached the `Trigger` / `Decline` prompt.
+That scenario is not an AI target-selection path; it broadens the active
+symptom to the shared prompt/message layer after a human target choice succeeds.
+
 This note records static source/runtime evidence plus copied-install parity. It
 is not visible gameplay proof that the Piranha Marsh or Bojuka Bog scenarios are
 fixed.
@@ -48,6 +53,18 @@ Shandalar DLL patch now also hooks `Target::real_select_target()` and skips the
 old target-presentation selector for non-speculating AI pure player targets
 after legal candidates have already been built. Fresh manual Augur, Piranha
 Marsh, and Bojuka Bog retests are still required.
+
+The later Glowing Anemone human `Trigger` / `Decline` freeze showed that the
+prompt/button instability cannot be treated as only AI targeting. Wine Debugger
+output from the same broader failure class showed a page fault at
+`EIP == EDX == 0xfff50de4`, outside all loaded game modules. Static inspection
+found that the previous WinMM timer patch removed one callback-thread call into
+the legacy sound/service wrapper at `0x56d476`, but one shell/window-procedure
+caller remained at `0x4ce62e` for the private MagSnd message `0x10101010`. The
+current Shandalar executable patch NOPs that remaining `UpdateSnd` message call
+while leaving card trigger logic unchanged. Fresh visible prompt/button
+stability retesting is still required; this is a targeted callback mitigation,
+not gameplay proof.
 
 ## Finding
 
@@ -97,7 +114,14 @@ change in this pass is the resolver cave described above.
 | Bojuka Bog resolution target | `src/cards/worldwake.c`; `Program/src/cards/worldwake.c` | inline replacement at `0x3f63e0`; Program `0x3bc630` |
 | Generic AI player-only selector | `src/functions/targets.c`; `Program/src/functions/targets.c` | ManalinkEh hook/cave `0x469583`/`0x495ad0`; Program `0x429453`/`0x452cd0`; Shandalar.dll C++ targeter hook/cave `0xcb16`/`0x1174920` in root and Program |
 | AI land CIP resolver stack-bypass | `src/functions/events.c`; `Program/src/functions/events.c` | ManalinkEh resolver hook/cave `0x429acf`/`0x495b00`; Program `0x3ec7cf`/`0x452d00`; restored Piranha/Bojuka calls at `0x3fe77d`/`0x3f63bd` and Program `0x3c490d`/`0x3bc60d`; Shandalar.dll resolver hook `.cdxai` `0x94d34`/`0x1174800` in root and Program |
+| Shandalar MagSnd update-message callback | n/a binary compatibility patch | root and Program `Shandalar.exe` call at VA `0x4ce62e` / file offset `0xcda2e` |
 | Source-only exile helper hardening | `src/functions/deck.c`; `Program/src/functions/deck.c` | source snapshots only; no shipped DLL helper patch |
+
+The Shandalar `.cdxai` section is shared. The land-CIP resolver cave owns
+`0x1174800..0x117491f`; the player-target selector cave starts at
+`0x1174920`. `tools/patch-ai-land-cip-trigger-stack-bypass.py` must compare and
+write only the resolver-owned prefix so it does not clobber the player-target
+selector cave in already-patched DLLs.
 
 The local `MTG` copied install was patched too. Backups were preserved as
 `ManalinkEh.before-ai-land-cip-stack-bypass-patch.dll` in the root and Program
@@ -109,6 +133,8 @@ Program Shandalar helper DLLs.
 
 | File | SHA-256 |
 | --- | --- |
+| `Shandalar.exe` | `bec1dd2bba524618529d674e3a927f4aa93f53a39a444dd3d6d425856f8c1b32` |
+| `Program/Shandalar.exe` | `bec1dd2bba524618529d674e3a927f4aa93f53a39a444dd3d6d425856f8c1b32` |
 | `Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` |
 | `Program/Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` |
 | `ManalinkEh.dll` | `68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5` |
@@ -128,15 +154,18 @@ python3 tools/patch-bojuka-bog-trigger-target.py
 python3 tools/patch-ai-player-target-selection.py
 python3 tools/patch-ai-etb-player-target-preselect.py
 python3 tools/patch-ai-land-cip-trigger-stack-bypass.py --apply
+python3 tools/patch-shandalar-magsnd-update-callback.py
 tools/check-source-snapshot-parity.sh
 tools/verify-install-tree.sh
 tools/verify-crossover-mtg-state.sh
-shasum -a 256 Shandalar.dll Program/Shandalar.dll ManalinkEh.dll Program/ManalinkEh.dll
+shasum -a 256 Shandalar.exe Program/Shandalar.exe Shandalar.dll Program/Shandalar.dll ManalinkEh.dll Program/ManalinkEh.dll
 ```
 
 Representative AI land CIP resolver byte checks:
 
 ```sh
+xxd -p -l 5 -s $((0xcda2e)) Shandalar.exe
+xxd -p -l 5 -s $((0xcda2e)) Program/Shandalar.exe
 xxd -p -l 10 -s $((0x429acf)) ManalinkEh.dll
 xxd -p -l 5 -s $((0x3f63bd)) ManalinkEh.dll
 xxd -p -l 5 -s $((0x3fe77d)) ManalinkEh.dll

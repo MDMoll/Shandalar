@@ -37,6 +37,7 @@ SHANDALAR_RESOLVE_HOOK_LENGTH = 9
 CARD_CALL_LENGTH = 5
 CAVE_LENGTH = 0x100
 SHANDALAR_CAVE_LENGTH = 0x200
+SHANDALAR_LAND_CAVE_OWNED_LENGTH = 0x120
 SHANDALAR_CAVE_SECTION = b".cdxai"
 NOP = b"\x90"
 
@@ -719,19 +720,21 @@ def patch_shandalar_file(path: Path, spec: ShandalarPatchSpec, apply: bool, back
 
     current_hook = bytes(data[spec.resolve_hook_offset : spec.resolve_hook_offset + SHANDALAR_RESOLVE_HOOK_LENGTH])
     current_cave = bytes(data[cave_offset : cave_offset + SHANDALAR_CAVE_LENGTH])
+    current_land_cave = current_cave[:SHANDALAR_LAND_CAVE_OWNED_LENGTH]
+    land_cave = cave[:SHANDALAR_LAND_CAVE_OWNED_LENGTH]
 
     if current_hook not in (SHANDALAR_RESOLVE_HOOK_PREIMAGE, hook):
         raise SystemExit(
             f"FAIL: {path} Shandalar resolver hook has {current_hook.hex()}, expected old "
             f"{SHANDALAR_RESOLVE_HOOK_PREIMAGE.hex()} or patched {hook.hex()}"
         )
-    if current_cave not in (bytes(SHANDALAR_CAVE_LENGTH), cave):
+    if current_land_cave not in (bytes(SHANDALAR_LAND_CAVE_OWNED_LENGTH), land_cave):
         raise SystemExit(
-            f"FAIL: {path} .cdxai cave @ 0x{cave_offset:x} does not match an expected "
+            f"FAIL: {path} .cdxai land-CIP cave @ 0x{cave_offset:x} does not match an expected "
             "empty or patched preimage"
         )
 
-    already_patched = current_hook == hook and current_cave == cave and section_already_present
+    already_patched = current_hook == hook and current_land_cave == land_cave and section_already_present
     if already_patched:
         print(f"ok: {label} already patched; sha256 {sha256_file(path)}")
         return
@@ -750,7 +753,7 @@ def patch_shandalar_file(path: Path, spec: ShandalarPatchSpec, apply: bool, back
             print(f"ok: backup already exists {backup_path}")
 
     data[spec.resolve_hook_offset : spec.resolve_hook_offset + SHANDALAR_RESOLVE_HOOK_LENGTH] = hook
-    data[cave_offset : cave_offset + SHANDALAR_CAVE_LENGTH] = cave
+    data[cave_offset : cave_offset + SHANDALAR_LAND_CAVE_OWNED_LENGTH] = land_cave
 
     path.write_bytes(data)
     print(f"ok: patched {label}; sha256 {sha256_file(path)}")
