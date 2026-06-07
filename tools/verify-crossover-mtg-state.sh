@@ -35,8 +35,8 @@ START_MENU_SHORTCUT = (
 WINE = Path("/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine")
 
 EXPECTED_HASHES = {
-    "Shandalar.exe": "bec1dd2bba524618529d674e3a927f4aa93f53a39a444dd3d6d425856f8c1b32",
-    "Program/Shandalar.exe": "bec1dd2bba524618529d674e3a927f4aa93f53a39a444dd3d6d425856f8c1b32",
+    "Shandalar.exe": "c0d3607d991c976a2302880fb3cb341c096b570935bf0f27b91a732b45119a2b",
+    "Program/Shandalar.exe": "c0d3607d991c976a2302880fb3cb341c096b570935bf0f27b91a732b45119a2b",
     "Magic.exe": "93a40ce2c96aafee1d858a71ed69eb8c539aa9851796eb54b1af58f0bb97aba0",
     "Program/Magic.exe": "685669692634ec830fe228904e11b1b536bd4b20e52192863a6280c2dbff6b66",
     "FaceMaker.exe": "41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246",
@@ -103,10 +103,12 @@ EXPECTED_HEX_PREFIXES = {
     "Shandalar.exe": [
         (0xCDA2E, bytes.fromhex("9090909090")),
         (0xCDD3F, bytes.fromhex("9090909090")),
+        (0x16C320, bytes.fromhex("b804000000c3")),
     ],
     "Program/Shandalar.exe": [
         (0xCDA2E, bytes.fromhex("9090909090")),
         (0xCDD3F, bytes.fromhex("9090909090")),
+        (0x16C320, bytes.fromhex("b804000000c3")),
     ],
     "Shandalar.dll": [
         (0x94D34, bytes.fromhex("e9c776cc0090909090")),

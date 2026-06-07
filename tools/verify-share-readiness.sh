@@ -196,6 +196,7 @@ for path in \
   tools/patch-ai-player-target-selection.py \
   tools/patch-ai-etb-player-target-preselect.py \
   tools/patch-ai-land-cip-trigger-stack-bypass.py \
+  tools/patch-shandalar-disable-magsnd-init.py \
   tools/patch-shandalar-magsnd-update-callback.py \
   tools/patch-shandalar-winmm-tick-callback.py \
   tools/patch-bojuka-bog-trigger-target.py \
@@ -214,8 +215,8 @@ install_tree_output="$(tools/verify-install-tree.sh .)"
 printf '%s\n' "$install_tree_output" | grep -q "Install-tree verification passed." || fail "install-tree verifier did not report success"
 pass "repo root passes install-tree verification"
 
-expect_hash Shandalar.exe bec1dd2bba524618529d674e3a927f4aa93f53a39a444dd3d6d425856f8c1b32
-expect_hash Program/Shandalar.exe bec1dd2bba524618529d674e3a927f4aa93f53a39a444dd3d6d425856f8c1b32
+expect_hash Shandalar.exe c0d3607d991c976a2302880fb3cb341c096b570935bf0f27b91a732b45119a2b
+expect_hash Program/Shandalar.exe c0d3607d991c976a2302880fb3cb341c096b570935bf0f27b91a732b45119a2b
 expect_hash FaceMaker.exe 41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246
 expect_hash Program/FaceMaker.exe 41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246
 expect_hash FaceMaker-Original.exe 0471afcd0288a07422355ff2af224c40f8b29dc0a864eed90b3399e285f42c7e
@@ -273,6 +274,8 @@ expect_hex_prefix Shandalar.exe 0xcda2e 5 9090909090
 expect_hex_prefix Program/Shandalar.exe 0xcda2e 5 9090909090
 expect_hex_prefix Shandalar.exe 0xcdd3f 5 9090909090
 expect_hex_prefix Program/Shandalar.exe 0xcdd3f 5 9090909090
+expect_hex_prefix Shandalar.exe 0x16c320 6 b804000000c3
+expect_hex_prefix Program/Shandalar.exe 0x16c320 6 b804000000c3
 expect_hex_prefix FaceMaker.exe 0x5f40 11 6a0057508b4d1051ff7504
 expect_hex_prefix Program/FaceMaker.exe 0x5f40 11 6a0057508b4d1051ff7504
 expect_hex_prefix Magic.exe 0x3c303 13 e9c0d801009090909090909090
@@ -419,9 +422,11 @@ else
     $'ManalinkEh.dll\tpe-dll' \
     $'Program/Deckdll.dll\tpe-dll' \
     $'Program/ManalinkEh.dll\tpe-dll' \
+    $'Program/Shandalar.exe\tpe-executable' \
     $'Program/src/cards/worldwake.c\tsource' \
     $'Program/src/cards/zendikar.c\tsource' \
     $'Program/src/functions/targets.c\tsource' \
+    $'Shandalar.exe\tpe-executable' \
     $'docs/bugs/ai-etb-player-target-spell-chain-freeze.md\tdocumentation' \
     $'docs/bugs/piranha-marsh-spell-chain-freeze.md\tdocumentation' \
     $'docs/manual-gameplay-verification.md\tdocumentation' \
@@ -431,6 +436,7 @@ else
     $'src/functions/targets.c\tsource' \
     $'tools/check-source-snapshot-parity.sh\tshell-tool' \
     $'tools/patch-ai-etb-player-target-preselect.py\tpython-tool' \
+    $'tools/patch-shandalar-disable-magsnd-init.py\tpython-tool' \
     $'tools/patch-shandalar-magsnd-update-callback.py\tpython-tool' \
     $'tools/patch-shandalar-winmm-tick-callback.py\tpython-tool' \
     $'tools/verify-crossover-mtg-state.sh\tshell-tool' \

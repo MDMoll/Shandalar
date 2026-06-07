@@ -21,6 +21,7 @@ files.
 | `patch-ai-player-target-selection.py` | Guarded binary patch helper for root and `Program/` `ManalinkEh.dll` plus `Shandalar.dll`; skips the generic selector for AI-controlled player-only targets after candidate construction has already filtered and ordered legal targets. |
 | `patch-ai-etb-player-target-preselect.py` | Historical guarded binary patch helper for the failed Piranha Marsh/Bojuka Bog card-callsite wrapper attempts; retained for audit history, not the current active fix. |
 | `patch-ai-land-cip-trigger-stack-bypass.py` | Current guarded binary patch helper for root and `Program/` `ManalinkEh.dll`; restores the failed Piranha/Bojuka callsite wrappers and hooks `resolve_trigger()` so non-speculating AI-owned land CIP triggers resolve before Spell Chain insertion. |
+| `patch-shandalar-disable-magsnd-init.py` | Guarded binary patch helper for root and `Program/` `Shandalar.exe`; makes the adventure executable's MagSnd initializer return sound-unavailable before loading `MagSnd.dll`, after recurring CrossOver faults persisted below the previous `UpdateSnd` call-site patches. |
 | `patch-shandalar-magsnd-update-callback.py` | Guarded binary patch helper for root and `Program/` `Shandalar.exe`; NOPs the shell/window `MagSnd.dll` `UpdateSnd` message callback after Wine debugger evidence pointed at a stale callback/function-pointer path. |
 | `patch-shandalar-winmm-tick-callback.py` | Guarded binary patch helper for root and `Program/` `Shandalar.exe`; preserves the 33 ms WinMM tick counter while NOPing the callback-thread call to the legacy sound/service dispatcher that matched Wine debugger page-fault evidence. |
 | `patch-manalink-generic-damage-prevention-guard.py` | Guarded binary patch helper for root and `Program/` `ManalinkEh.dll`; routes the generic activated damage-prevention helper through a small executable cave so `GAA_DAMAGE_PREVENTION*` abilities are only offered during `LCBP_DAMAGE_PREVENTION`. |
@@ -66,6 +67,7 @@ uv run python tools/patch-ai-decision-clamp.py
 python3 tools/patch-ai-raw-mana-snapshot.py
 python3 tools/patch-piranha-marsh-trigger-target.py
 python3 tools/patch-bojuka-bog-trigger-target.py
+python3 tools/patch-shandalar-disable-magsnd-init.py
 python3 tools/patch-shandalar-magsnd-update-callback.py
 python3 tools/patch-shandalar-winmm-tick-callback.py
 uv run python tools/patch-magic-coinflip-default.py

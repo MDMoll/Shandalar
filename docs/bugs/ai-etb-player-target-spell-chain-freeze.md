@@ -18,6 +18,14 @@ Anemone, selected a target land, and reached the `Trigger` / `Decline` prompt.
 That scenario is not an AI target-selection path; it broadens the active
 symptom to the shared prompt/message layer after a human target choice succeeds.
 
+Another 2026-06-07 manual test froze after an AI Warlock cast Thoughtseize on
+its first turn. The `Spell Chain` pane was still movable and its Thoughtseize
+card render was corrupted, while the separate cast announcement overlay rendered
+the same card cleanly. Thoughtseize's AI discard selection is automatic after
+resolution, so this case moves the likely failing layer earlier, around
+Shandalar's Spell Chain/prompt/render/sound-service path rather than the
+card-specific discard code.
+
 This note records static source/runtime evidence plus copied-install parity. It
 is not visible gameplay proof that the Piranha Marsh or Bojuka Bog scenarios are
 fixed.
@@ -62,9 +70,18 @@ found that the previous WinMM timer patch removed one callback-thread call into
 the legacy sound/service wrapper at `0x56d476`, but one shell/window-procedure
 caller remained at `0x4ce62e` for the private MagSnd message `0x10101010`. The
 current Shandalar executable patch NOPs that remaining `UpdateSnd` message call
-while leaving card trigger logic unchanged. Fresh visible prompt/button
-stability retesting is still required; this is a targeted callback mitigation,
-not gameplay proof.
+while leaving card trigger logic unchanged.
+
+The later Thoughtseize freeze proved the two call-site NOPs were still not a
+complete mitigation. Wine Debugger again showed a page fault with
+`EIP == EDX == 0xfff50de4`; the live process had loaded `MagSnd.dll`; and static
+inspection showed `Shandalar.exe` still calls a `LoadLibraryA("MagSnd.dll")`
+initializer wrapper at VA `0x56cf20` before storing sound function pointers.
+The current executable mitigation patches that wrapper to return
+sound-unavailable (`mov eax, 4; ret`) before `MagSnd.dll` can load or arm its own
+timer/callback state. Fresh visible prompt/button stability retesting is still
+required; this is a targeted callback/sound-initialization mitigation, not
+gameplay proof, and adventure-mode MagSnd audio may be unavailable.
 
 ## Finding
 
@@ -115,6 +132,7 @@ change in this pass is the resolver cave described above.
 | Generic AI player-only selector | `src/functions/targets.c`; `Program/src/functions/targets.c` | ManalinkEh hook/cave `0x469583`/`0x495ad0`; Program `0x429453`/`0x452cd0`; Shandalar.dll C++ targeter hook/cave `0xcb16`/`0x1174920` in root and Program |
 | AI land CIP resolver stack-bypass | `src/functions/events.c`; `Program/src/functions/events.c` | ManalinkEh resolver hook/cave `0x429acf`/`0x495b00`; Program `0x3ec7cf`/`0x452d00`; restored Piranha/Bojuka calls at `0x3fe77d`/`0x3f63bd` and Program `0x3c490d`/`0x3bc60d`; Shandalar.dll resolver hook `.cdxai` `0x94d34`/`0x1174800` in root and Program |
 | Shandalar MagSnd update-message callback | n/a binary compatibility patch | root and Program `Shandalar.exe` call at VA `0x4ce62e` / file offset `0xcda2e` |
+| Shandalar MagSnd initialization disable | n/a binary compatibility patch | root and Program `Shandalar.exe` wrapper at VA `0x56cf20` / file offset `0x16c320` |
 | Source-only exile helper hardening | `src/functions/deck.c`; `Program/src/functions/deck.c` | source snapshots only; no shipped DLL helper patch |
 
 The Shandalar `.cdxai` section is shared. The land-CIP resolver cave owns
@@ -133,8 +151,8 @@ Program Shandalar helper DLLs.
 
 | File | SHA-256 |
 | --- | --- |
-| `Shandalar.exe` | `bec1dd2bba524618529d674e3a927f4aa93f53a39a444dd3d6d425856f8c1b32` |
-| `Program/Shandalar.exe` | `bec1dd2bba524618529d674e3a927f4aa93f53a39a444dd3d6d425856f8c1b32` |
+| `Shandalar.exe` | `c0d3607d991c976a2302880fb3cb341c096b570935bf0f27b91a732b45119a2b` |
+| `Program/Shandalar.exe` | `c0d3607d991c976a2302880fb3cb341c096b570935bf0f27b91a732b45119a2b` |
 | `Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` |
 | `Program/Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` |
 | `ManalinkEh.dll` | `68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5` |
@@ -154,6 +172,7 @@ python3 tools/patch-bojuka-bog-trigger-target.py
 python3 tools/patch-ai-player-target-selection.py
 python3 tools/patch-ai-etb-player-target-preselect.py
 python3 tools/patch-ai-land-cip-trigger-stack-bypass.py --apply
+python3 tools/patch-shandalar-disable-magsnd-init.py
 python3 tools/patch-shandalar-magsnd-update-callback.py
 tools/check-source-snapshot-parity.sh
 tools/verify-install-tree.sh
@@ -166,6 +185,8 @@ Representative AI land CIP resolver byte checks:
 ```sh
 xxd -p -l 5 -s $((0xcda2e)) Shandalar.exe
 xxd -p -l 5 -s $((0xcda2e)) Program/Shandalar.exe
+xxd -p -l 6 -s $((0x16c320)) Shandalar.exe
+xxd -p -l 6 -s $((0x16c320)) Program/Shandalar.exe
 xxd -p -l 10 -s $((0x429acf)) ManalinkEh.dll
 xxd -p -l 5 -s $((0x3f63bd)) ManalinkEh.dll
 xxd -p -l 5 -s $((0x3fe77d)) ManalinkEh.dll
@@ -214,8 +235,9 @@ e905fad40090909090909090909090909090
 ```
 
 Manual proof still requires replaying duels where the opponent activates Augur
-of Skulls and where opponents play the reported Piranha Marsh and Bojuka Bog
-lands, then confirming the duel remains interactive. At least one additional
-AI-controlled land ETB trigger and one additional AI player-target activated
-ability should still be tested separately because these patches now cover both
-the land-CIP resolver layer and the Shandalar player-target selector layer.
+of Skulls, casts Thoughtseize, and plays the reported Piranha Marsh and Bojuka
+Bog lands, then confirming the duel remains interactive. At least one additional
+AI-controlled land ETB trigger, one additional AI player-target activated
+ability, and one human `Trigger` / `Decline` prompt should still be tested
+separately because these patches now cover both the land-CIP resolver layer and
+the broader Shandalar prompt/sound-initialization layer.

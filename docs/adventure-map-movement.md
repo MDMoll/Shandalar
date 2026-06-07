@@ -73,7 +73,7 @@ options for this PE binary.
 Expected hash for both repo copies:
 
 ```text
-bec1dd2bba524618529d674e3a927f4aa93f53a39a444dd3d6d425856f8c1b32
+c0d3607d991c976a2302880fb3cb341c096b570935bf0f27b91a732b45119a2b
 ```
 
 Expected hook shape:
