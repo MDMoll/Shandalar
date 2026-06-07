@@ -165,15 +165,16 @@ surface.
 The latest name follow-up bypasses the fragile manual name editor at file
 offset `0xa1acd` and adds an empty-name fallback through code cave
 `0x465170`/file offset `0x64570`.
-The latest follow-up adds an adventure-map movement patch: hooks at `0x44398c`,
-`0x444a2b`, and `0x444aa7` use code cave `0x46502d` and flag `0x583a2c` so a
-repeat press of the active movement key can route through the existing stop
-path at `0x444a96`.
+Later follow-ups added an adventure-map movement patch and a WinMM timer-callback
+compatibility patch. The movement hooks at `0x44398c`, `0x444a2b`, and
+`0x444aa7` use code cave `0x46502d` and flag `0x583a2c` so a repeat press of the
+active movement key can route through the existing stop path at `0x444a96`; the
+WinMM patch NOPs the callback-thread `call 0x56d476` at file offset `0xcdd3f`.
 
 The current active root and `Program` Shandalar files hash to:
 
 ```text
-ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b
+92cca05b493c28f6c29c0cc4bd0018499acd9a8cbdce06f9230da59d5be0a0ef
 ```
 
 The earlier hSection-only Shandalar patch hashed to
@@ -362,6 +363,7 @@ Expected entries:
 | 2026-06-05 | 26.1.0.39808 | Repo and `MTG` | App-default `win7` | `ManalinkEh.dll` and `Program/ManalinkEh.dll` | Patched Bojuka Bog ETB target selection | None from static verification | Guarded patch helper plus byte/hash checks; `tools/verify-crossover-mtg-state.sh` | `xxd` and `objdump` verify the trigger calls `pick_player_duh()`; manual Bojuka retest later showed this selector-side patch was not sufficient. |
 | 2026-06-06 | 26.1.0.39808 | Repo and `MTG` | App-default `win7` | `ManalinkEh.dll` and `Program/ManalinkEh.dll` | Patched AI land CIP resolver stack-bypass handling | None from static verification | Guarded patch helper plus byte/hash checks; `tools/verify-crossover-mtg-state.sh` | Manual Bojuka/Piranha testing showed the earlier engine-native trigger-mode, `duh_mode()`-guarded resolve-trigger, and strict card-callsite wrapper candidates were not sufficient. `xxd` and `objdump` now verify `_resolve_trigger` jumps to a cave that resolves non-speculating AI-owned land `TRIGGER_COMES_INTO_PLAY` before Spell Chain insertion and otherwise falls back to the original resolver; fresh visible Bojuka/Piranha retest still needed. |
 | 2026-06-07 | 26.1.0.39808 | Repo and `MTG` | App-default `win7` | `Shandalar.dll` and `Program/Shandalar.dll` | Patched Shandalar C++ AI player-target selector | None from static verification | Guarded patch helper plus byte/hash checks; `tools/verify-crossover-mtg-state.sh` | Manual Augur of Skulls testing froze at the `Witch activates...` announcement after the land-CIP resolver patch, showing adventure duels needed the Shandalar targeter hook too. The new hook at `0xcb16` jumps to cave `0x1174920` and chooses candidate `0` only for AI pure player targets; fresh visible Augur/Piranha/Bojuka retest still needed. |
+| 2026-06-07 | 26.1.0.39808 | Repo and `MTG` | App-default `win7` | `Shandalar.exe` and `Program/Shandalar.exe` | Patched WinMM timer callback service call | None from static verification | Guarded patch helper plus byte/hash checks; `tools/verify-crossover-mtg-state.sh` | Wine Debugger output from a stopped `C:\Shandalar\Shandalar.exe` showed a page fault at `EIP == EDX == 0xfff50de4`, outside all loaded modules. Static analysis found the 33 ms `timeSetEvent()` callback at `0x4ce8cd` incrementing the tick counter and then calling legacy dispatcher `0x56d476`; the patch NOPs only that callback-thread call at VA `0x4ce93f` / file offset `0xcdd3f`. Fresh visible prompt/button stability retest is required. |
 | 2026-06-04 | 26.1.0.39808 | Repo and `MTG` | App-default `win7` | `Magic.exe`, `Program/Magic.exe`, and `user.reg` | Patched missing-registry `ShowCoinFlips` default from 1 to 0, and set active `MTG` `ShowCoinFlips=0` | None from static verification | Guarded patch helper plus registry update | `xxd` verifies `c7 05 5c 72 78 00 00 00 00 00`; active bottle hashes match the patched repo Magic hashes. Visible duel-start retest still needed. |
 
 ## Needs testing

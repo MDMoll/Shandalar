@@ -196,6 +196,7 @@ for path in \
   tools/patch-ai-player-target-selection.py \
   tools/patch-ai-etb-player-target-preselect.py \
   tools/patch-ai-land-cip-trigger-stack-bypass.py \
+  tools/patch-shandalar-winmm-tick-callback.py \
   tools/patch-bojuka-bog-trigger-target.py \
   tools/patch-piranha-marsh-trigger-target.py \
   tools/patch-magic-coinflip-default.py \
@@ -212,8 +213,8 @@ install_tree_output="$(tools/verify-install-tree.sh .)"
 printf '%s\n' "$install_tree_output" | grep -q "Install-tree verification passed." || fail "install-tree verifier did not report success"
 pass "repo root passes install-tree verification"
 
-expect_hash Shandalar.exe ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b
-expect_hash Program/Shandalar.exe ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b
+expect_hash Shandalar.exe 92cca05b493c28f6c29c0cc4bd0018499acd9a8cbdce06f9230da59d5be0a0ef
+expect_hash Program/Shandalar.exe 92cca05b493c28f6c29c0cc4bd0018499acd9a8cbdce06f9230da59d5be0a0ef
 expect_hash FaceMaker.exe 41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246
 expect_hash Program/FaceMaker.exe 41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246
 expect_hash FaceMaker-Original.exe 0471afcd0288a07422355ff2af224c40f8b29dc0a864eed90b3399e285f42c7e
@@ -267,6 +268,8 @@ shandalar_player_target_cave_hex=898d3cfdffff837f08017515817f1400100000750c31c0a
 
 expect_hex_prefix Shandalar.exe 0x1785b0 11 6a0057508b4d1051ff7504
 expect_hex_prefix Program/Shandalar.exe 0x1785b0 11 6a0057508b4d1051ff7504
+expect_hex_prefix Shandalar.exe 0xcdd3f 5 9090909090
+expect_hex_prefix Program/Shandalar.exe 0xcdd3f 5 9090909090
 expect_hex_prefix FaceMaker.exe 0x5f40 11 6a0057508b4d1051ff7504
 expect_hex_prefix Program/FaceMaker.exe 0x5f40 11 6a0057508b4d1051ff7504
 expect_hex_prefix Magic.exe 0x3c303 13 e9c0d801009090909090909090
@@ -425,6 +428,7 @@ else
     $'src/functions/targets.c\tsource' \
     $'tools/check-source-snapshot-parity.sh\tshell-tool' \
     $'tools/patch-ai-etb-player-target-preselect.py\tpython-tool' \
+    $'tools/patch-shandalar-winmm-tick-callback.py\tpython-tool' \
     $'tools/verify-crossover-mtg-state.sh\tshell-tool' \
     $'tools/verify-install-tree.sh\tshell-tool' \
     $'tools/verify-share-readiness.sh\tshell-tool'

@@ -188,8 +188,8 @@ Patched files after the first Shandalar hSection-only patch:
 | `Program/Shandalar.exe` | `73aa1400ddc452462f4e714e349ff06d4564c133408cf2ab10e576ae65d441b9` |
 
 Current active files have additional name-entry seed, name-editor bypass/fallback,
-and same-arrow movement-stop patches and now hash to
-`ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b`.
+same-arrow movement-stop, and WinMM timer-callback compatibility patches and now
+hash to `92cca05b493c28f6c29c0cc4bd0018499acd9a8cbdce06f9230da59d5be0a0ef`.
 
 Original hash for both files before this patch:
 `82c9b659dd131097b29931f0ed266c91d560103bc864d7eb6b806691d0dc9739`.
@@ -235,9 +235,9 @@ name-entry-only interim hash was
 `bd784cc248d08455270a6bfae5004ead8f9723d8017f8db152add113e8d3a9db`. The
 seed-plus-movement hash before the name-editor bypass/fallback was
 `155a668c72867bd1274410eb05ca05fbb7bd9bed843b42d1583ea536805a4aaf`. The
-current local bottle copies have the follow-up name-editor bypass/fallback and
-movement-stop patches and hash to
-`ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b`.
+current local `MTG` bottle copies have the follow-up name-editor
+bypass/fallback, movement-stop, and WinMM timer-callback patches and hash to
+`92cca05b493c28f6c29c0cc4bd0018499acd9a8cbdce06f9230da59d5be0a0ef`.
 
 ## Shandalar Name-Entry Patches
 
@@ -259,10 +259,10 @@ should continue with default `Player`.
 
 Patched files:
 
-| Path | SHA-256 after combined patch |
+| Path | SHA-256 after current combined patch |
 | --- | --- |
-| `Shandalar.exe` | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` |
-| `Program/Shandalar.exe` | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` |
+| `Shandalar.exe` | `92cca05b493c28f6c29c0cc4bd0018499acd9a8cbdce06f9230da59d5be0a0ef` |
+| `Program/Shandalar.exe` | `92cca05b493c28f6c29c0cc4bd0018499acd9a8cbdce06f9230da59d5be0a0ef` |
 
 Patch bytes:
 
@@ -296,10 +296,10 @@ The old 24-byte surface-copy sequence was searched with `perl -0777` and was
 not found in either active Shandalar executable. The patched files were copied
 into both local CrossOver bottle installs:
 
-| Bottle path | Current SHA-256 |
+| Bottle path | Recorded SHA-256 |
 | --- | --- |
-| `/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Shandalar.exe` | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` |
-| `/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Program/Shandalar.exe` | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` |
+| `/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Shandalar.exe` | `92cca05b493c28f6c29c0cc4bd0018499acd9a8cbdce06f9230da59d5be0a0ef` |
+| `/Users/mdmoll/Library/Application Support/CrossOver/Bottles/MTG/drive_c/Shandalar/Program/Shandalar.exe` | `92cca05b493c28f6c29c0cc4bd0018499acd9a8cbdce06f9230da59d5be0a0ef` |
 | `/Users/mdmoll/Library/Application Support/CrossOver/Bottles/Shandalar-Win8-Test/drive_c/Shandalar/Shandalar.exe` | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` |
 | `/Users/mdmoll/Library/Application Support/CrossOver/Bottles/Shandalar-Win8-Test/drive_c/Shandalar/Program/Shandalar.exe` | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` |
 
@@ -373,7 +373,7 @@ The separate Win8 comparison state is:
 | Reported Windows version | Microsoft Windows 8, `CurrentVersion=6.2`, `CurrentBuild=9200` | `grep -aEn 'CurrentBuild|CurrentVersion|ProductName' ".../Bottles/Shandalar-Win8-Test/system.reg"`. |
 | Paging file | `C:\pagefile.sys 512 1024` | `grep -aEn 'PagingFiles' ".../Bottles/Shandalar-Win8-Test/system.reg"`. |
 | Install path | `C:\Shandalar` | Bottle-local copy exists at `/Users/mdmoll/Library/Application Support/CrossOver/Bottles/Shandalar-Win8-Test/drive_c/Shandalar`. |
-| Active Shandalar binary hash | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` | `shasum -a 256` on root, `Program/`, `MTG`, and `Shandalar-Win8-Test` Shandalar copies; this active hash includes DIB, name-entry seed/bypass/fallback, and movement-stop patches. |
+| Last recorded Shandalar binary hash for this comparison bottle | `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b` | Historical `shasum -a 256` evidence for the `Shandalar-Win8-Test` copy before the later WinMM timer-callback patch; this comparison bottle was not present during the 2026-06-07 WinMM verification. |
 | Preferred launch path | `Y:\Shandalar\Shandalar\Shandalar.exe` from `Y:\Shandalar\Shandalar` after the repo binary patch | `/tmp/shandalar-repo-patched-sendkeys-cx.log` shows the patched repo exe passed the post-color resource load point. |
 | Bottle-local comparison path | `C:\Shandalar\Shandalar.exe` from `C:\Shandalar` | Startup-smoked before the repo patch; the bottle-local copies were later patched with backups. |
 | Virtual desktop | `ShandalarTall=1024x800` | `user.reg` contains app-default desktop `ShandalarTall` for `Shandalar.exe`, `Magic.exe`, and `FaceMaker.exe`. |
