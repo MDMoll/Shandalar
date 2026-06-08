@@ -2,12 +2,9 @@
 #include "CardArtLib.h"
 #include <ctype.h>
 #include <cstring>
-
-#define BOOST_FILESYSTEM_VERSION 3
-#include <boost/filesystem.hpp>
+#include <utility>
 
 namespace gdi = Gdiplus;
-namespace fs = boost::filesystem;
 
 static std::unordered_map<std::string, std::unique_ptr<gdi::Image>> *cache;
 static char** idToName;
@@ -18,6 +15,7 @@ static ULONG_PTR gdiplusToken;
 static ULONG_PTR gdiplusBGThreadToken;
 static gdi::GdiplusStartupInput gdiplusStartupInput;
 static gdi::GdiplusStartupOutput gdiplusStartupOutput;
+static bool gdiplus_available = false;
 static bool images_counted = false;
 
 static card_ptr_t* cards_ptr_shandalar_dll = NULL;
@@ -51,14 +49,6 @@ static std::string lowercase_ascii(const char* text)
 		return result;
 	for (const unsigned char* p = (const unsigned char*)text; *p; ++p)
 		result += (char)tolower(*p);
-	return result;
-}
-
-static std::string lowercase_ascii(const std::string& text)
-{
-	std::string result;
-	for (std::string::const_iterator it = text.begin(); it != text.end(); ++it)
-		result += (char)tolower((unsigned char)*it);
 	return result;
 }
 
@@ -205,48 +195,51 @@ static void count_images(void)
 		card_ptrs[i].num_pics = 1;	// Always assume at least one image; it would have been corrected to 1 if initially set to 0 anyway
 	}
 
-	for (fs::directory_iterator dirit(fs::path("./CardArtManalink")), end; dirit != end; ++dirit){
-		try {
-			if (!is_regular_file(dirit->status()))
-				continue;
+	WIN32_FIND_DATAA find_data;
+	HANDLE find = FindFirstFileA("CardArtManalink\\*.jpg", &find_data);
+	if (find == INVALID_HANDLE_VALUE)
+		return;
 
-			std::string filename = dirit->path().filename().string();
+	do {
+		if (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+			continue;
 
-			/* boost::regex would be more concise, but this is about 10% faster when not disk-bound, and more importantly, doesn't bloat the dll file size.
-			 * boost::filesystem already increases it from 328k to 1040k; adding boost::regex ballooned it to 1540k. */
-			std::string lower_filename = lowercase_ascii(filename);
-			std::string cardname;
-			const char* name = lower_filename.c_str();
-			unsigned int num = 0;
-			for (; *name; ++name){
-				if (*name == '('){
-					if (!cardname.empty() && cardname[cardname.size() - 1] == ' ' && *(name + 1) >= '1' && *(name + 1) <= '9'){
-						cardname.resize(cardname.size() - 1);	// remove the last space before the parenthesis
+		/* boost::regex would be more concise, but this is about 10% faster when not disk-bound, and more importantly, doesn't bloat the dll file size.
+		 * The old Boost filesystem dependency also made CardArtLib hard to rebuild with current MinGW toolchains. */
+		std::string lower_filename = lowercase_ascii(find_data.cFileName);
+		std::string cardname;
+		const char* name = lower_filename.c_str();
+		unsigned int num = 0;
+		for (; *name; ++name){
+			if (*name == '('){
+				if (!cardname.empty() && cardname[cardname.size() - 1] == ' ' && *(name + 1) >= '1' && *(name + 1) <= '9'){
+					cardname.resize(cardname.size() - 1);	// remove the last space before the parenthesis
+					++name;
+					num = atoi(name);
+					while (*name && *name >= '0' && *name <= '9')
 						++name;
-						num = atoi(name);
-						while (*name && *name >= '0' && *name <= '9')
-							++name;
-						if (strcmp(name, ").jpg"))
-							num = 0;	// didn't match epilogue
-						break;
-					} else
-						break;	// ( found, but not after a space, or not followed by [1..9]
-				}
-				cardname += *name;
+					if (strcmp(name, ").jpg"))
+						num = 0;	// didn't match epilogue
+					break;
+				} else
+					break;	// ( found, but not after a space, or not followed by [1..9]
 			}
-			if (num == 0)	// no image number found, or failed after finding (
-				continue;
+			cardname += *name;
+		}
+		if (num == 0)	// no image number found, or failed after finding (
+			continue;
 
-			std::unordered_map<std::string, int>::const_iterator csvidit = name_to_csvid.find(cardname);
-			if (csvidit == name_to_csvid.end())
-				continue;
+		std::unordered_map<std::string, int>::const_iterator csvidit = name_to_csvid.find(cardname);
+		if (csvidit == name_to_csvid.end())
+			continue;
 
-			int csvid = csvidit->second;
-			++num;	// "Grizzly Bears (3).jpg" is actually the fourth image
-			if (card_ptrs[csvid].num_pics < num)
-				card_ptrs[csvid].num_pics = num;
-		} catch (...) {}	// can't read dir, file stopped existing between iteration and status, etc. - we don't care, just skip it.
-	}
+		int csvid = csvidit->second;
+		++num;	// "Grizzly Bears (3).jpg" is actually the fourth image
+		if (card_ptrs[csvid].num_pics < num)
+			card_ptrs[csvid].num_pics = num;
+	} while (FindNextFileA(find, &find_data));
+
+	FindClose(find);
 }
 
 void Cardartlib_initialize_for_shandalar(card_data_t* real_cards_data, card_ptr_t* real_cards_ptr)
@@ -254,7 +247,10 @@ void Cardartlib_initialize_for_shandalar(card_data_t* real_cards_data, card_ptr_
 	// Avoid querying Shandalar.dll directly; it may not be present.
 	(void)real_cards_data;
 	cards_ptr_shandalar_dll = real_cards_ptr;
-	count_images();	// during startup instead of waiting for first to display
+	EnterCriticalSection(&crit);
+	if (!images_counted)
+		count_images();	// during startup instead of waiting for first to display
+	LeaveCriticalSection(&crit);
 }
 
 static bool file_exists(const char *filename)
@@ -265,8 +261,35 @@ static bool file_exists(const char *filename)
 	return false;
 }
 
+static bool ensure_gdiplus_started(void)
+{
+	if (gdiplus_available)
+		return true;
+
+	gdiplusStartupInput.GdiplusVersion = 1;
+	gdiplusStartupInput.DebugEventCallback = NULL;
+	gdiplusStartupInput.SuppressBackgroundThread = TRUE;
+	gdiplusStartupInput.SuppressExternalCodecs = TRUE;
+
+	if (GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, &gdiplusStartupOutput) != gdi::Ok || !gdiplusToken)
+		return false;
+
+	if (gdiplusStartupOutput.NotificationHook) {
+		gdi::Status stat = gdiplusStartupOutput.NotificationHook(&gdiplusBGThreadToken);
+		if (stat != gdi::Ok)
+			gdiplusBGThreadToken = 0;
+	}
+
+	gdiplus_available = true;
+	return true;
+}
+
 int LoadBigArt(int id, int version, LONG width, int height) {
 	EnterCriticalSection(&crit);
+	if (!ensure_gdiplus_started()) {
+		LeaveCriticalSection(&crit);
+		return 0;
+	}
 	if (!images_counted)
 		count_images();
 	std::string path = idToNameFun(id, version);
@@ -282,7 +305,11 @@ int LoadBigArt(int id, int version, LONG width, int height) {
 		}
 		std::unique_ptr<wchar_t[]> wPath = stringToWChar(path);
 		std::unique_ptr<gdi::Image> tmpSurface(new gdi::Image(wPath.get()));
-		(*cache)[path] = move(tmpSurface);
+		if (tmpSurface->GetLastStatus() != gdi::Ok) {
+			LeaveCriticalSection(&crit);
+			return 0;
+		}
+		(*cache)[path] = std::move(tmpSurface);
 	}
 	LeaveCriticalSection(&crit);
 	return 1; // 1 if the art is available
@@ -347,12 +374,9 @@ int ReloadSmallArtIfWrongSize(int id, int version) {
 
 int DrawBigArt(HDC hdc, const RECT* rect, int id, int version) {
 	if (!LoadBigArt(id, version, 0, 0)) {
-		EnterCriticalSection(&crit);
-		gdi::Graphics graphics(hdc);
-		gdi::SolidBrush brush(gdi::Color(211,211,211));
-		gdi::Rect tmpRect(rect->left, rect->top, rect->right - rect->left, rect->bottom - rect->top);
-		graphics.FillRectangle(&brush, tmpRect);
-		LeaveCriticalSection(&crit);
+		HBRUSH brush = CreateSolidBrush(RGB(211, 211, 211));
+		FillRect(hdc, rect, brush);
+		DeleteObject(brush);
 		return 0;
 	}
 	EnterCriticalSection(&crit);
@@ -374,26 +398,32 @@ static void init() {
 	cache = new std::unordered_map<std::string, std::unique_ptr<gdi::Image>>;
 
 	InitializeCriticalSection(&crit);
-	gdiplusStartupInput.SuppressBackgroundThread = TRUE;
-	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, &gdiplusStartupOutput);
-	gdi::Status stat = gdiplusStartupOutput.NotificationHook(&gdiplusBGThreadToken);
-	assert(stat == gdi::Ok);
 
 	images_counted = false;
 }
 
 static void deinit() {
 	delete cache;
+	cache = NULL;
 	if (idToName) {
 		for (unsigned int i = 0; i < numberOfCards; ++i)
 			if (idToName[i])
 				free(idToName[i]);
 		free(idToName);
+		idToName = NULL;
 	}
 
+	if (gdiplusBGThreadToken && gdiplusStartupOutput.NotificationUnhook) {
+		gdiplusStartupOutput.NotificationUnhook(gdiplusBGThreadToken);
+		gdiplusBGThreadToken = 0;
+	}
+	if (gdiplusToken) {
+		gdi::GdiplusShutdown(gdiplusToken);
+		gdiplusToken = 0;
+	}
+	gdiplus_available = false;
+
 	DeleteCriticalSection(&crit);
-	gdiplusStartupOutput.NotificationUnhook(gdiplusBGThreadToken);
-	gdi::GdiplusShutdown(gdiplusToken);
 }
 
 int WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID reserved) {

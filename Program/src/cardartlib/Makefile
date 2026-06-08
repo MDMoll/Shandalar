@@ -4,7 +4,9 @@ include ../Makefile-common
 
 # Input files
 SUBDIRS = src
-LIBS = gdiplus boost_filesystem-mgw46-s-1_45 boost_system-mgw46-s-1_45
+LIBS = gdiplus gdi32
+LFLAGS += -Wl,--enable-stdcall-fixup -Wl,--defsym,___ImageBase=__image_base__ \
+	-Wl,--disable-dynamicbase -Wl,--disable-nxcompat
 
 # Output files
 OUTPUT = CardArtLib.dll

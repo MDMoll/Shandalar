@@ -49,7 +49,7 @@ and
 | Finding | Evidence | Status |
 | --- | --- | --- |
 | `src/` and `Program/src/` are not interchangeable. | `source-snapshot-parity-summary.txt` records 322 relative paths: 80 same, 142 different, 0 missing in `src`, and 100 missing in `Program/src`. | verified |
-| Current mirrored source-safety edits have a guard but do not resolve provenance. | `card_id.h`, `cards/draft.c`, and `cardartlib/src/main.cpp` exact-match checks pass; source-safety markers pass in `cards/draft.c`, `functions/targets.c`, and `drawcardlib/config.c`. | guarded |
+| Current mirrored source-safety edits have a guard but do not resolve provenance. | `card_id.h`, `cards/draft.c`, and `cardartlib/src/main.cpp` exact-match checks pass; source-safety markers pass in `cards/draft.c`, `functions/targets.c`, `cardartlib/src/main.cpp`, and `drawcardlib/config.c`. | guarded |
 | Source does not prove shipped-binary reproducibility. | Build dry-runs are incomplete and no full build was attempted. | verified |
 | Patch scripts encode current binary-maintenance knowledge. | Patch scripts and docs reference offsets, hooks, caves, and target EXE/DLL names. | verified |
 | Runtime behavior still depends on exact launch path. | Binary strings and docs show basename/runtime-folder references such as `Cards.dat`, `DuelSounds`, `FaceMaker.exe`, and `zlib.dll`. | verified |

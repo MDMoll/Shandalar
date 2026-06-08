@@ -117,15 +117,25 @@ still absent, `Drawcardlib.dll`, `CardArtLib.dll`, and GDI+ were loaded, and
 thread idle in the host event loop while a Wine thread repeatedly sampled in
 `ntdll.so`; Wine Debugger again reported the same invalid execution target,
 `EIP == EDX == 0xfff50de4`. Static inspection then found Drawcardlib's
-`GdiplusStartup()` used `SuppressBackgroundThread = 0`, unlike CardArtLib,
-which already used explicit notification hooks. The current Drawcardlib source
-and rebuilt root/Program DLLs now set `SuppressBackgroundThread = 1`, call
-`NotificationHook()`, and unhook before `GdiplusShutdown()`. A 2026-06-08
-CrossOver root launch review then found the first rebuilt `DrawCardLib.dll`
-crashed during process attach because it carried `DYNAMIC_BASE`/`NX_COMPAT`
-startup characteristics; the accepted rebuilt DLL keeps PE `DllCharacteristics`
-at `0x0000` via the Drawcardlib Makefile's legacy-safe linker flags. Fresh
-visible Spell Chain/card-rendering retesting remains required.
+`GdiplusStartup()` used `SuppressBackgroundThread = 0`, while CardArtLib still
+started GDI+ from `DllMain` and retained loaded `Gdiplus::Image` objects in its
+cache. The current Drawcardlib source and rebuilt root/Program DLLs now set
+`SuppressBackgroundThread = 1`, call `NotificationHook()`, and unhook before
+`GdiplusShutdown()`. A 2026-06-08 CrossOver root launch review then found the
+first rebuilt `DrawCardLib.dll` crashed during process attach because it
+carried `DYNAMIC_BASE`/`NX_COMPAT` startup characteristics; the accepted
+rebuilt DLL keeps PE `DllCharacteristics` at `0x0000` via the Drawcardlib
+Makefile's legacy-safe linker flags.
+
+A later Brilliant Halo freeze showed the MCI disable and Drawcardlib hardening
+were still insufficient. The copied install already matched the repo, live
+`lsof` showed `CardArtManalink/Brilliant Halo.jpg` open with CardArtLib/GDI+
+loaded, and Wine Debugger again reported `EIP == EDX == 0xfff50de4`. CardArtLib
+has now been rebuilt so GDI+ starts lazily outside `DllMain`, uses explicit
+notification hook/unhook handling, suppresses external codecs, validates
+`Gdiplus::Image` load status before caching, and removes the old Boost
+filesystem dependency. Fresh visible Spell Chain/card-rendering retesting
+remains required.
 
 ## Finding
 

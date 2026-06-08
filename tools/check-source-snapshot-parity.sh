@@ -340,6 +340,9 @@ check_marker "drawcardlib/config.c" "char* key = concat_cfg_key(key1, key2);" "a
 check_marker "drawcardlib/config.c" "char* key = concat_cfg_key(\"font\", font_name);" "allocated-font-key"
 check_marker "drawcardlib/drawcardlib.c" "input.SuppressBackgroundThread = 1;" "drawcardlib-explicit-gdiplus-hook"
 check_marker "drawcardlib/drawcardlib.c" "gdiplus_startup_output.NotificationHook(&gdiplus_bg_thread_token);" "drawcardlib-gdiplus-notification-hook"
+check_marker "cardartlib/src/main.cpp" "ensure_gdiplus_started(void)" "cardartlib-lazy-gdiplus-start"
+check_marker "cardartlib/src/main.cpp" "gdiplusStartupInput.SuppressExternalCodecs = TRUE;" "cardartlib-suppress-external-codecs"
+check_marker "cardartlib/src/main.cpp" "FindFirstFileA(\"CardArtManalink\\\\*.jpg\"" "cardartlib-win32-image-enumeration"
 check_marker "functions/functions.c" "if( (mode & (GAA_DAMAGE_PREVENTION | GAA_DAMAGE_PREVENTION_PLAYER | GAA_DAMAGE_PREVENTION_CREATURE | GAA_DAMAGE_PREVENTION_ME))" "generic-activated-damage-prevention-window"
 
 emit "summary" "result" "same" "$same_count"

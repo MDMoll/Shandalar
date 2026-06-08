@@ -316,7 +316,9 @@ void produce_mana(int, int, int);
 void real_lose_the_game(int);
 int real_put_into_play(int, int);
 int raw_put_iid_on_top_of_deck(int player, int iid);	// Put a newly-created card with internal_card_id iid on top of player's library.
+#ifndef __cplusplus
 int sprintf(char *str, const char *format, ...);
+#endif
 int rearrange_top_3(int, int, event_t);
 void redraw_libraries(void);
 int regenerate(int, int, event_t, int, int);

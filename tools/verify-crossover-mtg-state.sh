@@ -43,8 +43,8 @@ EXPECTED_HASHES = {
     "Program/FaceMaker.exe": "41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246",
     "Shandalar.dll": "f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7",
     "Program/Shandalar.dll": "f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7",
-    "CardArtLib.dll": "975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f6416457e510484",
-    "Program/CardArtLib.dll": "975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f6416457e510484",
+    "CardArtLib.dll": "c1a68591059ff3e650104bf711d4e3f0c9a01a232db2e594af64aaa6846b3c1d",
+    "Program/CardArtLib.dll": "c1a68591059ff3e650104bf711d4e3f0c9a01a232db2e594af64aaa6846b3c1d",
     "DeckDLL.dll": "5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0",
     "Program/Deckdll.dll": "5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0",
     "Drawcardlib.dll": "9f37f131ba4a80ba543bb9372489438ac306cd01363b58cbc5ae8b1ccfd80700",
@@ -85,6 +85,8 @@ EXPECTED_HASHES = {
 }
 
 EXPECTED_DLL_CHARACTERISTICS = {
+    "CardArtLib.dll": 0x0000,
+    "Program/CardArtLib.dll": 0x0000,
     "Drawcardlib.dll": 0x0000,
     "Program/Drawcardlib.dll": 0x0000,
 }
@@ -390,7 +392,7 @@ ok(f"patched bottle runtime hashes match docs ({len(EXPECTED_HASHES)} checked)")
 
 for rel_path, expected in EXPECTED_DLL_CHARACTERISTICS.items():
     expect_pe_dll_characteristics(rel_path, expected)
-ok("patched bottle Drawcardlib PE startup flags are legacy-safe")
+ok("patched bottle card renderer PE startup flags are legacy-safe")
 
 for rel_path, checks in EXPECTED_HEX_PREFIXES.items():
     for offset, expected in checks:
