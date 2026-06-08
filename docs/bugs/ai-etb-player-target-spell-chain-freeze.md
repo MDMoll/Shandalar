@@ -178,6 +178,7 @@ change in this pass is the resolver cave described above.
 | Shandalar MagSnd update-message callback | n/a binary compatibility patch | root and Program `Shandalar.exe` call at VA `0x4ce62e` / file offset `0xcda2e` |
 | Shandalar minimal WinMM timer callback | n/a binary compatibility patch | root and Program `Shandalar.exe` callback entry at VA `0x4ce8cd` / file offset `0xcdccd` |
 | Shandalar MagSnd initialization disable | n/a binary compatibility patch | root and Program `Shandalar.exe` wrapper at VA `0x56cf20` / file offset `0x16c320` |
+| Shandalar MCIWndCreateA disable | n/a binary compatibility patch | root and Program `Shandalar.exe` thunk at VA `0x578c10` / file offset `0x178010` |
 | Statwin MagVid loader disable | n/a binary compatibility patch | root and Program `Statwin.dll` wrapper at VA `0x10003610` / file offset `0x2a10` |
 | Drawcardlib GDI+ background-thread suppression | `src/drawcardlib/drawcardlib.c`; `Program/src/drawcardlib/drawcardlib.c`; `src/drawcardlib/Makefile`; `Program/src/drawcardlib/Makefile` | rebuilt root and Program `Drawcardlib.dll`; root and local `MTG` copied-install copies hash to `9f37f131ba4a80ba543bb9372489438ac306cd01363b58cbc5ae8b1ccfd80700` and verify with PE `DllCharacteristics` `0x0000` |
 | Source-only exile helper hardening | `src/functions/deck.c`; `Program/src/functions/deck.c` | source snapshots only; no shipped DLL helper patch |
@@ -198,8 +199,8 @@ Program Shandalar helper DLLs.
 
 | File | SHA-256 |
 | --- | --- |
-| `Shandalar.exe` | `17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6` |
-| `Program/Shandalar.exe` | `17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6` |
+| `Shandalar.exe` | `ebba01ad04aba5fb78841f37b6c264dfd17f1d6ca6ccfcc9851c2972b64f5f6b` |
+| `Program/Shandalar.exe` | `ebba01ad04aba5fb78841f37b6c264dfd17f1d6ca6ccfcc9851c2972b64f5f6b` |
 | `Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` |
 | `Program/Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` |
 | `Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` |

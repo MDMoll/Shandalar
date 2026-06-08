@@ -176,7 +176,7 @@ message call at file offset `0xcda2e`; the WinMM patch NOPs the callback-thread
 The current active root and `Program` Shandalar files hash to:
 
 ```text
-17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6
+ebba01ad04aba5fb78841f37b6c264dfd17f1d6ca6ccfcc9851c2972b64f5f6b
 ```
 
 The earlier hSection-only Shandalar patch hashed to

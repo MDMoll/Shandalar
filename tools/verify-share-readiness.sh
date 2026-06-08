@@ -223,6 +223,7 @@ for path in \
   tools/patch-ai-land-cip-trigger-stack-bypass.py \
   tools/patch-statwin-disable-magvid-loader.py \
   tools/patch-shandalar-disable-magsnd-init.py \
+  tools/patch-shandalar-disable-mciwndcreate.py \
   tools/patch-shandalar-magsnd-update-callback.py \
   tools/patch-shandalar-minimal-winmm-timer-callback.py \
   tools/patch-shandalar-winmm-tick-callback.py \
@@ -242,8 +243,8 @@ install_tree_output="$(tools/verify-install-tree.sh .)"
 printf '%s\n' "$install_tree_output" | grep -q "Install-tree verification passed." || fail "install-tree verifier did not report success"
 pass "repo root passes install-tree verification"
 
-expect_hash Shandalar.exe 17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6
-expect_hash Program/Shandalar.exe 17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6
+expect_hash Shandalar.exe ebba01ad04aba5fb78841f37b6c264dfd17f1d6ca6ccfcc9851c2972b64f5f6b
+expect_hash Program/Shandalar.exe ebba01ad04aba5fb78841f37b6c264dfd17f1d6ca6ccfcc9851c2972b64f5f6b
 expect_hash FaceMaker.exe 41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246
 expect_hash Program/FaceMaker.exe 41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246
 expect_hash FaceMaker-Original.exe 0471afcd0288a07422355ff2af224c40f8b29dc0a864eed90b3399e285f42c7e

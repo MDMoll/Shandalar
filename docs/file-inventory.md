@@ -38,13 +38,13 @@ no-resolution helpers, and a later visible S2 run logged
 `FaceMaker-nores.exe /S` while reaching the adventure map. Later Shandalar
 follow-ups patched the name-entry default buffer, name-editor bypass/fallback,
 same-arrow adventure-map stop behavior, MagSnd update-message compatibility
-path, the minimal WinMM timer-callback compatibility path, and the MagSnd
-init-disable path,
+path, the minimal WinMM timer-callback compatibility path, the MagSnd
+init-disable path, and the MCIWndCreateA disable path,
 changing the active Shandalar hash from the hSection-only
 `73aa1400ddc452462f4e714e349ff06d4564c133408cf2ab10e576ae65d441b9` through the
 name-entry-only `bd784cc248d08455270a6bfae5004ead8f9723d8017f8db152add113e8d3a9db`
 and the name-seed-plus-movement value `155a668c72867bd1274410eb05ca05fbb7bd9bed843b42d1583ea536805a4aaf` to the current combined-patch
-`17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6`.
+`ebba01ad04aba5fb78841f37b6c264dfd17f1d6ca6ccfcc9851c2972b64f5f6b`.
 
 ## Summary
 
@@ -161,7 +161,7 @@ describe Git history/storage, not game files.
 | Observation | Evidence | Cleanup confidence |
 | --- | --- | --- |
 | Full non-git duplicate audit found a large exact-duplicate surface. | [duplicate-audit.md](duplicate-audit.md) records the older full non-git scan plus the later tracked-only safe cleanup pass. The tracked-only pass removed one OS cache file and left duplicate runtime/package families untouched. | High duplicate confidence, low cleanup confidence until launch-copy tests choose canonical package/runtime paths. |
-| `Program/Shandalar.exe` and root `Shandalar.exe` are identical. | Same active SHA-256: `17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6`; hSection-only interim hash was `73aa1400ddc452462f4e714e349ff06d4564c133408cf2ab10e576ae65d441b9`; name-entry-only interim hash was `bd784cc248d08455270a6bfae5004ead8f9723d8017f8db152add113e8d3a9db`; name-seed-plus-movement hash was `155a668c72867bd1274410eb05ca05fbb7bd9bed843b42d1583ea536805a4aaf`; DIB/name/movement hash was `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b`; original pre-patch hash was `82c9b659dd131097b29931f0ed266c91d560103bc864d7eb6b806691d0dc9739`. | Medium for dedupe planning, not deletion; adjacent DLL/assets still differ, and copied CrossOver bottle installs may still have older unpatched copies. |
+| `Program/Shandalar.exe` and root `Shandalar.exe` are identical. | Same active SHA-256: `ebba01ad04aba5fb78841f37b6c264dfd17f1d6ca6ccfcc9851c2972b64f5f6b`; pre-MCI callback/MagSnd hash was `17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6`; hSection-only interim hash was `73aa1400ddc452462f4e714e349ff06d4564c133408cf2ab10e576ae65d441b9`; name-entry-only interim hash was `bd784cc248d08455270a6bfae5004ead8f9723d8017f8db152add113e8d3a9db`; name-seed-plus-movement hash was `155a668c72867bd1274410eb05ca05fbb7bd9bed843b42d1583ea536805a4aaf`; DIB/name/movement hash was `ad9ee80e0d377e7f1741e48aa0e33c3a8d7bd2873d43045e32bc42812aaa284b`; original pre-patch hash was `82c9b659dd131097b29931f0ed266c91d560103bc864d7eb6b806691d0dc9739`. | Medium for dedupe planning, not deletion; adjacent DLL/assets still differ, and copied CrossOver bottle installs may still have older unpatched copies. |
 | Active `Program/FaceMaker.exe` and root `FaceMaker.exe` are identical to each other but no longer identical to the no-resolution helper copies. | Active SHA-256: `41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246`; no-resolution/Korath SHA-256: `43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b`. The difference is the 11-byte `CreateDIBSection hSection = NULL` patch at file offset `0x5f40`; a visible S2 run still observed `FaceMaker-nores.exe /S`. | Keep active and no-resolution helpers until full character-creation testing chooses a canonical helper. |
 | `Program/FaceData.txt`, `Program/FaceButtons.txt`, and `Program/FaceArt/` match `Manalink3/Program/` after the fix. | `cmp` for text files and `diff -qr` for art directory. | Keep as runtime support for `Program/FaceMaker.exe`. |
 | `Program/Magic.exe` and root `Magic.exe` differ. | Different SHA-256 values. | Do not dedupe without launch comparison. |

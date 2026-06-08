@@ -6,6 +6,7 @@ files.
 | Tool | Purpose |
 | --- | --- |
 | `audit_codebase.py` | Read-only static/source/tooling audit helper that writes inventories, grep-style reports, and the activated damage-prevention handler inventory under `docs/generated/code-audit/`; inventories cover the tree, while grep-style scans default to focused source/tooling scope unless `--scan-scope all` is supplied. |
+| `build-deck-injector.sh` | Builds `DeckInjector.jar` from `src/gui/*.java` with JDK 21 bytecode; this is a support-tool rebuild, not a Shandalar runtime build. |
 | `check-build-prereqs.sh` | Read-only build preflight that reports source-tree blockers and missing local Windows/MinGW-style tools before anyone tries a build or historical copy script. |
 | `check-source-snapshot-parity.sh` | Read-only `src/` versus `Program/src/` parity report that treats whole-tree divergence as source-provenance evidence while enforcing exact-match and mirrored safety-marker checks for current source fixes. |
 | `check-security-scanner-availability.sh` | Reports scanner-related commands visible on the current machine and explains which are usable for the security gate; it does not run a scan. |
@@ -22,6 +23,7 @@ files.
 | `patch-ai-etb-player-target-preselect.py` | Historical guarded binary patch helper for the failed Piranha Marsh/Bojuka Bog card-callsite wrapper attempts; retained for audit history, not the current active fix. |
 | `patch-ai-land-cip-trigger-stack-bypass.py` | Current guarded binary patch helper for root and `Program/` `ManalinkEh.dll`; restores the failed Piranha/Bojuka callsite wrappers and hooks `resolve_trigger()` so non-speculating AI-owned land CIP triggers resolve before Spell Chain insertion. |
 | `patch-shandalar-disable-magsnd-init.py` | Guarded binary patch helper for root and `Program/` `Shandalar.exe`; makes the adventure executable's MagSnd initializer return sound-unavailable before loading `MagSnd.dll`, after recurring CrossOver faults persisted below the previous `UpdateSnd` call-site patches. |
+| `patch-shandalar-disable-mciwndcreate.py` | Guarded binary patch helper for root and `Program/` `Shandalar.exe`; makes the direct MSVFW32 `MCIWndCreateA` thunk return `NULL` before entering Wine's legacy MCI window/video path. |
 | `patch-shandalar-magsnd-update-callback.py` | Guarded binary patch helper for root and `Program/` `Shandalar.exe`; NOPs the shell/window `MagSnd.dll` `UpdateSnd` message callback after Wine debugger evidence pointed at a stale callback/function-pointer path. |
 | `patch-shandalar-minimal-winmm-timer-callback.py` | Guarded binary patch helper for root and `Program/` `Shandalar.exe`; reduces the WinMM timer callback entry to only `inc dword [0x589df0]; ret 0x14` after a later pre-card freeze still produced the same poisoned callback fault with MagSnd and MagVid absent. |
 | `patch-shandalar-winmm-tick-callback.py` | Guarded binary patch helper for root and `Program/` `Shandalar.exe`; preserves the 33 ms WinMM tick counter while NOPing the callback-thread call to the legacy sound/service dispatcher that matched Wine debugger page-fault evidence. |
@@ -36,6 +38,7 @@ files.
 | `record-manual-gameplay-result.sh` | Updates one environment field or one visible gameplay result row in `docs/manual-gameplay-verification.md`; it does not run the game or decide whether a test passed. |
 | `record-security-scan-result.sh` | Records one path or all current tracked scan targets in `security-scan-results.tsv` after a real scanner pass; it requires exact current hashes and `--confirmed-real-scan`. |
 | `verify-crossover-mtg-state.sh` | Optional local check for this machine's `MTG` CrossOver bottle: copied runtime hashes including patched Magic executables, Manalink damage-prevention, AI decision-time clamp, AI raw-mana snapshot, Piranha Marsh trigger-target bytes, Bojuka Bog trigger-target bytes, Manalink and Shandalar generic AI player-target selector bytes, and AI land CIP resolver stack-bypass bytes, root/Program `zlib.dll`, Program adjacent config/font files through `DuelArt/Planeswalker.dat` and the six Program `TT*.ttf` drawcard fonts, Program CardArt drawcardlib assets through `Modern/CardOv_Nyx.png`, representative Magic and Manalink patch bytes, `AiDecisionTime=270`, `ShowCoinFlips=0`, `Window = 2`, app-default `win7`, `Shandalar1440=1440x1080`, and paging-file registry state. |
+| `verify-deck-injector.sh` | Verifies `DeckInjector.jar` has the JDK 21 classfile version, entry point, and Scrubland id/code mapping. |
 | `verify-final-share-gates.sh` | Strict completion gate for controlled-maintenance sharing; it runs local share-readiness, reports evidence blockers, requires complete manual gameplay evidence, requires full scanner-result coverage, and confirms `origin/<branch>` matches the local branch tip once those evidence gates pass. It is expected to fail until external evidence exists. |
 | `verify-handoff-artifacts.sh` | Verifies the default `/private/tmp` bundle and patch artifacts for the current branch tip, including checksum sidecars, bundle import, and patch tree restoration. |
 | `verify-handoff-readiness.sh` | Runs the non-gameplay handoff stack: share-readiness, gameplay/security baseline sanity checks, share-status inventory/status/hash drift checks, cleanup-copy dry-runs for default no-`.git` and `--include-git` modes, bundle/patch dry-runs, optional bundle-import verification, optional default artifact verification, and optional CrossOver bottle-state verification. |
@@ -61,6 +64,7 @@ tools/create-git-handoff-bundle.sh --replace
 tools/create-patch-package.sh --dry-run
 tools/create-patch-package.sh --replace --verify-apply
 tools/create-security-scan-results-template.sh --output security-scan-results.tsv
+tools/build-deck-injector.sh
 tools/list-branch-delta.sh
 tools/list-branch-delta.sh --summary
 tools/list-security-scan-targets.sh
@@ -87,6 +91,7 @@ tools/verify-handoff-readiness.sh --verify-bundle-import --verify-artifacts
 tools/verify-install-tree.sh /path/to/Shandalar
 tools/verify-manual-gameplay-results.sh --allow-incomplete
 tools/verify-manual-gameplay-results.sh --allow-incomplete --show-missing
+tools/verify-deck-injector.sh
 tools/verify-security-scan-results.sh --allow-missing
 tools/verify-share-readiness.sh
 ```

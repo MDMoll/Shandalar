@@ -126,8 +126,8 @@ expect_plain_summoned_wizard_deck_pair() {
 cd "$install_root"
 pass "install root exists: $(pwd)"
 
-expect_hash Shandalar.exe 17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6
-expect_hash Program/Shandalar.exe 17f7af843fd2fd5424e7d36d547f4315d20fdfa840fb5050a96ab9a727a181f6
+expect_hash Shandalar.exe ebba01ad04aba5fb78841f37b6c264dfd17f1d6ca6ccfcc9851c2972b64f5f6b
+expect_hash Program/Shandalar.exe ebba01ad04aba5fb78841f37b6c264dfd17f1d6ca6ccfcc9851c2972b64f5f6b
 expect_hash FaceMaker.exe 41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246
 expect_hash Program/FaceMaker.exe 41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246
 expect_hash FaceMaker-nores.exe 43331d22d05787979af0d29cea1775fd3bcebf8acdb3c3be34524e9ca7762f4b
@@ -199,6 +199,8 @@ expect_hex_prefix Shandalar.exe 0xcdd3f 5 9090909090
 expect_hex_prefix Program/Shandalar.exe 0xcdd3f 5 9090909090
 expect_hex_prefix Shandalar.exe 0x16c320 6 b804000000c3
 expect_hex_prefix Program/Shandalar.exe 0x16c320 6 b804000000c3
+expect_hex_prefix Shandalar.exe 0x178010 6 31c0c3909090
+expect_hex_prefix Program/Shandalar.exe 0x178010 6 31c0c3909090
 expect_hex_prefix Statwin.dll 0x2a10 6 b807000000c3
 expect_hex_prefix Program/Statwin.dll 0x2a10 6 b807000000c3
 expect_hex_prefix FaceMaker.exe 0x5f40 11 6a0057508b4d1051ff7504
