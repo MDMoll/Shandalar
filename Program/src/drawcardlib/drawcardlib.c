@@ -266,11 +266,12 @@ gdip_create_graphics(HDC hdc, GpGraphics** graphics, InterpolationMode mode)
   if (GdipCreateFromHDC(hdc, &gfx) != Ok || !gfx)
 	return 0;
 
-  if (GdipSetInterpolationMode(gfx, mode) != Ok)
-	{
-	  GdipDeleteGraphics(gfx);
-	  return 0;
-	}
+  /*
+   * Some Wine/CrossOver dialog HDCs can reject interpolation changes even
+   * though the graphics context itself is valid.  Treat the mode as a quality
+   * hint so card pickers still draw with the default interpolation.
+   */
+  GdipSetInterpolationMode(gfx, mode);
 
   *graphics = gfx;
   return 1;
@@ -333,11 +334,7 @@ gdip_get_image_graphics_context(GpImage* image, GpGraphics** graphics, Interpola
   if (GdipGetImageGraphicsContext(image, &gfx) != Ok || !gfx)
 	return 0;
 
-  if (GdipSetInterpolationMode(gfx, mode) != Ok)
-	{
-	  GdipDeleteGraphics(gfx);
-	  return 0;
-	}
+  GdipSetInterpolationMode(gfx, mode);
 
   *graphics = gfx;
   return 1;

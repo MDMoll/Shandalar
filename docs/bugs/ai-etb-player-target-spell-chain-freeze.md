@@ -195,7 +195,7 @@ change in this pass is the resolver cave described above.
 | Shandalar MagSnd initialization disable | n/a binary compatibility patch | root and Program `Shandalar.exe` wrapper at VA `0x56cf20` / file offset `0x16c320` |
 | Shandalar MCIWndCreateA disable | n/a binary compatibility patch | root and Program `Shandalar.exe` thunk at VA `0x578c10` / file offset `0x178010` |
 | Statwin MagVid loader disable | n/a binary compatibility patch | root and Program `Statwin.dll` wrapper at VA `0x10003610` / file offset `0x2a10` |
-| Drawcardlib GDI+ lifecycle and checked-wrapper hardening | `src/drawcardlib/*.c`; `src/drawcardlib/drawcardlib.h`; `Program/src/drawcardlib/*.c`; `Program/src/drawcardlib/drawcardlib.h`; `src/drawcardlib/Makefile`; `Program/src/drawcardlib/Makefile` | rebuilt root and Program `Drawcardlib.dll`; root and local `MTG` copied-install copies hash to `24fbf84f26dd8258cd9ae23350971080fa2f192a210f610ca6a135b669b6ead9`, suppress external codecs, check notification-hook status, route high-frequency GDI+ render operations through checked wrappers, and verify with PE `DllCharacteristics` `0x0000` |
+| Drawcardlib GDI+ lifecycle and checked-wrapper hardening | `src/drawcardlib/*.c`; `src/drawcardlib/drawcardlib.h`; `Program/src/drawcardlib/*.c`; `Program/src/drawcardlib/drawcardlib.h`; `src/drawcardlib/Makefile`; `Program/src/drawcardlib/Makefile` | rebuilt root and Program `Drawcardlib.dll`; root and local `MTG` copied-install copies hash to `7b585c3f2c57bdbda66ceaeecdd48a8e97d67bb32010c1455165fcb44cd2966c`, suppress external codecs, check notification-hook status, route high-frequency GDI+ render operations through checked wrappers, treat interpolation setup as nonfatal for valid Wine/CrossOver dialog HDCs, and verify with PE `DllCharacteristics` `0x0000` |
 | Source-only exile helper hardening | `src/functions/deck.c`; `Program/src/functions/deck.c` | source snapshots only; no shipped DLL helper patch |
 
 The Shandalar `.cdxai` section is shared. The land-CIP resolver cave owns
@@ -220,8 +220,8 @@ Program Shandalar helper DLLs.
 | `Program/Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` |
 | `Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` |
 | `Program/Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` |
-| `Drawcardlib.dll` | `24fbf84f26dd8258cd9ae23350971080fa2f192a210f610ca6a135b669b6ead9` |
-| `Program/Drawcardlib.dll` | `24fbf84f26dd8258cd9ae23350971080fa2f192a210f610ca6a135b669b6ead9` |
+| `Drawcardlib.dll` | `7b585c3f2c57bdbda66ceaeecdd48a8e97d67bb32010c1455165fcb44cd2966c` |
+| `Program/Drawcardlib.dll` | `7b585c3f2c57bdbda66ceaeecdd48a8e97d67bb32010c1455165fcb44cd2966c` |
 | `ManalinkEh.dll` | `0a2d77aa15fd18648a99398d7bb45b97e47a1a8ea6c01dc3e22433851940a507` |
 | `Program/ManalinkEh.dll` | `e715b92495677abf940b3bfda438477d66896532b24c1b05a4ea2bc2179c2e22` |
 
