@@ -231,6 +231,191 @@ del_obj(HGDIOBJ* obj)
 	}
 }
 
+int
+gdip_get_image_size(GpImage* image, UINT* width, UINT* height)
+{
+  if (width)
+	*width = 0;
+  if (height)
+	*height = 0;
+
+  if (!image || !width || !height)
+	return 0;
+
+  if (GdipGetImageWidth(image, width) != Ok || GdipGetImageHeight(image, height) != Ok
+	  || *width == 0 || *height == 0)
+	{
+	  *width = 0;
+	  *height = 0;
+	  return 0;
+	}
+
+  return 1;
+}
+
+int
+gdip_create_graphics(HDC hdc, GpGraphics** graphics, InterpolationMode mode)
+{
+  if (graphics)
+	*graphics = NULL;
+
+  if (!hdc || !graphics)
+	return 0;
+
+  GpGraphics* gfx = NULL;
+  if (GdipCreateFromHDC(hdc, &gfx) != Ok || !gfx)
+	return 0;
+
+  if (GdipSetInterpolationMode(gfx, mode) != Ok)
+	{
+	  GdipDeleteGraphics(gfx);
+	  return 0;
+	}
+
+  *graphics = gfx;
+  return 1;
+}
+
+void
+gdip_delete_graphics(GpGraphics** graphics)
+{
+  if (graphics && *graphics)
+	{
+	  GdipDeleteGraphics(*graphics);
+	  *graphics = NULL;
+	}
+}
+
+int
+gdip_create_bitmap_from_scan0(INT width, INT height, INT stride, PixelFormat format, BYTE* scan0, GpBitmap** bitmap)
+{
+  if (bitmap)
+	*bitmap = NULL;
+
+  if (!bitmap || width <= 0 || height <= 0 || stride == 0 || !scan0)
+	return 0;
+
+  GpBitmap* created = NULL;
+  if (GdipCreateBitmapFromScan0(width, height, stride, format, scan0, &created) != Ok || !created)
+	return 0;
+
+  *bitmap = created;
+  return 1;
+}
+
+int
+gdip_clone_bitmap_area(INT x, INT y, INT width, INT height, PixelFormat format, GpBitmap* src, GpBitmap** dst)
+{
+  if (dst)
+	*dst = NULL;
+
+  if (!src || !dst || width <= 0 || height <= 0)
+	return 0;
+
+  GpBitmap* cloned = NULL;
+  if (GdipCloneBitmapAreaI(x, y, width, height, format, src, &cloned) != Ok || !cloned)
+	return 0;
+
+  *dst = cloned;
+  return 1;
+}
+
+int
+gdip_get_image_graphics_context(GpImage* image, GpGraphics** graphics, InterpolationMode mode)
+{
+  if (graphics)
+	*graphics = NULL;
+
+  if (!image || !graphics)
+	return 0;
+
+  GpGraphics* gfx = NULL;
+  if (GdipGetImageGraphicsContext(image, &gfx) != Ok || !gfx)
+	return 0;
+
+  if (GdipSetInterpolationMode(gfx, mode) != Ok)
+	{
+	  GdipDeleteGraphics(gfx);
+	  return 0;
+	}
+
+  *graphics = gfx;
+  return 1;
+}
+
+int
+gdip_draw_image(GpGraphics* graphics, GpImage* image, INT x, INT y)
+{
+  return graphics && image && GdipDrawImageI(graphics, image, x, y) == Ok;
+}
+
+int
+gdip_draw_image_rect(GpGraphics* graphics, GpImage* image, INT x, INT y, INT width, INT height)
+{
+  return graphics && image && width > 0 && height > 0
+	&& GdipDrawImageRectI(graphics, image, x, y, width, height) == Ok;
+}
+
+int
+gdip_draw_image_rect_rect(GpGraphics* graphics, GpImage* image,
+						  INT dstx, INT dsty, INT dstwidth, INT dstheight,
+						  INT srcx, INT srcy, INT srcwidth, INT srcheight,
+						  GpImageAttributes* attrs)
+{
+  return graphics && image && dstwidth > 0 && dstheight > 0 && srcwidth > 0 && srcheight > 0
+	&& GdipDrawImageRectRectI(graphics, image,
+							  dstx, dsty, dstwidth, dstheight,
+							  srcx, srcy, srcwidth, srcheight,
+							  UnitPixel, attrs, NULL, NULL) == Ok;
+}
+
+int
+gdip_lock_bits(GpBitmap* bitmap, const GpRect* rect, UINT flags, PixelFormat format, BitmapData* data)
+{
+  if (data)
+	memset(data, 0, sizeof(*data));
+
+  if (!bitmap || !rect || !data || rect->Width <= 0 || rect->Height <= 0)
+	return 0;
+
+  if (GdipBitmapLockBits(bitmap, rect, flags, format, data) != Ok || !data->Scan0)
+	{
+	  memset(data, 0, sizeof(*data));
+	  return 0;
+	}
+
+  return 1;
+}
+
+void
+gdip_unlock_bits(GpBitmap* bitmap, BitmapData* data)
+{
+  if (bitmap && data && data->Scan0)
+	{
+	  GdipBitmapUnlockBits(bitmap, data);
+	  memset(data, 0, sizeof(*data));
+	}
+}
+
+int
+gdip_create_image_attributes(GpImageAttributes** attrs)
+{
+  if (attrs)
+	*attrs = NULL;
+
+  if (!attrs)
+	return 0;
+
+  return GdipCreateImageAttributes(attrs) == Ok && *attrs;
+}
+
+int
+gdip_set_alpha_color_matrix(GpImageAttributes* attrs, ColorMatrix* matrix)
+{
+  return attrs && matrix
+	&& GdipSetImageAttributesColorMatrix(attrs, ColorAdjustTypeBitmap, TRUE, matrix, NULL, ColorMatrixFlagsDefault) == Ok;
+}
+
 static void
 del_resources(void)
 {
@@ -383,21 +568,25 @@ make_frame_from_2_overlays(PicHandleNames target, PicHandleNames background, Pic
 	make_frame(overlay2);
 
   UINT width, height;
-  GdipGetImageWidth(gpics[background], &width);
-  GdipGetImageHeight(gpics[background], &height);
+  if (!gpics[background] || !gpics[overlay1] || (overlay2 != PICHANDLE_INVALID && !gpics[overlay2])
+	  || !gdip_get_image_size(gpics[background], &width, &height))
+	return;
 
   GpBitmap* gbmp_target = NULL;
-  GdipCloneBitmapAreaI(0, 0, width, height, PixelFormat32bppARGB, gpics[background], &gbmp_target);
+  if (!gdip_clone_bitmap_area(0, 0, width, height, PixelFormat32bppARGB, gpics[background], &gbmp_target))
+	return;
 
   GpGraphics* gfx_target = NULL;
-  GdipGetImageGraphicsContext(gbmp_target, &gfx_target);
+  if (!gdip_get_image_graphics_context(gbmp_target, &gfx_target, InterpolationModeHighQuality)
+	  || !gdip_draw_image(gfx_target, gpics[overlay1], 0, 0)
+	  || (overlay2 != PICHANDLE_INVALID && !gdip_draw_image(gfx_target, gpics[overlay2], 0, 0)))
+	{
+	  gdip_delete_graphics(&gfx_target);
+	  GdipDisposeImage(gbmp_target);
+	  return;
+	}
 
-  GdipSetInterpolationMode(gfx_target, InterpolationModeHighQuality);
-  GdipDrawImageI(gfx_target, gpics[overlay1], 0, 0);
-  if (overlay2 != PICHANDLE_INVALID)
-	GdipDrawImageI(gfx_target, gpics[overlay2], 0, 0);
-
-  GdipDeleteGraphics(gfx_target);
+  gdip_delete_graphics(&gfx_target);
 
   gpics[target] = gbmp_target;
 }
@@ -419,13 +608,14 @@ make_hybrid_frame_with_overlay(Config* config, PicHandleNames target, PicHandleN
 	make_frame(overlay);
 
   UINT lwidth, lheight, rwidth, rheight;
-  GdipGetImageWidth(gpics[left], &lwidth);
-  GdipGetImageHeight(gpics[left], &lheight);
-  GdipGetImageWidth(gpics[right], &rwidth);
-  GdipGetImageHeight(gpics[right], &rheight);
+  if (!gpics[left] || !gpics[right] || (overlay != PICHANDLE_INVALID && !gpics[overlay])
+	  || !gdip_get_image_size(gpics[left], &lwidth, &lheight)
+	  || !gdip_get_image_size(gpics[right], &rwidth, &rheight))
+	return;
 
   GpBitmap* gbmp_target = NULL;
-  GdipCloneBitmapAreaI(0, 0, lwidth, lheight, PixelFormat32bppARGB, gpics[left], &gbmp_target);
+  if (!gdip_clone_bitmap_area(0, 0, lwidth, lheight, PixelFormat32bppARGB, gpics[left], &gbmp_target))
+	return;
 
   // Add alpha channel
   GpRect r;
@@ -434,11 +624,20 @@ make_hybrid_frame_with_overlay(Config* config, PicHandleNames target, PicHandleN
   r.Width = rwidth;
   r.Height = rheight;
   BitmapData right_data;
-  GdipBitmapLockBits(gpics[right], &r, ImageLockModeRead, PixelFormat32bppARGB, &right_data);
+  if (!gdip_lock_bits(gpics[right], &r, ImageLockModeRead, PixelFormat32bppARGB, &right_data))
+	{
+	  GdipDisposeImage(gbmp_target);
+	  return;
+	}
 
   // We want the final alpha to be a weighted average of source and target alpha, not a sum, but gdi+ gives no control over the channel!  So have to do it manually. :( :(
   BitmapData target_data;
-  GdipBitmapLockBits(gbmp_target, &r, ImageLockModeWrite, PixelFormat32bppARGB, &target_data);
+  if (!gdip_lock_bits(gbmp_target, &r, ImageLockModeWrite, PixelFormat32bppARGB, &target_data))
+	{
+	  gdip_unlock_bits(gpics[right], &right_data);
+	  GdipDisposeImage(gbmp_target);
+	  return;
+	}
 
   double percent_solid_on_hybrid = (100 - config->frames_percent_mixed_on_hybrid) / 200.0;
   double m = 255.0 / (rwidth * (1 - 2 * percent_solid_on_hybrid));
@@ -485,18 +684,21 @@ make_hybrid_frame_with_overlay(Config* config, PicHandleNames target, PicHandleN
 		}
 	}
 
-  GdipBitmapUnlockBits(gbmp_target, &target_data);
-  GdipBitmapUnlockBits(gpics[right], &right_data);
+  gdip_unlock_bits(gbmp_target, &target_data);
+  gdip_unlock_bits(gpics[right], &right_data);
 
   if (overlay != PICHANDLE_INVALID)
 	{
 	  GpGraphics* gfx_target = NULL;
-	  GdipGetImageGraphicsContext(gbmp_target, &gfx_target);
+	  if (!gdip_get_image_graphics_context(gbmp_target, &gfx_target, InterpolationModeHighQuality)
+		  || !gdip_draw_image(gfx_target, gpics[overlay], 0, 0))
+		{
+		  gdip_delete_graphics(&gfx_target);
+		  GdipDisposeImage(gbmp_target);
+		  return;
+		}
 
-	  GdipSetInterpolationMode(gfx_target, InterpolationModeHighQuality);
-	  GdipDrawImageI(gfx_target, gpics[overlay], 0, 0);
-
-	  GdipDeleteGraphics(gfx_target);
+	  gdip_delete_graphics(&gfx_target);
 	}
 
   gpics[target] = gbmp_target;
@@ -1172,8 +1374,9 @@ draw_smallcard_frame(HDC hdc, const RECT* dest_rect, PicHandleNames framenum, Gp
   if (!hdc || !dest_rect)
 	return;
 
-  UINT width;
-  GdipGetImageWidth(gpics[framenum], &width);
+  UINT width, height;
+  if (!gdip_get_image_size(gpics[framenum], &width, &height))
+	return;
 
   SetRect(&card_rect, 0, 0, 800, cfg->smallcard_title_dest_height);
 
@@ -1486,18 +1689,25 @@ make_gpic_from_pic(PicHandleNames picnum)
   if (!gpics[picnum])
 	{
 	  BITMAP bmp;
-	  GetObject(pics[picnum], sizeof(BITMAP), &bmp);
+	  if (!pics[picnum] || GetObject(pics[picnum], sizeof(BITMAP), &bmp) != sizeof(BITMAP)
+		  || bmp.bmWidth <= 0 || bmp.bmHeight <= 0 || !bmp.bmBits)
+		return;
 
 	  int just_initted = init_gdiplus();
 
-	  GdipCreateBitmapFromScan0(bmp.bmWidth, bmp.bmHeight, bmp.bmWidth * 4, picnum == CARDBACK ? PixelFormat32bppRGB : PixelFormat32bppARGB, bmp.bmBits, &gpics[picnum]);
+	  if (!gdip_create_bitmap_from_scan0(bmp.bmWidth, bmp.bmHeight, bmp.bmWidth * 4,
+										 picnum == CARDBACK ? PixelFormat32bppRGB : PixelFormat32bppARGB,
+										 bmp.bmBits, &gpics[picnum]))
+		return;
 
 	  if (just_initted)
 		{
 		  if (picnum != CARDCOUNTERS)
 			{
 			  make_gpic_from_pic(CARDCOUNTERS);	// Otherwise the first card with counters tends not to draw them.
-			  GetObject(pics[CARDCOUNTERS], sizeof(BITMAP), &bmp);
+			  if (!pics[CARDCOUNTERS] || GetObject(pics[CARDCOUNTERS], sizeof(BITMAP), &bmp) != sizeof(BITMAP)
+				  || bmp.bmWidth <= 0 || bmp.bmHeight <= 0 || !bmp.bmBits)
+				return;
 			}
 
 		  // Premultiply alpha for gdi rendering
@@ -1518,46 +1728,55 @@ make_gpic_from_pic(PicHandleNames picnum)
 void
 gdip_blt_whole(HDC hdc, const RECT* dest_rect, PicHandleNames frame, GpImageAttributes* alpha_xform)
 {
+  if (!hdc || !dest_rect)
+	return;
+
   if (!gpics[frame])
 	make_frame(frame);
+  if (!gpics[frame])
+	return;
 
   if (alpha_xform)
 	{
 	  UINT width, height;
-	  GdipGetImageWidth(gpics[frame], &width);
-	  GdipGetImageHeight(gpics[frame], &height);
+	  if (!gdip_get_image_size(gpics[frame], &width, &height))
+		return;
 	  gdip_blt(hdc, dest_rect, frame, 0, 0, width, height, alpha_xform);
 	}
   else
 	{
 	  GpGraphics* gfx = NULL;
 
-	  GdipCreateFromHDC(hdc, &gfx);
-	  GdipSetInterpolationMode(gfx, InterpolationModeHighQualityBicubic);
+	  if (gdip_create_graphics(hdc, &gfx, InterpolationModeHighQualityBicubic))
+		gdip_draw_image_rect(gfx, gpics[frame],
+							 dest_rect->left, dest_rect->top,
+							 dest_rect->right - dest_rect->left, dest_rect->bottom - dest_rect->top);
 
-	  GdipDrawImageRectI(gfx, gpics[frame], dest_rect->left, dest_rect->top, dest_rect->right - dest_rect->left, dest_rect->bottom - dest_rect->top);
-
-	  GdipDeleteGraphics(gfx);
+	  gdip_delete_graphics(&gfx);
 	}
 }
 
 void
 gdip_blt(HDC hdc, const RECT* dest_rect, PicHandleNames frame, int src_x, int src_y, int width, int height, GpImageAttributes* alpha_xform)
 {
+  if (!hdc || !dest_rect)
+	return;
+
   if (!gpics[frame])
 	make_frame(frame);
+  if (!gpics[frame])
+	return;
 
   GpGraphics* gfx = NULL;
 
-  GdipCreateFromHDC(hdc, &gfx);
-  GdipSetInterpolationMode(gfx, InterpolationModeHighQualityBicubic);
+  if (gdip_create_graphics(hdc, &gfx, InterpolationModeHighQualityBicubic))
+	gdip_draw_image_rect_rect(gfx, gpics[frame],
+							  dest_rect->left, dest_rect->top,
+							  dest_rect->right - dest_rect->left, dest_rect->bottom - dest_rect->top,
+							  src_x, src_y, width, height,
+							  alpha_xform);
 
-  GdipDrawImageRectRectI(gfx, gpics[frame],
-						 dest_rect->left, dest_rect->top, dest_rect->right - dest_rect->left, dest_rect->bottom - dest_rect->top,
-						 src_x, src_y, width, height,
-						 UnitPixel, alpha_xform, NULL, NULL);
-
-  GdipDeleteGraphics(gfx);
+  gdip_delete_graphics(&gfx);
 }
 
 const card_data_t*

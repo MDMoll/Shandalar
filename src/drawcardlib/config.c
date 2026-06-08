@@ -217,13 +217,18 @@ create_1_alpha_xform(GpImageAttributes** xform, ColorMatrix* matrix, int alpha)
 	*xform = NULL;
   else
 	{
-	  GdipCreateImageAttributes(xform);
+	  if (!gdip_create_image_attributes(xform))
+		return;
 	  int x, y;
 	  for (x = 0; x < 5; ++x)
 		for (y = 0; y < 5; ++y)
 		  matrix->m[x][y] = (x == y) ? 1 : 0;
 	  matrix->m[3][3] = MAX(alpha, 0) / 255.0;
-	  GdipSetImageAttributesColorMatrix(*xform, ColorAdjustTypeBitmap, TRUE, matrix, NULL, ColorMatrixFlagsDefault);
+	  if (!gdip_set_alpha_color_matrix(*xform, matrix))
+		{
+		  GdipDisposeImageAttributes(*xform);
+		  *xform = NULL;
+		}
 	}
 }
 

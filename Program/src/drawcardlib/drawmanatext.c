@@ -147,32 +147,37 @@ draw_mana_symbol(HDC hdc, char c, int x, int y, int wid, int hgt)
 
   make_gpic_from_pic(MANASYMBOLS);
 
-  UINT src_hgt;
-  GdipGetImageHeight(gpics[MANASYMBOLS], &src_hgt);
+  UINT src_wid, src_hgt;
+  if (!gdip_get_image_size(gpics[MANASYMBOLS], &src_wid, &src_hgt))
+	return;
 
   int src_x = (-(int)c - 1) * src_hgt /*sic*/;
   int src_y = 0;
+  if (src_x < 0 || src_hgt == 0 || src_x + (int)src_hgt > (int)src_wid)
+	return;
 
   if (wid < 0)
 	wid = src_hgt /*sic*/;
   if (hgt < 0)
 	hgt = src_hgt;
 
-  GpGraphics* gfx;
-  GdipCreateFromHDC(hdc, &gfx);
-  GdipSetInterpolationMode(gfx, InterpolationModeHighQuality);
+  GpGraphics* gfx = NULL;
+  if (!gdip_create_graphics(hdc, &gfx, InterpolationModeHighQuality))
+	return;
 
   /* Gdi+ prefilters an image before scaling it, so even with a fully-transparent borders around each subimage, it'll still sometimes pick up edges from
    * adjacent subimages.  So what I do is first crop the image to a secondary bitmap (which does not interpolate), then blt with interpolation from *that*
    * to the final image. */
 
   GpBitmap* cropped = NULL;
-  GdipCloneBitmapAreaI(src_x, src_y, src_hgt /*sic*/, src_hgt, PixelFormat32bppARGB, gpics[MANASYMBOLS], &cropped);
+  if (gdip_clone_bitmap_area(src_x, src_y, src_hgt /*sic*/, src_hgt,
+							 PixelFormat32bppARGB, gpics[MANASYMBOLS], &cropped))
+	{
+	  gdip_draw_image_rect(gfx, cropped, x, y, wid, hgt);
+	  GdipDisposeImage(cropped);
+	}
 
-  GdipDrawImageRectI(gfx, cropped, x, y, wid, hgt);
-
-  GdipDisposeImage(cropped);
-  GdipDeleteGraphics(gfx);
+  gdip_delete_graphics(&gfx);
 }
 
 CountColors

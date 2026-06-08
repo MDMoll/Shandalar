@@ -60,10 +60,21 @@ draw_special_counters(HDC hdc, const RECT* rect, int player, int card)
   unsigned int src_width, src_height;
   if (counters_renderer == RENDERER_GDIPLUS)
 	{
-	  GdipGetImageWidth(gpics[CARDCOUNTERS], &src_width);
-	  GdipGetImageHeight(gpics[CARDCOUNTERS], &src_height);
+	  if (counters_num_columns <= 0 || counters_num_rows <= 0
+		  || !gdip_get_image_size(gpics[CARDCOUNTERS], &src_width, &src_height))
+		{
+		  if (parent == PARENT_SHANDALAR)
+			LeaveCriticalSection(critical_section_for_drawing);
+		  return;
+		}
 	  src_width /= counters_num_columns;
 	  src_height /= counters_num_rows;
+	  if (src_width == 0 || src_height == 0)
+		{
+		  if (parent == PARENT_SHANDALAR)
+			LeaveCriticalSection(critical_section_for_drawing);
+		  return;
+		}
 	}
   else
 	{
@@ -146,10 +157,19 @@ get_special_counter_rect(RECT* rect_dest, const RECT* rect_src, int num)
   unsigned int src_width, src_height;
   if (counters_renderer == RENDERER_GDIPLUS)
 	{
-	  GdipGetImageWidth(gpics[CARDCOUNTERS], &src_width);
-	  GdipGetImageHeight(gpics[CARDCOUNTERS], &src_height);
+	  if (counters_num_columns <= 0 || counters_num_rows <= 0
+		  || !gdip_get_image_size(gpics[CARDCOUNTERS], &src_width, &src_height))
+		{
+		  SetRect(rect_dest, 0, 0, 0, 0);
+		  return;
+		}
 	  src_width /= counters_num_columns;
 	  src_height /= counters_num_rows;
+	  if (src_width == 0 || src_height == 0)
+		{
+		  SetRect(rect_dest, 0, 0, 0, 0);
+		  return;
+		}
 	}
   else
 	{
@@ -238,10 +258,21 @@ draw_standard_counters(HDC hdc, const RECT* rect, int player, int card)
   unsigned int src_width, src_height;
   if (counters_renderer == RENDERER_GDIPLUS)
 	{
-	  GdipGetImageWidth(gpics[CARDCOUNTERS], &src_width);
-	  GdipGetImageHeight(gpics[CARDCOUNTERS], &src_height);
+	  if (counters_num_columns <= 0 || counters_num_rows <= 0
+		  || !gdip_get_image_size(gpics[CARDCOUNTERS], &src_width, &src_height))
+		{
+		  if (parent == PARENT_SHANDALAR)
+			LeaveCriticalSection(critical_section_for_drawing);
+		  return;
+		}
 	  src_width /= counters_num_columns;
 	  src_height /= counters_num_rows;
+	  if (src_width == 0 || src_height == 0)
+		{
+		  if (parent == PARENT_SHANDALAR)
+			LeaveCriticalSection(critical_section_for_drawing);
+		  return;
+		}
 	}
   else
 	{

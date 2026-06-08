@@ -456,6 +456,22 @@ void del_obj(HGDIOBJ* obj);
 void draw_rect_outline(HDC hdc, const RECT* rect, COLORREF color);
 void draw_text_with_shadow(HDC hdc, RECT* rect, const TextWithShadow* tws, COLORREF override_color, const char* str, int len);	// override_color, len == -1 for default
 void draw_text_with_shadow_at_x(HDC hdc, RECT* rect, int x_pos, const TextWithShadow* tws, COLORREF override_color, const char* str, int len);	// override_color, len == -1 for default
+int gdip_clone_bitmap_area(INT x, INT y, INT width, INT height, PixelFormat format, GpBitmap* src, GpBitmap** dst);
+int gdip_create_bitmap_from_scan0(INT width, INT height, INT stride, PixelFormat format, BYTE* scan0, GpBitmap** bitmap);
+int gdip_create_graphics(HDC hdc, GpGraphics** graphics, InterpolationMode mode);
+int gdip_create_image_attributes(GpImageAttributes** attrs);
+void gdip_delete_graphics(GpGraphics** graphics);
+int gdip_draw_image(GpGraphics* graphics, GpImage* image, INT x, INT y);
+int gdip_draw_image_rect(GpGraphics* graphics, GpImage* image, INT x, INT y, INT width, INT height);
+int gdip_draw_image_rect_rect(GpGraphics* graphics, GpImage* image,
+							  INT dstx, INT dsty, INT dstwidth, INT dstheight,
+							  INT srcx, INT srcy, INT srcwidth, INT srcheight,
+							  GpImageAttributes* attrs);
+int gdip_get_image_graphics_context(GpImage* image, GpGraphics** graphics, InterpolationMode mode);
+int gdip_get_image_size(GpImage* image, UINT* width, UINT* height);
+int gdip_lock_bits(GpBitmap* bitmap, const GpRect* rect, UINT flags, PixelFormat format, BitmapData* data);
+int gdip_set_alpha_color_matrix(GpImageAttributes* attrs, ColorMatrix* matrix);
+void gdip_unlock_bits(GpBitmap* bitmap, BitmapData* data);
 void gdip_blt(HDC hdc, const RECT* dest_rect, PicHandleNames frame, int src_x, int src_y, int width, int height, GpImageAttributes* alpha_xform);
 void gdip_blt_whole(HDC hdc, const RECT* dest_rect, PicHandleNames frame, GpImageAttributes* alpha_xform);
 const card_data_t* get_card_data_from_csvid(uint32_t csvid);

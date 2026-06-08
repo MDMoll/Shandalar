@@ -88,6 +88,10 @@ check_drawcardlib_source() {
   require_marker "$path" "gdiplus_startup_output.NotificationHook(&gdiplus_bg_thread_token);" "$path calls GDI+ notification hook"
   require_marker "$path" "if (stat != Ok)" "$path checks GDI+ notification hook status"
   require_marker "$path" "gdiplus_startup_output.NotificationUnhook(gdiplus_bg_thread_token);" "$path calls GDI+ notification unhook"
+  require_marker "$path" "gdip_create_graphics(HDC hdc" "$path has checked graphics wrapper"
+  require_marker "$path" "gdip_create_bitmap_from_scan0(INT width" "$path has checked bitmap wrapper"
+  require_marker "$path" "gdip_draw_image_rect_rect(GpGraphics* graphics" "$path has checked rect-rect draw wrapper"
+  require_marker "$path" "gdip_lock_bits(GpBitmap* bitmap" "$path has checked bitmap lock wrapper"
   assert_no_gdiplus_startup_in_dllmain "$path"
 }
 
@@ -110,10 +114,10 @@ summarize_gdip_calls() {
   [[ -d "$path" ]] || return
 
   local count
-  count="$(rg -n 'Gdip[A-Za-z0-9_]+\(' "$path" --glob '*.[ch]' --glob '*.cpp' 2>/dev/null | wc -l | tr -d ' ')"
-  printf 'info: %s has %s direct GDI+ API callsite(s)\n' "$path" "$count"
-  if [[ "$count" -gt 20 ]]; then
-    warn "$path has many direct GDI+ calls; new renderer work should prefer checked wrappers"
+  count="$({ rg -n 'Gdip[A-Za-z0-9_]+\(' "$path" --glob '*.[ch]' --glob '*.cpp' --glob '!gdiplus.h' --glob '!drawcardlib.h' --glob '!drawcardlib.c' 2>/dev/null || true; } | { rg -v 'GdipDisposeImage(Attributes)?\(' || true; } | wc -l | tr -d ' ')"
+  printf 'info: %s has %s direct non-wrapper GDI+ API callsite(s)\n' "$path" "$count"
+  if [[ "$path" == *drawcardlib && "$count" -ne 0 ]]; then
+    fail "$path has direct non-wrapper GDI+ callsites"
   fi
 }
 

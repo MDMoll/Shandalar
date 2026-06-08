@@ -122,6 +122,10 @@ started GDI+ from `DllMain` and retained loaded `Gdiplus::Image` objects in its
 cache. The current Drawcardlib source and rebuilt root/Program DLLs now set
 `SuppressBackgroundThread = 1` and `SuppressExternalCodecs = 1`, call
 `NotificationHook()`, check hook status, and unhook before `GdiplusShutdown()`.
+They also route high-frequency GDI+ image creation, clone, graphics-context,
+lock, draw, and image-size operations through checked wrappers so failed GDI+
+status returns stop the draw path instead of cascading through null/invalid
+objects.
 A 2026-06-08 CrossOver root launch review then found the
 first rebuilt `DrawCardLib.dll` crashed during process attach because it
 carried `DYNAMIC_BASE`/`NX_COMPAT` startup characteristics; the accepted
@@ -191,7 +195,7 @@ change in this pass is the resolver cave described above.
 | Shandalar MagSnd initialization disable | n/a binary compatibility patch | root and Program `Shandalar.exe` wrapper at VA `0x56cf20` / file offset `0x16c320` |
 | Shandalar MCIWndCreateA disable | n/a binary compatibility patch | root and Program `Shandalar.exe` thunk at VA `0x578c10` / file offset `0x178010` |
 | Statwin MagVid loader disable | n/a binary compatibility patch | root and Program `Statwin.dll` wrapper at VA `0x10003610` / file offset `0x2a10` |
-| Drawcardlib GDI+ background-thread and codec suppression | `src/drawcardlib/drawcardlib.c`; `Program/src/drawcardlib/drawcardlib.c`; `src/drawcardlib/Makefile`; `Program/src/drawcardlib/Makefile` | rebuilt root and Program `Drawcardlib.dll`; root and local `MTG` copied-install copies hash to `d09188b790ad8cb363b2428c8636b412caa6267c0d8e826abdb255072c3aef3f`, suppress external codecs, check notification-hook status, and verify with PE `DllCharacteristics` `0x0000` |
+| Drawcardlib GDI+ lifecycle and checked-wrapper hardening | `src/drawcardlib/*.c`; `src/drawcardlib/drawcardlib.h`; `Program/src/drawcardlib/*.c`; `Program/src/drawcardlib/drawcardlib.h`; `src/drawcardlib/Makefile`; `Program/src/drawcardlib/Makefile` | rebuilt root and Program `Drawcardlib.dll`; root and local `MTG` copied-install copies hash to `24fbf84f26dd8258cd9ae23350971080fa2f192a210f610ca6a135b669b6ead9`, suppress external codecs, check notification-hook status, route high-frequency GDI+ render operations through checked wrappers, and verify with PE `DllCharacteristics` `0x0000` |
 | Source-only exile helper hardening | `src/functions/deck.c`; `Program/src/functions/deck.c` | source snapshots only; no shipped DLL helper patch |
 
 The Shandalar `.cdxai` section is shared. The land-CIP resolver cave owns
@@ -216,8 +220,8 @@ Program Shandalar helper DLLs.
 | `Program/Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` |
 | `Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` |
 | `Program/Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` |
-| `Drawcardlib.dll` | `d09188b790ad8cb363b2428c8636b412caa6267c0d8e826abdb255072c3aef3f` |
-| `Program/Drawcardlib.dll` | `d09188b790ad8cb363b2428c8636b412caa6267c0d8e826abdb255072c3aef3f` |
+| `Drawcardlib.dll` | `24fbf84f26dd8258cd9ae23350971080fa2f192a210f610ca6a135b669b6ead9` |
+| `Program/Drawcardlib.dll` | `24fbf84f26dd8258cd9ae23350971080fa2f192a210f610ca6a135b669b6ead9` |
 | `ManalinkEh.dll` | `68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5` |
 | `Program/ManalinkEh.dll` | `619ce5d3f80f4ac951418e8a1b2ec803b3b9aa0128e01b827e744b80e63962fc` |
 

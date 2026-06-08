@@ -76,18 +76,26 @@ blt_expansion_symbol(HDC hdc, const RECT* dest_rect, EXPANSION_t expansion, rari
   src_x += 4 * (src_y / EXPANSIONS_TALL);
   src_y %= EXPANSIONS_TALL;
 
-  GpGraphics* gfx;
+  GpGraphics* gfx = NULL;
 
   make_gpic_from_pic(EXPANSION_SYMBOLS);
-  GdipCreateFromHDC(hdc, &gfx);
-  GdipSetInterpolationMode(gfx, InterpolationModeHighQualityBicubic);
+  if (!gpics[EXPANSION_SYMBOLS] || !gdip_create_graphics(hdc, &gfx, InterpolationModeHighQualityBicubic))
+	return;
 
   UINT width, height;
-  GdipGetImageWidth(gpics[EXPANSION_SYMBOLS], &width);
-  GdipGetImageHeight(gpics[EXPANSION_SYMBOLS], &height);
+  if (!gdip_get_image_size(gpics[EXPANSION_SYMBOLS], &width, &height))
+	{
+	  gdip_delete_graphics(&gfx);
+	  return;
+	}
 
   int sym_wid = width / (EXPANSIONS_WIDE * 4);
   int sym_hgt = height / EXPANSIONS_TALL;
+  if (sym_wid <= 0 || sym_hgt <= 0)
+	{
+	  gdip_delete_graphics(&gfx);
+	  return;
+	}
 
   int dest_x = dest_rect->left;
   int dest_y = dest_rect->top;
@@ -99,12 +107,14 @@ blt_expansion_symbol(HDC hdc, const RECT* dest_rect, EXPANSION_t expansion, rari
    * to the final image. */
 
   GpBitmap* cropped = NULL;
-  GdipCloneBitmapAreaI(src_x * sym_wid, src_y * sym_hgt, sym_wid, sym_hgt, PixelFormat32bppARGB, gpics[EXPANSION_SYMBOLS], &cropped);
+  if (gdip_clone_bitmap_area(src_x * sym_wid, src_y * sym_hgt, sym_wid, sym_hgt,
+							 PixelFormat32bppARGB, gpics[EXPANSION_SYMBOLS], &cropped))
+	{
+	  gdip_draw_image_rect(gfx, cropped, dest_x, dest_y, dest_wid, dest_hgt);
+	  GdipDisposeImage(cropped);
+	}
 
-  GdipDrawImageRectI(gfx, cropped, dest_x, dest_y, dest_wid, dest_hgt);
-
-  GdipDisposeImage(cropped);
-  GdipDeleteGraphics(gfx);
+  gdip_delete_graphics(&gfx);
 }
 
 // Returns 0 if text should use PowertoughnessColor, 1 if should use TitleOnLightColor
@@ -286,30 +296,38 @@ blt_powertoughness_box(HDC hdc, const RECT* dest_rect, PicHandleNames frame, GpI
 		  break;
 	  }
 
-  GpGraphics* gfx;
+  GpGraphics* gfx = NULL;
 
   make_gpic_from_pic(ptbox);
-  GdipCreateFromHDC(hdc, &gfx);
-  GdipSetInterpolationMode(gfx, InterpolationModeHighQuality);
+  if (!gpics[ptbox] || !gdip_create_graphics(hdc, &gfx, InterpolationModeHighQuality))
+	return light;
 
   UINT width, height;
-  GdipGetImageWidth(gpics[ptbox], &width);
-  GdipGetImageHeight(gpics[ptbox], &height);
+  if (!gdip_get_image_size(gpics[ptbox], &width, &height))
+	{
+	  gdip_delete_graphics(&gfx);
+	  return light;
+	}
   if (cfg->fullcard_extended_powertoughness)
 	width /= 3;
   height /= 8;
+  if (width == 0 || height == 0)
+	{
+	  gdip_delete_graphics(&gfx);
+	  return light;
+	}
 
   int dest_x = dest_rect->left;
   int dest_y = dest_rect->top;
   int dest_wid = (dest_rect->right >= dest_rect->left) ? (UINT)(dest_rect->right - dest_rect->left) : width;
   int dest_hgt = (dest_rect->bottom >= dest_rect->top) ? (UINT)(dest_rect->bottom - dest_rect->top) : height;
 
-  GdipDrawImageRectRectI(gfx, gpics[ptbox],
-						 dest_x, dest_y, dest_wid, dest_hgt,
-						 src_x * width, src_y * height, width, height,
-						 UnitPixel, alpha_xform, NULL, NULL);
+  gdip_draw_image_rect_rect(gfx, gpics[ptbox],
+							dest_x, dest_y, dest_wid, dest_hgt,
+							src_x * width, src_y * height, width, height,
+							alpha_xform);
 
-  GdipDeleteGraphics(gfx);
+  gdip_delete_graphics(&gfx);
 
   return light;
 }
@@ -429,29 +447,37 @@ blt_type_icon(HDC hdc, const RECT* dest_rect, const card_ptr_t* cp, PicHandleNam
   if (src_x == -1)
 	return;
 
-  GpGraphics* gfx;
+  GpGraphics* gfx = NULL;
 
   make_gpic_from_pic(iconimg);
-  GdipCreateFromHDC(hdc, &gfx);
-  GdipSetInterpolationMode(gfx, InterpolationModeHighQuality);
+  if (!gpics[iconimg] || !gdip_create_graphics(hdc, &gfx, InterpolationModeHighQuality))
+	return;
 
   UINT width, height;
-  GdipGetImageWidth(gpics[iconimg], &width);
-  GdipGetImageHeight(gpics[iconimg], &height);
+  if (!gdip_get_image_size(gpics[iconimg], &width, &height))
+	{
+	  gdip_delete_graphics(&gfx);
+	  return;
+	}
   width /= 8;
   height /= 2;
+  if (width == 0 || height == 0)
+	{
+	  gdip_delete_graphics(&gfx);
+	  return;
+	}
 
   int dest_x = dest_rect->left;
   int dest_y = dest_rect->top;
   int dest_wid = (dest_rect->right >= dest_rect->left) ? (UINT)(dest_rect->right - dest_rect->left) : width;
   int dest_hgt = (dest_rect->bottom >= dest_rect->top) ? (UINT)(dest_rect->bottom - dest_rect->top) : height;
 
-  GdipDrawImageRectRectI(gfx, gpics[iconimg],
-						 dest_x, dest_y, dest_wid, dest_hgt,
-						 src_x * width, src_y * height, width, height,
-						 UnitPixel, NULL, NULL, NULL);
+  gdip_draw_image_rect_rect(gfx, gpics[iconimg],
+							dest_x, dest_y, dest_wid, dest_hgt,
+							src_x * width, src_y * height, width, height,
+							NULL);
 
-  GdipDeleteGraphics(gfx);
+  gdip_delete_graphics(&gfx);
 }
 
 static int
@@ -1054,8 +1080,8 @@ fullcard_expand_text_box(HDC hdc, RECT* rect_rulesbox, PicHandleNames framenum, 
 	framenum = FRAMEPART_FROM_BASE(CARDOV_MODERN_COLORLESS, cfg);
 
   UINT width, height;
-  GdipGetImageWidth(gpics[framenum], &width);
-  GdipGetImageHeight(gpics[framenum], &height);
+  if (!gdip_get_image_size(gpics[framenum], &width, &height))
+	return;
 
   // Blit from full width to full width with clipping instead of just to rect_rulesbox to avoid artifacts from the horrid nearest-neighbor filtering.
   int savedc = SaveDC(hdc);
