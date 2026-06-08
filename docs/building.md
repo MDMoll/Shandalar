@@ -21,7 +21,7 @@ an end-to-end rebuild of the shipped game.
 | --- | --- | --- |
 | `src/Makefile` | `ManalinkEh.dll` | Not accepted as a runtime replacement; dry run now prints a full compile/link plan, and the local MinGW/yasm/binutils tools are present. |
 | `src/deck/Makefile` | `DeckDll.dll` | Built locally with Homebrew MinGW/yasm overrides plus legacy-safe startup flags, then deployed to root plus `Program/`; SHA-256 `5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0`. |
-| `src/drawcardlib/Makefile` | `Drawcardlib.dll` | Built locally with Homebrew MinGW/yasm path overrides and legacy compatibility flags (`-fcommon -Wno-error`), then deployed to root plus `Program/`; SHA-256 `79096fd15ef22ed50f84aee681e48c6c3e678690c48e71f5430a03beee5cb7d1`. |
+| `src/drawcardlib/Makefile` | `Drawcardlib.dll` | Built locally with Homebrew MinGW/yasm path overrides, modern compiler compatibility flags (`-fcommon -Wno-error`), and legacy-safe PE startup linker flags (`___ImageBase=__image_base__`, `--disable-dynamicbase`, `--disable-nxcompat`), then deployed to root plus `Program/`; SHA-256 `9f37f131ba4a80ba543bb9372489438ac306cd01363b58cbc5ae8b1ccfd80700`. |
 | `src/cardartlib/Makefile` | `CardArtLib.dll` | Not attempted beyond inspection. |
 | `src/patches/*` | Patched binaries/DLLs in-place | Not run; patch scripts are potentially mutating. |
 
@@ -53,7 +53,10 @@ Current result: after restoring `src/card_id.h` from `Program/src/card_id.h`,
 the dry run prints the full `ManalinkEh.dll` compile/link plan. It still does
 not prove a real Manalink build; only `src/deck/DeckDll.dll` and
 `src/drawcardlib/Drawcardlib.dll` have been rebuilt with explicit
-`i686-w64-mingw32-*` tool overrides.
+`i686-w64-mingw32-*` tool overrides. Drawcardlib must keep the same
+legacy-safe PE startup linker flags as DeckDLL; a 2026-06-08 CrossOver root
+launch review showed the first GDI+ rebuild crashed during `DrawCardLib.dll`
+process attach when it carried `DYNAMIC_BASE`/`NX_COMPAT` characteristics.
 
 Header check:
 

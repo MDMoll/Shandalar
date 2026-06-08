@@ -6,7 +6,9 @@ CFLAGS = -ggdb2 -O2 -m32 -fno-omit-frame-pointer -march=i586		\
 	-Wshadow -W -Wstrict-prototypes -Wnested-externs -Winline	\
 	-Werror -I.. -I.
 AFLAGS = -a x86 -m x86 -p nasm -r nasm -f win32 -I.. -I.
-LDFLAGS = -L. $(patsubst %.dll,-l%,$(EXTERNDLLS)) -lgdi32 -lgdiplus -lshlwapi -lMsimg32
+LDFLAGS = -Wl,--enable-stdcall-fixup -Wl,--defsym,___ImageBase=__image_base__ \
+	-Wl,--disable-dynamicbase -Wl,--disable-nxcompat \
+	-L. $(patsubst %.dll,-l%,$(EXTERNDLLS)) -lgdi32 -lgdiplus -lshlwapi -lMsimg32
 COMPILE = $(CC) $(CFLAGS) -c
 RM = rm -f
 

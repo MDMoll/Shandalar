@@ -120,8 +120,12 @@ thread idle in the host event loop while a Wine thread repeatedly sampled in
 `GdiplusStartup()` used `SuppressBackgroundThread = 0`, unlike CardArtLib,
 which already used explicit notification hooks. The current Drawcardlib source
 and rebuilt root/Program DLLs now set `SuppressBackgroundThread = 1`, call
-`NotificationHook()`, and unhook before `GdiplusShutdown()`. Fresh visible
-Spell Chain/card-rendering retesting remains required.
+`NotificationHook()`, and unhook before `GdiplusShutdown()`. A 2026-06-08
+CrossOver root launch review then found the first rebuilt `DrawCardLib.dll`
+crashed during process attach because it carried `DYNAMIC_BASE`/`NX_COMPAT`
+startup characteristics; the accepted rebuilt DLL keeps PE `DllCharacteristics`
+at `0x0000` via the Drawcardlib Makefile's legacy-safe linker flags. Fresh
+visible Spell Chain/card-rendering retesting remains required.
 
 ## Finding
 
@@ -175,7 +179,7 @@ change in this pass is the resolver cave described above.
 | Shandalar minimal WinMM timer callback | n/a binary compatibility patch | root and Program `Shandalar.exe` callback entry at VA `0x4ce8cd` / file offset `0xcdccd` |
 | Shandalar MagSnd initialization disable | n/a binary compatibility patch | root and Program `Shandalar.exe` wrapper at VA `0x56cf20` / file offset `0x16c320` |
 | Statwin MagVid loader disable | n/a binary compatibility patch | root and Program `Statwin.dll` wrapper at VA `0x10003610` / file offset `0x2a10` |
-| Drawcardlib GDI+ background-thread suppression | `src/drawcardlib/drawcardlib.c`; `Program/src/drawcardlib/drawcardlib.c` | rebuilt root and Program `Drawcardlib.dll`; root and local `MTG` copied-install copies hash to `79096fd15ef22ed50f84aee681e48c6c3e678690c48e71f5430a03beee5cb7d1` |
+| Drawcardlib GDI+ background-thread suppression | `src/drawcardlib/drawcardlib.c`; `Program/src/drawcardlib/drawcardlib.c`; `src/drawcardlib/Makefile`; `Program/src/drawcardlib/Makefile` | rebuilt root and Program `Drawcardlib.dll`; root and local `MTG` copied-install copies hash to `9f37f131ba4a80ba543bb9372489438ac306cd01363b58cbc5ae8b1ccfd80700` and verify with PE `DllCharacteristics` `0x0000` |
 | Source-only exile helper hardening | `src/functions/deck.c`; `Program/src/functions/deck.c` | source snapshots only; no shipped DLL helper patch |
 
 The Shandalar `.cdxai` section is shared. The land-CIP resolver cave owns
@@ -200,8 +204,8 @@ Program Shandalar helper DLLs.
 | `Program/Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` |
 | `Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` |
 | `Program/Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` |
-| `Drawcardlib.dll` | `79096fd15ef22ed50f84aee681e48c6c3e678690c48e71f5430a03beee5cb7d1` |
-| `Program/Drawcardlib.dll` | `79096fd15ef22ed50f84aee681e48c6c3e678690c48e71f5430a03beee5cb7d1` |
+| `Drawcardlib.dll` | `9f37f131ba4a80ba543bb9372489438ac306cd01363b58cbc5ae8b1ccfd80700` |
+| `Program/Drawcardlib.dll` | `9f37f131ba4a80ba543bb9372489438ac306cd01363b58cbc5ae8b1ccfd80700` |
 | `ManalinkEh.dll` | `68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5` |
 | `Program/ManalinkEh.dll` | `619ce5d3f80f4ac951418e8a1b2ec803b3b9aa0128e01b827e744b80e63962fc` |
 
@@ -226,7 +230,8 @@ python3 tools/patch-shandalar-minimal-winmm-timer-callback.py
 tools/check-source-snapshot-parity.sh
 tools/verify-install-tree.sh
 tools/verify-crossover-mtg-state.sh
-shasum -a 256 Shandalar.exe Program/Shandalar.exe Shandalar.dll Program/Shandalar.dll Statwin.dll Program/Statwin.dll ManalinkEh.dll Program/ManalinkEh.dll
+shasum -a 256 Shandalar.exe Program/Shandalar.exe Shandalar.dll Program/Shandalar.dll Statwin.dll Program/Statwin.dll Drawcardlib.dll Program/Drawcardlib.dll ManalinkEh.dll Program/ManalinkEh.dll
+objdump -p Drawcardlib.dll Program/Drawcardlib.dll | rg -A2 'DllCharacteristics|DYNAMIC_BASE|NX_COMPAT'
 ```
 
 Representative AI land CIP resolver byte checks:

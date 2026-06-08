@@ -32,7 +32,7 @@ a runtime package is actually needed.
 | `Program/Shandalar.dll` | `Cardartlib.dll`, `Deckdll.dll`, `Drawcardlib.dll`, `ADVAPI32.DLL`, `GDI32.dll`, `KERNEL32.dll`, `msvcrt.dll`, `MSIMG32.DLL`, `USER32.dll`, `WINMM.DLL` | `CardArtLib.dll`, `Deckdll.dll`, `Drawcardlib.dll` | Uses `MSIMG32.DLL`; Windows/Wine usually provide it. Program copy now matches root after the stale helper generation caused a visible Hornet fatal. |
 | `Program/ManalinkEh.dll` | `kernel32.dll`, `KERNEL32.dll`, `msvcrt.dll`, `USER32.dll` | none beyond system DLLs | Root `ManalinkEh.dll` imports more DLLs than the Program copy. |
 | `Program/ManalinkEx.dll` | `kernel32.dll`, `user32.dll`, `advapi32.dll` | none beyond system DLLs | Loaded by `Magic.exe`; root copy has a different import table. |
-| `Program/Drawcardlib.dll` | `Cardartlib.dll`, `image.dll`, `GDI32.dll`, `gdiplus.dll`, `KERNEL32.dll`, `MSIMG32.DLL`, `api-ms-win-crt-convert-l1-1-0.dll`, `api-ms-win-crt-heap-l1-1-0.dll`, `api-ms-win-crt-private-l1-1-0.dll`, `api-ms-win-crt-runtime-l1-1-0.dll`, `api-ms-win-crt-stdio-l1-1-0.dll`, `api-ms-win-crt-string-l1-1-0.dll`, `SHLWAPI.dll`, `USER32.dll` | `CardArtLib.dll`, `Image.dll` | Card rendering helper. Program copy now matches root and is rebuilt so Drawcardlib uses GDI+ notification hooks instead of allowing GDI+ to create its own background thread. |
+| `Program/Drawcardlib.dll` | `Cardartlib.dll`, `image.dll`, `GDI32.dll`, `gdiplus.dll`, `KERNEL32.dll`, `MSIMG32.DLL`, `api-ms-win-crt-convert-l1-1-0.dll`, `api-ms-win-crt-heap-l1-1-0.dll`, `api-ms-win-crt-private-l1-1-0.dll`, `api-ms-win-crt-runtime-l1-1-0.dll`, `api-ms-win-crt-stdio-l1-1-0.dll`, `api-ms-win-crt-string-l1-1-0.dll`, `SHLWAPI.dll`, `USER32.dll` | `CardArtLib.dll`, `Image.dll` | Card rendering helper. Program copy now matches root and is rebuilt so Drawcardlib uses GDI+ notification hooks instead of allowing GDI+ to create its own background thread; the accepted build has PE `DllCharacteristics` `0x0000`. |
 
 CrossOver `MTG` note: direct logged launch of
 `C:\Shandalar\Program\Shandalar.exe` previously failed before gameplay because
@@ -62,10 +62,15 @@ Hornet recurrence was traced to stale Program helper DLLs, so
 `Program/Drawcardlib.dll` now match root. A newer `Program/Drawcardlib.dll`
 previously required adjacent `libgcc_s_dw2-1.dll`, so that file remains present
 in both root and Program layouts. The current rebuilt Drawcardlib generation
-uses Wine-provided `api-ms-win-crt-*` imports and suppresses the GDI+ background
-thread. The latest bounded log opened the Program helper DLLs and card-data
-files without the earlier fatal strings. An exact-path visible retest is still
-needed before the Program Shandalar path can be treated as supported.
+uses Wine-provided `api-ms-win-crt-*` imports, suppresses the GDI+ background
+thread, and must keep `DYNAMIC_BASE`/`NX_COMPAT` disabled. A 2026-06-08 direct
+root launch review found the first GDI+ rebuild aborting during
+`DrawCardLib.dll` process attach with an access violation in MinGW startup; the
+accepted rebuild has PE `DllCharacteristics` `0x0000` and was copied to the repo
+and local `MTG` root/Program paths. The latest bounded Program-path log opened
+the Program helper DLLs and card-data files without the earlier fatal strings.
+An exact-path visible retest is still needed before the Program Shandalar path
+can be treated as supported.
 Root `C:\Shandalar\Shandalar.exe` remains the current copied-bottle Shandalar
 path.
 
@@ -76,14 +81,14 @@ path.
 | `Program/Shandalar.exe` | PE32 GUI Intel 80386 | Win32 UI/system DLLs, `WINMM.dll`, `MSVFW32.dll`, `MSVCRT.dll`, local `DrawCardLib.dll`, `DECKDLL.dll`, `CdTools.dll`, `CardArtLib.dll` | No direct `VCRUNTIME`, `MSVCP`, `MFC`, `DDRAW`, or `D3D` imports found. | Use x86 runtimes only if a missing-DLL dialog/log points to them. |
 | `Program/Magic.exe` | PE32 GUI Intel 80386 | Win32 UI/system DLLs, `MSVFW32.dll`, `WINMM.dll`, local `deckdll.dll`, `drawcardlib.dll`, `manalinkeh.dll`, `manalinkex.dll` | No direct `VCRUNTIME`, `MSVCP`, `MFC`, `DDRAW`, or `D3D` imports found. | `ManalinkEh.dll` and `ManalinkEx.dll` must be available from the working directory/load path. |
 | `Program/Shandalar.dll` | PE32 DLL Intel 80386 | Local card/deck/rendering DLLs, `MSIMG32.DLL`, `WINMM.DLL`, `msvcrt.dll` | No direct `VCRUNTIME`, `MSVCP`, `MFC`, `DDRAW`, or `D3D` imports found. | Keep root and Program helper generations synced with the active card-data trio. |
-| `Program/Drawcardlib.dll` | PE32 DLL Intel 80386 | `Cardartlib.dll`, `image.dll`, GDI/GDI+, `MSIMG32.DLL`, `SHLWAPI.DLL`, `api-ms-win-crt-*` | GDI+ support may matter in older bottles if `GDIPLUS.DLL` is absent or incomplete. | Preserve `CardArtLib.dll`, `Image.dll`, and top-level `Program/CardArt` rendering assets nearby. |
+| `Program/Drawcardlib.dll` | PE32 DLL Intel 80386 | `Cardartlib.dll`, `image.dll`, GDI/GDI+, `MSIMG32.DLL`, `SHLWAPI.DLL`, `api-ms-win-crt-*` | GDI+ support may matter in older bottles if `GDIPLUS.DLL` is absent or incomplete. | Preserve `CardArtLib.dll`, `Image.dll`, top-level `Program/CardArt` rendering assets, and legacy-safe PE startup flags nearby. |
 
 ## Supporting DLL Imports
 
 | DLL | Imported DLLs from this checkout | Notes |
 | --- | --- | --- |
 | `Program/CardArtLib.dll` | `GDIPLUS.DLL`, `KERNEL32.dll`, `msvcrt.dll` | GDI+ image helper. |
-| `Program/Drawcardlib.dll` | `Cardartlib.dll`, `image.dll`, `GDI32.dll`, `gdiplus.dll`, `KERNEL32.dll`, `MSIMG32.DLL`, `api-ms-win-crt-convert-l1-1-0.dll`, `api-ms-win-crt-heap-l1-1-0.dll`, `api-ms-win-crt-private-l1-1-0.dll`, `api-ms-win-crt-runtime-l1-1-0.dll`, `api-ms-win-crt-stdio-l1-1-0.dll`, `api-ms-win-crt-string-l1-1-0.dll`, `SHLWAPI.dll`, `USER32.dll` | Card rendering helper; current Program copy matches root and suppresses the GDI+ background thread. |
+| `Program/Drawcardlib.dll` | `Cardartlib.dll`, `image.dll`, `GDI32.dll`, `gdiplus.dll`, `KERNEL32.dll`, `MSIMG32.DLL`, `api-ms-win-crt-convert-l1-1-0.dll`, `api-ms-win-crt-heap-l1-1-0.dll`, `api-ms-win-crt-private-l1-1-0.dll`, `api-ms-win-crt-runtime-l1-1-0.dll`, `api-ms-win-crt-stdio-l1-1-0.dll`, `api-ms-win-crt-string-l1-1-0.dll`, `SHLWAPI.dll`, `USER32.dll` | Card rendering helper; current Program copy matches root, suppresses the GDI+ background thread, and keeps PE `DllCharacteristics` at `0x0000`. |
 | `Program/CdTools.dll` | `KERNEL32.dll`, `USER32.dll`, `ADVAPI32.dll` | CD/autoplay helper imported by `Shandalar.exe`. |
 | `Program/Statwin.dll` | `KERNEL32.dll`, `USER32.dll`, `GDI32.dll`, `MSVFW32.dll`, `MSVCRT.dll` | UI/video-adjacent helper. Current root and Program copies match and are patched so Statwin reports MagVid video unavailable before loading `magvid.dll`; old StatWin/AVI video behavior may be unavailable. |
 | `Program/ManalinkEh.dll` | `kernel32.dll`, `KERNEL32.dll`, `msvcrt.dll`, `USER32.dll` | Manalink extension DLL imported by `Magic.exe`; patched for Samite-family and generic activated damage-prevention prompt freezes, AI decision-time clamping, AI raw-mana speculation snapshot restore safety, Piranha Marsh/Bojuka Bog trigger targeting, generic AI player-only target selection, and AI land CIP resolver stack-bypass handling. |

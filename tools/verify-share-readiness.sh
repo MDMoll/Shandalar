@@ -44,6 +44,29 @@ expect_hex_prefix() {
   [ "$actual" = "$expected" ] || fail "$path hex at $offset $actual != $expected"
 }
 
+hex_le_to_uint() {
+  local hex="$1"
+  local swapped=""
+  local i
+  for ((i=${#hex}; i>0; i-=2)); do
+    swapped+="${hex:i-2:2}"
+  done
+  printf '%d' "0x$swapped"
+}
+
+expect_pe_dll_characteristics() {
+  local path="$1"
+  local expected="$2"
+  expect_file "$path"
+  local e_lfanew_hex e_lfanew characteristics_offset actual_le actual
+  e_lfanew_hex="$(xxd -p -l 4 -s 0x3c "$path" | tr -d '\n')"
+  e_lfanew="$(hex_le_to_uint "$e_lfanew_hex")"
+  characteristics_offset=$((e_lfanew + 4 + 20 + 0x46))
+  actual_le="$(xxd -p -l 2 -s "$characteristics_offset" "$path" | tr -d '\n')"
+  actual="$(printf '%04x' "$(hex_le_to_uint "$actual_le")")"
+  [ "$actual" = "$expected" ] || fail "$path PE DllCharacteristics 0x$actual != 0x$expected"
+}
+
 expect_text_match() {
   local path="$1"
   local pattern="$2"
@@ -234,8 +257,8 @@ expect_hash CardArtLib.dll 975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f641
 expect_hash Program/CardArtLib.dll 975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f6416457e510484
 expect_hash DeckDLL.dll 5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0
 expect_hash Program/Deckdll.dll 5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0
-expect_hash Drawcardlib.dll 79096fd15ef22ed50f84aee681e48c6c3e678690c48e71f5430a03beee5cb7d1
-expect_hash Program/Drawcardlib.dll 79096fd15ef22ed50f84aee681e48c6c3e678690c48e71f5430a03beee5cb7d1
+expect_hash Drawcardlib.dll 9f37f131ba4a80ba543bb9372489438ac306cd01363b58cbc5ae8b1ccfd80700
+expect_hash Program/Drawcardlib.dll 9f37f131ba4a80ba543bb9372489438ac306cd01363b58cbc5ae8b1ccfd80700
 expect_hash Statwin.dll f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf
 expect_hash Program/Statwin.dll f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf
 expect_hash ManalinkEh.dll 68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5
@@ -270,6 +293,10 @@ expect_hash Program/CardArt/Planeswalker/LoyaltyMinus.png 89f01e1bda607459ea6560
 expect_hash Program/CardArt/Planeswalker/LoyaltyPlus.png ad4b8971dd43955ccfd3daf9020b3a6f60c0a8fe9f21b73847c07a81b12af3ef
 expect_hash Program/CardArt/Planeswalker/LoyaltyZero.png 8faf7ec5225538bcb97b539a1614282007ea484317411806a311f1c2d800ccef
 pass "patched runtime hashes match docs"
+
+expect_pe_dll_characteristics Drawcardlib.dll 0000
+expect_pe_dll_characteristics Program/Drawcardlib.dll 0000
+pass "Drawcardlib PE startup flags are legacy-safe"
 
 shandalar_land_cip_cave_hex=83fe017557833d00d28b0001744ef60534a99300027545813d78d19400db00000075393935381c8e0075313935b8f47b007529391dc42f8e0075218d149b89d0c1e00429d08d148752e842ed31ffa90100000074065fe90f0000005a8d149b8b0d381c8e00e9d38833ffc705ace97b0000000000ff3578d19400ff3564b7d106ff35b8f47b00ff35c42f8e00814f08000100106a006affba0100000029f25253566a7e5356e896c832ff83c4208b0424a3c42f8e008b442404a3b8f47b008b442408a364b7d1068b44240ca378d19400816708fffeffefc705ace97b000000000068000300005356e873972fff83c40c8f05c42f8e008f05b8f47b008f0564b7d1068f0578d19400e96d8a33ff
 shandalar_player_target_cave_hex=898d3cfdffff837f08017515817f1400100000750c31c0a36cd49400e9fe052bffb8f8424c00ffd0a16cd49400e9d6052bff0000000000000000000000000000

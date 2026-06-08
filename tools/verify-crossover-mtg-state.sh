@@ -47,8 +47,8 @@ EXPECTED_HASHES = {
     "Program/CardArtLib.dll": "975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f6416457e510484",
     "DeckDLL.dll": "5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0",
     "Program/Deckdll.dll": "5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0",
-    "Drawcardlib.dll": "79096fd15ef22ed50f84aee681e48c6c3e678690c48e71f5430a03beee5cb7d1",
-    "Program/Drawcardlib.dll": "79096fd15ef22ed50f84aee681e48c6c3e678690c48e71f5430a03beee5cb7d1",
+    "Drawcardlib.dll": "9f37f131ba4a80ba543bb9372489438ac306cd01363b58cbc5ae8b1ccfd80700",
+    "Program/Drawcardlib.dll": "9f37f131ba4a80ba543bb9372489438ac306cd01363b58cbc5ae8b1ccfd80700",
     "Statwin.dll": "f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf",
     "Program/Statwin.dll": "f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf",
     "ManalinkEh.dll": "68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5",
@@ -82,6 +82,11 @@ EXPECTED_HASHES = {
     "Program/CardArt/Planeswalker/LoyaltyMinus.png": "89f01e1bda607459ea6560c0b6608a9aab409799c05cd00279fee6d0bfd82cb9",
     "Program/CardArt/Planeswalker/LoyaltyPlus.png": "ad4b8971dd43955ccfd3daf9020b3a6f60c0a8fe9f21b73847c07a81b12af3ef",
     "Program/CardArt/Planeswalker/LoyaltyZero.png": "8faf7ec5225538bcb97b539a1614282007ea484317411806a311f1c2d800ccef",
+}
+
+EXPECTED_DLL_CHARACTERISTICS = {
+    "Drawcardlib.dll": 0x0000,
+    "Program/Drawcardlib.dll": 0x0000,
 }
 
 SHANDALAR_LAND_CIP_CAVE = bytes.fromhex(
@@ -257,6 +262,25 @@ def expect_hex_prefix(rel_path: str, offset: int, expected: bytes) -> None:
         )
 
 
+def pe_dll_characteristics(path: Path) -> int:
+    data = path.read_bytes()
+    if len(data) < 0x40:
+        fail(f"{path} is too small to contain a PE header")
+    e_lfanew = int.from_bytes(data[0x3C:0x40], "little")
+    offset = e_lfanew + 4 + 20 + 0x46
+    if len(data) < offset + 2:
+        fail(f"{path} is too small to contain PE DllCharacteristics")
+    return int.from_bytes(data[offset : offset + 2], "little")
+
+
+def expect_pe_dll_characteristics(rel_path: str, expected: int) -> None:
+    path = INSTALL / rel_path
+    expect_file(path)
+    actual = pe_dll_characteristics(path)
+    if actual != expected:
+        fail(f"{rel_path} PE DllCharacteristics 0x{actual:04x} != 0x{expected:04x}")
+
+
 def expect_no_variant_markers(rel_path: str) -> None:
     text = read_text(INSTALL / rel_path)
     for line_number, line in enumerate(text.splitlines(), 1):
@@ -361,6 +385,10 @@ else:
 for rel_path, expected in EXPECTED_HASHES.items():
     expect_hash(rel_path, expected)
 ok(f"patched bottle runtime hashes match docs ({len(EXPECTED_HASHES)} checked)")
+
+for rel_path, expected in EXPECTED_DLL_CHARACTERISTICS.items():
+    expect_pe_dll_characteristics(rel_path, expected)
+ok("patched bottle Drawcardlib PE startup flags are legacy-safe")
 
 for rel_path, checks in EXPECTED_HEX_PREFIXES.items():
     for offset, expected in checks:

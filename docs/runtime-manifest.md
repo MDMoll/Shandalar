@@ -1,6 +1,6 @@
 # Runtime Manifest
 
-Generated from local inspection on 2026-05-31 and updated on 2026-06-07 in
+Generated from local inspection on 2026-05-31 and updated on 2026-06-08 in
 `/Users/mdmoll/Shandalar/Shandalar`.
 
 This manifest is for identity, review, and scan handoff. It is not a malware
@@ -26,8 +26,8 @@ scan, a license grant, or proof of gameplay stability.
 | `Program/CardArtLib.dll` | `975111a7f82d4e026a8572c669a678eddea2d5ffa895dce59f6416457e510484` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `CardArtLib.dll` for direct Program-path Shandalar launches. |
 | `DeckDLL.dll` | `5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0` | PE32 DLL Intel 80386 | Root deck/card-data helper rebuilt from `src/deck` with the Shandalar minimum-deck-size guard and legacy-safe startup flags: no dynamic base/NX compatibility bits, plus `___ImageBase=__image_base__`. |
 | `Program/Deckdll.dll` | `5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `DeckDLL.dll` with the existing Program filename case preserved. |
-| `Drawcardlib.dll` | `79096fd15ef22ed50f84aee681e48c6c3e678690c48e71f5430a03beee5cb7d1` | PE32 DLL Intel 80386 | Root card-rendering helper generation rebuilt so Drawcardlib uses explicit GDI+ notification hooks instead of allowing a GDI+ background thread. |
-| `Program/Drawcardlib.dll` | `79096fd15ef22ed50f84aee681e48c6c3e678690c48e71f5430a03beee5cb7d1` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `Drawcardlib.dll`; this generation imports Wine-provided `api-ms-win-crt-*` DLLs instead of `libgcc_s_dw2-1.dll` directly. |
+| `Drawcardlib.dll` | `9f37f131ba4a80ba543bb9372489438ac306cd01363b58cbc5ae8b1ccfd80700` | PE32 DLL Intel 80386 | Root card-rendering helper generation rebuilt so Drawcardlib uses explicit GDI+ notification hooks instead of allowing a GDI+ background thread, with legacy-safe PE startup flags and `DllCharacteristics` `0x0000`. |
+| `Program/Drawcardlib.dll` | `9f37f131ba4a80ba543bb9372489438ac306cd01363b58cbc5ae8b1ccfd80700` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `Drawcardlib.dll`; this generation imports Wine-provided `api-ms-win-crt-*` DLLs instead of `libgcc_s_dw2-1.dll` directly and keeps `DYNAMIC_BASE`/`NX_COMPAT` disabled for CrossOver loader compatibility. |
 | `Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` | PE32 DLL Intel 80386 | Root status/video-adjacent helper; patched at VA `0x10003610` / file offset `0x2a10` so the dynamic MagVid loader returns video-unavailable before loading `magvid.dll`. |
 | `Program/Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `Statwin.dll`; includes the same MagVid loader-disable compatibility patch. |
 | `libgcc_s_dw2-1.dll` | `89f6147f5ed3f271d0b88f0586e079b9ac22e76c31221e5d5013aa273cc4694b` | PE32 DLL Intel 80386 | Preserved GCC runtime helper from the previous drawcard helper generation and Program-path loader fix. |

@@ -93,11 +93,12 @@ checkout and the local copied install. A later visible recurrence of the
 Hornet fatal came from stale Program helper DLLs rather than the card-data trio:
 `Program/Shandalar.dll`, `Program/CardArtLib.dll`, `Program/Deckdll.dll`, and
 `Program/Drawcardlib.dll` now match root. The current rebuilt Drawcardlib has
-explicit GDI+ notification hooks and imports Wine-provided `api-ms-win-crt-*`
-DLLs rather than `libgcc_s_dw2-1.dll` directly; the adjacent Program libgcc
-helper remains preserved from the earlier Program-path loader fix. The latest
-bounded log loaded those Program helper DLLs and data files without the earlier
-fatal strings. The exact Program path still needs visible retesting.
+explicit GDI+ notification hooks, imports Wine-provided `api-ms-win-crt-*` DLLs
+rather than `libgcc_s_dw2-1.dll` directly, and keeps PE `DllCharacteristics` at
+`0x0000`; the adjacent Program libgcc helper remains preserved from the earlier
+Program-path loader fix. The latest bounded Program-path log loaded those
+Program helper DLLs and data files without the earlier fatal strings. The exact
+Program path still needs visible retesting.
 
 Backup note: bottle-local originals were saved as
 `Shandalar.before-hsection-null-patch.exe` and
@@ -246,6 +247,8 @@ wine Magic.exe
 | Visible direct launch of `C:\Shandalar\Program\Shandalar.exe` in bottle `MTG` after the Program card-data trio was present | repo root | Stopped again at the Hornet `raw_cards_data[-1]` fatal. Strings and hash inspection showed the exact assert string lived in the stale `Program/Shandalar.dll` helper generation. `Program/Shandalar.dll`, `Program/CardArtLib.dll`, `Program/Deckdll.dll`, and `Program/Drawcardlib.dll` now match root in the repo and local copied install. |
 | `/usr/bin/perl -e 'alarm 20; exec @ARGV' /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar\Program" --cx-log /tmp/shandalar-mtg-program-dll-sync-retest-cx.log --debugmsg +seh,+file "C:\Shandalar\Program\Shandalar.exe"` | repo root | After syncing the Program helper DLLs, the old Hornet fatal was absent, but the newer Program `DrawCardLib.dll` could not load because `C:\Shandalar\Program\libgcc_s_dw2-1.dll` was missing. `Program/libgcc_s_dw2-1.dll` now matches root in the repo and local copied install. |
 | `/usr/bin/perl -e 'alarm 20; exec @ARGV' /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar\Program" --cx-log /tmp/shandalar-mtg-program-dll-sync-libgcc-retest-cx.log --debugmsg +seh,+file "C:\Shandalar\Program\Shandalar.exe"` | repo root | Loaded `C:\Shandalar\Program\DrawCardLib.dll`, `libgcc_s_dw2-1.dll`, `DECKDLL.dll`, `shandalar.dll`, and the Program card-data files. Targeted scan found no generic card-data fatal, `raw_cards_data`, Hornet fatal, missing-asset dialog, missing-library import, page fault, assertion, or unhandled-exception strings. The process stayed alive until the 20-second alarm; leftover `Shandalar.exe` was killed manually, so this is loader/fatal-regression evidence only. |
+| `/usr/bin/perl -e 'alarm 20; exec @ARGV' /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" --cx-log /tmp/shandalar-regression-root-launch-cx.log --debugmsg +seh,+loaddll,+file "C:\Shandalar\Shandalar.exe"` | repo root | Immediate exit code 5 after the first GDI+ Drawcardlib rebuild. The log showed `DrawCardLib.dll` process attach followed by an access violation, `MODULE_InitDLL (... L"DrawCardLib.dll",PROCESS_ATTACH,...) - RETURN 0`, `Initialization of L"DrawCardLib.dll" failed`, and `DrawCardLib.dll failed to initialize`. Static inspection showed that generation had `DYNAMIC_BASE`/`NX_COMPAT`, unlike the accepted legacy-safe build. |
+| `/usr/bin/perl -e 'alarm 20; exec @ARGV' /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG --workdir "C:\Shandalar" --cx-log /tmp/shandalar-regression-root-launch-post-drawcardlib-linkfix-cx.log --debugmsg +seh,+loaddll,+file "C:\Shandalar\Shandalar.exe"` | repo root | After rebuilding Drawcardlib with `___ImageBase=__image_base__`, `--disable-dynamicbase`, and `--disable-nxcompat`, the process stayed alive until the 20-second alarm. The log shows `process_attach (L"DrawCardLib.dll",...) - START` and `END`, and targeted scans found no `failed to initialize`, `Initialization of`, `EXCEPTION_ACCESS_VIOLATION`, page-fault, card-data fatal, or missing-asset strings. The child process left by the alarm was killed manually, so this is loader-regression evidence only. |
 | `/usr/bin/perl -e 'alarm 15; exec @ARGV' /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG Shandalar.exe --help` | `/Users/mdmoll/Shandalar/Shandalar/Program` | Exit code 53, no stdout/stderr captured. |
 | `/usr/bin/perl -e 'alarm 15; exec @ARGV' /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG Shandalar.exe` | `/Users/mdmoll/Shandalar/Shandalar/Program` | Exit code 53, no stdout/stderr captured. |
 | `/usr/bin/perl -e 'alarm 15; exec @ARGV' /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine --bottle MTG Magic.exe` | `/Users/mdmoll/Shandalar/Shandalar/Program` | Exit code 53, no stdout/stderr captured. |
