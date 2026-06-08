@@ -46,8 +46,8 @@ temporary opponent-row replacement.
 
 | File | Patch site | Expected bytes | New SHA-256 |
 | --- | --- | --- | --- |
-| `ManalinkEh.dll` | Hook at file offset `0x40db84`, function VMA `0x0240e584`; cave at `0x495a90` / VMA `0x02497090` | Hook starts `e9 07 8b 08 00`; cave starts `8d 7d b4 31 c0 8b 0c 85 c0 f3 4e 00` and ends `e9 eb 74 f7 ff` | `68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5` |
-| `Program/ManalinkEh.dll` | Hook at file offset `0x3d3844`, function VMA `0x023d4244`; cave at `0x452c90` / VMA `0x02454090` | Hook starts `e9 47 fe 07 00`; cave starts `8d 7d b4 31 c0 8b 0c 85 c0 f3 4e 00` and ends `e9 ab 01 f8 ff` | `619ce5d3f80f4ac951418e8a1b2ec803b3b9aa0128e01b827e744b80e63962fc` |
+| `ManalinkEh.dll` | Hook at file offset `0x40db84`, function VMA `0x0240e584`; cave at `0x495a90` / VMA `0x02497090` | Hook starts `e9 07 8b 08 00`; cave starts `8d 7d b4 31 c0 8b 0c 85 c0 f3 4e 00` and ends `e9 eb 74 f7 ff` | `0a2d77aa15fd18648a99398d7bb45b97e47a1a8ea6c01dc3e22433851940a507` |
+| `Program/ManalinkEh.dll` | Hook at file offset `0x3d3844`, function VMA `0x023d4244`; cave at `0x452c90` / VMA `0x02454090` | Hook starts `e9 47 fe 07 00`; cave starts `8d 7d b4 31 c0 8b 0c 85 c0 f3 4e 00` and ends `e9 ab 01 f8 ff` | `e715b92495677abf940b3bfda438477d66896532b24c1b05a4ea2bc2179c2e22` |
 
 The shared executable cave section virtual size is now `0x200`, leaving the
 existing generic damage-prevention cave at `+0x30`, the AI decision-time cave at

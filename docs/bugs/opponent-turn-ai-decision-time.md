@@ -43,8 +43,8 @@ nonpositive or higher values use `270`.
 
 | File | Patch site | Expected bytes | New SHA-256 |
 | --- | --- | --- | --- |
-| `ManalinkEh.dll` | Hook at file offset `0x40d0e1`, function VMA `0x0240dad0`; cave at `0x495a60` / VMA `0x02497060` | Hook `e9 7a 95 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 74 6a f7 ff` | `68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5` |
-| `Program/ManalinkEh.dll` | Hook at file offset `0x3d2da1`, function VMA `0x023d3790`; cave at `0x452c60` / VMA `0x02454060` | Hook `e9 ba 08 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 34 f7 f7 ff` | `619ce5d3f80f4ac951418e8a1b2ec803b3b9aa0128e01b827e744b80e63962fc` |
+| `ManalinkEh.dll` | Hook at file offset `0x40d0e1`, function VMA `0x0240dad0`; cave at `0x495a60` / VMA `0x02497060` | Hook `e9 7a 95 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 74 6a f7 ff` | `0a2d77aa15fd18648a99398d7bb45b97e47a1a8ea6c01dc3e22433851940a507` |
+| `Program/ManalinkEh.dll` | Hook at file offset `0x3d2da1`, function VMA `0x023d3790`; cave at `0x452c60` / VMA `0x02454060` | Hook `e9 ba 08 08 00 90 90 90 90 90 90`; cave `89 c3 85 c0 7e 08 81 fb 0e 01 00 00 7e 05 bb 0e 01 00 00 e9 34 f7 f7 ff` | `e715b92495677abf940b3bfda438477d66896532b24c1b05a4ea2bc2179c2e22` |
 
 The current hashes above also include the later AI raw-mana snapshot,
 Piranha Marsh trigger-target, Bojuka Bog trigger-target, generic AI

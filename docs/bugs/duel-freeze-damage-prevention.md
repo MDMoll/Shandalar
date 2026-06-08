@@ -98,8 +98,8 @@ The runtime fix is in `ManalinkEh.dll`, not `Shandalar.exe`.
 
 | File | Patch site | New SHA-256 |
 | --- | --- | --- |
-| `ManalinkEh.dll` | Samite-family guard at file offset `0x3bb035`, function VMA `0x023bba20`; generic helper jump at `0x44cb23`; helper cave at `0x495a30` / VMA `0x02497030` | `68f2ba31f26f99edfb0944fe3fbc577ef0a42f9f6a6d7d44cb3aaa5f9b9cadd5` |
-| `Program/ManalinkEh.dll` | Samite-family guard at file offset `0x381a25`, function VMA `0x02382410`; generic helper jump at `0x40f115`; helper cave at `0x452c30` / VMA `0x02454030` | `619ce5d3f80f4ac951418e8a1b2ec803b3b9aa0128e01b827e744b80e63962fc` |
+| `ManalinkEh.dll` | Samite-family guard at file offset `0x3bb035`, function VMA `0x023bba20`; generic helper jump at `0x44cb23`; helper cave at `0x495a30` / VMA `0x02497030` | `0a2d77aa15fd18648a99398d7bb45b97e47a1a8ea6c01dc3e22433851940a507` |
+| `Program/ManalinkEh.dll` | Samite-family guard at file offset `0x381a25`, function VMA `0x02382410`; generic helper jump at `0x40f115`; helper cave at `0x452c30` / VMA `0x02454030` | `e715b92495677abf940b3bfda438477d66896532b24c1b05a4ea2bc2179c2e22` |
 
 Expected bytes at both patch sites:
 

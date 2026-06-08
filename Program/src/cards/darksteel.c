@@ -1479,7 +1479,7 @@ int card_myr_matrix(int player, int card, event_t event){//UNUSEDCARD
 
 int card_myr_moonvessel(int player, int card, event_t event){
 
-	if( graveyard_from_play(player, card, event) ){
+	if( this_dies_trigger(player, card, event, RESOLVE_TRIGGER_MANDATORY) ){
 		produce_mana(player, COLOR_COLORLESS, 1);
 	}
 	return 0;
