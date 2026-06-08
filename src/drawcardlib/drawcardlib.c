@@ -176,13 +176,17 @@ init_gdiplus(void)
 	  input.GdiplusVersion = 1;
 	  input.DebugEventCallback = NULL;
 	  input.SuppressBackgroundThread = 1;
-	  input.SuppressExternalCodecs = 0;
+	  input.SuppressExternalCodecs = 1;
 
 	  if (GdiplusStartup(&gdiplus_token, &input, &gdiplus_startup_output) != Ok || !gdiplus_token)
 		return 0;
 
 	  if (gdiplus_startup_output.NotificationHook)
-		gdiplus_startup_output.NotificationHook(&gdiplus_bg_thread_token);
+		{
+		  GpStatus stat = gdiplus_startup_output.NotificationHook(&gdiplus_bg_thread_token);
+		  if (stat != Ok)
+			gdiplus_bg_thread_token = 0;
+		}
 
 	  int i;
 	  for (i = 0; i <= MAX_CFG; ++i)
