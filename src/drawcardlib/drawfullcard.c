@@ -6,13 +6,67 @@
 
 Watermark watermarks[256];	// Up to 255 may be defined, plus one as a sentinel
 
+#define FULLCARD_RULES_TEXT_BUFFER_SIZE	2000
+
+static int
+ensure_loaded_gpic(PicHandleNames picnum)
+{
+  if (picnum < 0 || picnum >= MAX_PICHANDLES_PLUS_1)
+	return 0;
+
+  if (!gpics[picnum])
+	make_gpic_from_pic(picnum);
+
+  return gpics[picnum] != NULL;
+}
+
+static int
+dest_rect_dimensions(const RECT* dest_rect, int fallback_wid, int fallback_hgt,
+					 int* dest_x, int* dest_y, int* dest_wid, int* dest_hgt)
+{
+  if (!dest_rect || !dest_x || !dest_y || !dest_wid || !dest_hgt)
+	return 0;
+
+  *dest_x = dest_rect->left;
+  *dest_y = dest_rect->top;
+  *dest_wid = dest_rect->right > dest_rect->left ? dest_rect->right - dest_rect->left : fallback_wid;
+  *dest_hgt = dest_rect->bottom > dest_rect->top ? dest_rect->bottom - dest_rect->top : fallback_hgt;
+
+  return *dest_wid > 0 && *dest_hgt > 0;
+}
+
+static int
+draw_cropped_gpic_cell(HDC hdc, const RECT* dest_rect, PicHandleNames picnum,
+					   int src_x, int src_y, int src_wid, int src_hgt)
+{
+  if (!hdc || !dest_rect || src_wid <= 0 || src_hgt <= 0 || !ensure_loaded_gpic(picnum))
+	return 0;
+
+  int dest_x, dest_y, dest_wid, dest_hgt;
+  if (!dest_rect_dimensions(dest_rect, src_wid, src_hgt, &dest_x, &dest_y, &dest_wid, &dest_hgt))
+	return 0;
+
+  GpBitmap* cropped = NULL;
+  if (!gdip_clone_bitmap_area(src_x, src_y, src_wid, src_hgt, PixelFormat32bppARGB, gpics[picnum], &cropped))
+	return 0;
+
+  GpGraphics* gfx = NULL;
+  int rval = 0;
+  if (gdip_create_graphics(hdc, &gfx, InterpolationModeHighQualityBicubic))
+	rval = gdip_draw_image_rect(gfx, cropped, dest_x, dest_y, dest_wid, dest_hgt);
+
+  gdip_delete_graphics(&gfx);
+  GdipDisposeImage(cropped);
+  return rval;
+}
+
 void
 blt_expansion_symbol(HDC hdc, const RECT* dest_rect, EXPANSION_t expansion, rarity_t rarity, int smallcard)
 {
 #define EXPANSIONS_WIDE	6	// Number of expansions wide (times four rarities)
 #define EXPANSIONS_TALL	25	// Number of expansions tall
 
-  if (!hdc || !dest_rect || !pics[EXPANSION_SYMBOLS])
+  if (!hdc || !dest_rect)
 	return;
 
   int src_x, src_y;
@@ -76,98 +130,48 @@ blt_expansion_symbol(HDC hdc, const RECT* dest_rect, EXPANSION_t expansion, rari
   src_x += 4 * (src_y / EXPANSIONS_TALL);
   src_y %= EXPANSIONS_TALL;
 
-  GpGraphics* gfx = NULL;
-
-  make_gpic_from_pic(EXPANSION_SYMBOLS);
-  if (!gpics[EXPANSION_SYMBOLS] || !gdip_create_graphics(hdc, &gfx, InterpolationModeHighQualityBicubic))
+  if (!ensure_loaded_gpic(EXPANSION_SYMBOLS))
 	return;
 
   UINT width, height;
   if (!gdip_get_image_size(gpics[EXPANSION_SYMBOLS], &width, &height))
-	{
-	  gdip_delete_graphics(&gfx);
-	  return;
-	}
+	return;
 
   int sym_wid = width / (EXPANSIONS_WIDE * 4);
   int sym_hgt = height / EXPANSIONS_TALL;
   if (sym_wid <= 0 || sym_hgt <= 0)
-	{
-	  gdip_delete_graphics(&gfx);
-	  return;
-	}
+	return;
 
-  int dest_x = dest_rect->left;
-  int dest_y = dest_rect->top;
-  int dest_wid = (dest_rect->right >= dest_rect->left) ? dest_rect->right - dest_rect->left : sym_wid;
-  int dest_hgt = (dest_rect->bottom >= dest_rect->top) ? dest_rect->bottom - dest_rect->top : sym_hgt;
+  draw_cropped_gpic_cell(hdc, dest_rect, EXPANSION_SYMBOLS,
+						 src_x * sym_wid, src_y * sym_hgt, sym_wid, sym_hgt);
 
-  /* Gdi+ prefilters an image before scaling it, so even with a fully-transparent borders around each subimage, it'll still sometimes pick up edges from
-   * adjacent subimages.  So what I do is first crop the image to a secondary bitmap (which does not interpolate), then blt with interpolation from *that*
-   * to the final image. */
-
-  GpBitmap* cropped = NULL;
-  if (gdip_clone_bitmap_area(src_x * sym_wid, src_y * sym_hgt, sym_wid, sym_hgt,
-							 PixelFormat32bppARGB, gpics[EXPANSION_SYMBOLS], &cropped))
-	{
-	  gdip_draw_image_rect(gfx, cropped, dest_x, dest_y, dest_wid, dest_hgt);
-	  GdipDisposeImage(cropped);
-	}
-
-  gdip_delete_graphics(&gfx);
+#undef EXPANSIONS_WIDE
+#undef EXPANSIONS_TALL
 }
 
 void
 blt_dfc_symbol(HDC hdc, const RECT* dest_rect, uint8_t dfc_sym)
 {
-  if (!hdc || !dest_rect || !pics[DFC_SYMBOLS])
+  if (!hdc || !dest_rect || dfc_sym > DFC_SYMBOL_MAX)
 	return;
 
-  if (dfc_sym > DFC_SYMBOL_MAX)
+  if (!ensure_loaded_gpic(DFC_SYMBOLS))
 	return;
+
   int src_x = dfc_sym % 2;
   int src_y = dfc_sym / 2;
 
-  GpGraphics* gfx = NULL;
-
-  make_gpic_from_pic(DFC_SYMBOLS);
-  if (!gpics[DFC_SYMBOLS] || !gdip_create_graphics(hdc, &gfx, InterpolationModeHighQualityBicubic))
-	return;
-
   UINT width, height;
   if (!gdip_get_image_size(gpics[DFC_SYMBOLS], &width, &height))
-	{
-	  gdip_delete_graphics(&gfx);
-	  return;
-	}
-  (void)height;
+	return;
 
   int sym_wid = width / 2;
   int sym_hgt = sym_wid;
-  if (sym_wid <= 0 || sym_hgt <= 0)
-	{
-	  gdip_delete_graphics(&gfx);
-	  return;
-	}
+  if (sym_wid <= 0 || sym_hgt <= 0 || (src_y + 1) * sym_hgt > (int)height)
+	return;
 
-  int dest_x = dest_rect->left;
-  int dest_y = dest_rect->top;
-  int dest_wid = (dest_rect->right >= dest_rect->left) ? dest_rect->right - dest_rect->left : sym_wid;
-  int dest_hgt = (dest_rect->bottom >= dest_rect->top) ? dest_rect->bottom - dest_rect->top : sym_hgt;
-
-  /* Gdi+ prefilters an image before scaling it, so even with a fully-transparent borders around each subimage, it'll
-   * still sometimes pick up edges from adjacent subimages.  So what I do is first crop the image to a secondary
-   * bitmap (which does not interpolate), then blt with interpolation from *that* to the final image. */
-
-  GpBitmap* cropped = NULL;
-  if (gdip_clone_bitmap_area(src_x * sym_wid, src_y * sym_hgt, sym_wid, sym_hgt,
-							 PixelFormat32bppARGB, gpics[DFC_SYMBOLS], &cropped))
-	{
-	  gdip_draw_image_rect(gfx, cropped, dest_x, dest_y, dest_wid, dest_hgt);
-	  GdipDisposeImage(cropped);
-	}
-
-  gdip_delete_graphics(&gfx);
+  draw_cropped_gpic_cell(hdc, dest_rect, DFC_SYMBOLS,
+						 src_x * sym_wid, src_y * sym_hgt, sym_wid, sym_hgt);
 }
 
 // Returns 0 if text should use PowertoughnessColor, 1 if should use TitleOnLightColor
@@ -175,10 +179,10 @@ static int
 blt_powertoughness_box(HDC hdc, const RECT* dest_rect, PicHandleNames frame, GpImageAttributes* alpha_xform)
 {
   PicHandleNames ptbox = FRAMEPART_FROM_BASE(POWERTOUGHNESS_MODERN, cfg);
-  if (!hdc || !dest_rect || !pics[ptbox])
+  if (!hdc || !dest_rect)
 	return 0;
 
-  typedef enum
+  enum
   {
 	PTY_WHITE = 0,
 	PTY_BLUE,
@@ -188,16 +192,16 @@ blt_powertoughness_box(HDC hdc, const RECT* dest_rect, PicHandleNames frame, GpI
 	PTY_COLORLESS,
 	PTY_GOLD,
 	PTY_ARTIFACT
-  } PowerToughnessY;
+  };
 
-  typedef enum
+  enum
   {
 	PTX_NORMAL = 0,
 	PTX_GOLD,
 	PTX_DUAL_LAND
-  } PowerToughnessX;
+  };
 
-  int src_x = PTX_NORMAL, src_y, light = 0;
+  int src_x = PTX_NORMAL, src_y = PTY_COLORLESS, light = 0;
 
   // Normalize to modern frame set
   frame = BASE_FRAME(frame);
@@ -349,31 +353,26 @@ blt_powertoughness_box(HDC hdc, const RECT* dest_rect, PicHandleNames frame, GpI
 		  break;
 	  }
 
-  GpGraphics* gfx = NULL;
-
-  make_gpic_from_pic(ptbox);
-  if (!gpics[ptbox] || !gdip_create_graphics(hdc, &gfx, InterpolationModeHighQuality))
+  if (!ensure_loaded_gpic(ptbox))
 	return light;
 
   UINT width, height;
   if (!gdip_get_image_size(gpics[ptbox], &width, &height))
-	{
-	  gdip_delete_graphics(&gfx);
-	  return light;
-	}
+	return light;
+
   if (cfg->fullcard_extended_powertoughness)
 	width /= 3;
   height /= 8;
   if (width == 0 || height == 0)
-	{
-	  gdip_delete_graphics(&gfx);
-	  return light;
-	}
+	return light;
 
-  int dest_x = dest_rect->left;
-  int dest_y = dest_rect->top;
-  int dest_wid = (dest_rect->right >= dest_rect->left) ? (UINT)(dest_rect->right - dest_rect->left) : width;
-  int dest_hgt = (dest_rect->bottom >= dest_rect->top) ? (UINT)(dest_rect->bottom - dest_rect->top) : height;
+  int dest_x, dest_y, dest_wid, dest_hgt;
+  if (!dest_rect_dimensions(dest_rect, width, height, &dest_x, &dest_y, &dest_wid, &dest_hgt))
+	return light;
+
+  GpGraphics* gfx = NULL;
+  if (!gdip_create_graphics(hdc, &gfx, InterpolationModeHighQuality))
+	return light;
 
   gdip_draw_image_rect_rect(gfx, gpics[ptbox],
 							dest_x, dest_y, dest_wid, dest_hgt,
@@ -390,7 +389,7 @@ blt_type_icon(HDC hdc, const RECT* dest_rect, const card_ptr_t* cp, PicHandleNam
 {
   PicHandleNames iconimg = FRAMEPART_FROM_BASE(TYPE_ICON_MODERN, cfg);
 
-  if (!hdc || !dest_rect || !iconimg)
+  if (!hdc || !dest_rect || !cp)
 	return;
 
   int src_y;
@@ -445,7 +444,7 @@ blt_type_icon(HDC hdc, const RECT* dest_rect, const card_ptr_t* cp, PicHandleNam
   int src_x = -1;
 
   // Find card type(s).  Surprisingly complex.
-  typedef enum
+  enum
   {
 	ICON_TYPE_ARTIFACT = 0,
 	ICON_TYPE_CREATURE,
@@ -455,7 +454,7 @@ blt_type_icon(HDC hdc, const RECT* dest_rect, const card_ptr_t* cp, PicHandleNam
 	ICON_TYPE_MULTIPLE,
 	ICON_TYPE_PLANESWALKER,
 	ICON_TYPE_SORCERY
-  } IconType;
+  };
 
   const card_data_t* cd;
 
@@ -500,30 +499,25 @@ blt_type_icon(HDC hdc, const RECT* dest_rect, const card_ptr_t* cp, PicHandleNam
   if (src_x == -1)
 	return;
 
-  GpGraphics* gfx = NULL;
-
-  make_gpic_from_pic(iconimg);
-  if (!gpics[iconimg] || !gdip_create_graphics(hdc, &gfx, InterpolationModeHighQuality))
+  if (!ensure_loaded_gpic(iconimg))
 	return;
 
   UINT width, height;
   if (!gdip_get_image_size(gpics[iconimg], &width, &height))
-	{
-	  gdip_delete_graphics(&gfx);
-	  return;
-	}
+	return;
+
   width /= 8;
   height /= 2;
   if (width == 0 || height == 0)
-	{
-	  gdip_delete_graphics(&gfx);
-	  return;
-	}
+	return;
 
-  int dest_x = dest_rect->left;
-  int dest_y = dest_rect->top;
-  int dest_wid = (dest_rect->right >= dest_rect->left) ? (UINT)(dest_rect->right - dest_rect->left) : width;
-  int dest_hgt = (dest_rect->bottom >= dest_rect->top) ? (UINT)(dest_rect->bottom - dest_rect->top) : height;
+  int dest_x, dest_y, dest_wid, dest_hgt;
+  if (!dest_rect_dimensions(dest_rect, width, height, &dest_x, &dest_y, &dest_wid, &dest_hgt))
+	return;
+
+  GpGraphics* gfx = NULL;
+  if (!gdip_create_graphics(hdc, &gfx, InterpolationModeHighQuality))
+	return;
 
   gdip_draw_image_rect_rect(gfx, gpics[iconimg],
 							dest_x, dest_y, dest_wid, dest_hgt,
@@ -551,35 +545,49 @@ cost_values_to_cost_text(const card_ptr_t* cp, char* dest)
   cost_colorless = cp->req_colorless;
 
   char* p = buf;
+  char* end = buf + sizeof(buf) - 1;
+
+#define APPEND_ONE(ch)							\
+  do											\
+	{											\
+	  if (p + 1 > end)							\
+		goto cost_text_done;					\
+	  *p++ = (ch);								\
+	} while (0)
+
+#define APPEND_TAG(ch)							\
+  do											\
+	{											\
+	  if (p + 2 > end)							\
+		goto cost_text_done;					\
+	  *p++ = '|';								\
+	  *p++ = (ch);								\
+	} while (0)
+
   if (cost_colorless)
 	{
 	  if ((int)cost_colorless == -1
 		  || cost_colorless == 72
 		  || cost_colorless == 40)
 		{
-		  *p++ = '|';
-		  *p++ = 'X';
+		  APPEND_TAG('X');
 		}
 	  else if (cost_colorless <= 9)
 		{
-		  *p++ = '|';
-		  *p++ = '0' + cost_colorless;
+		  APPEND_TAG('0' + cost_colorless);
 		}
 	  else if (cost_colorless <= 16)
 		{
-		  *p++ = '|';
-		  *p++ = '1';
-		  *p++ = '0' + cost_colorless - 10;
+		  APPEND_ONE('|');
+		  APPEND_ONE('1');
+		  APPEND_ONE('0' + cost_colorless - 10);
 		}
 	  // otherwise just displays nothing!
 	}
 
 #define COLORED_MANA(var, chr)					\
-  for (; var != 0; --var)						\
-	{											\
-	  *p++ = '|';								\
-	  *p++ = chr;								\
-	}
+  for (; (var) > 0; --(var))					\
+	APPEND_TAG(chr)
 
   COLORED_MANA(cost_white,	'W');
   COLORED_MANA(cost_green,	'G');
@@ -590,12 +598,13 @@ cost_values_to_cost_text(const card_ptr_t* cp, char* dest)
 #undef COLORED_MANA
 
   if (p == buf)
-	{
-	  *p++ = '|';
-	  *p++ = '0';
-	}
+	APPEND_TAG('0');
 
+cost_text_done:
   *p = 0;
+
+#undef APPEND_TAG
+#undef APPEND_ONE
 
   strcpy(dest, buf);
 
@@ -605,18 +614,29 @@ cost_values_to_cost_text(const card_ptr_t* cp, char* dest)
 static int
 draw_fullcard_art(HDC hdc, RECT* rect, uint32_t id, int pic_version)
 {
+  if (!hdc || !rect)
+	return 0;
+
   RECT rect_big_art_pixels;
-  CopyRect(&rect_big_art_pixels, &cfg->fullcard_mana);
+  CopyRect(&rect_big_art_pixels, rect);
   LPtoDP(hdc, (POINT*)(&rect_big_art_pixels), 2);
 
-  LoadBigArt(id, pic_version, rect_big_art_pixels.right - rect_big_art_pixels.left, rect_big_art_pixels.bottom - rect_big_art_pixels.top);
+  int art_wid = abs(rect_big_art_pixels.right - rect_big_art_pixels.left);
+  int art_hgt = abs(rect_big_art_pixels.bottom - rect_big_art_pixels.top);
+  if (art_wid <= 0 || art_hgt <= 0)
+	return 0;
+
+  LoadBigArt(id, pic_version, art_wid, art_hgt);
   DrawBigArt(hdc, rect, id, pic_version);
-  return IsBigArtRightSize(id, pic_version, rect_big_art_pixels.right - rect_big_art_pixels.left, rect_big_art_pixels.bottom - rect_big_art_pixels.top);
+  return IsBigArtRightSize(id, pic_version, art_wid, art_hgt);
 }
 
 static int
 has_graveyard_ability(const card_ptr_t* cp)
 {
+  if (!cp)
+	return 0;
+
   const card_data_t* cd = get_card_data_from_csvid(cp->id);
   if (!cd)
 	return 0;
@@ -706,8 +726,14 @@ manacost_width(HDC hdc, const RECT* dest_rect, const card_ptr_t* cp)
 	  len = strlen(cost_text) >> 1;
 	}
 
-  len *= (dest_rect->bottom - dest_rect->top);
-  return len;
+  int symbol_size = dest_rect->bottom - dest_rect->top;
+  if (symbol_size <= 0 || len <= 0)
+	return 0;
+
+  if (len > INT_MAX / symbol_size)
+	return INT_MAX;
+
+  return len * symbol_size;
 }
 
 static void
@@ -757,6 +783,9 @@ draw_manacost(HDC hdc, RECT* dest_rect, const card_ptr_t* cp)
   else
 	{
 	  int width_height = dest_rect->bottom - dest_rect->top;	// mana symbols have same width/height
+	  if (width_height <= 0)
+		return;
+
 	  int posx = dest_rect->right - (len * width_height);
 	  int posy = dest_rect->top;
 
@@ -775,24 +804,38 @@ draw_manacost(HDC hdc, RECT* dest_rect, const card_ptr_t* cp)
 }
 
 static void
-strip_hack_and_sleight_symbols(char* dest, const char* src)
+strip_hack_and_sleight_symbols(char* dest, size_t dest_size, const char* src)
 {
-  while ((*dest = *src))
+  if (!dest || dest_size == 0)
+	return;
+
+  if (!src)
+	{
+	  *dest = 0;
+	  return;
+	}
+
+  char* q = dest;
+  char* end = dest + dest_size - 1;
+
+  while (*src && q < end)
 	{
 	  if (*src == '|'
 		  && (*(src + 1) == 'H' || *(src + 1) == 'S'))
 		src += (*(src + 2) >= '1' && *(src + 2) <= '4') ? 3 : 2;
 	  else
-		{
-		  ++dest;
-		  ++src;
-		}
+		*q++ = *src++;
 	}
+
+  *q = 0;
 }
 
 static int
 strip_planeswalker_base_loyalty(char* srcdest)
 {
+  if (!srcdest)
+	return 0;
+
   int l = strlen(srcdest);
   if (l <= 4)
 	return 0;
@@ -837,11 +880,12 @@ get_title_text_override_color(PicHandleNames framenum, void* alpha_xform,
 		switch (framenum)
 		  {
 			case FRAME_MODERN_SPELL_HYBRID_WHITE_BLACK:
-			  if (white_black_visible)
-				return white_black_colorref;
+				  if (white_black_visible)
+					return white_black_colorref;
 
-			  // otherwise, fall through
-			case FRAME_MODERN_LAND_COLORLESS:
+				  // otherwise, fall through
+				  __attribute__((fallthrough));
+				case FRAME_MODERN_LAND_COLORLESS:
 			case FRAME_MODERN_LAND_WHITE:
 			case FRAME_MODERN_LAND_GOLD_MIN ... FRAME_MODERN_LAND_GOLD_MAX:
 			case FRAME_MODERN_LAND_GOLD:
@@ -888,10 +932,11 @@ get_fullcard_rulestext_color(PicHandleNames framenum)
 	switch (BASE_FRAME(framenum))
 	  {
 		case FRAME_MODERN_LAND_GOLD_WHITE_BLACK:	case FRAME_MODERN_ARTIFACT_LAND_GOLD_WHITE_BLACK:
-		  if (cfg->fullcard_rules_on_white_black_land_visible)
-			return cfg->fullcard_rules_on_white_black_land_color.colorref;
-		  // otherwise, fall through
-		case FRAME_MODERN_LAND_BLACK:				case FRAME_MODERN_ARTIFACT_LAND_BLACK:
+			  if (cfg->fullcard_rules_on_white_black_land_visible)
+				return cfg->fullcard_rules_on_white_black_land_color.colorref;
+			  // otherwise, fall through
+			  __attribute__((fallthrough));
+			case FRAME_MODERN_LAND_BLACK:				case FRAME_MODERN_ARTIFACT_LAND_BLACK:
 		case FRAME_MODERN_LAND_BLUE:				case FRAME_MODERN_ARTIFACT_LAND_BLUE:
 		case FRAME_MODERN_LAND_GREEN:				case FRAME_MODERN_ARTIFACT_LAND_GREEN:
 		case FRAME_MODERN_LAND_RED:					case FRAME_MODERN_ARTIFACT_LAND_RED:
@@ -912,7 +957,8 @@ get_fullcard_rulestext_color(PicHandleNames framenum)
 static int
 has_manacost(const card_ptr_t* cp)
 {
-  return ((int8_t)cp->card_type != CP_TYPE_LAND
+  return (cp
+		  && (int8_t)cp->card_type != CP_TYPE_LAND
 		  && (int8_t)cp->card_type != CP_TYPE_TOKEN
 		  && (int8_t)cp->card_type != CP_TYPE_SCHEME
 		  && (int8_t)cp->card_type != CP_TYPE_PLANE
@@ -930,6 +976,9 @@ typedef enum
 static TranslucentFrameMode
 draw_art_first(HDC hdc, uint32_t csvid, int pic_version, PicHandleNames framenum, int* suppress_later_art, int* big_art_exists)
 {
+  if (!suppress_later_art || !big_art_exists)
+	return TFM_NORMAL;
+
   int colorless_option, cardback;
   if (framenum == CARDBACK)
 	{
@@ -952,7 +1001,7 @@ draw_art_first(HDC hdc, uint32_t csvid, int pic_version, PicHandleNames framenum
 		{
 		  make_gpic_from_pic(CARDBACK);
 		  gdip_blt_whole(hdc, &cfg->fullcard_frame, CARDBACK, NULL);
-		  *big_art_exists = 1;
+		  *big_art_exists = gpics[CARDBACK] != NULL;
 		  return TFM_CARDBACK;
 		}
 	  else
@@ -962,7 +1011,6 @@ draw_art_first(HDC hdc, uint32_t csvid, int pic_version, PicHandleNames framenum
 			return TFM_COLORLESS_ALSO_NORMAL_FULLCARD_ART;
 		  else
 			return TFM_COLORLESS;
-			draw_fullcard_art(hdc, &cfg->fullcard_art, csvid, pic_version);
 		}
 	}
   else
@@ -980,6 +1028,9 @@ draw_art_first(HDC hdc, uint32_t csvid, int pic_version, PicHandleNames framenum
 static void
 draw_fullcard_frame(HDC hdc, PicHandleNames framenum, GpImageAttributes** alpha_xform, TranslucentFrameMode translucent_frame)
 {
+  if (!hdc || !alpha_xform)
+	return;
+
   if (translucent_frame == TFM_NORMAL)
 	gdip_blt_whole(hdc, &cfg->fullcard_frame, framenum, NULL);
   else
@@ -997,7 +1048,7 @@ draw_fullcard_dfcsym_tombstone_title(HDC hdc, const card_ptr_t* cp, const Rarity
   RECT rect_title;
   CopyRect(&rect_title, &cfg->fullcard_title);
 
-  if (cfg->fullcard_dfc_visible && r->dfc_symbol <= DFC_SYMBOL_MAX)
+  if (r && cfg->fullcard_dfc_visible && r->dfc_symbol <= DFC_SYMBOL_MAX)
 	blt_dfc_symbol(hdc, &cfg->fullcard_dfc, r->dfc_symbol);
 
   int tombstone_drawn = 0;
@@ -1019,12 +1070,14 @@ draw_fullcard_dfcsym_tombstone_title(HDC hdc, const card_ptr_t* cp, const Rarity
   else
 	rt = cfg->fullcard_title.right;
 
+  const char* card_name = cp && cp->name ? cp->name : "";
+
   SIZE textsize;
-  int fnt, len = strlen(cp->name);
+  int fnt, len = strlen(card_name);
   for (fnt = BIGCARDTITLE_FONT; fnt < BIGCARDTITLE_FONT9; ++fnt)
 	{
 	  SelectObject(hdc, fonts[fnt]);
-	  GetTextExtentPoint32(hdc, cp->name, len, &textsize);
+	  GetTextExtentPoint32(hdc, card_name, len, &textsize);
 	  if (rect_title.left + textsize.cx <= rt)
 		goto found_bigcardtitle_font;
 	}
@@ -1046,7 +1099,7 @@ draw_fullcard_dfcsym_tombstone_title(HDC hdc, const card_ptr_t* cp, const Rarity
 
   SetTextAlign(hdc, cfg->fullcard_title_center ? TA_CENTER : TA_LEFT);
 
-  draw_text_with_shadow_at_x(hdc, &rect_title, pos, &cfg->fullcard_title_txt, title_text_override_color, cp->name, len);
+  draw_text_with_shadow_at_x(hdc, &rect_title, pos, &cfg->fullcard_title_txt, title_text_override_color, card_name, len);
 
   if (cfg->fullcard_title_center)
 	SetTextAlign(hdc, TA_LEFT);
@@ -1059,11 +1112,11 @@ draw_fullcard_type(HDC hdc, const card_ptr_t* cp, COLORREF title_text_override_c
 {
   int loyalty = 0;
 
-  if (cp->card_type != (uint32_t)(-1) && cp->card_type != CP_TYPE_NONE)	// deliberately non-narrowed
+  if (cp && cp->card_type != (uint32_t)(-1) && cp->card_type != CP_TYPE_NONE)	// deliberately non-narrowed
 	{
 	  char buf[100];	// longest observed: Jeska, Warrior Adept at 44
 
-	  strip_hack_and_sleight_symbols(buf, cp->type_text);
+	  strip_hack_and_sleight_symbols(buf, sizeof(buf), cp->type_text);
 
 	  if (is_a_planeswalker && !is_a_creature && cfg->fullcard_show_loyalty_base)
 		loyalty = strip_planeswalker_base_loyalty(buf);
@@ -1099,10 +1152,15 @@ draw_fullcard_type(HDC hdc, const card_ptr_t* cp, COLORREF title_text_override_c
 static void
 draw_fullcard_watermark(HDC hdc, const Rarity* r, const RECT* rect_rulestext)
 {
-  if (!r || r->watermark == 0xFF)
+  if (!hdc || !r || !rect_rulestext || r->watermark == 0xFF || r->watermark >= 255)
+	return;
+
+  if (watermark_size_x <= 0 || watermark_size_y <= 0)
 	return;
 
   Watermark* wmark = &watermarks[r->watermark];
+  if (!wmark->name)
+	return;
 
   if (wmark->expansions && !cfg->fullcard_watermark_outside_set && !wmark->expansions[r->default_expansion])
 	return;
@@ -1130,7 +1188,10 @@ fullcard_exclude_expanded_text_box(HDC hdc, const card_ptr_t* cp, char* inout_ru
 {
   int txt_hgt = 0;
 
-  strip_hack_and_sleight_symbols(inout_rules_text, cp->rules_text);
+  if (!cp || !inout_rules_text || !rect_rulestext || !rect_rulesbox)
+	return 0;
+
+  strip_hack_and_sleight_symbols(inout_rules_text, FULLCARD_RULES_TEXT_BUFFER_SIZE, cp->rules_text);
 
   if (*inout_rules_text)
 	{
@@ -1146,11 +1207,12 @@ fullcard_exclude_expanded_text_box(HDC hdc, const card_ptr_t* cp, char* inout_ru
 	  txt_hgt += HIWORD(calc_draw_mana_text(hdc, rect_rulestext, inout_rules_text, 1, 0, lc)) + metrics.tmHeight / 2;
 	}
 
-  if (*cp->flavor_text)
+  const char* flavor_text = cp->flavor_text ? cp->flavor_text : "";
+  if (*flavor_text)
 	{
 	  SelectObject(hdc, fonts[FLAVOR_FONT]);
 
-	  txt_hgt += HIWORD(calc_draw_mana_text(hdc, rect_rulestext, cp->flavor_text, 0, 1, NULL));
+	  txt_hgt += HIWORD(calc_draw_mana_text(hdc, rect_rulestext, flavor_text, 0, 1, NULL));
 	}
 
   if (rect_rulestext->bottom - rect_rulestext->top < txt_hgt)
@@ -1170,6 +1232,9 @@ fullcard_exclude_expanded_text_box(HDC hdc, const card_ptr_t* cp, char* inout_ru
 static void
 fullcard_expand_text_box(HDC hdc, RECT* rect_rulesbox, PicHandleNames framenum, GpImageAttributes* alpha_xform, TranslucentFrameMode translucent_frame)
 {
+  if (!hdc || !rect_rulesbox)
+	return;
+
   if (translucent_frame != TFM_NORMAL)
 	framenum = FRAMEPART_FROM_BASE(CARDOV_MODERN_COLORLESS, cfg);
 
@@ -1186,12 +1251,16 @@ fullcard_expand_text_box(HDC hdc, RECT* rect_rulesbox, PicHandleNames framenum, 
   gdip_blt(hdc, rect_rulesbox, framenum,
 		   0, (height * cfg->fullcard_expand_top / 10000),
 		   width, (height * (cfg->fullcard_expand_height) / 10000), alpha_xform);
-  RestoreDC(hdc, savedc);
+  if (savedc)
+	RestoreDC(hdc, savedc);
 }
 
 static void
 draw_fullcard_loyalty_costs(HDC hdc, const RECT* rect_rulestext, LoyaltyCost* loyalty_costs, GpImageAttributes* alpha_xform)
 {
+  if (!hdc || !rect_rulestext || !loyalty_costs)
+	return;
+
   RECT rect_loyalty_cost;
   rect_loyalty_cost.left = cfg->fullcard_loyalty_cost.left;
   rect_loyalty_cost.right = cfg->fullcard_loyalty_cost.right;
@@ -1243,8 +1312,11 @@ static void
 draw_fullcard_textbox_contents(HDC hdc, const card_ptr_t* cp, RECT* rect_rulestext, char* rules_text, const Rarity* r,
 							   PicHandleNames framenum, GpImageAttributes* alpha_xform, int is_a_planeswalker)
 {
+  if (!hdc || !cp || !rect_rulestext || !rules_text)
+	return;
+
   if (!*rules_text)	// i.e., not already computed
-	strip_hack_and_sleight_symbols(rules_text, cp->rules_text);
+	strip_hack_and_sleight_symbols(rules_text, FULLCARD_RULES_TEXT_BUFFER_SIZE, cp->rules_text);
 
   SetTextColor(hdc, get_fullcard_rulestext_color(framenum));
 
@@ -1272,8 +1344,9 @@ draw_fullcard_textbox_contents(HDC hdc, const card_ptr_t* cp, RECT* rect_ruleste
 
   SelectObject(hdc, fonts[FLAVOR_FONT]);
 
-  if (*cp->flavor_text)
-	draw_mana_text(hdc, &rect_flavor_text, cp->flavor_text, 1, 0, 1, NULL);
+  const char* flavor_text = cp->flavor_text ? cp->flavor_text : "";
+  if (*flavor_text)
+	draw_mana_text(hdc, &rect_flavor_text, flavor_text, 1, 0, 1, NULL);
 }
 
 static void
@@ -1321,6 +1394,8 @@ draw_fullcard_power_toughness(HDC hdc, PicHandleNames framenum, GpImageAttribute
   SetTextAlign(hdc, cfg->fullcard_powertoughness_center ? TA_CENTER : TA_RIGHT);
 
   draw_text_with_shadow_at_x(hdc, &cfg->fullcard_powertoughness, pos, &cfg->fullcard_powertoughness_txt, pt_color, buf, -1);
+
+  SetTextAlign(hdc, TA_LEFT);
 }
 
 static void
@@ -1337,6 +1412,8 @@ draw_fullcard_base_loyalty(HDC hdc, int loyalty, GpImageAttributes* alpha_xform)
   sprintf(buf, "%d", loyalty);
 
   draw_text_with_shadow_at_x(hdc, &cfg->fullcard_loyalty_base, pos, &cfg->fullcard_loyalty_txt, -1, buf, -1);
+
+  SetTextAlign(hdc, TA_LEFT);
 }
 
 static void
@@ -1377,6 +1454,8 @@ draw_fullcard_vanguard(HDC hdc, const card_ptr_t* cp)
  found_life_font:;
   pos = (cfg->fullcard_vanguard_life.right + cfg->fullcard_vanguard_life.left) / 2;
   draw_text_with_shadow_at_x(hdc, &cfg->fullcard_vanguard_life, pos, &tws, -1, buf, -1);
+
+  SetTextAlign(hdc, TA_LEFT);
 }
 
 static void
@@ -1386,8 +1465,9 @@ draw_fullcard_border_initial(HDC hdc)
    * where the edges should be. */
 
   HBRUSH solid_brush = CreateSolidBrush(cfg->fullcard_border_color.colorref);
-  SelectObject(hdc, solid_brush);
-  SelectObject(hdc, GetStockObject(NULL_PEN));
+  HGDIOBJ brush_to_select = solid_brush ? (HGDIOBJ)solid_brush : GetStockObject(BLACK_BRUSH);
+  HGDIOBJ old_brush = SelectObject(hdc, brush_to_select);
+  HGDIOBJ old_pen = SelectObject(hdc, GetStockObject(NULL_PEN));
 
   // left
   Rectangle(hdc, cfg->fullcard_frame.left-2, cfg->fullcard_frame.top-2, cfg->fullcard_frame.left+50, cfg->fullcard_frame.bottom+2);
@@ -1397,6 +1477,9 @@ draw_fullcard_border_initial(HDC hdc)
   Rectangle(hdc, cfg->fullcard_frame.left-2, cfg->fullcard_frame.top-2, cfg->fullcard_frame.right+2, cfg->fullcard_frame.top+50);
   // bottom
   Rectangle(hdc, cfg->fullcard_frame.left-2, cfg->fullcard_frame.bottom-50, cfg->fullcard_frame.right+2, cfg->fullcard_frame.bottom+2);
+
+  SelectObject(hdc, old_pen);
+  SelectObject(hdc, old_brush);
 
   if (solid_brush)
 	DeleteObject(solid_brush);
@@ -1409,10 +1492,14 @@ draw_fullcard_border(HDC hdc)
   ExcludeClipRect(hdc, cfg->fullcard_frame.left+2, cfg->fullcard_frame.top+2, cfg->fullcard_frame.right-2, cfg->fullcard_frame.bottom-2);
 
   HBRUSH solid_brush = CreateSolidBrush(cfg->fullcard_border_color.colorref);
-  SelectObject(hdc, solid_brush);
-  SelectObject(hdc, GetStockObject(NULL_PEN));
+  HGDIOBJ brush_to_select = solid_brush ? (HGDIOBJ)solid_brush : GetStockObject(BLACK_BRUSH);
+  HGDIOBJ old_brush = SelectObject(hdc, brush_to_select);
+  HGDIOBJ old_pen = SelectObject(hdc, GetStockObject(NULL_PEN));
 
   RoundRect(hdc, 0, 0, 800, 1200, cfg->fullcard_rounding.x, cfg->fullcard_rounding.y);
+
+  SelectObject(hdc, old_pen);
+  SelectObject(hdc, old_brush);
 
   if (solid_brush)
 	DeleteObject(solid_brush);
@@ -1427,7 +1514,7 @@ DrawFullCard(HDC hdc, const RECT* dest_rect, const card_ptr_t* cp, int pic_versi
   (void)big_art_style;
   (void)illus;
 
-  if (!hdc || !dest_rect || !cp)
+  if (!hdc || !dest_rect || !cp || dest_rect->right == dest_rect->left || dest_rect->bottom == dest_rect->top)
 	return 0;
 
   EnterCriticalSection(critical_section_for_drawing);
@@ -1438,6 +1525,13 @@ DrawFullCard(HDC hdc, const RECT* dest_rect, const card_ptr_t* cp, int pic_versi
 	  assign_default_rarities();
 	}
 
+  const Rarity* r = get_rarity(cp->id);
+  if (!r)
+	{
+	  LeaveCriticalSection(critical_section_for_drawing);
+	  return 0;
+	}
+
   int savedc = SaveDC(hdc);
   SetMapMode(hdc, MM_ISOTROPIC);
   SetWindowExtEx(hdc, 800, 1200, NULL);
@@ -1446,7 +1540,6 @@ DrawFullCard(HDC hdc, const RECT* dest_rect, const card_ptr_t* cp, int pic_versi
   SetWindowOrgEx(hdc, 400, 600, NULL);
   SetViewportOrgEx(hdc, (dest_rect->right + dest_rect->left) / 2, (dest_rect->bottom + dest_rect->top) / 2, NULL);
 
-  const Rarity* r = get_rarity(cp->id);
   PicHandleNames framenum = select_frame(cp, r, -1, -1);
 
   int is_a_creature = (hack_power || hack_toughness
@@ -1464,7 +1557,7 @@ DrawFullCard(HDC hdc, const RECT* dest_rect, const card_ptr_t* cp, int pic_versi
   GpImageAttributes* alpha_xform = NULL;
   int suppress_later_art = 0, big_art_exists = 0;
 
-  char rules_text[2000];	// longest observed: Dance of the Dead at 658
+  char rules_text[FULLCARD_RULES_TEXT_BUFFER_SIZE];	// longest observed: Dance of the Dead at 658
   *rules_text = 0;
 
   SetBkMode(hdc, TRANSPARENT);
@@ -1527,7 +1620,8 @@ DrawFullCard(HDC hdc, const RECT* dest_rect, const card_ptr_t* cp, int pic_versi
 
   draw_fullcard_border(hdc);
 
-  RestoreDC(hdc, savedc);
+  if (savedc)
+	RestoreDC(hdc, savedc);
   LeaveCriticalSection(critical_section_for_drawing);
   return big_art_exists;
 }
@@ -1586,25 +1680,46 @@ DrawCardBack(HDC hdc, const RECT* dest_rect,
 			  dest_rect->left + borderx, dest_rect->top + bordery,
 			  dest_rect->right - borderx, dest_rect->bottom - bordery);
 
-	  if (cardback_renderer == RENDERER_GDIPLUS)
-		gdip_blt_whole(hdc, &pic_rect, CARDBACK, NULL);
+	  if (pic_rect.right <= pic_rect.left || pic_rect.bottom <= pic_rect.top)
+		{
+		  rval = 0;
+		}
+	  else if (cardback_renderer == RENDERER_GDIPLUS)
+		{
+		  gdip_blt_whole(hdc, &pic_rect, CARDBACK, NULL);
+		  rval = 1;
+		}
 	  else
 		{
-		  int savedc = SaveDC(hdc);
-		  SelectObject(*spare_hdc, pics[CARDBACK]);
+		  if (!spare_hdc || !*spare_hdc || !pics[CARDBACK])
+			{
+			  rval = 0;
+			}
+		  else
+			{
+			  BITMAP bmp;
+			  if (GetObject(pics[CARDBACK], sizeof(BITMAP), &bmp) != sizeof(BITMAP)
+				  || bmp.bmWidth <= 0 || bmp.bmHeight <= 0)
+				{
+				  rval = 0;
+				}
+			  else
+				{
+				  int savedc = SaveDC(hdc);
+				  HGDIOBJ old_spare_bmp = SelectObject(*spare_hdc, pics[CARDBACK]);
 
-		  BITMAP bmp;
-		  GetObject(pics[CARDBACK], sizeof(BITMAP), &bmp);
-		  int src_width = bmp.bmWidth;
-		  int src_height = bmp.bmHeight;
+				  StretchBlt(hdc, pic_rect.left, pic_rect.top, pic_rect.right - pic_rect.left, pic_rect.bottom - pic_rect.top,
+							 *spare_hdc, 0, 0, bmp.bmWidth, bmp.bmHeight, SRCCOPY);
 
-		  StretchBlt(hdc, dest_rect->left, dest_rect->top, dest_rect->right - dest_rect->left, dest_rect->bottom - dest_rect->top,
-					 *spare_hdc, 0, 0, src_width, src_height, SRCCOPY);
+				  if (old_spare_bmp)
+					SelectObject(*spare_hdc, old_spare_bmp);
+				  if (savedc)
+					RestoreDC(hdc, savedc);
 
-		  RestoreDC(hdc, savedc);
+				  rval = 1;
+				}
+			}
 		}
-
-	  rval = 1;
 	}
 
   LeaveCriticalSection(critical_section_for_drawing);

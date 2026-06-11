@@ -1,4 +1,6 @@
-CC = gcc
+MINGW_PREFIX ?= $(shell if command -v i686-w64-mingw32-gcc >/dev/null 2>&1; then printf 'i686-w64-mingw32-'; elif command -v i386-mingw32-gcc >/dev/null 2>&1; then printf 'i386-mingw32-'; fi)
+CC = $(MINGW_PREFIX)gcc
+OBJCOPY = $(MINGW_PREFIX)objcopy
 CFLAGS = -ggdb2 -O2 -m32 -fno-omit-frame-pointer -march=i586		\
 	-mpreferred-stack-boundary=2 -Wall -Wextra -Wpointer-arith	\
 	-Wbad-function-cast -Wcast-qual -Wcast-align -Wwrite-strings	\
@@ -29,8 +31,8 @@ $(INSTALLDIR)/$(TGTDBG): $(TGTDLL)
 
 $(TGTDLL): $(COBJFILES)
 	$(CC) -shared -m32 -o $@ $(COBJFILES) $(DEFFILE) $(LDFLAGS)
-	objcopy --only-keep-debug $(TGTDLL) $(TGTDBG)
-	objcopy --strip-debug $(TGTDLL)
+	$(OBJCOPY) --only-keep-debug $(TGTDLL) $(TGTDBG)
+	$(OBJCOPY) --strip-debug $(TGTDLL)
 
 %.o: %.c ../manalink.h $(HFILES)
 	$(COMPILE) -o $@ $<

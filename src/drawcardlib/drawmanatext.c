@@ -104,8 +104,7 @@ signed char mana_tags[MANA_SYMBOLS * 3 + 1] =
   0
 };
 
-CountColors mana_tag_to_count_colors[255] = { 0 };
-
+CountColors mana_tag_to_count_colors[256] = { 0 };
 
 void
 init_mana_tags(void)
@@ -116,6 +115,8 @@ init_mana_tags(void)
   single_mana[(uint8_t)'G'] = COUNT_COLOR_GREEN;
   single_mana[(uint8_t)'R'] = COUNT_COLOR_RED;
   single_mana[(uint8_t)'W'] = COUNT_COLOR_WHITE;
+
+  memset(mana_tag_to_count_colors, 0, sizeof(mana_tag_to_count_colors));
 
   int i;
   for (i = 0; mana_tags[i]; i += 3)
@@ -142,16 +143,19 @@ draw_mana_symbol(HDC hdc, char c, int x, int y, int wid, int hgt)
   if (!hdc)
 	return;
 
-  if ((uint8_t)c < (uint8_t)(-MANA_SYMBOLS))
+  int tag = (int)(int8_t)c;
+  if (tag >= 0 || tag < -MANA_SYMBOLS)
 	return;
 
   make_gpic_from_pic(MANASYMBOLS);
+  if (!gpics[MANASYMBOLS])
+	return;
 
   UINT src_wid, src_hgt;
   if (!gdip_get_image_size(gpics[MANASYMBOLS], &src_wid, &src_hgt))
 	return;
 
-  int src_x = (-(int)c - 1) * src_hgt /*sic*/;
+  int src_x = (-tag - 1) * src_hgt /*sic*/;
   int src_y = 0;
   if (src_x < 0 || src_hgt == 0 || src_x + (int)src_hgt > (int)src_wid)
 	return;
@@ -160,9 +164,7 @@ draw_mana_symbol(HDC hdc, char c, int x, int y, int wid, int hgt)
 	wid = src_hgt /*sic*/;
   if (hgt < 0)
 	hgt = src_hgt;
-
-  GpGraphics* gfx = NULL;
-  if (!gdip_create_graphics(hdc, &gfx, InterpolationModeHighQuality))
+  if (wid <= 0 || hgt <= 0)
 	return;
 
   /* Gdi+ prefilters an image before scaling it, so even with a fully-transparent borders around each subimage, it'll still sometimes pick up edges from
@@ -170,14 +172,16 @@ draw_mana_symbol(HDC hdc, char c, int x, int y, int wid, int hgt)
    * to the final image. */
 
   GpBitmap* cropped = NULL;
-  if (gdip_clone_bitmap_area(src_x, src_y, src_hgt /*sic*/, src_hgt,
-							 PixelFormat32bppARGB, gpics[MANASYMBOLS], &cropped))
-	{
-	  gdip_draw_image_rect(gfx, cropped, x, y, wid, hgt);
-	  GdipDisposeImage(cropped);
-	}
+  if (!gdip_clone_bitmap_area(src_x, src_y, src_hgt /*sic*/, src_hgt,
+							  PixelFormat32bppARGB, gpics[MANASYMBOLS], &cropped))
+	return;
+
+  GpGraphics* gfx = NULL;
+  if (gdip_create_graphics(hdc, &gfx, InterpolationModeHighQuality))
+	gdip_draw_image_rect(gfx, cropped, x, y, wid, hgt);
 
   gdip_delete_graphics(&gfx);
+  GdipDisposeImage(cropped);
 }
 
 CountColors
@@ -195,7 +199,10 @@ manacost_to_count_colors(const card_ptr_t* cp)
 		if (*q != '|')
 		  ++q;
 		else
-		  rval |= mana_tag_to_count_colors[convert_initial_mana_tag(&q)];
+		  {
+			int tag = convert_initial_mana_tag(&q);
+			rval |= mana_tag_to_count_colors[(uint8_t)tag];
+		  }
 	}
   else
 	{
@@ -221,38 +228,40 @@ manacost_to_count_colors(const card_ptr_t* cp)
 int
 convert_initial_mana_tag(const char** src_string)
 {
+  if (!src_string || !*src_string)
+	return 0;
+
   const char* p = *src_string;
 
   if (*p != '|')
 	return 0;
 
-  ++p;
-
-  int16_t needle = *(const int16_t*)p;
+  ++p;	// Point just after the |.  On failure, this is exactly how far the old implementation advanced.
 
   signed char mana_tag_tag;
-  signed char* mana_tag_entry;
+  const signed char* mana_tag_entry;
   for (mana_tag_entry = mana_tags; ((mana_tag_tag = *mana_tag_entry)); mana_tag_entry += 3)
 	{
-	  int16_t key = *(int16_t*)(mana_tag_entry + 1);
-	  if (!(key & 0xff00))
+	  char key0 = mana_tag_entry[1];
+	  char key1 = mana_tag_entry[2];
+
+	  if (key1)
 		{
-		  if ((int8_t)needle == (int8_t)key)
-			break;
+		  if (p[0] == key0 && p[1] == key1)
+			{
+			  *src_string = p + 2;
+			  return (uint8_t)mana_tag_tag;
+			}
 		}
-	  else if (needle == key)
+	  else if (p[0] == key0)
 		{
-		  p = p + 1;
-		  break;
+		  *src_string = p + 1;
+		  return (uint8_t)mana_tag_tag;
 		}
 	}
 
-  if (mana_tag_tag)
-	++p;
-
   *src_string = p;
-
-  return (unsigned char)mana_tag_tag;
+  return 0;
 }
 
 int
@@ -262,6 +271,8 @@ calc_draw_mana_text(HDC hdc, const RECT* rect, const char* str, int rules_text_f
 	return 0;
 
   int savedc = SaveDC(hdc);
+  if (!savedc)
+	return 0;
 
   IntersectClipRect(hdc, 0, 0, 1, 1);
   int rval = draw_mana_text(hdc, rect, str, 0, rules_text_flag, no_additional_space, loyalty);
@@ -273,21 +284,35 @@ calc_draw_mana_text(HDC hdc, const RECT* rect, const char* str, int rules_text_f
 int
 draw_mana_text(HDC hdc, const RECT* dest_rect, const char* str, int drawflag, int rules_text_flag, int no_additional_space, LoyaltyCost* loyalty)
 {
-  if (!hdc || !dest_rect || !str || !*str)
+  if (!hdc || !dest_rect || !str || !*str || dest_rect->right <= dest_rect->left || dest_rect->bottom <= dest_rect->top)
 	return 0;
 
+  enum
+  {
+	DRAW_MANA_TEXT_MAX_LOYALTY_COSTS = 5,
+	DRAW_MANA_TEXT_BUFFER_SIZE = 3000
+  };
+
   int savedc = SaveDC(hdc);
+  if (!savedc)
+	return 0;
 
   TEXTMETRIC metrics;
-  GetTextMetrics(hdc, &metrics);
+  if (!GetTextMetrics(hdc, &metrics))
+	{
+	  RestoreDC(hdc, savedc);
+	  return 0;
+	}
 
-  int font_line_hgt = metrics.tmHeight;
+  int font_line_hgt = MAX(1, metrics.tmHeight);
 
   int drawing_on_fullcard = GetMapMode(hdc) == MM_ISOTROPIC;
 
   RECT rect;
   int line_hgt;
   rect.bottom = line_hgt = metrics.tmHeight - (drawing_on_fullcard ? 8 : 2);
+  if (line_hgt <= 0)
+	line_hgt = rect.bottom = 1;
   rect.top = rect.left = rect.right = 0;
   LPtoDP(hdc, (POINT*)(&rect), 2);
 
@@ -301,10 +326,14 @@ draw_mana_text(HDC hdc, const RECT* dest_rect, const char* str, int drawflag, in
   int sym_ext_wid, sym_wid, sym_hgt;
   {
 	int w = drawing_on_fullcard ? metrics.tmHeight : (rect.right - rect.left);
+	if (w <= 0)
+	  w = metrics.tmHeight;
+	if (w <= 0)
+	  w = 1;
 
-	sym_hgt = (int64_t)(metrics.tmHeight) * 75 / 100;
-	sym_wid = (int64_t)w * 75 / 100;
-	sym_ext_wid = (int64_t)w * 85 / 100;
+	sym_hgt = MAX(1, (int64_t)(metrics.tmHeight) * 75 / 100);
+	sym_wid = MAX(1, (int64_t)w * 75 / 100);
+	sym_ext_wid = MAX(1, (int64_t)w * 85 / 100);
   }
 
   IntersectClipRect(hdc, dest_rect->left, dest_rect->top, dest_rect->right + 1, dest_rect->bottom);
@@ -319,33 +348,38 @@ draw_mana_text(HDC hdc, const RECT* dest_rect, const char* str, int drawflag, in
   partial_loyalty.top = INT_MIN;
   partial_loyalty.bottom = INT_MIN;
 
+  int loyalty_entries = 0;
   if (loyalty)
-	loyalty->top = INT_MIN;
+	loyalty[0].top = INT_MIN;
 
-  char buf[3000];
+  char buf[DRAW_MANA_TEXT_BUFFER_SIZE];
   SIZE word_wid;
   int posx = dest_rect->left;
   int posy = dest_rect->top;
   int max_wid = 0;
   int after_nl = 1;
 
-#define END_LOYALTY_TEXT(foo) do {					\
-  if (loyalty && partial_loyalty.top != INT_MIN)	\
-	{												\
-	  strcpy(loyalty->txt, partial_loyalty.txt);	\
-	  loyalty->top = partial_loyalty.top;			\
-	  loyalty->bottom = posy + line_hgt;			\
-	  ++loyalty;									\
-	  loyalty->top = INT_MIN;						\
-	  partial_loyalty.top = INT_MIN;				\
-	}												\
+#define END_LOYALTY_TEXT() do {							\
+  if (loyalty && partial_loyalty.top != INT_MIN)		\
+	{													\
+	  if (loyalty_entries < DRAW_MANA_TEXT_MAX_LOYALTY_COSTS)	\
+		{												\
+		  partial_loyalty.bottom = posy + line_hgt;		\
+		  loyalty[loyalty_entries] = partial_loyalty;	\
+		  ++loyalty_entries;							\
+		  loyalty[loyalty_entries].top = INT_MIN;		\
+		}												\
+	  *partial_loyalty.txt = 0;							\
+	  partial_loyalty.top = INT_MIN;					\
+	  partial_loyalty.bottom = INT_MIN;					\
+	}													\
 } while (0)
 
   while (*str)
 	{
 	  if (*str == '\n')
 		{
-		  END_LOYALTY_TEXT(foo);
+		  END_LOYALTY_TEXT();
 
 		  after_nl = 1;
 		  ++str;
@@ -383,19 +417,21 @@ draw_mana_text(HDC hdc, const RECT* dest_rect, const char* str, int drawflag, in
 
 		  if (end_of_loyalty_cost)
 			{
-			  char txt[LOYALTY_MOD_TXT_LEN];
-			  strncpy(txt, str, LOYALTY_MOD_TXT_LEN);
-			  txt[LOYALTY_MOD_TXT_LEN - 1] = 0;
-			  char* q = strchr(txt, ':');
-			  assert(q && "Loyalty cost too long");
-			  *q = 0;
-			  END_LOYALTY_TEXT(foo);
-			  strcpy(partial_loyalty.txt, txt);
-			  partial_loyalty.top = posy;
-			  str = end_of_loyalty_cost;
+			  const char* colon = end_of_loyalty_cost - 2;
+			  size_t loyalty_len = (size_t)(colon - str);
 
-			  after_nl = 0;
-			  continue;
+			  if (loyalty_len > 0 && loyalty_len < LOYALTY_MOD_TXT_LEN)
+				{
+				  END_LOYALTY_TEXT();
+
+				  memcpy(partial_loyalty.txt, str, loyalty_len);
+				  partial_loyalty.txt[loyalty_len] = 0;
+				  partial_loyalty.top = posy;
+				  str = end_of_loyalty_cost;
+
+				  after_nl = 0;
+				  continue;
+				}
 			}
 		}
 
@@ -420,15 +456,16 @@ draw_mana_text(HDC hdc, const RECT* dest_rect, const char* str, int drawflag, in
 		  char* p = buf;
 		  int tag;
 
-		  while ((tag = convert_initial_mana_tag(&str)))
+		  while (buf_len < DRAW_MANA_TEXT_BUFFER_SIZE - 1 && (tag = convert_initial_mana_tag(&str)))
 			{
-			  *p++ = tag;
+			  *p++ = (char)tag;
 			  ++buf_len;
 			}
+		  *p = 0;
 		}
 		if (buf_len)
 		  {
-			if (sym_wid * buf_len + posx > dest_rect->right)	// symbols fit into current line?
+			if ((int64_t)sym_wid * buf_len + posx > dest_rect->right)	// symbols fit into current line?
 			  {
 				// nope
 				int w = posx - dest_rect->left;
@@ -442,10 +479,11 @@ draw_mana_text(HDC hdc, const RECT* dest_rect, const char* str, int drawflag, in
 			for (; buf_len; --buf_len)
 			  {
 				if (drawflag)	// otherwise, calculating size, so no symbols needed
-				  draw_mana_symbol(hdc, *p++,
+				  draw_mana_symbol(hdc, *p,
 								   ((uint32_t)(sym_ext_wid - sym_wid) >> 1) + posx,
 								   ((uint32_t)(font_line_hgt - sym_hgt) >> 1) + posy,
 								   sym_wid, sym_hgt);
+				++p;
 				posx += sym_ext_wid;
 			  }
 
@@ -469,7 +507,7 @@ draw_mana_text(HDC hdc, const RECT* dest_rect, const char* str, int drawflag, in
 		char* p = buf;
 		int buf_len = 0;
 		int switch_back = 0;
-		while (*str && *str != ' ' && *str != '\n' && *str != '|')
+		while (*str && *str != ' ' && *str != '\n' && *str != '|' && buf_len < DRAW_MANA_TEXT_BUFFER_SIZE - 1)
 		  {
 			if (*str == '(' && rules_text_flag)
 			  {
@@ -494,6 +532,9 @@ draw_mana_text(HDC hdc, const RECT* dest_rect, const char* str, int drawflag, in
 		  }
 		*p = 0;
 
+		if (buf_len <= 0)
+		  continue;
+
 		GetTextExtentPoint32(hdc, buf, buf_len, &word_wid);
 
 		if (word_wid.cx + posx > dest_rect->right)
@@ -516,12 +557,16 @@ draw_mana_text(HDC hdc, const RECT* dest_rect, const char* str, int drawflag, in
 	  }
 	}
 
-  END_LOYALTY_TEXT(foo);
+  END_LOYALTY_TEXT();
 
   if (posx - dest_rect->left > max_wid)
 	max_wid = posx - dest_rect->left;
 
   int max_hgt = line_hgt + posy - dest_rect->top;
+  if (max_wid > 0xffff)
+	max_wid = 0xffff;
+  if (max_hgt > 0x7fff)
+	max_hgt = 0x7fff;
 
   RestoreDC(hdc, savedc);
   return (max_hgt << 16) | (max_wid & 0xffff);

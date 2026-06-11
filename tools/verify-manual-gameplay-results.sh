@@ -105,6 +105,7 @@ required_tests = [
     "R3",
     "R4",
     "R5",
+    "R6",
 ]
 
 

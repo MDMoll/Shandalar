@@ -5,10 +5,15 @@
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <windows.h>
 #include <shlwapi.h>
 
@@ -20,6 +25,10 @@
 #include "manalink.h"
 
 #include "gdiplus.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum
 {
@@ -150,7 +159,7 @@ typedef enum
 
 #define BASE_FRAMEPART(framepart)	(framepart < CARDBK_MIN_FRAMEPART ? framepart : ((framepart - CARDBK_MIN_FRAMEPART) % NUM_FRAMEPARTS_PER_FRAMESET) + CARDBK_MIN_FRAMEPART)
 #define FRAMESET_OF_FRAMEPART(framepart)		(framepart < CARDBK_MIN_FRAMEPART ? 0 : (framepart - CARDBK_MIN_FRAMEPART) / NUM_FRAMEPARTS_PER_FRAMESET)
-#define FRAMEPART_FROM_BASE(framepart, config)	(framepart < CARDBK_MIN_FRAMEPART ? framepart : config->cardbk_base + framepart - CARDBK_MIN_FRAMEPART)
+#define FRAMEPART_FROM_BASE(framepart, config)	(framepart < CARDBK_MIN_FRAMEPART ? framepart : (config)->cardbk_base + framepart - CARDBK_MIN_FRAMEPART)
 
 #undef FRAMEPARTS
 
@@ -426,7 +435,7 @@ DLLIMPORT int IsBigArtRightSize(int id, int version, int width, int height);
 DLLIMPORT int IsSmallArtIn(int id, int version);
 DLLIMPORT int LoadBigArt(int id, int version, int width, int height);
 DLLIMPORT int LoadSmallArt(int id, int version, int width, int height);
-DLLIMPORT int ReloadSmallArtIfWrongSize(int id, int version, int width, int heigt);
+DLLIMPORT int ReloadSmallArtIfWrongSize(int id, int version, int width, int height);
 
 /**************** Public API ****************/
 BOOL WINAPI DllMain(HINSTANCE dll, DWORD reason, LPVOID reserved);
@@ -479,10 +488,10 @@ card_instance_t* get_displayed_card_instance(int player, int card);
 const char* get_pichandlename(PicHandleNames handle_name, int idx);
 int is_planeswalker_by_cp(const card_ptr_t* cp);
 int is_vanguard_by_cp(const card_ptr_t* cp);
+void make_gpic_from_pic(PicHandleNames picnum);
 void popup(const char* title, const char* fmt, ...);
 PicHandleNames select_frame(const card_ptr_t* cp, const Rarity* r, int player, int card);	// player and card should be -1,-1 when unknown or invalid
 int find_rules_engine_csvid(void);
-void make_gpic_from_pic(PicHandleNames picnum);
 
 /**************** In drawfullcard.c ****************/
 void blt_expansion_symbol(HDC hdc, const RECT* dest_rect, EXPANSION_t expansion, rarity_t rarity, int smallcard);
@@ -502,5 +511,9 @@ void init_mana_tags(void);
 
 /**************** In get_displayed_card_instance.asm ****************/
 card_instance_t* get_displayed_card_instance_manalink(int player, int card);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

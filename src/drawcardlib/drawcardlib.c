@@ -2,6 +2,14 @@
 // Drawcardlib: display card and mana cost graphics.
 // drawcardlib.c: primary interface to Magic.exe; smallcards
 
+#include <assert.h>
+#include <errno.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "drawcardlib.h"
 
 typedef struct
@@ -100,6 +108,45 @@ HDC* spare_hdc = NULL;
 
 card_instance_t* hack_instance = NULL;	// Instance of the currently-drawn card, if known.  Only accurate after a call to select_frame().
 
+static int
+pic_handle_is_valid(PicHandleNames picnum)
+{
+  return picnum >= 0 && picnum < MAX_PICHANDLES_PLUS_1;
+}
+
+static void
+enter_cs(CRITICAL_SECTION* cs)
+{
+  if (cs)
+	EnterCriticalSection(cs);
+}
+
+static void
+leave_cs(CRITICAL_SECTION* cs)
+{
+  if (cs)
+	LeaveCriticalSection(cs);
+}
+
+static int
+valid_player_card(int player, int card)
+{
+  return player >= 0 && player <= 1 && card >= 0 && card < 151;
+}
+
+static void
+safe_snprintf(char* buf, size_t bufsz, const char* fmt, ...)
+{
+  if (!buf || bufsz == 0)
+	return;
+
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(buf, bufsz, fmt ? fmt : "", args);
+  va_end(args);
+  buf[bufsz - 1] = 0;
+}
+
 /**************** In Magic.exe ****************/
 card_data_t* cards_data_exe = (void*)(0x7e7010);	// drawcardlib.c, drawfullcard.c
 card_ptr_t** cards_ptr_manalink_exe = (void*)(0x73bb00);
@@ -112,12 +159,18 @@ void
 popup(const char* title, const char* fmt, ...)
 {
   char buf[8000];
-  va_list args;
-  va_start(args, fmt);
-  vsnprintf(buf, 8000, fmt, args);
-  va_end(args);
+  buf[0] = 0;
 
-  MessageBox(0, buf, title, MB_ICONERROR|MB_TASKMODAL);
+  if (fmt)
+	{
+	  va_list args;
+	  va_start(args, fmt);
+	  vsnprintf(buf, sizeof(buf), fmt, args);
+	  va_end(args);
+	  buf[sizeof(buf) - 1] = 0;
+	}
+
+  MessageBox(0, buf, title ? title : "drawcardlib.dll", MB_ICONERROR|MB_TASKMODAL);
 }
 
 card_instance_t*
@@ -153,18 +206,26 @@ get_card_ptr(int csvid)
 static void
 init_palette(void)
 {
-  PALETTEENTRY* entry = &logpalette->palPalEntry[0];
-  int i;
-  for (i = 0; i < 256; ++i, ++entry)
-	{
-	  BYTE red = entry->peRed;
-	  entry->peRed = entry->peBlue;
-	  entry->peBlue = red;
+  static int palette_channels_swapped = 0;
 
-	  entry->peFlags = PC_EXPLICIT;
+  if (!palette_channels_swapped)
+	{
+	  PALETTEENTRY* entry = &logpalette->palPalEntry[0];
+	  int i;
+	  for (i = 0; i < 256; ++i, ++entry)
+		{
+		  BYTE red = entry->peRed;
+		  entry->peRed = entry->peBlue;
+		  entry->peBlue = red;
+
+		  entry->peFlags = PC_EXPLICIT;
+		}
+
+	  palette_channels_swapped = 1;
 	}
 
-  palette = CreatePalette(logpalette);
+  if (!palette)
+	palette = CreatePalette(logpalette);
 }
 
 static int
@@ -178,6 +239,7 @@ init_gdiplus(void)
 	  input.SuppressBackgroundThread = 1;
 	  input.SuppressExternalCodecs = 1;
 
+	  memset(&gdiplus_startup_output, 0, sizeof(gdiplus_startup_output));
 	  if (GdiplusStartup(&gdiplus_token, &input, &gdiplus_startup_output) != Ok || !gdiplus_token)
 		return 0;
 
@@ -208,6 +270,20 @@ close_gdiplus(void)
 		gpics[i] = NULL;
 	  }
 
+  for (i = 0; i <= MAX_CFG; ++i)
+	{
+	  if (configs[i].smallcard_loyalty_curr_alpha_xform)
+		{
+		  GdipDisposeImageAttributes(configs[i].smallcard_loyalty_curr_alpha_xform);
+		  configs[i].smallcard_loyalty_curr_alpha_xform = NULL;
+		}
+	  if (configs[i].colorless_alpha_xform)
+		{
+		  GdipDisposeImageAttributes(configs[i].colorless_alpha_xform);
+		  configs[i].colorless_alpha_xform = NULL;
+		}
+	}
+
   if (gdiplus_bg_thread_token && gdiplus_startup_output.NotificationUnhook)
 	{
 	  gdiplus_startup_output.NotificationUnhook(gdiplus_bg_thread_token);
@@ -219,6 +295,8 @@ close_gdiplus(void)
 	  GdiplusShutdown(gdiplus_token);
 	  gdiplus_token = 0;
 	}
+
+  memset(&gdiplus_startup_output, 0, sizeof(gdiplus_startup_output));
 }
 
 void
@@ -267,9 +345,9 @@ gdip_create_graphics(HDC hdc, GpGraphics** graphics, InterpolationMode mode)
 	return 0;
 
   /*
-   * Some Wine/CrossOver dialog HDCs can reject interpolation changes even
-   * though the graphics context itself is valid.  Treat the mode as a quality
-   * hint so card pickers still draw with the default interpolation.
+   * Treat interpolation as a quality hint. Some Wine/CrossOver dialog HDCs
+   * can reject the interpolation change even when the graphics context itself
+   * is usable.
    */
   GdipSetInterpolationMode(gfx, mode);
 
@@ -436,10 +514,26 @@ del_screendc(void)
 	{
 	  DeleteDC(screendc);
 	  screendc = 0;
-	  if (parent == PARENT_OTHER)
+	}
+
+  if (parent == PARENT_OTHER)
+	{
+	  if (spare_hdc && *spare_hdc)
+		{
+		  DeleteDC(*spare_hdc);
+		  *spare_hdc = NULL;
+		}
+
+	  if (critical_section_for_drawing)
 		{
 		  DeleteCriticalSection(critical_section_for_drawing);
+		  critical_section_for_drawing = NULL;
+		}
+
+	  if (critical_section_for_display)
+		{
 		  DeleteCriticalSection(critical_section_for_display);
+		  critical_section_for_display = NULL;
 		}
 	}
 }
@@ -455,6 +549,12 @@ initialize(void)
 #endif
 
   HMODULE parent_mod = GetModuleHandle(0);
+  if (!parent_mod)
+	{
+	  popup("drawcardlib.dll", "GetModuleHandle(NULL) failed");
+	  return 0;
+	}
+
   if (GetProcAddress(parent_mod, "szDeckName"))
 	{
 	  parent = PARENT_MANALINK;
@@ -478,16 +578,19 @@ initialize(void)
 	  InitializeCriticalSection(critical_section_for_drawing);
 	  critical_section_for_display = &local_critical_section2;
 	  InitializeCriticalSection(critical_section_for_display);
+
 	  HDC hdc_parent = GetDC(0);
 	  static HDC local_spare_hdc = NULL;
 	  local_spare_hdc = CreateCompatibleDC(hdc_parent);
+	  if (hdc_parent)
+		ReleaseDC(0, hdc_parent);
 	  spare_hdc = &local_spare_hdc;
-	  ReleaseDC(0, hdc_parent);
 	}
 
   HDC hdc = GetDC(NULL);
   screendc = CreateCompatibleDC(hdc);
-  ReleaseDC(NULL, hdc);
+  if (hdc)
+	ReleaseDC(NULL, hdc);
 
   init_palette();
 
@@ -511,7 +614,10 @@ initialize(void)
   result &= prepare_fonts_and_imgs();	// deliberately not && - always call both
 
   if (!result)
-	del_resources();
+	{
+	  del_resources();
+	  del_screendc();
+	}
 
   return result;
 }
@@ -557,6 +663,15 @@ static void make_frame(PicHandleNames frame);
 static void
 make_frame_from_2_overlays(PicHandleNames target, PicHandleNames background, PicHandleNames overlay1, PicHandleNames overlay2)
 {
+  if (!pic_handle_is_valid(target)
+	  || !pic_handle_is_valid(background)
+	  || !pic_handle_is_valid(overlay1)
+	  || (overlay2 != PICHANDLE_INVALID && !pic_handle_is_valid(overlay2)))
+	return;
+
+  if (gpics[target])
+	return;
+
   if (!gpics[background])
 	make_frame(background);
   if (!gpics[overlay1])
@@ -597,6 +712,16 @@ make_frame_from_overlay(PicHandleNames target, PicHandleNames background, PicHan
 static void
 make_hybrid_frame_with_overlay(Config* config, PicHandleNames target, PicHandleNames left, PicHandleNames right, PicHandleNames overlay)
 {
+  if (!config
+	  || !pic_handle_is_valid(target)
+	  || !pic_handle_is_valid(left)
+	  || !pic_handle_is_valid(right)
+	  || (overlay != PICHANDLE_INVALID && !pic_handle_is_valid(overlay)))
+	return;
+
+  if (gpics[target])
+	return;
+
   if (!gpics[left])
 	make_frame(left);
   if (!gpics[right])
@@ -614,12 +739,12 @@ make_hybrid_frame_with_overlay(Config* config, PicHandleNames target, PicHandleN
   if (!gdip_clone_bitmap_area(0, 0, lwidth, lheight, PixelFormat32bppARGB, gpics[left], &gbmp_target))
 	return;
 
-  // Add alpha channel
   GpRect r;
   r.X = 0;
   r.Y = 0;
-  r.Width = rwidth;
-  r.Height = rheight;
+  r.Width = MIN(lwidth, rwidth);
+  r.Height = MIN(lheight, rheight);
+
   BitmapData right_data;
   if (!gdip_lock_bits(gpics[right], &r, ImageLockModeRead, PixelFormat32bppARGB, &right_data))
 	{
@@ -627,7 +752,6 @@ make_hybrid_frame_with_overlay(Config* config, PicHandleNames target, PicHandleN
 	  return;
 	}
 
-  // We want the final alpha to be a weighted average of source and target alpha, not a sum, but gdi+ gives no control over the channel!  So have to do it manually. :( :(
   BitmapData target_data;
   if (!gdip_lock_bits(gbmp_target, &r, ImageLockModeWrite, PixelFormat32bppARGB, &target_data))
 	{
@@ -636,26 +760,28 @@ make_hybrid_frame_with_overlay(Config* config, PicHandleNames target, PicHandleN
 	  return;
 	}
 
-  double percent_solid_on_hybrid = (100 - config->frames_percent_mixed_on_hybrid) / 200.0;
-  double m = 255.0 / (rwidth * (1 - 2 * percent_solid_on_hybrid));
-  double b = -255.0 * percent_solid_on_hybrid / (1 - 2 * percent_solid_on_hybrid);
+  int mixed = config->frames_percent_mixed_on_hybrid;
+  if (mixed > 100)
+	mixed = 100;
 
-  UINT x, y;
-  UINT minheight = MIN(right_data.Height, target_data.Height);
-  UINT minwidth = MIN(right_data.Width, target_data.Width);
+  double percent_solid_on_hybrid = mixed <= 0 ? 0.5 : (100 - mixed) / 200.0;
+  double m = mixed <= 0 ? 0.0 : 255.0 / (r.Width * (1 - 2 * percent_solid_on_hybrid));
+  double b = mixed <= 0 ? 0.0 : -255.0 * percent_solid_on_hybrid / (1 - 2 * percent_solid_on_hybrid);
+
   INT right_stride = abs(right_data.Stride);
   INT target_stride = abs(target_data.Stride);
-  for (y = 0; y < minheight; ++y)
+  INT x, y;
+  for (y = 0; y < r.Height; ++y)
 	{
 	  uint8_t* rightbits = (uint8_t*)right_data.Scan0 + y * right_stride;
 	  uint8_t* targetbits = (uint8_t*)target_data.Scan0 + y * target_stride;
-	  for (x = 0; x < minwidth; ++x, rightbits += 4, targetbits += 4)
+	  for (x = 0; x < r.Width; ++x, rightbits += 4, targetbits += 4)
 		{
-		  double blend = m*x + b;
+		  double blend = mixed <= 0 ? (x < r.Width / 2 ? 0.0 : 255.0) : m*x + b;
 		  if (blend < 0.0)
-			blend = 0;
+			blend = 0.0;
 		  else if (blend > 255.0)
-			blend = 255;
+			blend = 255.0;
 
 #define CLAMP_INTO(to)				\
 		  if (k < 0.0)				\
@@ -677,7 +803,7 @@ make_hybrid_frame_with_overlay(Config* config, PicHandleNames target, PicHandleN
 
 		  k = (255 - blend)*targetbits[3]/255 + blend*rightbits[3]/255;
 		  CLAMP_INTO(3);
-#undef CLAMP
+#undef CLAMP_INTO
 		}
 	}
 
@@ -710,6 +836,9 @@ make_hybrid_frame(Config* config, PicHandleNames target, PicHandleNames left, Pi
 static void
 make_frame(PicHandleNames frame)
 {
+  if (!pic_handle_is_valid(frame))
+	return;
+
   switch (frame)
 	{
 	  case CARDBACK:	case MANASYMBOLS:	case EXPANSION_SYMBOLS:	case WATERMARKS:	case CARDCOUNTERS:
@@ -905,9 +1034,10 @@ count_colors_to_hybrid_pic_handle_name(CountColors cc, PicHandleNames base, PicH
 static int
 is_token_by_instance(card_instance_t* instance)
 {
-  return ((instance->token_status & STATUS_TOKEN)
-		  && (parent != PARENT_MANALINK
-			  || (!(instance->targets[14].card != -1 && (instance->targets[14].card & SF_UNEARTH)))));
+  return instance
+		  && ((instance->token_status & STATUS_TOKEN)
+			  && (parent != PARENT_MANALINK
+				  || (!(instance->targets[14].card != -1 && (instance->targets[14].card & SF_UNEARTH)))));
 }
 
 static int
@@ -929,6 +1059,9 @@ get_special_type_cfgnum_by_type(int type)
 static int
 get_special_type_cfgnum_by_cp(const card_ptr_t* cp)
 {
+  if (!cp)
+	return -1;
+
   int cf;
   if ((cf = get_special_type_cfgnum_by_type(cp->types[0])) != -1)
 	return cf;
@@ -938,6 +1071,8 @@ get_special_type_cfgnum_by_cp(const card_ptr_t* cp)
   if (parent == PARENT_MANALINK || parent == PARENT_SHANDALAR)
 	{
 	  cp = get_card_ptr(cp->id);
+	  if (!cp)
+		return -1;
 	  if ((cf = get_special_type_cfgnum_by_type(cp->types[0])) != -1)
 		return cf;
 	  if ((cf = get_special_type_cfgnum_by_type(cp->types[1])) != -1)
@@ -969,7 +1104,7 @@ typedef enum
 static dfc_t
 is_dfc(const Rarity* r)
 {
-  if (r->dfc_symbol > DFC_SYMBOL_MAX)
+  if (!r || r->dfc_symbol > DFC_SYMBOL_MAX)
 	return DFC_NO;
   if (r->dfc_symbol & 1)
 	return DFC_BACK;
@@ -979,6 +1114,27 @@ is_dfc(const Rarity* r)
 PicHandleNames
 select_frame(const card_ptr_t* cp, const Rarity* r, int player, int card)
 {
+  static Rarity fallback_rarity;
+  static int fallback_rarity_initialized = 0;
+
+  if (!cp)
+	return CARDBACK;
+
+  if (!r)
+	{
+	  if (!fallback_rarity_initialized)
+		{
+		  memset(&fallback_rarity, 0, sizeof(fallback_rarity));
+		  fallback_rarity.default_rarity = NONE;
+		  fallback_rarity.default_expansion = 0;
+		  fallback_rarity.watermark = 0xFF;
+		  fallback_rarity.dfc_symbol = 0xFF;
+		  fallback_rarity.flags = 0;
+		  fallback_rarity_initialized = 1;
+		}
+	  r = &fallback_rarity;
+	}
+
   int typ;
   int clr;
   int ench_evening = 0;
@@ -997,7 +1153,13 @@ select_frame(const card_ptr_t* cp, const Rarity* r, int player, int card)
 		  popup("drawcardlib.dll", "Encoded instance found, but running from neither Shandalar nor Manalink (deckbuilder?)");
 		  abort();
 		}
+
+	  if (!valid_player_card(player, card))
+		return CARDBACK;
+
 	  instance = hack_instance = get_displayed_card_instance(player, card);
+	  if (!instance || instance->internal_card_id < 0)
+		return CARDBACK;
 
 	  /* Activation cards on the stack, other than the top one, for some reason get their colors overwritten by 1.  This can be observed with the original
 	   * executable/drawcardlib by picking a permanent that has a repeatable activation ability (I used Figure of Destiny), changing its color (I used
@@ -1045,23 +1207,26 @@ select_frame(const card_ptr_t* cp, const Rarity* r, int player, int card)
 			clr = manacost_to_count_colors(cp);
 
 		  if (clr == 0 && !(typ & (TYPE_ARTIFACT | TYPE_LAND)))	// no mana cost (like, say, Ancestral Vision, Evermind, Garruk Relentless, or a token)
-			switch (get_card_ptr(cards_data_exe[((typ & TYPE_EFFECT) ? (int32_t)instance->original_internal_card_id : instance->internal_card_id)].id)->color)
-			  {
-				case CP_COLOR_BLACK:	clr = COLOR_TEST_BLACK;	break;
-				case CP_COLOR_BLUE:		clr = COLOR_TEST_BLUE;	break;
-				case CP_COLOR_MULTI:	clr = COLOR_TEST_ANY & ~COLOR_TEST_COLORLESS;	break;	// force gold frame
-				case CP_COLOR_GREEN:	clr = COLOR_TEST_GREEN;	break;
-				case CP_COLOR_RED:		clr = COLOR_TEST_RED;	break;
-				case CP_COLOR_WHITE:	clr = COLOR_TEST_WHITE;	break;
-				case CP_COLOR_SPECIAL:	clr = -2;				break;
+			{
+			  const card_ptr_t* source_cp = get_card_ptr(cards_data_exe[((typ & TYPE_EFFECT) ? (int32_t)instance->original_internal_card_id : instance->internal_card_id)].id);
+			  switch (source_cp ? source_cp->color : CP_COLOR_LESS)
+				{
+				  case CP_COLOR_BLACK:	clr = COLOR_TEST_BLACK;	break;
+				  case CP_COLOR_BLUE:		clr = COLOR_TEST_BLUE;	break;
+				  case CP_COLOR_MULTI:	clr = COLOR_TEST_ANY & ~COLOR_TEST_COLORLESS;	break;	// force gold frame
+				  case CP_COLOR_GREEN:	clr = COLOR_TEST_GREEN;	break;
+				  case CP_COLOR_RED:		clr = COLOR_TEST_RED;	break;
+				  case CP_COLOR_WHITE:	clr = COLOR_TEST_WHITE;	break;
+				  case CP_COLOR_SPECIAL:	clr = -2;				break;
 
-				case CP_COLOR_LESS:
-				case CP_COLOR_ARTIFACT:
-				case CP_COLOR_LAND:
-				default:
-				  clr = 0;
-				  break;
-			  }
+				  case CP_COLOR_LESS:
+				  case CP_COLOR_ARTIFACT:
+				  case CP_COLOR_LAND:
+				  default:
+					clr = 0;
+					break;
+				}
+			}
 		  else
 			clr &= COLOR_TEST_ANY_COLORED;
 		}
@@ -1273,8 +1438,16 @@ select_frame(const card_ptr_t* cp, const Rarity* r, int player, int card)
 		  || cp->id == CARD_ID_THASSA_GOD_OF_THE_SEA))
 	{
 	  const card_ptr_t* base_cp = get_card_ptr(cp->id + 1);
-	  hack_power = base_cp->power;
-	  hack_toughness = base_cp->toughness;
+	  if (base_cp)
+		{
+		  hack_power = base_cp->power;
+		  hack_toughness = base_cp->toughness;
+		}
+	  else
+		{
+		  hack_power = cp->power;
+		  hack_toughness = cp->toughness;
+		}
 	}
   else
 	{
@@ -1401,16 +1574,21 @@ select_frame(const card_ptr_t* cp, const Rarity* r, int player, int card)
   else
 	frame = frameset + (frame - FRAME_MODERN_MIN);
 
-  if (!gpics[frame])
+  if (pic_handle_is_valid(frame) && !gpics[frame])
 	make_frame(frame);
 
-  return frame;
+  return pic_handle_is_valid(frame) ? frame : CARDBACK;
 }
 
 static RECT*
 draw_smallcard_art(HDC hdc, const RECT* card_rect, int id, int version, int must_save_dc, int shrink_rect, int intersect_clip_with_shrunk_rect)
 {
+  if (!hdc || !card_rect)
+	return NULL;
+
   int savedc = must_save_dc ? SaveDC(hdc) : 0;
+  if (must_save_dc && !savedc)
+	return NULL;
 
   SetMapMode(hdc, MM_TEXT);
 
@@ -1460,7 +1638,12 @@ draw_smallcard_frame(HDC hdc, const RECT* dest_rect, PicHandleNames framenum, Gp
 {
   RECT card_rect;
 
-  if (!hdc || !dest_rect)
+  if (!hdc || !dest_rect || !pic_handle_is_valid(framenum))
+	return;
+
+  if (!gpics[framenum])
+	make_frame(framenum);
+  if (!gpics[framenum])
 	return;
 
   UINT width, height;
@@ -1484,6 +1667,9 @@ static void
 draw_text_with_shadow_and_background(HDC hdc, RECT* rect, int x_offset, const TextWithShadow* tws, const char* str,
 									 COLORREF bkcolor, COLORREF override_color, int len)
 {
+  if (!hdc || !rect || !tws || !str)
+	return;
+
   if (len <= 0)
 	len = strlen(str);
 
@@ -1519,6 +1705,9 @@ draw_text_with_shadow_and_background(HDC hdc, RECT* rect, int x_offset, const Te
 void
 draw_text_with_shadow(HDC hdc, RECT* rect, const TextWithShadow* tws, COLORREF override_color, const char* str, int len)
 {
+  if (!hdc || !rect || !tws || !str)
+	return;
+
   if (len < 0)
 	len = strlen(str);
 
@@ -1537,6 +1726,9 @@ draw_text_with_shadow(HDC hdc, RECT* rect, const TextWithShadow* tws, COLORREF o
 void
 draw_text_with_shadow_at_x(HDC hdc, RECT* rect, int x_pos, const TextWithShadow* tws, COLORREF override_color, const char* str, int len)
 {
+  if (!hdc || !rect || !tws || !str)
+	return;
+
   if (len < 0)
 	len = strlen(str);
 
@@ -1560,6 +1752,9 @@ draw_smallcard_title_impl(HDC hdc, const RECT* dest_rect, const char* card_title
 	return 0;
 
   int savedc = SaveDC(hdc);
+  if (!savedc)
+	return 0;
+
   GdiFlush();
 
   SetMapMode(hdc,MM_ANISOTROPIC);
@@ -1659,13 +1854,17 @@ int
 DrawSmallCardTitle(HDC hdc, const RECT* dest_rect, const char* card_title, int color, int controlled_by_owner,
 				   const card_ptr_t* cp, int player, int card)
 {
-  EnterCriticalSection(critical_section_for_drawing);
+  enter_cs(critical_section_for_drawing);
 #pragma message "This needs multiple injections so we can figure out which config to use."
   PicHandleNames framenum;
   GpImageAttributes* alpha_xform;
-  if (controlled_by_owner & 0x8)
+
+  int select_specific_config = controlled_by_owner & 0x8;
+  if (select_specific_config)
+	controlled_by_owner &= ~0x8;
+
+  if (select_specific_config && cp)
 	{
-	  controlled_by_owner &= ~0x8;
 	  framenum = select_frame(cp, get_rarity(cp->id), player, card);
 
 	  int colorless_option;
@@ -1691,8 +1890,8 @@ DrawSmallCardTitle(HDC hdc, const RECT* dest_rect, const char* card_title, int c
 	  framenum = CARDBACK;
 	  alpha_xform = NULL;
   }
-  int rval = draw_smallcard_title_impl(hdc, dest_rect, card_title, color, controlled_by_owner, framenum, alpha_xform);
-  LeaveCriticalSection(critical_section_for_drawing);
+  int rval = draw_smallcard_title_impl(hdc, dest_rect, card_title ? card_title : "", color, controlled_by_owner, framenum, alpha_xform);
+  leave_cs(critical_section_for_drawing);
   return rval;
 }
 
@@ -1704,8 +1903,13 @@ DrawSmallCard(HDC hdc, const RECT* card_rect, const card_ptr_t* cp, int version,
 
   // player and card are only valid if mode == 73
 
-  EnterCriticalSection(critical_section_for_drawing);
+  enter_cs(critical_section_for_drawing);
   int savedc = SaveDC(hdc);
+  if (!savedc)
+	{
+	  leave_cs(critical_section_for_drawing);
+	  return 0;
+	}
 
   SetMapMode(hdc, MM_ANISOTROPIC);
   SetWindowExtEx(hdc, 800, 1120, NULL);
@@ -1744,13 +1948,13 @@ DrawSmallCard(HDC hdc, const RECT* card_rect, const card_ptr_t* cp, int version,
   if (!(colorless_option & FRAMES_TRANSLUCENT_COLORLESS_NO_SMALLCARD_FRAME))
 	draw_smallcard_frame(hdc, card_rect, framenum, alpha_xform);
 
-  if (cfg->smallcard_dfc_visible && r->dfc_symbol <= DFC_SYMBOL_MAX)
+  if (r && cfg->smallcard_dfc_visible && r->dfc_symbol <= DFC_SYMBOL_MAX)
 	blt_dfc_symbol(hdc, &cfg->smallcard_dfc, r->dfc_symbol);
 
-  if (cfg->smallcard_expansion_visible && r)
+  if (r && cfg->smallcard_expansion_visible)
 	blt_expansion_symbol(hdc, &cfg->smallcard_expansion, r->default_expansion, r->default_rarity, 1);
 
-  draw_smallcard_title_impl(hdc, card_rect, cp->name, 0, 1, orig_framenum, alpha_xform);
+  draw_smallcard_title_impl(hdc, card_rect, cp->name ? cp->name : "", 0, 1, orig_framenum, alpha_xform);
 
   /************************************************************************
    * frame		art1st->artfirst	!artfirst							  *
@@ -1768,7 +1972,7 @@ DrawSmallCard(HDC hdc, const RECT* card_rect, const card_ptr_t* cp, int version,
 	{
 	  RECT* small_art_rect = draw_smallcard_art(hdc, card_rect, cp->id, version, 0, 1, colorless_option & FRAMES_TRANSLUCENT_COLORLESS_REDRAW_SMALLCARD_ART);
 
-	  if (cfg->smallcard_artoutline_visible)
+	  if (small_art_rect && cfg->smallcard_artoutline_visible)
 		draw_rect_outline(hdc, small_art_rect, cfg->smallcard_artoutline_color.colorref);
 	}
 
@@ -1782,14 +1986,14 @@ DrawSmallCard(HDC hdc, const RECT* card_rect, const card_ptr_t* cp, int version,
 		loy_alpha_xform = alpha_xform;
 
 	  gdip_blt_whole(hdc, &cfg->smallcard_loyalty_curr_box, FRAMEPART_FROM_BASE(LOYALTY_BASE_MODERN, cfg),
-					 cfg->smallcard_loyalty_curr_alpha_xform ? cfg->smallcard_loyalty_curr_alpha_xform : alpha_xform);
+					 loy_alpha_xform);
 
 	  SelectObject(hdc, fonts[SMALLCARDLOYALTYCURR_FONT]);
 	  int pos = (cfg->smallcard_loyalty_curr.right + cfg->smallcard_loyalty_curr.left) / 2;
 
 	  SetTextAlign(hdc, TA_CENTER);
 	  char buf[10];
-	  sprintf(buf, "%d", hack_instance->special_counters);
+	  safe_snprintf(buf, sizeof(buf), "%d", hack_instance->special_counters);
 
 	  SetBkMode(hdc, TRANSPARENT);
 	  SelectObject(hdc, GetStockObject(NULL_BRUSH));
@@ -1808,7 +2012,7 @@ DrawSmallCard(HDC hdc, const RECT* card_rect, const card_ptr_t* cp, int version,
 	}
 
   card_instance_t* instance;
-  if (mode == 73)
+  if (mode == 73 && valid_player_card(player, card))
 	instance = get_displayed_card_instance(player, card);
   else
 	instance = hack_instance;
@@ -1821,9 +2025,9 @@ DrawSmallCard(HDC hdc, const RECT* card_rect, const card_ptr_t* cp, int version,
 
   int rval = RestoreDC(hdc, savedc);
 
-  LeaveCriticalSection(critical_section_for_drawing);
+  leave_cs(critical_section_for_drawing);
 
-  if (mode == 73)	// Drawing an effect card, so manually draw the counters, too
+  if (mode == 73 && instance && valid_player_card(player, card))	// Drawing an effect card, so manually draw the counters, too
 	{
 	  // special counters
 	  if (instance->special_counters)
@@ -1844,15 +2048,20 @@ DrawSmallCard(HDC hdc, const RECT* card_rect, const card_ptr_t* cp, int version,
 void
 draw_rect_outline(HDC hdc, const RECT* rect, COLORREF color)
 {
+  if (!hdc || !rect)
+	return;
+
   HGDIOBJ old_brush = SelectObject(hdc, GetStockObject(NULL_BRUSH));
 
   HPEN pen = CreatePen(PS_SOLID, 0, color);
-  HGDIOBJ old_pen = SelectObject(hdc, pen);
+  HGDIOBJ old_pen = pen ? SelectObject(hdc, pen) : NULL;
 
   Rectangle(hdc, rect->left, rect->top, rect->right, rect->bottom);
 
-  SelectObject(hdc, old_pen);
-  SelectObject(hdc, old_brush);
+  if (old_pen)
+	SelectObject(hdc, old_pen);
+  if (old_brush)
+	SelectObject(hdc, old_brush);
 
   if (pen)
 	DeleteObject(pen);
@@ -1861,41 +2070,41 @@ draw_rect_outline(HDC hdc, const RECT* rect, COLORREF color)
 void
 make_gpic_from_pic(PicHandleNames picnum)
 {
-  if (!gpics[picnum])
+  if (!pic_handle_is_valid(picnum) || gpics[picnum])
+	return;
+
+  BITMAP bmp;
+  if (!pics[picnum] || GetObject(pics[picnum], sizeof(BITMAP), &bmp) != sizeof(BITMAP)
+	  || bmp.bmWidth <= 0 || bmp.bmHeight <= 0 || !bmp.bmBits)
+	return;
+
+  int just_initted = init_gdiplus();
+
+  if (!gdip_create_bitmap_from_scan0(bmp.bmWidth, bmp.bmHeight, bmp.bmWidth * 4,
+									 picnum == CARDBACK ? PixelFormat32bppRGB : PixelFormat32bppARGB,
+									 bmp.bmBits, &gpics[picnum]))
+	return;
+
+  if (just_initted)
 	{
-	  BITMAP bmp;
-	  if (!pics[picnum] || GetObject(pics[picnum], sizeof(BITMAP), &bmp) != sizeof(BITMAP)
-		  || bmp.bmWidth <= 0 || bmp.bmHeight <= 0 || !bmp.bmBits)
-		return;
-
-	  int just_initted = init_gdiplus();
-
-	  if (!gdip_create_bitmap_from_scan0(bmp.bmWidth, bmp.bmHeight, bmp.bmWidth * 4,
-										 picnum == CARDBACK ? PixelFormat32bppRGB : PixelFormat32bppARGB,
-										 bmp.bmBits, &gpics[picnum]))
-		return;
-
-	  if (just_initted)
+	  if (picnum != CARDCOUNTERS)
 		{
-		  if (picnum != CARDCOUNTERS)
-			{
-			  make_gpic_from_pic(CARDCOUNTERS);	// Otherwise the first card with counters tends not to draw them.
-			  if (!pics[CARDCOUNTERS] || GetObject(pics[CARDCOUNTERS], sizeof(BITMAP), &bmp) != sizeof(BITMAP)
-				  || bmp.bmWidth <= 0 || bmp.bmHeight <= 0 || !bmp.bmBits)
-				return;
-			}
+		  make_gpic_from_pic(CARDCOUNTERS);	// Otherwise the first card with counters tends not to draw them.
+		  if (!pics[CARDCOUNTERS] || GetObject(pics[CARDCOUNTERS], sizeof(BITMAP), &bmp) != sizeof(BITMAP)
+			  || bmp.bmWidth <= 0 || bmp.bmHeight <= 0 || !bmp.bmBits)
+			return;
+		}
 
-		  // Premultiply alpha for gdi rendering
-		  unsigned char* bits = bmp.bmBits;
-		  int sz = bmp.bmWidth * bmp.bmHeight;
-		  int px;
-		  for (px = 0; px < sz; ++px)
-			{
-			  bits[0] = bits[0] * bits[3] / 256;
-			  bits[1] = bits[1] * bits[3] / 256;
-			  bits[2] = bits[2] * bits[3] / 256;
-			  bits += 4;
-			}
+	  // Premultiply alpha for gdi rendering
+	  unsigned char* bits = bmp.bmBits;
+	  int sz = bmp.bmWidth * bmp.bmHeight;
+	  int px;
+	  for (px = 0; px < sz; ++px)
+		{
+		  bits[0] = bits[0] * bits[3] / 256;
+		  bits[1] = bits[1] * bits[3] / 256;
+		  bits[2] = bits[2] * bits[3] / 256;
+		  bits += 4;
 		}
 	}
 }
@@ -1903,7 +2112,7 @@ make_gpic_from_pic(PicHandleNames picnum)
 void
 gdip_blt_whole(HDC hdc, const RECT* dest_rect, PicHandleNames frame, GpImageAttributes* alpha_xform)
 {
-  if (!hdc || !dest_rect)
+  if (!hdc || !dest_rect || !pic_handle_is_valid(frame))
 	return;
 
   if (!gpics[frame])
@@ -1934,7 +2143,7 @@ gdip_blt_whole(HDC hdc, const RECT* dest_rect, PicHandleNames frame, GpImageAttr
 void
 gdip_blt(HDC hdc, const RECT* dest_rect, PicHandleNames frame, int src_x, int src_y, int width, int height, GpImageAttributes* alpha_xform)
 {
-  if (!hdc || !dest_rect)
+  if (!hdc || !dest_rect || !pic_handle_is_valid(frame) || width <= 0 || height <= 0)
 	return;
 
   if (!gpics[frame])
@@ -1961,18 +2170,22 @@ get_card_data_from_csvid(uint32_t csvid)
 	return NULL;
 
   static const int max_csvid = 32768;
-  if (csvid >= max_csvid - 1)
+  if (csvid >= (uint32_t)max_csvid)
 	return NULL;
 
   static int32_t* csvid_to_iid = NULL;
   if (!csvid_to_iid)
 	{
 	  csvid_to_iid = (int32_t*)malloc(sizeof(int32_t) * max_csvid);
+	  if (!csvid_to_iid)
+		return NULL;
+
 	  memset(csvid_to_iid, -1, sizeof(int32_t) * max_csvid);
 
 	  int i;
 	  for (i = 0; i < max_csvid && cards_data_exe[i].id != (uint16_t)(-1); ++i)
-		csvid_to_iid[cards_data_exe[i].id] = i;
+		if (cards_data_exe[i].id < max_csvid)
+		  csvid_to_iid[cards_data_exe[i].id] = i;
 	}
 
   if (csvid_to_iid[csvid] == -1)
@@ -1982,7 +2195,7 @@ get_card_data_from_csvid(uint32_t csvid)
 		csvid_to_iid[csvid] = -2;	// So we don't search again
 	}
 
-  if (csvid_to_iid[csvid] == -2)
+  if (csvid_to_iid[csvid] < 0 || csvid_to_iid[csvid] >= max_csvid)
 	return NULL;
   else
 	return &cards_data_exe[csvid_to_iid[csvid]];
@@ -1999,7 +2212,7 @@ find_rules_engine_csvid(void)
 
 	  card_id_rules_engine = CARD_ID_RULES_ENGINE;	// If it's not found, don't search again
 	  int iid;
-	  for (iid = 0; cards_data_exe[iid].id != 0xffff; ++iid)
+	  for (iid = 0; iid < 32768 && cards_data_exe[iid].id != 0xffff; ++iid)
 		if (cards_data_exe[iid].code_pointer == 0x20014f7)
 		  {
 			card_id_rules_engine = cards_data_exe[iid].id;

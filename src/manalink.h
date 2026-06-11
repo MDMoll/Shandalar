@@ -1,10 +1,12 @@
 #ifndef MANALINK_H
 #define MANALINK_H
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <stdarg.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "defs.h"
 
@@ -101,10 +103,10 @@ extern int ldoubleclicked;
 extern int life[2];
 extern int life_gained;	// Amount of life just gained during TRIGGER_GAIN_LIFE.
 /* landsofcolor_controlled[player][color] contains the total number of all lands of the given color controlled by player.  It's possible it's meant to be the
- * total amount of mana produceable by all of player's lands, though.
+ * total amount of mana producible by all of player's lands, though.
  *
  * landsofcolor_controlled[player][COLOR_COLORLESS] is the total number of lands that aren't counted as a specific color, and [COLOR_ANY] keeps a count of all
- * lands.  Again, it might be intended to be colorless mana produceable and total mana produceable by lands. */
+ * lands.  Again, it might be intended to be colorless mana producible and total mana producible by lands. */
 extern int landsofcolor_controlled[2][8];
 /* basiclandtypes_controlled[player][color] contains the total number of lands controlled by player that are swamps/islands/forests/mountains/plains.
  * basiclandtypes_controlled[player][COLOR_COLORLESS] and [COLOR_ANY] keep a count of non-colored and total lands, respectively. */
@@ -145,7 +147,7 @@ extern int unknown62BCEC;
 extern int mana_paid[7];	// Mana paid in the last successful call to charge_mana().
 extern int mana_pool[2][8];
 extern int available_slots;
-char card_coded[30000/8];
+extern char card_coded[30000 / 8];
 extern int creatures_dead_this_turn;
 extern int activation_card;
 extern int ai_is_speculating;
@@ -216,7 +218,7 @@ extern int PAY_MANA_RED;
 extern int PAY_MANA_WHITE;
 extern int PAY_MANA_ARTIFACT;
 
-char* set_legacy_effect_name_addr;
+extern char* set_legacy_effect_name_addr;
 
 int pick_creature_to_regen(target_definition_t td);
 int is_creature_dead(void);
@@ -228,13 +230,13 @@ int can_target(target_definition_t *td);
 int target_available(int player, int card, target_definition_t *td);
 extern const char* hack_prepend_prompt;	// Set this to a string to prepend it (and a colon and space) to all targeting prompts.  Set to NULL when done.
 int pick_target(target_definition_t *td, const char *prompt);	// Selects a target into (td->player, td->card)->targets[0].  Loads prompt from Text.res.  Sets spell_fizzled if cancelled.
-int new_pick_target(target_definition_t *td, const char *prompt, int ret_location, int sp_fizzled);	// Selects a target into (td->player, td->card)->targets[ret_location], or into the next unused slot (counting by instance->number_of_targets) if ret_location is -1.  Loads prompt from Text.res.  Sets spell_fizzled if cancelled and sp_fizzled is nonzero.
-int pick_next_target_noload(target_definition_t *td, const char *prompt);	// Selects a target into (td->player, td->card)'s next unused target slot (counting by instance->number_of_targets).  prompt is used literally, not loaded from Text.res.  Sets spell_fizzled if cancelled.
+int new_pick_target(target_definition_t *td, const char *prompt, int ret_location, int sp_fizzled);	// Selects a target into (td->player, td->card)->targets[ret_location], or into the next unused slot (counting by instance->number_of_targets) if ret_location is -1.  Loads prompt from Text.res.  Sets spell_fizzled if canceled and sp_fizzled is nonzero.
+int pick_next_target_noload(target_definition_t *td, const char *prompt);	// Selects a target into (td->player, td->card)'s next unused target slot (counting by instance->number_of_targets).  prompt is used literally, not loaded from Text.res.  Sets spell_fizzled if canceled.
 int pick_up_to_n_targets(target_definition_t* td, const char* prompt, int num);	// Selects up to num targets starting from (td->player, td->card)->targets[0].  Returns actual number chosen (also in number_of_targets).  Set allow_cancel to 3 to show both Done and Cancel buttons.  Sets spell_fizzled only if the Cancel button is clicked, not if the Done button is.
 int pick_up_to_n_targets_noload(target_definition_t* td, const char* prompt, int num);	// Just like pick_up_to_n_targets(), but uses prompt literally instead of loading from Text.res.
-int mark_up_to_n_targets_noload(target_definition_t* td, const char* prompt, int num, char (*marked)[151]);	// Just like pick_up_to_n_targets_noload(), but doesn't change (td->player,td->card)'s number_of_targets or targets array, instead marking targets in marked[][].  If the Cancel button is pushed, returns 0 and sets cancel to 1, but leaves previously-chosen targets set in marked.  marked should be a char array[2][151] initialized to 0.  Set num to -1 to allow any number of targets.  This should only be used for non-targetted things resolving immediately after chosen, since they won't track change of control or be seen by when-this-becomes-targeted triggers.
-int pick_next_target_arbitrary(target_definition_t *td, const char *prompt, int player, int card);	// Selects a target into next (player, card)'s unused target slot (counting by instance->number_of_targets), while using (td->player, td->card) as the targeting source.  Sets spell_fizzled if cancelled.
-int pick_next_target_noload_arbitrary(target_definition_t *td, const char *prompt, int player, int card);	// Selects a target into next (player, card)'s unused target slot (counting by instance->number_of_targets), while using (td->player, td->card) as the targeting source.  prompt is used literally, not loaded from Text.res.  Sets spell_fizzled if cancelled.
+int mark_up_to_n_targets_noload(target_definition_t* td, const char* prompt, int num, char (*marked)[151]);	// Just like pick_up_to_n_targets_noload(), but doesn't change (td->player,td->card)'s number_of_targets or targets array, instead marking targets in marked[][].  If the Cancel button is pushed, returns 0 and sets cancel to 1, but leaves previously-chosen targets set in marked.  marked should be a char array[2][151] initialized to 0.  Set num to -1 to allow any number of targets.  This should only be used for non-targeted things resolving immediately after chosen, since they won't track change of control or be seen by when-this-becomes-targeted triggers.
+int pick_next_target_arbitrary(target_definition_t *td, const char *prompt, int player, int card);	// Selects a target into next (player, card)'s unused target slot (counting by instance->number_of_targets), while using (td->player, td->card) as the targeting source.  Sets spell_fizzled if canceled.
+int pick_next_target_noload_arbitrary(target_definition_t *td, const char *prompt, int player, int card);	// Selects a target into next (player, card)'s unused target slot (counting by instance->number_of_targets), while using (td->player, td->card) as the targeting source.  prompt is used literally, not loaded from Text.res.  Sets spell_fizzled if canceled.
 int select_target(int player, int card, target_definition_t *td, const char *prompt, target_t *ret_location);	// Selects a target into ret_location, or (player, card)->targets[0] if NULL.  Targeting source is player/card instead of td->player/td->card.  prompt is used literally, not loaded from Text.res.  Never sets spell_fizzled.
 int pick_player_duh(int player, int card, int preferred_controller, int allow_cancel);	// If duh mode is on, pick preferred_controller if he's a valid target, or else cancel if that's allowed.  Otherwise, forwards to pick_target(td, "TARGET_PLAYER").
 int target_opponent(int player, int card);	// (player/card) targets 1-player in its targets[0] and returns nonzero, else returns 0.

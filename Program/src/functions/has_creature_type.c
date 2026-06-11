@@ -246,7 +246,7 @@ subtype_t from_hardcodedsubtype_to_subtype(hardcoded_subtype_t hcs)
   if (hcs <= HARDCODED_SUBTYPE_VIASHINO)
 	return arr_from_hardcoded_subtype_to_subtype[hcs];
   else
-	return hcs;
+	return (subtype_t)0;
 }
 
 static int is_basic_land_subtype(int subtype){
@@ -410,6 +410,9 @@ int has_subtype_by_id(int id, subtype_t subtype){
 	}
 
 	if( is_creature_type(subtype) && is_changeling(-1, get_internal_card_id_from_csv_id(id)) ){
+		return 1;
+	}
+	if( subtype == SUBTYPE_BASIC && is_basic_land_by_id(id) ){
 		return 1;
 	}
 	if( subtype == SUBTYPE_SNOW && is_basic_land_by_id(id) ){

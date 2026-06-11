@@ -1,10 +1,57 @@
+#include <limits.h>
+
 #include "manalink.h"
 
+enum
+{
+	UPKEEP_MAX_ACTIVE_CARDS = 150
+};
+
+static int bounded_upkeep_active_cards_count(int player)
+{
+	return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], UPKEEP_MAX_ACTIVE_CARDS) : 0;
+}
+
+static int upkeep_player_is_valid(int player)
+{
+	return player >= HUMAN && player <= AI;
+}
+
+static void get_upkeep_prompt_smallcard(int triggering_player, int triggering_card, int player, int card, int* smp, int* smc)
+{
+	if (triggering_card == card && triggering_player == player){
+		*smp = -1;
+		*smc = -1;
+	}
+	else{
+		*smp = triggering_player;
+		*smc = triggering_card;
+	}
+}
+
+static int multiply_upkeep_cost(int cost, int multiplier)
+{
+	if (cost <= 0 || multiplier <= 0){
+		return 0;
+	}
+
+	if (cost > INT_MAX / multiplier){
+		return INT_MAX;
+	}
+
+	return cost * multiplier;
+}
+
 int count_upkeeps(int player){
+	if (!upkeep_player_is_valid(player)){
+		return 0;
+	}
+
 	int result = 1;
 	APNAP(p,{
 				int c;
-				for(c = 0; c < active_cards_count[p]; c++){
+				int active_count = bounded_upkeep_active_cards_count(p);
+				for(c = 0; c < active_count; c++){
 					if( in_play(p, c) && ! is_humiliated(p, c) ){
 						int csvid = get_id(p, c);
 						switch( csvid ){
@@ -45,20 +92,24 @@ void echo(int player, int card, event_t event, int colorless, int black, int blu
 		set_special_flags(player, card, SF_ECHO_TO_PAY);
 	}
 
-	if( check_special_flags(player, card, SF_ECHO_TO_PAY) && ! check_special_flags3(player, card, SF3_ECHO_PAID) && 
-		current_turn == player && upkeep_trigger(player, card, event) 
+	if( check_special_flags(player, card, SF_ECHO_TO_PAY) && ! check_special_flags3(player, card, SF3_ECHO_PAID) &&
+		current_turn == player && upkeep_trigger(player, card, event)
 	  ){
 		set_special_flags3(player, card, SF3_ECHO_PAID);
 		if( count_upkeeps(player) > 0 ){
 			int kill = 1;
-			if( has_mana_multi(player, colorless, black, blue, green, red, white) ){
+			int pay_zero = check_battlefield_for_id(player, CARD_ID_THICK_SKINNED_GOBLIN);
+			if( pay_zero || has_mana_multi(player, colorless, black, blue, green, red, white) ){
 				int choice = do_dialog(player, player, card, -1, -1, " Pay echo\n Decline", 0);
 				if( choice == 0 ){
-					if( ! check_battlefield_for_id(player, CARD_ID_THICK_SKINNED_GOBLIN) ){
-						charge_mana_multi(player, colorless, black, blue, green, red, white);
-					}
-					if( spell_fizzled != 1 ){
+					if( pay_zero ){
 						kill = 0;
+					}
+					else{
+						charge_mana_multi(player, colorless, black, blue, green, red, white);
+						if( spell_fizzled != 1 ){
+							kill = 0;
+						}
 					}
 				}
 			}
@@ -98,19 +149,14 @@ void basic_upkeep_arbitrary(int triggering_player, int triggering_card, int play
   if (event == EVENT_UPKEEP_TRIGGER_ABILITY)
 	{
 	  int smp, smc;
-	  if (triggering_card == card && triggering_player == player)
-		smp = smc = -1;
-	  else
-		{
-		  smp = triggering_player;
-		  smc = triggering_card;
-		}
+	  get_upkeep_prompt_smallcard(triggering_player, triggering_card, player, card, &smp, &smc);
 
-	  if (!(has_mana_multi(player, colorless, black, blue, green, red, white)
+	  int can_pay = has_mana_multi(player, colorless, black, blue, green, red, white);
+	  if (!(can_pay
 			&& DIALOG(triggering_player, triggering_card, EVENT_ACTIVATE,
 					  DLG_FULLCARD(player, card), DLG_SMALLCARD(smp, smc), DLG_WHO_CHOOSES(player),
 					  DLG_RANDOM, DLG_NO_STORAGE, DLG_AUTOCHOOSE_IF_1, DLG_NO_CANCEL,
-					  "Pay upkeep", has_mana_multi(player, colorless, black, blue, green, red, white), 1,
+					  "Pay upkeep", can_pay, 1,
 					  "Decline", 1, 1) == 1
 			&& charge_mana_multi_while_resolving(player, card, EVENT_RESOLVE_TRIGGER, player, colorless, black, blue, green, red, white)))
 		{
@@ -132,11 +178,12 @@ int basic_upkeep_unpaid(int player, int card, event_t event, int colorless, int 
 
   if (event == EVENT_UPKEEP_TRIGGER_ABILITY)
 	{
-	  if (!(has_mana_multi(player, colorless, black, blue, green, red, white)
+	  int can_pay = has_mana_multi(player, colorless, black, blue, green, red, white);
+	  if (!(can_pay
 			&& DIALOG(player, card, EVENT_ACTIVATE,
 					  DLG_FULLCARD(player, card), DLG_WHO_CHOOSES(player),
 					  DLG_RANDOM, DLG_NO_STORAGE, DLG_AUTOCHOOSE_IF_1, DLG_NO_CANCEL,
-					  "Pay upkeep", has_mana_multi(player, colorless, black, blue, green, red, white), 1,
+					  "Pay upkeep", can_pay, 1,
 					  "Decline", 1, 1) == 1
 			&& charge_mana_multi_while_resolving(player, card, EVENT_RESOLVE_TRIGGER, player, colorless, black, blue, green, red, white)))
 		{
@@ -179,23 +226,26 @@ int cumulative_upkeep_arbitrary(int triggering_player, int triggering_card, int 
 	   * fix them if it changes .*/
 
 	  int smp, smc;
-	  if (triggering_card == card && triggering_player == player)
-		smp = smc = -1;
-	  else
-		{
-		  smp = triggering_player;
-		  smc = triggering_card;
-		}
+	  get_upkeep_prompt_smallcard(triggering_player, triggering_card, player, card, &smp, &smc);
 
 	  add_counter(player, card, COUNTER_AGE);
 	  int amount = count_counters(player, card, COUNTER_AGE);
+
+	  int cost_colorless = multiply_upkeep_cost(colorless, amount);
+	  int cost_black = multiply_upkeep_cost(black, amount);
+	  int cost_blue = multiply_upkeep_cost(blue, amount);
+	  int cost_green = multiply_upkeep_cost(green, amount);
+	  int cost_red = multiply_upkeep_cost(red, amount);
+	  int cost_white = multiply_upkeep_cost(white, amount);
+	  int can_pay = has_mana_multi(player, cost_colorless, cost_black, cost_blue, cost_green, cost_red, cost_white);
+
 	  if (!(DIALOG(triggering_player, triggering_card, EVENT_ACTIVATE,
 				   DLG_FULLCARD(player, card), DLG_SMALLCARD(smp, smc), DLG_WHO_CHOOSES(player),
 				   DLG_RANDOM, DLG_NO_STORAGE, DLG_AUTOCHOOSE_IF_1, DLG_NO_CANCEL,
-				   "Pay cumulative upkeep", has_mana_multi(player, colorless*amount, black*amount, blue*amount, green*amount, red*amount, white*amount), 1,
+				   "Pay cumulative upkeep", can_pay, 1,
 				   "Decline", 1, 1) == 1
-			&& charge_mana_multi_while_resolving(player, card, EVENT_RESOLVE_TRIGGER, player, colorless*amount, black*amount, blue*amount,
-												 green*amount, red*amount, white*amount)))
+			&& charge_mana_multi_while_resolving(player, card, EVENT_RESOLVE_TRIGGER, player, cost_colorless, cost_black, cost_blue,
+												 cost_green, cost_red, cost_white)))
 		{
 		  cancel = 0;
 		  kill_card(player, card, KILL_SACRIFICE);
@@ -221,11 +271,16 @@ int cumulative_upkeep_hybrid(int player, int card, event_t event, int amt_colore
 	{
 	  add_counter(player, card, COUNTER_AGE);
 	  int amount = count_counters(player, card, COUNTER_AGE);
+
+	  int cost_colored = multiply_upkeep_cost(amt_colored, amount);
+	  int cost_colorless = multiply_upkeep_cost(amt_colorless, amount);
+	  int can_pay = has_mana_hybrid(player, cost_colored, first_color, second_color, cost_colorless);
+
 	  if (!(DIALOG(player, card, EVENT_ACTIVATE,
 				   DLG_RANDOM, DLG_NO_STORAGE, DLG_AUTOCHOOSE_IF_1, DLG_NO_CANCEL,
-				   "Pay cumulative upkeep", has_mana_hybrid(player, amt_colored*amount, first_color, second_color, amt_colorless*amount), 1,
+				   "Pay cumulative upkeep", can_pay, 1,
 				   "Decline", 1, 1) == 1
-			&& charge_mana_hybrid_while_resolving(player, card, EVENT_RESOLVE_TRIGGER, amt_colored*amount, first_color, second_color, amt_colorless*amount)))
+			&& charge_mana_hybrid_while_resolving(player, card, EVENT_RESOLVE_TRIGGER, cost_colored, first_color, second_color, cost_colorless)))
 		{
 		  cancel = 0;
 		  kill_card(player, card, KILL_SACRIFICE);
@@ -246,9 +301,11 @@ int cumulative_upkeep_general(int player, int card, event_t event, int (*can_pay
 	{
 	  add_counter(player, card, COUNTER_AGE);
 	  int amount = count_counters(player, card, COUNTER_AGE);
+	  int can_pay = (!can_pay_fn || (can_pay_fn)(player, card, amount));
+
 	  if (!(DIALOG(player, card, EVENT_ACTIVATE,
 				   DLG_RANDOM, DLG_NO_STORAGE, DLG_AUTOCHOOSE_IF_1, DLG_NO_CANCEL,
-				   "Pay cumulative upkeep", (!can_pay_fn || (can_pay_fn)(player, card, amount)), 1,
+				   "Pay cumulative upkeep", can_pay, 1,
 				   "Decline", 1, 1) == 1
 			&& (!pay_fn || (pay_fn)(player, card, amount))))
 		{

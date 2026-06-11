@@ -12,7 +12,7 @@
  * Complex code cannot be called from this function, since it's running in a
  * different thread from the AI.  In particular, get_ability() cannot be
  * called, since it sends an event to all cards.  The abilities are cached in
- * what's (incorrectly) been labelled card_instance_t::regen_status.
+ * what's (incorrectly) been labeled card_instance_t::regen_status.
  *
  * Similarly, we use get_displayed_card_instance() to get the version of the
  * card instance that matches the displayed game state, rather than
@@ -72,7 +72,7 @@ int get_ability_image(int player, int card, int result){
 	 * cards) but has high impact.
 	 *
 	 * This is always set with First Strike; KEYWORD_DOUBLE_STRIKE in fact
-	 * includes the First Strike bit.  Hence the comparison to
+	 * includes the First Strike bit.  Hence, the comparison to
 	 * KEYWORD_DOUBLE_STRIKE instead of just nonzero like the others, and
 	 * removal of KEYWORD_FIRST_STRIKE. */
 	if ((instance->regen_status & KEYWORD_DOUBLE_STRIKE) == KEYWORD_DOUBLE_STRIKE){

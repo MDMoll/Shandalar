@@ -2,7 +2,15 @@
 // Drawcardlib: display card and mana cost graphics.
 // config.c: read Duel.dat, watermarks.csv, menus.txt, Rarity.dat
 
+#include <assert.h>
 #include <ctype.h>
+#include <errno.h>
+#include <limits.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "drawcardlib.h"
 
@@ -207,9 +215,128 @@ int watermark_size_x, watermark_size_y, watermarks_num_columns = 1, watermarks_n
 static char* frames_pic_names[FRAME_MAX_LOADED + 2] = { 0 };	// +2, so there's a NULL at the end
 static int frames_dup_of[FRAME_MAX_LOADED + 1] = { [0 ... FRAME_MAX_LOADED] = -1 };	// gcc extension: sets all frames_dup_of[0] through [FRAME_MAX_LOADED] to -1
 
+static char*
+safe_strdup(const char* str)
+{
+  if (!str)
+	str = "";
+  return strdup(str);
+}
+
+static int
+replace_strdup(char** dest, const char* str)
+{
+  if (!dest)
+	return 0;
+
+  char* dup = safe_strdup(str);
+  if (!dup)
+	return 0;
+
+  free(*dest);
+  *dest = dup;
+  return 1;
+}
+
+static void
+strip_trailing_crlf(char* str)
+{
+  if (!str)
+	return;
+
+  size_t len = strlen(str);
+  while (len > 0 && (str[len - 1] == '\n' || str[len - 1] == '\r'))
+	str[--len] = 0;
+}
+
+static int
+ascii_isalnum_char(int ch)
+{
+  unsigned char c = (unsigned char)ch;
+  return isascii(c) && isalnum(c);
+}
+
+static int
+ascii_isalpha_char(int ch)
+{
+  unsigned char c = (unsigned char)ch;
+  return isascii(c) && isalpha(c);
+}
+
+static int
+ascii_islower_char(int ch)
+{
+  unsigned char c = (unsigned char)ch;
+  return isascii(c) && islower(c);
+}
+
+static int
+ascii_isspace_char(int ch)
+{
+  unsigned char c = (unsigned char)ch;
+  return isascii(c) && isspace(c);
+}
+
+static int
+ascii_isdigit_char(int ch)
+{
+  unsigned char c = (unsigned char)ch;
+  return isascii(c) && isdigit(c);
+}
+
+static int
+ascii_tolower_char(int ch)
+{
+  unsigned char c = (unsigned char)ch;
+  return isascii(c) ? tolower(c) : c;
+}
+
+static ExpansionCategory
+safe_expansion_category_no_read(int expansion)
+{
+  if (!expansion_categories || expansion < 0 || expansion >= raw_expansions)
+	return EXPCAT_NONE;
+
+  ExpansionCategory cat = expansion_categories[expansion];
+  return cat >= 0 && cat <= MAX_EXPCAT ? cat : EXPCAT_NONE;
+}
+
+static int
+read_raw_expansions_from_rarity_dat(void)
+{
+  FILE* rarity_dat = fopen("rarity.dat", "rb");
+  if (!rarity_dat)
+	{
+	  popup("drawcardlib.dll", "Could not open rarity.dat: %s", strerror(errno));
+	  return 0;
+	}
+
+  int ignore;
+  int rval = 0;
+  if (fread(&ignore, 4, 1, rarity_dat) != 1)
+	popup("drawcardlib.dll", "Could not read number of cards: %s", strerror(errno));
+  else if (fread(&raw_expansions, 4, 1, rarity_dat) != 1)
+	popup("drawcardlib.dll", "Could not read number of expansions: %s", strerror(errno));
+  else if (raw_expansions < 9)
+	popup("drawcardlib.dll", "number of expansions only %d, expected at least 9", raw_expansions);
+  else
+	rval = 1;
+
+  if (fclose(rarity_dat) && rval)
+	{
+	  popup("drawcardlib.dll", "Could not close rarity.dat: %s", strerror(errno));
+	  rval = 0;
+	}
+
+  return rval;
+}
+
 static void
 create_1_alpha_xform(GpImageAttributes** xform, ColorMatrix* matrix, int alpha)
 {
+  if (!xform || !matrix)
+	return;
+
   if (*xform)
 	GdipDisposeImageAttributes(*xform);
 
@@ -235,7 +362,7 @@ create_1_alpha_xform(GpImageAttributes** xform, ColorMatrix* matrix, int alpha)
 void
 create_alpha_xforms(Config* config)
 {
-  if (gdiplus_token)	// otherwise, wait until the call from init_gdiplus()
+  if (config && gdiplus_token)	// otherwise, wait until the call from init_gdiplus()
 	{
 	  create_1_alpha_xform(&config->smallcard_loyalty_curr_alpha_xform, &config->smallcard_loyalty_curr_alpha_xform_matrix, config->smallcard_loyalty_curr_alpha);
 	  create_1_alpha_xform(&config->colorless_alpha_xform, &config->colorless_alpha_xform_matrix, config->frames_colorless_alpha);
@@ -245,16 +372,17 @@ create_alpha_xforms(Config* config)
 static char*
 concat_cfg_key(const char* key1, const char* key2)
 {
+  if (!key1)
+	key1 = "";
+  if (!key2)
+	key2 = "";
+
   size_t len1 = strlen(key1);
   size_t len2 = strlen(key2);
-  if (len1 > (size_t)-1 - len2)
+  if (len1 > SIZE_MAX - len2 - 1)
 	return NULL;
 
-  size_t total = len1 + len2;
-  if (total == (size_t)-1)
-	return NULL;
-
-  char* buf = (char*)malloc(total + 1);
+  char* buf = (char*)malloc(len1 + len2 + 1);
   if (!buf)
 	return NULL;
 
@@ -279,7 +407,11 @@ get_pichandlename(PicHandleNames handle_name, int idx)
 
 	  Config* cf = &configs[FRAMESET_OF_FRAMEPART(handle_name)];
 
-	  snprintf(buf[idx], sizeof(buf[idx]), "(%s) %s\\DuelArt\\%s: [Frames]%s", cf->option_name, base_dir, cf->configfile_name, cfg_pic_names[BASE_FRAMEPART(handle_name)]);
+	  snprintf(buf[idx], sizeof(buf[idx]), "(%s) %s\\DuelArt\\%s: [Frames]%s",
+			   cf->option_name ? cf->option_name : "",
+			   base_dir,
+			   cf->configfile_name ? cf->configfile_name : "",
+			   cfg_pic_names[BASE_FRAMEPART(handle_name)]);
 	}
   else
 	snprintf(buf[idx], sizeof(buf[idx]), "#%d", (int)handle_name);
@@ -298,6 +430,9 @@ get_cfg_int_raw(const char* section, const char* key, int deflt)
 static void
 get_cfg_int(Config* config, int* val, const char* section, const char* key, int deflt)
 {
+  if (!config || !val)
+	return;
+
   if (config != &configs[CFG_BASE])
 	deflt = *CFG_BASE_PTR(int, config, val);
   *val = GetPrivateProfileInt(section, key, deflt, current_configfile_name);
@@ -318,6 +453,9 @@ get_cfg_int2_raw(const char* section, const char* key1, const char* key2, int de
 static void
 get_cfg_rect(Config* config, RECT* rect, const char* section, const char* key, int deflt_l, int deflt_t, int deflt_w, int deflt_h)
 {
+  if (!config || !rect)
+	return;
+
   RECT* r;
   if (config != &configs[CFG_BASE])
 	{
@@ -345,6 +483,9 @@ get_cfg_rect(Config* config, RECT* rect, const char* section, const char* key, i
 static void
 get_cfg_point(Config* config, POINT* pt, const char* section, const char* key, int deflt_x, int deflt_y)
 {
+  if (!config || !pt)
+	return;
+
   if (config != &configs[CFG_BASE])
 	{
 	  POINT* p = CFG_BASE_PTR(POINT, config, pt);
@@ -359,6 +500,9 @@ get_cfg_point(Config* config, POINT* pt, const char* section, const char* key, i
 static int
 get_cfg_colordef(Config* config, ColorDef* color, const char* section, const char* key, int deflt_r, int deflt_g, int deflt_b)
 {
+  if (!config || !color)
+	return 0;
+
   if (config != &configs[CFG_BASE])
 	{
 	  ColorDef* deflt = CFG_BASE_PTR(ColorDef, config, color);
@@ -385,14 +529,17 @@ get_cfg_colordef(Config* config, ColorDef* color, const char* section, const cha
 }
 
 static void
-get_cfg_str_raw(char* dest, int sz_of_dest, const char* section, const char* key, const char* deflt_fmt, ...)
+get_cfg_str_raw(char* dest, size_t sz_of_dest, const char* section, const char* key, const char* deflt_fmt, ...)
 {
+  if (!dest || sz_of_dest == 0)
+	return;
+
   GetPrivateProfileString(section, key, "\1", dest, sz_of_dest, current_configfile_name);
   if (!strcmp(dest, "\1"))
 	{
 	  va_list args;
 	  va_start(args, deflt_fmt);
-	  vsnprintf(dest, sz_of_dest, deflt_fmt, args);
+	  vsnprintf(dest, sz_of_dest, deflt_fmt ? deflt_fmt : "", args);
 	  va_end(args);
 	}
   dest[sz_of_dest - 1] = 0;
@@ -401,19 +548,20 @@ get_cfg_str_raw(char* dest, int sz_of_dest, const char* section, const char* key
 static void
 get_cfg_str_dup(char** dest, const char* section, const char* key, const char* deflt_fmt, ...)
 {
+  if (!dest)
+	return;
+
   char buf[1000];
-  GetPrivateProfileString(section, key, "\1", buf, 1000, current_configfile_name);
+  GetPrivateProfileString(section, key, "\1", buf, sizeof(buf), current_configfile_name);
   if (!strcmp(buf, "\1"))
 	{
 	  va_list args;
 	  va_start(args, deflt_fmt);
-	  vsnprintf(buf, 1000, deflt_fmt, args);
+	  vsnprintf(buf, sizeof(buf), deflt_fmt ? deflt_fmt : "", args);
 	  va_end(args);
 	}
-  buf[999] = 0;
-  if (*dest)
-	free(*dest);
-  *dest = strdup(buf);
+  buf[sizeof(buf) - 1] = 0;
+  replace_strdup(dest, buf);
 }
 
 static LOGFONT*
@@ -421,6 +569,9 @@ cfg_font(const char* font_name, int italic, int* decrement)
 {
   static LOGFONT fnt;
   memset(&fnt, 0, sizeof(LOGFONT));
+
+  if (!font_name)
+	font_name = "";
 
   fnt.lfWidth = 4 * get_cfg_int2_raw(FONTSTXT, "width", font_name, 0);
   fnt.lfHeight = 4 * get_cfg_int2_raw(FONTSTXT, "size", font_name, 20);
@@ -436,6 +587,7 @@ cfg_font(const char* font_name, int italic, int* decrement)
   if (key)
 	{
 	  GetPrivateProfileString(FONTSTXT, key, "MS Sans Serif", fnt.lfFaceName, LF_FACESIZE, current_configfile_name);
+	  fnt.lfFaceName[LF_FACESIZE - 1] = 0;
 	  free(key);
 	}
   else
@@ -444,12 +596,21 @@ cfg_font(const char* font_name, int italic, int* decrement)
 }
 
 static void
+font_resource_path(char* dest, size_t dest_size, const char* fontname)
+{
+  if (!dest || dest_size == 0)
+	return;
+
+  snprintf(dest, dest_size, "%s%s", base_dir, fontname ? fontname : "");
+  dest[dest_size - 1] = 0;
+}
+
+static void
 rem_font(const char* fontname)
 {
   char buf[2 * MAX_PATH + 1];
 
-  strcpy(buf, base_dir);
-  strcat(buf, fontname);
+  font_resource_path(buf, sizeof(buf), fontname);
   RemoveFontResource(buf);
 }
 
@@ -458,10 +619,16 @@ del_fonts_and_imgs(void)
 {
   int i;
   for (i = 0; i < MAX_PICHANDLES_PLUS_1; ++i)
-	if (frames_dup_of[i] >= 0)
-	  pics[i] = NULL;	// just set null if this image is a shallow copy of another
-	else
-	  del_obj(&pics[i]);
+	{
+	  int dup_of = i <= FRAME_MAX_LOADED ? frames_dup_of[i] : -1;
+	  if (dup_of >= 0)
+		pics[i] = NULL;	// just set null if this image is a shallow copy of another
+	  else
+		del_obj(&pics[i]);
+	}
+
+  for (i = 0; i <= FRAME_MAX_LOADED; ++i)
+	frames_dup_of[i] = -1;
 
   for (i = 0; i < FRAME_MAX_LOADED + 2; ++i)
 	if (frames_pic_names[i])
@@ -486,7 +653,7 @@ prepare_fonts_and_imgs(void)
 {
   char buf[3 * MAX_PATH + 1];
 
-#define ADD_FONT(fontname)	do { strcpy(buf, base_dir); strcat(buf, fontname); AddFontResource(buf); } while (0)
+#define ADD_FONT(fontname)	do { font_resource_path(buf, sizeof(buf), fontname); AddFontResource(buf); } while (0)
   ADD_FONT(FONT1NAME);
   ADD_FONT(FONT3NAME);
   ADD_FONT(FONT4NAME);
@@ -496,7 +663,10 @@ prepare_fonts_and_imgs(void)
 #undef ADD_FONT
 
   int i, any_failures = 0;
-  for (i = 0; frames_pic_names[i]; ++i)
+  for (i = 0; i <= FRAME_MAX_LOADED; ++i)
+	frames_dup_of[i] = -1;
+
+  for (i = 0; i <= FRAME_MAX_LOADED && frames_pic_names[i]; ++i)
 	{
 	  switch (BASE_FRAMEPART(i))
 		{
@@ -549,30 +719,32 @@ prepare_fonts_and_imgs(void)
 	  for (j = 0; j < i; ++j)
 		// If this has the same name as a previously loaded image, just copy the pointer.
 		// Strcasecmp on the (previously canonicalized) filenames is sufficient for our purposes; opening the files and calling GetFileInformationByHandle() it the robust way, but it's much slower.
-		if (pics[j] && !strcasecmp(frames_pic_names[i], frames_pic_names[j]))
+		if (pics[j] && frames_pic_names[j] && !strcasecmp(frames_pic_names[i], frames_pic_names[j]))
 		  {
 			pics[i] = pics[j];
 			frames_dup_of[i] = j;	// ...and mark it so we don't try to free it later
 			goto outer_continue;
 		  }
 
-	  snprintf(buf, 3 * MAX_PATH + 1, "%s\\CARDART\\%s",
+	  snprintf(buf, sizeof(buf), "%s\\CARDART\\%s",
 			   base_dir,
 			   frames_pic_names[i]);
+	  buf[sizeof(buf) - 1] = 0;
 	  if (!(pics[i] = LoadImage(buf, palette, 0, 0)))
 		{
 		  popup("drawcardlib.dll", "Could not load %s=\n\"%s\"", get_pichandlename(i, 0), buf);
-		  free(frames_pic_names[i]);
-		  frames_pic_names[i] = strdup("\1");	// so anything else pointing to it gets a popup instead of being identified as a duplicate
+		  replace_strdup(&frames_pic_names[i], "\1");	// so anything else pointing to it gets a popup instead of being identified as a duplicate
 		  any_failures = 1;
 		}
 
-	  if (i == WATERMARKS)
+	  if (i == WATERMARKS && pics[WATERMARKS])
 		{
 		  BITMAP bmp;
-		  GetObject(pics[WATERMARKS], sizeof(BITMAP), &bmp);
-		  watermark_size_x = bmp.bmWidth / watermarks_num_columns;
-		  watermark_size_y = bmp.bmHeight / watermarks_num_rows;
+		  if (GetObject(pics[WATERMARKS], sizeof(BITMAP), &bmp))
+			{
+			  watermark_size_x = watermarks_num_columns > 0 ? bmp.bmWidth / watermarks_num_columns : 0;
+			  watermark_size_y = watermarks_num_rows > 0 ? bmp.bmHeight / watermarks_num_rows : 0;
+			}
 		}
 
 	outer_continue:;
@@ -695,7 +867,11 @@ char* base_frame_pic_names[NUM_FRAMEPARTS_PER_FRAMESET] = {0};
 static void
 read_cfg_file(Config* config)
 {
-  sprintf(current_configfile_name, "%s\\DuelArt\\%s", base_dir, config->configfile_name);
+  if (!config || !config->configfile_name)
+	return;
+
+  snprintf(current_configfile_name, sizeof(current_configfile_name), "%s\\DuelArt\\%s", base_dir, config->configfile_name);
+  current_configfile_name[sizeof(current_configfile_name) - 1] = 0;
 
   const char* section = "SmallCard";
   get_cfg_rect(config, &config->smallcard_art, section, "Art", 79, 161, 860, 786);
@@ -810,7 +986,7 @@ read_cfg_file(Config* config)
   for (i = 0; i < FULLCARD_CURVE_MANA_MAX; ++i)
 	{
 	  char curve_mana[16];
-	  sprintf(curve_mana, "CurveMana%d", i + 1);
+	  snprintf(curve_mana, sizeof(curve_mana), "CurveMana%d", i + 1);
 	  get_cfg_point(config, &config->fullcard_curve_mana[i], section, curve_mana, 400, 100);
 	}
 
@@ -892,12 +1068,12 @@ read_cfg_file(Config* config)
 
 
   char frame_base_dir[MAX_PATH + 1];
-  get_cfg_str_raw(frame_base_dir, MAX_PATH, section, "FrameBaseDir", config == &configs[CFG_BASE] ? "." : base_frame_base_dir);
+  get_cfg_str_raw(frame_base_dir, sizeof(frame_base_dir), section, "FrameBaseDir", config == &configs[CFG_BASE] ? "." : (base_frame_base_dir ? base_frame_base_dir : "."));
   if (config == &configs[CFG_BASE])
-	base_frame_base_dir = strdup(frame_base_dir);
+	replace_strdup(&base_frame_base_dir, frame_base_dir);
 
   char default_image[MAX_PATH + 1];
-  get_cfg_str_raw(default_image, MAX_PATH, section, "DefaultImage", "");
+  get_cfg_str_raw(default_image, sizeof(default_image), section, "DefaultImage", "");
 
   char** frame_pic_name;
   if (config == &configs[CFG_BASE])
@@ -908,20 +1084,29 @@ read_cfg_file(Config* config)
   for (i = 0; i < NUM_FRAMEPARTS_PER_FRAMESET; ++i)
 	{
 	  char filename[MAX_PATH + 1];
-	  get_cfg_str_raw(filename, MAX_PATH, section, cfg_pic_names[i + CARDBK_MIN_FRAMEPART],
+	  const char* fallback_image = NULL;
+	  if (*default_image)
+		fallback_image = default_image;
+	  else if (config == &configs[CFG_BASE])
+		fallback_image = cfg_pic_names[i + CARDBK_MIN_FRAMEPART];
+	  else
+		fallback_image = base_frame_pic_names[i] ? base_frame_pic_names[i] : cfg_pic_names[i + CARDBK_MIN_FRAMEPART];
+
+	  get_cfg_str_raw(filename, sizeof(filename), section, cfg_pic_names[i + CARDBK_MIN_FRAMEPART],
 					  "%s%s",
-					  *default_image ? default_image : config == &configs[CFG_BASE] ? cfg_pic_names[i + CARDBK_MIN_FRAMEPART] : base_frame_pic_names[i],
+					  fallback_image,
 					  *default_image ? "" : config == &configs[CFG_BASE] ? ".pic" : "");
 
-	  if (frame_pic_name[i])
-		free(frame_pic_name[i]);
+	  free(frame_pic_name[i]);
+	  frame_pic_name[i] = NULL;
 
 	  if (config == &configs[CFG_BASE])
-		frame_pic_name[i] = strdup(filename);
+		frame_pic_name[i] = safe_strdup(filename);
 	  else
 		{	// Add directory and canonicalize.
 		  char path[2 * MAX_PATH + 2];
-		  snprintf(path, 2 * MAX_PATH + 1, "%s\\%s", frame_base_dir, filename);
+		  snprintf(path, sizeof(path), "%s\\%s", frame_base_dir, filename);
+		  path[sizeof(path) - 1] = 0;
 
 		  // replace [/\\]+ with \\ - it's obscene that PathCanonicalize() can't deal with multiple backslashes, or any forward slashes
 		  char* p, *q;
@@ -936,12 +1121,22 @@ read_cfg_file(Config* config)
 			  else
 				*p = *q;
 			}
+		  *p = 0;
 
 		  // simplify . and ..
 		  char canonicalized[MAX_PATH + 1];
-		  PathCanonicalize(canonicalized, path);
+		  if (!PathCanonicalize(canonicalized, path))
+			{
+			  size_t copy_len = strlen(path);
+			  if (copy_len >= sizeof(canonicalized))
+				copy_len = sizeof(canonicalized) - 1;
+			  memcpy(canonicalized, path, copy_len);
+			  canonicalized[copy_len] = 0;
+			}
+		  else
+			canonicalized[sizeof(canonicalized) - 1] = 0;
 
-		  frame_pic_name[i] = strdup(canonicalized);
+		  frame_pic_name[i] = safe_strdup(canonicalized);
 		}
 	}
 
@@ -961,12 +1156,14 @@ read_watermark_section(int first_time)
   watermarks_num_columns = MAX(watermarks_num_columns, 1);
   watermarks_num_columns = MIN(watermarks_num_columns, 255);
 
-  if (!first_time)
+  if (!first_time && pics[WATERMARKS])
 	{
 	  BITMAP bmp;
-	  GetObject(pics[WATERMARKS], sizeof(BITMAP), &bmp);
-	  watermark_size_x = bmp.bmWidth / watermarks_num_columns;
-	  watermark_size_y = bmp.bmHeight / watermarks_num_rows;
+	  if (GetObject(pics[WATERMARKS], sizeof(BITMAP), &bmp))
+		{
+		  watermark_size_x = bmp.bmWidth / watermarks_num_columns;
+		  watermark_size_y = bmp.bmHeight / watermarks_num_rows;
+		}
 	}
 
   int i;
@@ -988,53 +1185,41 @@ read_watermark_section(int first_time)
   /* We need raw_expansions to be set, but it won't be yet.  And we can't just call read_rarities, since it calls read_watermarks_csv(), which needs this
    * complete first.  So just read raw_expansions from rarity.dat for now. */
 
-#define BAIL(...) do { popup("drawcardlib.dll", __VA_ARGS__); return; } while (0)
-  FILE* rarity_dat;
-  if (!(rarity_dat = fopen("rarity.dat", "rb")))
-	BAIL("Could not open rarity.dat: %s", strerror(errno));
-
-  int ignore;
-  if (fread(&ignore, 4, 1, rarity_dat) != 1)
-	BAIL("Could not read number of cards: %s", strerror(errno));
-
-  if (fread(&raw_expansions, 4, 1, rarity_dat) != 1)
-	BAIL("Could not read number of expansions: %s", strerror(errno));
-
-  if (raw_expansions < 9)
-	BAIL("number of expansions only %d, expected at least 9", raw_expansions);
-#undef BAIL
-
-  fclose(rarity_dat);
+  if (!read_raw_expansions_from_rarity_dat())
+	return;
 
   int idx = 0;
   char key[16];
   char expansions[1000];
-  for (i = 1; i < 255; ++i)
+  for (i = 1; i < 255 && idx < 254; ++i)	// leave watermarks[254] as a sentinel
 	{
-	  sprintf(key, "Row%d", i);
+	  snprintf(key, sizeof(key), "Row%d", i);
 	  int row = get_cfg_int_raw(WATERMARKSTXT, key, -1);
 	  if (row < 1 || row > watermarks_num_rows)
 		continue;
 
-	  sprintf(key, "Col%d", i);
+	  snprintf(key, sizeof(key), "Col%d", i);
 	  int col = get_cfg_int_raw(WATERMARKSTXT, key, -1);
 	  if (col < 1 || col > watermarks_num_columns)
 		continue;
 
-	  sprintf(key, "Name%d", i);
+	  snprintf(key, sizeof(key), "Name%d", i);
 	  char *name, *p;
 	  name = NULL;
 	  get_cfg_str_dup(&name, WATERMARKSTXT, key, "");
+	  if (!name)
+		continue;
+
 	  for (p = name; *p; ++p)
-		if (!isascii(*p) || !isalnum(*p))
+		if (!ascii_isalnum_char(*p))
 		  {
 			*name = 0;
 			break;
 		  }
 		else
-		  *p = tolower(*p);
+		  *p = (char)ascii_tolower_char(*p);
 
-	  if (!isalpha(*name))
+	  if (!ascii_isalpha_char(*name))
 		{
 		  free(name);
 		  continue;
@@ -1044,15 +1229,15 @@ read_watermark_section(int first_time)
 	  watermarks[idx].row = row - 1;
 	  watermarks[idx].col = col - 1;
 
-	  sprintf(key, "Expansions%d", i);
-	  get_cfg_str_raw(expansions, 1000, WATERMARKSTXT, key, "");
-	  if (isascii(*expansions) && isalnum(*expansions))
+	  snprintf(key, sizeof(key), "Expansions%d", i);
+	  get_cfg_str_raw(expansions, sizeof(expansions), WATERMARKSTXT, key, "");
+	  if (ascii_isalnum_char(*expansions))
 		{
-		  if (isalpha(*expansions))
+		  if (ascii_isalpha_char(*expansions))
 			{
 			  int j;
-			  for (j = 1; j < i; ++j)
-				if (!strcasecmp(expansions, watermarks[j].name))
+			  for (j = 0; j < idx; ++j)
+				if (watermarks[j].name && !strcasecmp(expansions, watermarks[j].name))
 				  {
 					watermarks[idx].copied_expansions = 1;
 					watermarks[idx].expansions = watermarks[j].expansions;
@@ -1062,17 +1247,20 @@ read_watermark_section(int first_time)
 		  else
 			{
 			  watermarks[idx].expansions = calloc(raw_expansions, 1);	// note that raw_expansions is 8 greater than the maximum permissible EXPANSION_t
-			  p = expansions;
-			  while (isascii(*p) && isdigit(*p))
+			  if (watermarks[idx].expansions)
 				{
-				  int exp = atoi(p);
-				  if (exp < raw_expansions)
-					watermarks[idx].expansions[exp] = 1;
+				  p = expansions;
+				  while (ascii_isdigit_char(*p))
+					{
+					  int exp = atoi(p);
+					  if (exp >= 0 && exp < raw_expansions)
+						watermarks[idx].expansions[exp] = 1;
 
-				  while (isascii(*p) && isdigit(*p))	// skip number
-					++p;
-				  while (*p && isascii(*p) && !isdigit(*p))	// skip trailing whitespace
-					++p;
+					  while (ascii_isdigit_char(*p))	// skip number
+						++p;
+					  while (*p && !ascii_isdigit_char(*p))	// skip trailing whitespace
+						++p;
+					}
 				}
 			}
 		}
@@ -1088,11 +1276,22 @@ read_cfg(void)
 
   if (!*base_dir)
 	{
-	  GetModuleFileName(NULL, base_dir, MAX_PATH + 1);
-	  *(strrchr(base_dir, '\\')) = 0;
+	  DWORD len = GetModuleFileName(NULL, base_dir, MAX_PATH);
+	  base_dir[MAX_PATH] = 0;
+	  if (len == 0)
+		snprintf(base_dir, sizeof(base_dir), ".");
+	  else
+		{
+		  char* slash = strrchr(base_dir, '\\');
+		  if (slash)
+			*slash = 0;
+		  else
+			snprintf(base_dir, sizeof(base_dir), ".");
+		}
 	}
 
-  sprintf(current_configfile_name, "%s\\DuelArt\\Duel.dat", base_dir);
+  snprintf(current_configfile_name, sizeof(current_configfile_name), "%s\\DuelArt\\Duel.dat", base_dir);
+  current_configfile_name[sizeof(current_configfile_name) - 1] = 0;
 
   configs[CFG_BASE].option_name = "";
   configs[CFG_BASE].cardbk_base = 0;	// Handled specially.
@@ -1198,7 +1397,7 @@ read_cfg(void)
   static int first_time = 1;
   if (first_time)
 	{
-	  configs[CFG_BASE].configfile_name = strdup("Duel.dat");
+	  configs[CFG_BASE].configfile_name = safe_strdup("Duel.dat");
 	  for (i = 0; i <= MAX_FRAMESET; ++i)
 		configs[i].configfile_name = NULL;
 	}
@@ -1257,7 +1456,7 @@ read_cfg(void)
 
   char buf[MAX_PATH + 1];
 
-  get_cfg_str_raw(buf, MAX_PATH, EXPANSIONSTXT, "ForceFrame", "");
+  get_cfg_str_raw(buf, sizeof(buf), EXPANSIONSTXT, "ForceFrame", "");
   if (*buf)
 	{
 	  char* p = buf;
@@ -1281,9 +1480,10 @@ read_cfg(void)
 		  if (force_frameset == -1)
 			{
 			  char buf2[MAX_PATH + 1000];
-			  p = buf2 + sprintf(buf2, "Unknown value for [Expansions]ForceFrame: \"%s\"\nValid values are:", buf);
-			  for (i = 0; i <= MAX_FRAMESET; ++i)
-				p += sprintf(p, "\n%s\nNyx%s", configs[i].option_name, configs[i].option_name);
+			  int pos = snprintf(buf2, sizeof(buf2), "Unknown value for [Expansions]ForceFrame: \"%s\"\nValid values are:", buf);
+			  for (i = 0; i <= MAX_FRAMESET && pos < (int)sizeof(buf2); ++i)
+				pos += snprintf(buf2 + pos, sizeof(buf2) - pos, "\n%s\nNyx%s", configs[i].option_name, configs[i].option_name);
+			  buf2[sizeof(buf2) - 1] = 0;
 
 			  popup("drawcardlib.dll", buf2);
 
@@ -1295,19 +1495,21 @@ read_cfg(void)
   cardback_renderer = get_cfg_int_raw(CARDBACKTXT, "Renderer", 1);
 
   counters_num_rows = get_cfg_int_raw(COUNTERSTXT, "NumRows", 12);
+  counters_num_rows = MAX(1, counters_num_rows);
   counters_num_columns = get_cfg_int_raw(COUNTERSTXT, "NumColumns", 12);
+  counters_num_columns = MAX(1, counters_num_columns);
   counters_renderer = get_cfg_int_raw(COUNTERSTXT, "Renderer", 0);
-  get_cfg_str_raw(buf, MAX_PATH, COUNTERSTXT, "Cardcounters", "");
+  get_cfg_str_raw(buf, sizeof(buf), COUNTERSTXT, "Cardcounters", "");
   if (*buf)
-	frames_pic_names[CARDCOUNTERS] = strdup(buf);
+	replace_strdup(&frames_pic_names[CARDCOUNTERS], buf);
 
   read_watermark_section(first_time);
 
   for (i = 0; i < CARDBK_MIN_FRAMEPART; ++i)
 	if (!frames_pic_names[i])
 	  {
-		snprintf(buf, MAX_PATH, "%s.pic", cfg_pic_names[i]);
-		frames_pic_names[i] = strdup(buf);
+		snprintf(buf, sizeof(buf), "%s.pic", cfg_pic_names[i]);
+		frames_pic_names[i] = safe_strdup(buf);
 	  }
 
   read_cfg_file(&configs[CFG_BASE]);	// Must be read first
@@ -1323,7 +1525,8 @@ read_cfg(void)
 	  base_frame_pic_names[i] = NULL;
 	}
 
-  sprintf(current_configfile_name, "%s\\DuelArt\\Duel.dat", base_dir);	// so fonts are read from Duel.dat
+  snprintf(current_configfile_name, sizeof(current_configfile_name), "%s\\DuelArt\\Duel.dat", base_dir);	// so fonts are read from Duel.dat
+  current_configfile_name[sizeof(current_configfile_name) - 1] = 0;
 
   first_time = 0;
   return rval;
@@ -1339,9 +1542,9 @@ read_watermarks_csv(void)
   {
 	uint8_t lookup_idx[26] = {0};
 	int i;
-	for (i = 0; watermarks[i].name; ++i)
+	for (i = 0; i < 255 && watermarks[i].name; ++i)
 	  {
-		assert(isascii(watermarks[i].name[0]) && islower(watermarks[i].name[0]));
+		assert(ascii_islower_char(watermarks[i].name[0]));
 		int radix = watermarks[i].name[0] - 'a';
 		assert(lookup_idx[radix] < 255);
 		lookup[radix][lookup_idx[radix]] = i+1;
@@ -1349,14 +1552,14 @@ read_watermarks_csv(void)
 	  }
   }
 
-#define BAIL(...) do { popup("drawcardlib.dll", __VA_ARGS__); return; } while (0)
-  FILE* watermarks_csv;
-  if (!(watermarks_csv = fopen("watermarks.csv", "r")))
+#define BAIL(...) do { popup("drawcardlib.dll", __VA_ARGS__); goto bail; } while (0)
+  FILE* watermarks_csv = fopen("watermarks.csv", "r");
+  if (!watermarks_csv)
 	BAIL("Could not open watermarks.csv: %s", strerror(errno));
 
   char line[1024], *wmark, *p;
   int id = 0, linenum = 0, idx;
-  while (fgets(line, 1024, watermarks_csv))
+  while (fgets(line, sizeof(line), watermarks_csv))
 	{
 	  ++linenum;
 	  if (linenum == 1 && !strncasecmp(line, "id;", 3))
@@ -1367,12 +1570,12 @@ read_watermarks_csv(void)
 		BAIL("Could not find first ; in line #%d of watermarks.csv [%s]", linenum, line);
 
 	  id = atoi(line);
-	  if (id == 0 && !strncmp(line, "0;", 2))
+	  if (id == 0 && strncmp(line, "0;", 2))
 		BAIL("Id not a number in line #%d of watermarks.csv [%s]", linenum, line);
 	  if (id < 0)
 		break;
 
-	  if (!(rarities && id >= 0 && id < total_cards))
+	  if (!(rarities && id >= 0 && id < total_cards && rarities[id]))
 		BAIL("Unknown id %d in line #%d of watermarks.csv [%s]", id, linenum, line);
 
 	  Rarity* r = rarities[id];
@@ -1382,13 +1585,14 @@ read_watermarks_csv(void)
 	  semi = strchr(semi, ';');
 	  if (semi)
 		*semi = '\0';
+	  strip_trailing_crlf(wmark);
 
 	  for (p = wmark; *p; ++p)
-		if (isascii(*p) && isupper(*p))
-		  *p = tolower(*p);
+		if (isascii((unsigned char)*p) && isupper((unsigned char)*p))
+		  *p = (char)tolower((unsigned char)*p);
 
-	  int radix = wmark[0];
-	  if (isascii(radix) && isalpha(radix))
+	  int radix = (unsigned char)wmark[0];
+	  if (ascii_isalpha_char(radix))
 		{
 		  if (radix == 't' && !strcmp(wmark, "timeshift"))
 			{
@@ -1454,23 +1658,36 @@ read_watermarks_csv(void)
 	BAIL("Could not read from watermarks.csv: %s", strerror(errno));
 
   if (fclose(watermarks_csv))
-	BAIL("Could not close watermarks.csv: %s", strerror(errno));
+	{
+	  watermarks_csv = NULL;
+	  BAIL("Could not close watermarks.csv: %s", strerror(errno));
+	}
+  watermarks_csv = NULL;
 
+ bail:
+  if (watermarks_csv)
+	fclose(watermarks_csv);
 #undef BAIL
 }
 
 static void
 read_rarities(void)
 {
-#define BAIL(...) do { popup("drawcardlib.dll", __VA_ARGS__); return; } while (0)
+#define BAIL(...) do { popup("drawcardlib.dll", __VA_ARGS__); goto bail; } while (0)
   rarities_read = 1;
 
-  FILE* rarity_dat;
+  FILE* rarity_dat = NULL;
+  uint8_t* raw_rarities = NULL;
+  Rarity** new_rarities = NULL;
+
   if (!(rarity_dat = fopen("rarity.dat", "rb")))
 	BAIL("Could not open rarity.dat: %s", strerror(errno));
 
   if (fread(&total_cards, 4, 1, rarity_dat) != 1)
 	BAIL("Could not read number of cards: %s", strerror(errno));
+
+  if (total_cards <= 0)
+	BAIL("Invalid number of cards in rarity.dat: %d", total_cards);
 
   if (parent == PARENT_MANALINK
 	  && total_cards != EXE_DWORD(0x7375ac)/*available_slots*/)
@@ -1482,9 +1699,10 @@ read_rarities(void)
   if (raw_expansions < 9)
 	BAIL("number of expansions only %d, expected at least 9", raw_expansions);
 
-  int expansion_size = (raw_expansions * 3 + 7) / 8;
+  if (raw_expansions > INT_MAX / 3)
+	BAIL("number of expansions too large: %d", raw_expansions);
 
-  uint8_t* raw_rarities;
+  int expansion_size = (raw_expansions * 3 + 7) / 8;
 
   if (!(raw_rarities = (uint8_t*)calloc(expansion_size, total_cards)))
 	BAIL("Could not calloc uint8_t* %d, %d", expansion_size, total_cards);
@@ -1494,42 +1712,66 @@ read_rarities(void)
 	BAIL("Could only read %d entries, expected %d: %s", count, total_cards, strerror(errno));
 
   if (fclose(rarity_dat))
-	BAIL("Could not close rarity.dat: %s", strerror(errno));
+	{
+	  rarity_dat = NULL;
+	  BAIL("Could not close rarity.dat: %s", strerror(errno));
+	}
+  rarity_dat = NULL;
 
-  if (!(rarities = (Rarity**)malloc(total_cards * sizeof(Rarity**))))
-	BAIL("Could not malloc Rarity** %d", total_cards * sizeof(Rarity**));
+  if (!(new_rarities = (Rarity**)calloc(total_cards, sizeof(*new_rarities))))
+	BAIL("Could not calloc Rarity** %d", total_cards);
 
   int card;
   for (card = 0; card < total_cards; ++card)
 	{
 	  Rarity* r;
-	  if (!(r = (Rarity*)malloc(sizeof(Rarity) + raw_expansions + 2)))	// This is wider than it needs to be because of FAKE_EXPANSIONS, but that's ok.
-		{
-		  rarities = NULL;
-		  BAIL("Could not malloc Rarity* %d", sizeof(Rarity) + raw_expansions + 2);
-		}
+	  size_t rarity_size = sizeof(Rarity) + (size_t)raw_expansions + 2;	// This is wider than it needs to be because of FAKE_EXPANSIONS, but that's ok.
+	  if (!(r = (Rarity*)calloc(1, rarity_size)))
+		BAIL("Could not calloc Rarity* %u", (unsigned)rarity_size);
 
-	  rarities[card] = r;
+	  new_rarities[card] = r;
 
 	  int raw_exp;
-	  for (raw_exp = FAKE_EXPANSIONS; raw_exp <= raw_expansions; ++raw_exp)
+	  for (raw_exp = FAKE_EXPANSIONS; raw_exp < raw_expansions; ++raw_exp)
 		{
 		  int bit_pos = raw_exp * 3;
-		  int bit_mask = 0x07 << (bit_pos & 0x07);
+		  int shift = bit_pos & 0x07;
+		  int bit_mask = 0x07 << shift;
 		  int offset = card * expansion_size + bit_pos / 8;
 
 		  int exp = raw_exp - FAKE_EXPANSIONS + 1;
 
-		  r->rarity_in_expansion[exp] = ((((uint16_t)(raw_rarities[offset + 1]) << 8) | raw_rarities[offset]) & bit_mask) >> (bit_pos & 0x07);
+		  uint16_t bits = raw_rarities[offset];
+		  if (shift > 5 && offset + 1 < (card + 1) * expansion_size)
+			bits |= ((uint16_t)raw_rarities[offset + 1]) << 8;
+
+		  r->rarity_in_expansion[exp] = (bits & bit_mask) >> shift;
 		}
 
 	  r->watermark = 0xFF;
 	  r->dfc_symbol = 0xFF;
 	  r->flags = 0;
 	}
+
   free(raw_rarities);
+  raw_rarities = NULL;
+
+  rarities = new_rarities;
+  new_rarities = NULL;
 
   assign_default_rarities();
+
+ bail:
+  if (rarity_dat)
+	fclose(rarity_dat);
+  free(raw_rarities);
+	  if (new_rarities)
+		{
+		  int cleanup_card;
+		  for (cleanup_card = 0; cleanup_card < total_cards; ++cleanup_card)
+			free(new_rarities[cleanup_card]);
+		  free(new_rarities);
+		}
 
 #undef BAIL
 }
@@ -1540,7 +1782,7 @@ get_rarity(int csvid)
   if (!rarities_read)
 	read_rarities();
 
-  if (!rarities || csvid < 0 || csvid >= total_cards)
+  if (!rarities || csvid < 0 || csvid >= total_cards || !rarities[csvid])
 	return NULL;
 
   if (rarities[csvid]->default_expansion == 0
@@ -1553,7 +1795,7 @@ get_rarity(int csvid)
 	  && csvid != CARD_ID_HANDICAP_3_CARDS)
 	{
 	  int candidate = csvid == CARD_ID_ASSEMBLY_WORKER ? CARD_ID_MISHRAS_FACTORY : csvid - 1;
-	  if (rarities[candidate]->default_expansion != 0)
+	  if (candidate >= 0 && candidate < total_cards && rarities[candidate] && rarities[candidate]->default_expansion != 0)
 		csvid = candidate;
 	}
 
@@ -1577,7 +1819,7 @@ read_expansion_categories(void)
   int strlen_expansioncategories = strlen(EXPANSIONCATEGORIES);
   int last_was_blank = 1;
   char line[1024];
-  while (fgets(line, 1024, menus_txt))
+  while (fgets(line, sizeof(line), menus_txt))
 	{
 	  if (line[0] == '\0' || line[0] == '\n' || line[0] == '\r')
 		{
@@ -1587,8 +1829,7 @@ read_expansion_categories(void)
 
 	  if (last_was_blank
 		  && !strncmp(line, EXPANSIONCATEGORIES, strlen_expansioncategories)
-		  && isascii(line[strlen_expansioncategories])
-		  && (line[strlen_expansioncategories] == '\0' || isspace(line[strlen_expansioncategories])))
+		  && ascii_isspace_char(line[strlen_expansioncategories]))
 		goto found;
 
 	  last_was_blank = 0;
@@ -1600,11 +1841,14 @@ read_expansion_categories(void)
   {
 	// Number of entries
 	int num_entries;
-	if (!fgets(line, 1024, menus_txt) || (num_entries = atoi(line)) <= 0)
+	if (!fgets(line, sizeof(line), menus_txt) || (num_entries = atoi(line)) <= 0)
 	  BAIL("Couldn't read number of entries after @EXPANSIONCATEGORIES in Menus.txt");
 
 	int alloc_size = sizeof(ExpansionCategory) * (raw_expansions + 1);
 	expansion_categories = malloc(alloc_size);
+	if (!expansion_categories)
+	  BAIL("Could not malloc ExpansionCategory* %d", alloc_size);
+
 	// initialize everything to EXPCAT_NONE
 	memset(expansion_categories, 0, alloc_size);
 	expansion_categories[0] = EXPCAT_NONE;
@@ -1613,7 +1857,7 @@ read_expansion_categories(void)
 	for (i = 0; i < num_entries && i < raw_expansions; ++i)
 	  {
 		ExpansionCategory expcat = EXPCAT_NONE;
-		if (!fgets(line, 1024, menus_txt)
+		if (!fgets(line, sizeof(line), menus_txt)
 			|| line[0] == '\0' || line[0] == '\n' || line[0] == '\r')
 		  BAIL("Invalid number of entries after @EXPANSIONCATEGORIES: expected %d, found %d", num_entries, i);
 
@@ -1643,6 +1887,8 @@ read_expansion_categories(void)
 	  }
   }
 
+  if (menus_txt)
+	fclose(menus_txt);
   return;
 
  bail:
@@ -1660,24 +1906,32 @@ read_expansion_categories(void)
 
 	int alloc_size = sizeof(ExpansionCategory) * num_expansion_categories;
 	expansion_categories = malloc(alloc_size);
+	if (!expansion_categories)
+	  return;
 
 	// initialize everything to EXPCAT_NONE
 	memset(expansion_categories, 0, alloc_size);
 	// overwrite start with our fallback defaults
 	memcpy(expansion_categories, fallback_expansion_categories, sizeof fallback_expansion_categories);
   }
+#undef EXPANSIONCATEGORIES
 #undef BAIL
 }
 
 void
 assign_default_rarities(void)
 {
+  if (!rarities)
+	return;
+
   read_expansion_categories();
 
   int card;
   for (card = 0; card < total_cards; ++card)
 	{
 	  Rarity* r = rarities[card];
+	  if (!r)
+		continue;
 
 	  r->default_expansion = 0;
 	  r->default_rarity = NONE;
@@ -1687,12 +1941,13 @@ assign_default_rarities(void)
 
 	  int raw_exp, this_priority, best_priority = expansions_priority[EXPCAT_NONE];
 
-	  for (raw_exp = FAKE_EXPANSIONS; raw_exp <= raw_expansions; ++raw_exp)
+	  for (raw_exp = FAKE_EXPANSIONS; raw_exp < raw_expansions; ++raw_exp)
 		{
 		  int exp = raw_exp - FAKE_EXPANSIONS + 1;
+		  ExpansionCategory cat = safe_expansion_category_no_read(exp);
 
 		  if (r->rarity_in_expansion[exp] != NONE
-			  && (this_priority = expansions_priority[expansion_categories[exp]]) >= best_priority
+			  && (this_priority = expansions_priority[cat]) >= best_priority
 			  && (this_priority > best_priority		// always use if we've found a new best priority
 				  || expansions_latest_printing))	// also use if we've only tied our previous best priority, but using the latest printing option
 			{
@@ -1713,7 +1968,7 @@ expansion_category(int expansion)
   if (!rarities_read)
 	read_rarities();
 
-  if (expansion < 0 || expansion >= raw_expansions)
+  if (expansion < 0 || expansion >= raw_expansions || !expansion_categories)
 	return EXPCAT_NONE;
   return (int)expansion_categories[expansion] >= 0 && expansion_categories[expansion] <= MAX_EXPCAT ? expansion_categories[expansion] : EXPCAT_NONE;
 }

@@ -1,6 +1,26 @@
+#include <limits.h>
+#include <stdint.h>
+
 #include "manalink.h"
 
-enum { AI_BATTLEFIELD_CARD_CAPACITY = 150 };
+/*
+ * AI glue and speculation support.
+ *
+ * This file sits close to the original executable.  Many calls below copy raw
+ * engine memory, replay AI speculative choices, or depend on exact phase values.
+ * Keep behavior changes small and explicit.  Prefer local guardrails, comments,
+ * and helper functions over broader rewrites.
+ */
+
+enum
+{
+	AI_BATTLEFIELD_CARD_CAPACITY = 150,
+	AI_DECISION_TIME_MAX_SETTING = 270,
+	AI_DYNAMIC_CARD_TYPES = 16,
+	AI_FULL_BACKUP_BYTES = 0x1cd00,
+	AI_PRIMARY_BACKUP_BYTES = 0x1a740,
+	AI_REPLAY_RESERVED_VALUE = 99
+};
 
 static int ai_player_is_valid(int player)
 {
@@ -12,72 +32,138 @@ static int ai_battlefield_card_slot_is_valid(int card)
 	return card >= 0 && card < AI_BATTLEFIELD_CARD_CAPACITY;
 }
 
+static int ai_active_cards_count(int player)
+{
+	return ai_player_is_valid(player) ? MIN(active_cards_count[player], AI_BATTLEFIELD_CARD_CAPACITY) : 0;
+}
+
+static int ai_network_trace_is_enabled(void)
+{
+	return (trace_mode & 2) != 0;
+}
+
+static int ai_is_running_real_human_autotap(int player)
+{
+	/*
+	 * The executable reuses this path for more than the visible human
+	 * left-double-click case.  Only run the preference-driven extra passes when
+	 * this is actually the human-facing path, or during network trace replay.
+	 */
+	return (player != AI || ai_network_trace_is_enabled()) && ai_is_speculating != 1;
+}
+
+static int ai_encode_replay_value(int value)
+{
+	return value >= AI_REPLAY_RESERVED_VALUE ? value + 1 : value;
+}
+
+static int ai_decode_replay_value(int value)
+{
+	return value >= AI_REPLAY_RESERVED_VALUE ? value - 1 : value;
+}
+
+static void* ai_engine_state_start(void)
+{
+	volatile uintptr_t addr = (uintptr_t)&must_attack;
+	return (void*)addr;
+}
+
 int get_usertime_of_current_thread_in_ms(void);	// exe
 extern int start_usertime_of_current_thread_in_ms;
 
 int check_timer_for_ai_speculation(void)
 {
 	int decision_time = get_setting(SETTING_AI_DECISION_TIME);
-	if (decision_time <= 0 || decision_time > 270){
-		decision_time = 270;
+	if (decision_time <= 0 || decision_time > AI_DECISION_TIME_MAX_SETTING){
+		decision_time = AI_DECISION_TIME_MAX_SETTING;
 	}
+
 	long long elapsed = (long long)get_usertime_of_current_thread_in_ms() - start_usertime_of_current_thread_in_ms;
 	if (elapsed <= 0){
 		return 0;
 	}
+
 	long long percent = (100LL * elapsed) / decision_time;
-	return percent > 0x7fffffff ? 0x7fffffff : (int)percent;
+	return percent > INT_MAX ? INT_MAX : (int)percent;
 }
 
 int pay_mana_maximally_satisfied(int* pay_mana_array, int x_val, int max_x_val);
 int try_to_pay_for_mana_by_autotapping(int player, int* amt, int* unknown_v46, int autotap_flags, int unknown_v47);
 
-void human_autotap_for_mana(int player, int* amt, int* unknown_v46, int unknown_v47){
-	// First is standard autotapping, straight out of the exe.
+static int mana_payment_still_needs_autotap(void)
+{
+	return !pay_mana_maximally_satisfied(&PAY_MANA_COLORLESS, x_value, max_x_value);
+}
 
-	// 1. Try to pay by tapping relevant basic lands.
-	if (!pay_mana_maximally_satisfied(&PAY_MANA_COLORLESS, x_value, max_x_value)){
-		try_to_pay_for_mana_by_autotapping(player, amt, unknown_v46,
-										   AUTOTAP_NO_CREATURES|AUTOTAP_NO_ARTIFACTS|AUTOTAP_NO_DONT_AUTO_TAP|AUTOTAP_NO_NONBASIC_LANDS,
-										   unknown_v47);
-	}
-	// 2. Try to pay by tapping all lands.
-	if (!pay_mana_maximally_satisfied(&PAY_MANA_COLORLESS, x_value, max_x_value)){
-		try_to_pay_for_mana_by_autotapping(player, amt, unknown_v46,
-										   AUTOTAP_NO_CREATURES|AUTOTAP_NO_ARTIFACTS|AUTOTAP_NO_DONT_AUTO_TAP,
-										   unknown_v47);
+static int mana_payment_is_pure_multi_generic_cost(void)
+{
+	if ((PAY_MANA_COLORLESS & 0xffff0000) || PAY_MANA_COLORLESS < 2){
+		return 0;
 	}
 
-	// Everything above here is standard.  New stuff below.
+	return PAY_MANA_BLACK == 0
+		&& PAY_MANA_BLUE == 0
+		&& PAY_MANA_GREEN == 0
+		&& PAY_MANA_RED == 0
+		&& PAY_MANA_WHITE == 0
+		&& PAY_MANA_ARTIFACT == 0;
+}
 
-	/* This function is not only called for the human player when you left-double-click to pay a cost, but also for the ai to pay its own costs and when it's
-	 * analyzing what the human could play.  The combinations of AUTOTAP_ flags below are all called afterwards (except when it's a human left-double-clicking),
-	 * as well as all combinations with AUTOTAP_NO_DONT_AUTOTAP not set; so in those cases, don't call them from here. */
-	if ((player != 1 || (trace_mode & 2)) && ai_is_speculating != 1){
-		if (get_setting(SETTING_AUTOTAP_ARTIFACTS)){
-			// 3a. Try to pay by tapping all lands and artifacts
-			if (!pay_mana_maximally_satisfied(&PAY_MANA_COLORLESS, x_value, max_x_value)){
-				try_to_pay_for_mana_by_autotapping(player, amt, unknown_v46,
-												   AUTOTAP_NO_CREATURES|AUTOTAP_NO_DONT_AUTO_TAP,
-												   unknown_v47);
-			}
+static void try_autotap_step_if_needed(int player, int* amt, int* unknown_v46, int autotap_flags, int unknown_v47)
+{
+	if (mana_payment_still_needs_autotap()){
+		try_to_pay_for_mana_by_autotapping(player, amt, unknown_v46, autotap_flags, unknown_v47);
+	}
+}
 
-			if (get_setting(SETTING_AUTOTAP_CREATURES)){
-				// 4a. Try to pay by tapping all lands, artifacts, and creatures
-				if (!pay_mana_maximally_satisfied(&PAY_MANA_COLORLESS, x_value, max_x_value)){
-					try_to_pay_for_mana_by_autotapping(player, amt, unknown_v46,
-													   AUTOTAP_NO_DONT_AUTO_TAP,
-													   unknown_v47);
-				}
-			}
-		} else if (get_setting(SETTING_AUTOTAP_CREATURES)){
-			// 3b. Try to pay by tapping all lands and creatures
-			if (!pay_mana_maximally_satisfied(&PAY_MANA_COLORLESS, x_value, max_x_value)){
-				try_to_pay_for_mana_by_autotapping(player, amt, unknown_v46,
-												   AUTOTAP_NO_ARTIFACTS|AUTOTAP_NO_DONT_AUTO_TAP,
-												   unknown_v47);
-			}
+void human_autotap_for_mana(int player, int* amt, int* unknown_v46, int unknown_v47)
+{
+	if (!ai_player_is_valid(player) || !amt || !unknown_v46){
+		return;
+	}
+
+	/*
+	 * The first two passes match the executable's normal autotap order:
+	 * first relevant basic lands, then all lands.
+	 */
+	if (!mana_payment_is_pure_multi_generic_cost()){
+		try_autotap_step_if_needed(player, amt, unknown_v46,
+								   AUTOTAP_NO_CREATURES | AUTOTAP_NO_ARTIFACTS | AUTOTAP_NO_DONT_AUTO_TAP | AUTOTAP_NO_NONBASIC_LANDS,
+								   unknown_v47);
+	}
+
+	try_autotap_step_if_needed(player, amt, unknown_v46,
+							   AUTOTAP_NO_CREATURES | AUTOTAP_NO_ARTIFACTS | AUTOTAP_NO_DONT_AUTO_TAP,
+							   unknown_v47);
+
+	if (!mana_payment_still_needs_autotap()){
+		return;
+	}
+
+	/*
+	 * The remaining passes are user-preference extensions.  Do not run them
+	 * while AI speculation is analyzing payment options, since the executable
+	 * will try the wider AUTOTAP flag combinations itself.
+	 */
+	if (!ai_is_running_real_human_autotap(player)){
+		return;
+	}
+
+	if (get_setting(SETTING_AUTOTAP_ARTIFACTS)){
+		try_autotap_step_if_needed(player, amt, unknown_v46,
+								   AUTOTAP_NO_CREATURES | AUTOTAP_NO_DONT_AUTO_TAP,
+								   unknown_v47);
+
+		if (get_setting(SETTING_AUTOTAP_CREATURES)){
+			try_autotap_step_if_needed(player, amt, unknown_v46,
+									   AUTOTAP_NO_DONT_AUTO_TAP,
+									   unknown_v47);
 		}
+	}
+	else if (get_setting(SETTING_AUTOTAP_CREATURES)){
+		try_autotap_step_if_needed(player, amt, unknown_v46,
+								   AUTOTAP_NO_ARTIFACTS | AUTOTAP_NO_DONT_AUTO_TAP,
+								   unknown_v47);
 	}
 }
 
@@ -136,9 +222,15 @@ void human_autotap_for_mana(int player, int* amt, int* unknown_v46, int unknown_
 0x509630			stack_data[32]
 0x5096b0			stack_cards[32]				// array of 32 target_t
 0x5097b0			stack_damage_targets[32]	// array of 32 target_t */
-// All that needs to be done to backup, save, and load additional data is to add it to the following macro.  The copy is shallow, and assumes sizeof(data) is correct.
+
+/*
+ * All that needs to be backed up, saved, and loaded in addition to the copied
+ * executable block should be listed here.  These copies are shallow and assume
+ * sizeof(data) is correct.
+ */
 extern int mulligans_complete[2];
 extern int challenge_round, challenge1, challenge2, challenge3, challenge4;
+
 #define BACKUP_AND_SAVE_LIST				\
   BACKUP_ARRAY(graveyard_source);			\
   BACKUP_SCALAR(next_graveyard_source_id);	\
@@ -161,13 +253,15 @@ extern int challenge_round, challenge1, challenge2, challenge3, challenge4;
 BACKUP_AND_SAVE_LIST
 #undef BACKUP_CMD_A
 #undef BACKUP_CMD_S
+
 void backup_data_for_ai(void)
 {
   // 0x498e30
-  memcpy((void*)0x50be70, &must_attack, 0x1a740);
+  memcpy((void*)0x50be70, ai_engine_state_start(), AI_PRIMARY_BACKUP_BYTES);
   STATIC_ASSERT(sizeof(card_data_t) == 72, sizeof_card_data_t_must_be_72);
+
   // This target immediately follows 0x50be70.
-  memcpy((void*)0x5265b0, &cards_data[EXE_DWORD(0x7a5380)], 16 * sizeof(card_data_t));
+  memcpy((void*)0x5265b0, &cards_data[EXE_DWORD(0x7a5380)], AI_DYNAMIC_CARD_TYPES * sizeof(card_data_t));
   EXE_DWORD(0x5b9b3c) = ai_modifier;
 
 #define BACKUP_CMD_A(data)	memcpy(backup_##data, data, sizeof(data))
@@ -180,9 +274,9 @@ void backup_data_for_ai(void)
 void restore_data_for_ai(void)
 {
   // 0x498e70
-  memcpy(&must_attack, (void*)0x50be70, 0x1a740);
+  memcpy(ai_engine_state_start(), (void*)0x50be70, AI_PRIMARY_BACKUP_BYTES);
   STATIC_ASSERT(sizeof(card_data_t) == 72, sizeof_card_data_t_must_be_72);
-  memcpy(&cards_data[EXE_DWORD(0x7a5380)], (void*)0x5265b0, 16 * sizeof(card_data_t));
+  memcpy(&cards_data[EXE_DWORD(0x7a5380)], (void*)0x5265b0, AI_DYNAMIC_CARD_TYPES * sizeof(card_data_t));
   ai_modifier = EXE_DWORD(0x5b9b3c);
 
 #define BACKUP_CMD_A(data)	memcpy(data, backup_##data, sizeof(data))
@@ -203,15 +297,19 @@ void restore_data_for_ai(void)
 BACKUP_AND_SAVE_LIST
 #undef BACKUP_CMD_A
 #undef BACKUP_CMD_S
+
 void backup_data_for_ai_0(void)
 {
   // 0x498d90
+
   // This target immediately follows 0x5265b0 in backup_data_for_ai()/restore_data_for_ai().
-  memcpy((void*)0x526a30, &must_attack, 0x1cd00);
+  memcpy((void*)0x526a30, ai_engine_state_start(), AI_FULL_BACKUP_BYTES);
   EXE_DWORD(0x5bbb44) = 0;
   STATIC_ASSERT(sizeof(card_data_t) == 72, sizeof_card_data_t_must_be_72);
+
   // This target immediately follows 0x526a30.
-  memcpy((void*)0x543730, &cards_data[EXE_DWORD(0x7a5380)], 16 * sizeof(card_data_t));
+  memcpy((void*)0x543730, &cards_data[EXE_DWORD(0x7a5380)], AI_DYNAMIC_CARD_TYPES * sizeof(card_data_t));
+
   // Immediately followed by displayed_mana_pool[][].
   ASSERT(stack_size >= 0);
 
@@ -225,9 +323,10 @@ void backup_data_for_ai_0(void)
 void restore_data_for_ai_0(void)
 {
   // 0x498df0
-  memcpy(&must_attack, (void*)0x526a30, 0x1cd00);
+  memcpy(ai_engine_state_start(), (void*)0x526a30, AI_FULL_BACKUP_BYTES);
   STATIC_ASSERT(sizeof(card_data_t) == 72, sizeof_card_data_t_must_be_72);
-  memcpy(&cards_data[EXE_DWORD(0x7a5380)], (void*)0x543730, 16 * sizeof(card_data_t));
+  memcpy(&cards_data[EXE_DWORD(0x7a5380)], (void*)0x543730, AI_DYNAMIC_CARD_TYPES * sizeof(card_data_t));
+
 #define BACKUP_CMD_A(data)	memcpy(data, backup0_##data, sizeof(data))
 #define BACKUP_CMD_S(data)	data = backup0_##data
   BACKUP_AND_SAVE_LIST
@@ -262,7 +361,9 @@ int save_or_load_supplement(int status)
 
   return status;
 }
-#undef BACKUP
+
+#undef BACKUP_ARRAY
+#undef BACKUP_SCALAR
 #undef BACKUP_AND_SAVE_LIST
 
 static int check_destroys_if_blocked_oneside(int lethal_player, int lethal_card, int other_player, int other_card)
@@ -312,39 +413,35 @@ int check_destroys_if_blocked(int attack_player, int attack_card, int defend_pla
   int result1 = check_destroys_if_blocked_oneside(attack_player, attack_card, defend_player, defend_card);
 
   int result2 = check_destroys_if_blocked_oneside(defend_player, defend_card, attack_player, attack_card);
-  // swap bits
-  result2 = ((result2 & 1) << 1) | ((result2 & 2) >> 1);
+  result2 = ((result2 & 1) << 1) | ((result2 & 2) >> 1);	// swap bits
 
   return result1 | result2;
 }
 
-/* What this seems to do is, during speculation, store value for later retrieval and returns it; and during actual execution, retrieve the value that was stored
+/* What this seems to do is, during speculation, store value for later retrieval and returns it;
+ * and during actual execution, retrieve the value that was stored
  * during the best path.  Not well understood. */
 int remember_ai_value(int player, int value)
 {
-  EXE_DWORD(0x7A2FE4) = 0;
+	EXE_DWORD(0x7A2FE4) = 0;
 
-  if (player == AI && !(trace_mode & 2))
+	if (player == AI && !ai_network_trace_is_enabled())
 	{
-	  if (ai_is_speculating == 1)
+		if (ai_is_speculating == 1)
 		{
-		  /* There's special-casing when 99 is retrieved in sub_499050(); it appears that path is always taken during further speculation.  Until this is better
-		   * understood, avoid that number entirely, encoding on storage and retrieval. */
-		  if (value >= 99)
-			++value;
-		  EXE_DWORD(0x7A2FE4) = value;
-		  EXE_FN(void, 0x498F20, void)();
+			/* There's special-casing when 99 is retrieved in sub_499050();
+			 * it appears that path is always taken during further speculation.  Until this is better
+			 * understood, avoid that number entirely, encoding on storage and retrieval. */
+			EXE_DWORD(0x7A2FE4) = ai_encode_replay_value(value);
+			EXE_FN(void, 0x498F20, void)();
 		}
-	  else
-		EXE_FN(int, 0x499050, void)();
+		else
+			EXE_FN(int, 0x499050, void)();
 	}
-  else
-	return value;
+	else
+		return value;
 
-  value = EXE_DWORD(0x7A2FE4);
-  if (value >= 99)
-	--value;
-  return value;
+	return ai_decode_replay_value(EXE_DWORD(0x7A2FE4));
 }
 
 // Like internal_rand(), but if player is the AI, stores and retrieves the choice per remember_ai_value()
@@ -358,14 +455,14 @@ int recorded_rand(int player, int upperbound)
 	  return 0;
 	}
 
-  // remember_ai_value() ignores value when replaying the real AI's stored speculative choice.
-  if (player == AI && !(trace_mode & 2) && ai_is_speculating != 1)
+  // remember_ai_value() ignores value when replaying the real AI's stored speculative choice
+  if (player == AI && !ai_network_trace_is_enabled() && ai_is_speculating != 1)
 	{
 	  int value = remember_ai_value(player, 0);
 	  if (value >= 0 && value < upperbound)
 		return value;
 
-	  // Sanity fallback, as in dialog choice replay, if speculation and execution drifted.
+	  // Sanity fallback, as in dialog choice replay, if speculation and execution drifted
 	  return internal_rand(upperbound);
 	}
 
@@ -373,11 +470,16 @@ int recorded_rand(int player, int upperbound)
 }
 
 void human_assign_blockers(int player);
+
 void ai_assign_blockers(int player)
 {
   // 0x4b18e0
 
-  EXE_FN(void, 0x4AF6F0, int)(player);	//TENTATIVE_ai_speculate_on_combat(player);
+  if (!ai_player_is_valid(player)){
+	return;
+  }
+
+  EXE_FN(void, 0x4AF6F0, int)(player);	// TENTATIVE_ai_speculate_on_combat(player);
 
   EXE_DWORD(0x60827C) = -9999;
 
@@ -389,32 +491,38 @@ void ai_assign_blockers(int player)
   if (!(ai_is_speculating == 1 || current_turn == HUMAN))
 	return;
 
-  // Begin additions
+  /*
+   * Normally the defender chooses blockers.  Some effects invert that choice.
+   * During speculation or when the AI attacks, the executable path already
+   * models this, so only call the human blocker picker for the real human case.
+   */
   if (event_flags & EF_ATTACKER_CHOOSES_BLOCKERS)
 	{
-	  if (!(ai_is_speculating == 1 || current_turn == AI))	// if speculating or AI is attacking, nothing blocks
+	  if (!(ai_is_speculating == 1 || current_turn == AI))
 		human_assign_blockers(player);
 	  return;
 	}
-  // End additions
 
-  int block_count = MIN(EXE_DWORD(0x607D54), 150);
-  for (i = 0; i < block_count; ++i)
+	int blocking_player = EXE_DWORD(0x607C2C);	// TENTATIVE_ai_speculation_opponent
+	int* ai_block_cards = EXE_DWORD_PTR(0x608304);	// WILDGUESS_ai_combat_block_card[]
+	int* ai_block_assignments = EXE_DWORD_PTR(0x60775C);
+
+	int block_count = MIN(EXE_DWORD(0x607D54), AI_BATTLEFIELD_CARD_CAPACITY);
+	for (i = 0; i < block_count; ++i)
 	{
-	  int blocking_player = EXE_DWORD(0x607C2C);	// TENTATIVE_ai_speculation_opponent
-	  int blocking_card = EXE_DWORD_PTR(0x608304)[i];	// WILDGUESS_ai_combat_block_card[i]
+		int blocking_card = ai_block_cards[i];
 
-	  if (blocking_player < HUMAN || blocking_player > AI || blocking_card < 0 || blocking_card >= 150)
+	  if (!ai_player_is_valid(blocking_player) || !ai_battlefield_card_slot_is_valid(blocking_card))
 		continue;
 
 	  forbid_attack = 0;
 	  if (event_flags & EA_PAID_BLOCK)
 		{
-		  EXE_FN(void, 0x435C80, void)();	//push_affected_card_stack()
+		  EXE_FN(void, 0x435C80, void)();	// push_affected_card_stack()
 		  trigger_cause_controller = blocking_player;
 		  trigger_cause = blocking_card;
 		  dispatch_trigger(1 - current_turn, TRIGGER_PAY_TO_BLOCK, EXE_STR(0x790248)/*PROMPT_TURNSEQUENCE[0]*/, 1);
-		  EXE_FN(void, 0x435CD0, void)();	//pop_affected_card_stack()
+		  EXE_FN(void, 0x435CD0, void)();	// pop_affected_card_stack()
 		  if (forbid_attack)
 			{
 			  forbid_attack = 0;
@@ -422,16 +530,15 @@ void ai_assign_blockers(int player)
 			}
 		}
 
-	  uint8_t blk = BYTE0(EXE_DWORD_PTR(0x60775C)[i]);
+	  uint8_t blk = BYTE0(ai_block_assignments[i]);
 
 	  card_instance_t* instance = in_play(blocking_player, blocking_card);
 	  if (!instance)
 		continue;
 
-	  // Begin additions
 	  if (instance->blocking != 255)	// Already during one of the two triggers dispatched from here
 		continue;
-	  // End additions
+
 	  instance->blocking = blk;
 
 	  if (blk != 255)	// Originally !(blk & 0x80) - this failed when blocking ids 128-149
@@ -450,7 +557,7 @@ void ai_assign_blockers(int player)
 	  /* This immediately followed the EA_PAID_BLOCK/TRIGGER_PAY_TO_BLOCK.  Putting it down here matches the order when a human blocks; in particular,
 	   * instance->blocking is correct during TRIGGER_BLOCKER_CHOSEN, which is necessary for Tromokratis. */
 	  if ((event_flags & EA_SELECT_BLOCK) && blk != 255)
-		dispatch_trigger2(current_turn, TRIGGER_BLOCKER_CHOSEN, EXE_STR(0x790074), 0,//PROMPT_BLOCKERSELECTION[0]
+		dispatch_trigger2(current_turn, TRIGGER_BLOCKER_CHOSEN, EXE_STR(0x790074), 0, // PROMPT_BLOCKERSELECTION[0]
 						  blocking_player, blocking_card);
 	}
 }
@@ -458,19 +565,28 @@ void ai_assign_blockers(int player)
 extern int raw_mana_available[2][8];
 void dispatch_event_raw(event_t event);
 void mana_burn(void);
+
 int hack_ai_decision_phase_upkeep = 0;
+
 int ai_decision_phase(int player, int *phase_code_to_go_to, int *becomes_second_arg_of_main_phase_and_discard_phase, int *becomes_third_arg_of_main_phase)
 {
   // 0x43d590
 
-  // Begin additions
+  if (!ai_player_is_valid(player)
+	  || !phase_code_to_go_to
+	  || !becomes_second_arg_of_main_phase_and_discard_phase
+	  || !becomes_third_arg_of_main_phase)
+	{
+	  ASSERT(0 && "ai_decision_phase() called with invalid arguments");
+	  return 0;
+	}
+
   int upkeep_speculation = hack_ai_decision_phase_upkeep;
   hack_ai_decision_phase_upkeep = 0;
-  // End additions
 
   int store_raw_mana_available[2][8];
 
-  if (trace_mode & 2)
+  if (ai_network_trace_is_enabled())
 	{
 	  char str[100];
 	  scnprintf(str, sizeof(str), "%d: Entering AI Decision Phase.\n", EXE_DWORD(0x60EC40)++);
@@ -489,7 +605,7 @@ int ai_decision_phase(int player, int *phase_code_to_go_to, int *becomes_second_
 	  dispatch_event_raw(EVENT_SHOULD_AI_PLAY);
 
 	  card_instance_t* inst;
-	  int c, active_count = MIN(active_cards_count[AI], 150);
+	  int c, active_count = ai_active_cards_count(AI);
 	  for (c = 0; c < active_count; ++c)
 		if ((inst = get_card_instance(AI, c))->internal_card_id != -1)
 		  call_card_function_i(inst, AI, c, EVENT_CAN_COUNTER);
@@ -512,7 +628,7 @@ int ai_decision_phase(int player, int *phase_code_to_go_to, int *becomes_second_
 		  EXE_DWORD(0x715B30) = ai_opinion;
 		  EXE_FN(void, 0x4990B0, void)();
 		  v16 = EXE_DWORD(0x60E9FC);
-		  //v10 = EXE_DWORD(0x738B48);	not referenced again
+		  // v10 = EXE_DWORD(0x738B48); not referenced again
 		}
 
 	  if (EXE_DWORD(0x7282F4) == 999)
@@ -545,6 +661,7 @@ int ai_decision_phase(int player, int *phase_code_to_go_to, int *becomes_second_
 		  *becomes_second_arg_of_main_phase_and_discard_phase = 1;
 		  *phase_code_to_go_to = 6;
 		  break;
+
 		case 2:
 		case 5:
 		case 6:
@@ -553,10 +670,12 @@ int ai_decision_phase(int player, int *phase_code_to_go_to, int *becomes_second_
 		  *becomes_second_arg_of_main_phase_and_discard_phase = ai_phase_decision;
 		  *phase_code_to_go_to = 6;
 		  break;
+
 		case 3:
 		  *becomes_second_arg_of_main_phase_and_discard_phase = 1;
 		  *phase_code_to_go_to = 7;	// discard
 		  break;
+
 		case 4:
 		case 7:
 		  if (land_can_be_played & TENTATIVE_LCBP_DURING_COMBAT)
@@ -567,23 +686,23 @@ int ai_decision_phase(int player, int *phase_code_to_go_to, int *becomes_second_
 		  *becomes_second_arg_of_main_phase_and_discard_phase = ai_phase_decision;
 		  *phase_code_to_go_to = 6;
 		  break;
+
 		case 17:
-		  // Begin additions
 		  *phase_code_to_go_to = 4;	// upkeep
-		  // End additions
+		  break;
+
+		default:
 		  break;
 		}
 	}
 
-  // Begin additions
   if (upkeep_speculation)
 	return 0;
-  // End additions
 
   if (*phase_code_to_go_to == -1)
 	{
 	  current_phase = PHASE_CLEANUP2;
-	  // v14 = 0;	// not referenced again
+	  // v14 = 0; not referenced again.
 	  EXE_FN(int, 0x439C90, int)(PHASE_CLEANUP2);	// TENTATIVE_check_for_stops(PHASE_CLEANUP2);
 	  mana_burn();
 

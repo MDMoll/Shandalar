@@ -49,7 +49,7 @@ conservative.
 | Public redistribution is approved. | [distribution.md](distribution.md) records that no repository-level license file was found and bundled rightsholder/trademark notices are present. |
 | A patch/docs-only public package exists. | [patch-package-plan.md](patch-package-plan.md) records helper commands for temporary patch artifacts and tree-apply verification, but no package artifact has been committed, visibly runtime-tested, scanner-verified, or release-approved. |
 | The binaries are guaranteed safe. | [security-scan.md](security-scan.md) records a clean ClamAV result for the tracked scan targets, but one scanner result is not a broad safety guarantee. |
-| `src/` rebuilds the shipped binaries. | `make -n` still hits missing/generated build inputs and toolchain assumptions. |
+| `src/` rebuilds the shipped binaries. | Source-local builds now pass for the checked top-level and helper targets, but those outputs have not been accepted as shipped-runtime replacements or reproducible release artifacts. |
 
 ## Push Checklist For New Commits
 

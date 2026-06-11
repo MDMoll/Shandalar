@@ -9,10 +9,10 @@ magic.exe and manalink.csv.
   The dll free space start at virtual address 0x01003839,
 its loads at 0x01001000 (0x01000C00 for asm purposes). So,
 just use the assembler part of editor, and work at 01003839.
-  If anyone is insterested, the source code of dll is inside
+  If anyone is interested, the source code of dll is inside
 editor folder, there is no trick involved at all. Oh, by the
 way, is written in Delphi.
-  The editor understand where you try to dissassembler, and
+  The editor understand where you try to disassembler, and
 show either magic.exe code or manalinkex.dll code, based on
 address. You don't need to worry about it, just apply patch,
 edit, fill... whatever...

@@ -1,20 +1,84 @@
 // Interactive searching and manipulation of libraries/graveyards/exile.
 
+#include <string.h>
+
 #include "manalink.h"
 
 int show_deck_exe(int player, const int* deck, int num_cards, const char* prompt, int suppress_done_label, /* const char* */int done_label);
 
+enum
+{
+  ZONE_MAX_CARDS = 500,
+  ZONE_MAX_ACTIVE_CARDS = 150,
+  ZONE_MAX_TARGETS = 19,
+  ZONE_HAND_SNAPSHOT_CAPACITY = 150
+};
+
+static int bounded_zone_active_cards_count(int player)
+{
+  return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], ZONE_MAX_ACTIVE_CARDS) : 0;
+}
+
+static int zone_player_is_valid(int player)
+{
+  return player >= HUMAN && player <= AI;
+}
+
+static int zone_card_slot_is_valid(int card)
+{
+  return card >= 0 && card < ZONE_MAX_ACTIVE_CARDS;
+}
+
+static int zone_count_from_sentinel(const int* zone)
+{
+  int count = 0;
+  if (!zone)
+	return 0;
+
+  while (count < ZONE_MAX_CARDS && zone[count] != -1)
+	++count;
+
+  return count;
+}
+
+static int bounded_zone_count(int zone_count)
+{
+  if (zone_count < 0)
+	return 0;
+
+  return MIN(zone_count, ZONE_MAX_CARDS);
+}
+
+static int can_store_tutor_result_in_target(int storage_loc)
+{
+  return storage_loc >= 0 && storage_loc < ZONE_MAX_TARGETS;
+}
+
 int show_deck(int player, const int* deck, int num_cards, const char* prompt, int suppress_done_label, /* const char* */int done_label)
 {
+	if (!deck || num_cards <= 0){
+		return -1;
+	}
+
+	num_cards = bounded_zone_count(num_cards);
 	call_sub_437E20_unless_ai_is_speculating();	// force redisplay
-	return show_deck_exe(player, deck, num_cards, prompt, suppress_done_label, done_label);
+	return show_deck_exe(player, deck, num_cards, prompt ? prompt : "", suppress_done_label, done_label);
 }
 
 int get_average_value_from_zone(int targ_player, const int *s_location, int zone_count, test_definition_t *this_test, int my_test, int mode){
 	int total = 0;
 	int found = 0;
 	int i;
+
+	if (!s_location || !this_test){
+		return 0;
+	}
+
+	zone_count = bounded_zone_count(zone_count);
 	for(i=0; i<zone_count; i++){
+		if( s_location[i] == -1 ){
+			break;
+		}
 		if( new_make_test(targ_player, s_location[i], my_test, this_test) ){
 			found++;
 			if( mode == AI_MAX_CMC || mode == AI_MIN_CMC || mode == AI_GOOD_TO_PUT_IN_GRAVE){
@@ -32,6 +96,16 @@ int get_average_value_from_zone(int targ_player, const int *s_location, int zone
 const char* hack_override_show_deck_done_button_label = NULL;
 int select_card_from_zone(int player, int targ_player, const int *s_location, int zone_count, int must_select, int ai_selection_mode, int test_type, test_definition_t *this_test){
 	int selected = -1;
+
+	if (!s_location || !this_test){
+		return -1;
+	}
+
+	zone_count = bounded_zone_count(zone_count);
+	if (zone_count <= 0){
+		return -1;
+	}
+
 	if( player != AI ){
 		while( 1 ){
 				const char* label = hack_override_show_deck_done_button_label;
@@ -40,7 +114,7 @@ int select_card_from_zone(int player, int targ_player, const int *s_location, in
 				}
 				selected = show_deck( player, s_location, zone_count, this_test->message, 0, (int)label );
 				if( must_select == 0 ){
-					if( selected != -1 ){
+					if( selected >= 0 && selected < zone_count && s_location[selected] != -1 ){
 						if( ! new_make_test( targ_player, s_location[selected], test_type, this_test)
 						  ){
 							selected = -1;
@@ -52,7 +126,8 @@ int select_card_from_zone(int player, int targ_player, const int *s_location, in
 					}
 				}
 				else{
-					if( selected != -1 && new_make_test( targ_player, s_location[selected], test_type, this_test) ){
+					if( selected >= 0 && selected < zone_count && s_location[selected] != -1
+						&& new_make_test( targ_player, s_location[selected], test_type, this_test) ){
 						break;
 					}
 				}
@@ -69,6 +144,9 @@ int select_card_from_zone(int player, int targ_player, const int *s_location, in
 		int apc = 0;
 
 		while( count < zone_count ){
+				if( s_location[count] == -1 ){
+					break;
+				}
 				if( new_make_test( targ_player, s_location[count], test_type, this_test) ){
 					if( ai_selection_mode == AI_FIRST_FOUND || (ai_selection_mode == AI_RANDOM && internal_rand(100)+1 > 50) ){
 						selected = count;
@@ -100,13 +178,14 @@ int select_card_from_zone(int player, int targ_player, const int *s_location, in
 						}
 					}
 
-					if( (ai_selection_mode == AI_MAX_VALUE || ai_selection_mode == AI_MAX_CMC || ai_selection_mode == AI_GOOD_TO_PUT_IN_GRAVE) &&
+					if( amount >= 0 &&
+						(ai_selection_mode == AI_MAX_VALUE || ai_selection_mode == AI_MAX_CMC || ai_selection_mode == AI_GOOD_TO_PUT_IN_GRAVE) &&
 						amount >= av_value
 					  ){
 						ai_pick[apc] = count;
 						apc++;
 					}
-					if( (ai_selection_mode == AI_MIN_VALUE || ai_selection_mode == AI_MIN_CMC) && amount <= av_value + 1 ){
+					if( amount >= 0 && (ai_selection_mode == AI_MIN_VALUE || ai_selection_mode == AI_MIN_CMC) && amount <= av_value + 1 ){
 						ai_pick[apc] = count;
 						apc++;
 					}
@@ -123,7 +202,7 @@ int select_card_from_zone(int player, int targ_player, const int *s_location, in
 
 int new_select_a_card(int player, int targ_player, int search_location, int must_select, int ai_selection_mode, int test_type, test_definition_t *this_test){
 
-	if( search_location < 1 ){
+	if( search_location < 1 || !zone_player_is_valid(targ_player) || !this_test ){
 	   return -1;
 	}
 	int zone_count = 0;
@@ -131,7 +210,7 @@ int new_select_a_card(int player, int targ_player, int search_location, int must
 	const int *s_location = deck_ptr[targ_player];
 
 	if( this_test->create_minideck > 0 ){
-		zone_count = this_test->create_minideck;
+		zone_count = MIN(this_test->create_minideck, count_deck(targ_player));
 	}
 
 	if( search_location == TUTOR_FROM_DECK && this_test->create_minideck > 0 && check_battlefield_for_id(1-player, CARD_ID_AVEN_MINDCENSOR) ){
@@ -153,34 +232,39 @@ int new_select_a_card(int player, int targ_player, int search_location, int must
 	   s_location = rfg_ptr[targ_player];
 	}
 
-	int hand_index[150];
+	int hand_index[ZONE_HAND_SNAPSHOT_CAPACITY];
 	if( search_location == TUTOR_FROM_HAND ){
 		int i;
-		for(i=0; i<150; i++){
+		for(i=0; i<ZONE_HAND_SNAPSHOT_CAPACITY; i++){
 			hand_index[i] = -1;
 		}
 		int hand_c = 0;
 		int count = 0;
-		while( count < active_cards_count[targ_player] ){
+		int active_count = bounded_zone_active_cards_count(targ_player);
+		while( count < active_count ){
 				if( in_hand(targ_player, count) && ! check_state(targ_player, count, STATE_CANNOT_TARGET) ){
 					card_instance_t *this = get_card_instance(targ_player, count);
-					hand_index[hand_c] = this->internal_card_id;
-					hand_c++;
-					zone_count++;
+					if (hand_c < ZONE_HAND_SNAPSHOT_CAPACITY){
+						hand_index[hand_c] = this->internal_card_id;
+						hand_c++;
+						zone_count++;
+					}
 				}
 				count++;
 		}
 		s_location = hand_index;
 	}
 
-	if( s_location[0] == -1 ){
+	if( !s_location || s_location[0] == -1 ){
 		return -1;
 	}
 
 	if( zone_count < 1 ){
-		while( s_location[zone_count] != -1){
-				zone_count++;
-		}
+		zone_count = zone_count_from_sentinel(s_location);
+	}
+
+	if (zone_count <= 0){
+		return -1;
 	}
 
 	int selected = select_card_from_zone(player, targ_player, s_location, zone_count, must_select, ai_selection_mode, -1, this_test);
@@ -188,7 +272,8 @@ int new_select_a_card(int player, int targ_player, int search_location, int must
 	if( selected != -1 && search_location == TUTOR_FROM_HAND ){
 		int my_id = cards_data[s_location[selected]].id;
 		int count = 0;
-		while( count < active_cards_count[targ_player] ){
+		int active_count = bounded_zone_active_cards_count(targ_player);
+		while( count < active_count ){
 				if( in_hand(targ_player, count) && get_id(targ_player, count) == my_id){
 					selected = count;
 					break;
@@ -220,7 +305,8 @@ int get_tutoring_denial(int player){
 		int i;
 		for(i=0; i<2; i++){
 			int count = 0;
-			while(count < active_cards_count[i] ){
+			int active_count = bounded_zone_active_cards_count(i);
+			while(count < active_count ){
 					if( in_play(i, count) ){
 						if( is_what(i, count, TYPE_PERMANENT) ){
 							if( get_id(i, count) == CARD_ID_MINDLOCK_ORB ){
@@ -268,6 +354,10 @@ int get_tutoring_denial(int player){
 
 int new_global_tutor(int player, int targ_player, int search_location, int destination, int must_select, int ai_selection_mode, test_definition_t *this_test){
 
+	if (!this_test || !zone_player_is_valid(targ_player)){
+		return -1;
+	}
+
 	if( search_location == TUTOR_FROM_DECK && this_test->create_minideck < 1 ){
 		if( get_tutoring_denial(player) ){
 			return -1;
@@ -283,8 +373,18 @@ int new_global_tutor(int player, int targ_player, int search_location, int desti
 
 	int test_type = new_get_test_score(this_test);
 
+	int qty = this_test->qty;
+	if (qty <= 0){
+		return -1;
+	}
+	qty = MIN(qty, ZONE_MAX_CARDS);
+
 	int q;
-	int tutored[this_test->qty];
+	int tutored[qty];
+	for (q = 0; q < qty; ++q){
+		tutored[q] = -1;
+	}
+
 	int tc = 0;
 	int grafdiggers_cage_flag = ((destination == TUTOR_PLAY || destination == TUTOR_PLAY_TAPPED || destination == TUTOR_PLAY_ATTACKING)
 								 && check_battlefield_for_id(ANYBODY, CARD_ID_GRAFDIGGERS_CAGE));
@@ -292,7 +392,7 @@ int new_global_tutor(int player, int targ_player, int search_location, int desti
 	if (nsl == TUTOR_FROM_GRAVE_NOTARGET){
 		nsl = TUTOR_FROM_GRAVE;
 	}
-	for(q=0; q<this_test->qty; q++){
+	for(q=0; q<qty; q++){
 		int selected = new_select_a_card(player, targ_player, search_location, must_select, ai_selection_mode, test_type, this_test);
 		if( selected != -1 ){
 			const int *s_location = deck_ptr[targ_player];
@@ -350,7 +450,7 @@ int new_global_tutor(int player, int targ_player, int search_location, int desti
 				remove_card_from_rfg(targ_player, cards_data[s_location[selected]].id);
 				tc++;
 			}
-			
+
 			if( this_test->create_minideck > 1 ){
 				this_test->create_minideck--;
 				if( this_test->create_minideck == 0 ){
@@ -484,7 +584,7 @@ int new_global_tutor(int player, int targ_player, int search_location, int desti
 					default:
 					break;
 			}
-			if( this_test->storage > -1 ){
+			if( this_test->storage > -1 && zone_player_is_valid(player) && zone_card_slot_is_valid(this_test->storage) && can_store_tutor_result_in_target(storage_loc) ){
 				get_card_instance(player, this_test->storage)->targets[storage_loc].card = tutored[q];
 				storage_loc++;
 			}
@@ -502,7 +602,7 @@ int new_global_tutor(int player, int targ_player, int search_location, int desti
 		}
 	}
 
-	return this_test->qty > 1 ? really_tutored : card_added;
+	return qty > 1 ? really_tutored : card_added;
 }
 
 int global_tutor(int player, int targ_player, int search_location, int destination, int must_select, int ai_selection_mode, int type, int flag1, int subtype, int flag2, int color, int flag3, int id, int flag4, int cc, int flag5){
@@ -576,6 +676,9 @@ int reveal_top_cards_of_library(int player, int num_cards)
  * Move the rest to [destination_rest]. */
 int reveal_top_cards_of_library_and_choose(int src_player, int src_card, int t_player, int num_cards, int must_select, tutor_t destination_chosen, int reveal_chosen, tutor_t destination_rest, int reveal_rest, test_definition_t* test)
 {
+  if (!test || !zone_player_is_valid(t_player))
+	return -1;
+
   if (reveal_rest)
 	num_cards = reveal_top_cards_of_library(t_player, num_cards);
   else
@@ -585,6 +688,9 @@ int reveal_top_cards_of_library_and_choose(int src_player, int src_card, int t_p
 	}
   if (num_cards <= 0)
 	return -1;
+
+  int original_qty = test->qty;
+  int original_create_minideck = test->create_minideck;
 
   int num_to_pick = MIN(num_cards, test->qty);
   if (num_to_pick <= 0)
@@ -619,7 +725,7 @@ int reveal_top_cards_of_library_and_choose(int src_player, int src_card, int t_p
 			remove_card_from_deck(t_player, selected);
 			int ca = add_card_to_hand(src_player, iid);
 			if( destination_chosen == TUTOR_HAND_AND_MARK && ca > -1 ){
-				add_state(t_player, ca, STATE_TARGETTED);
+				add_state(src_player, ca, STATE_TARGETTED);
 			}
 			break;
 
@@ -760,6 +866,9 @@ int reveal_top_cards_of_library_and_choose(int src_player, int src_card, int t_p
 		  break;
 	  }
 
+  test->qty = original_qty;
+  test->create_minideck = original_create_minideck;
+
   return selected;	// position of last card chosen; or its csvid if destination_chosen was TUTOR_GET_ID
 }
 
@@ -797,7 +906,7 @@ int select_one_and_mill_the_rest(int player, int t_player, int number, int type)
 		while( selected == -1 ){
 				selected = show_deck( player, deck, number, "Pick a card", 0, 0x7375B0 );
 		}
-		if( is_what(-1, deck[selected], type) ){
+		if( selected >= 0 && selected < number && is_what(-1, deck[selected], type) ){
 			card_added = add_card_to_hand(t_player, deck[selected]);
 			remove_card_from_deck(t_player, selected);
 			number--;
@@ -809,6 +918,12 @@ int select_one_and_mill_the_rest(int player, int t_player, int number, int type)
 }
 
 int select_one_and_put_the_rest_on_bottom(int player, int t_player, int number){
+
+	int count = count_deck(t_player);
+	number = MIN(number, count);
+	if (number <= 0){
+		return -1;
+	}
 
 	int selected = -1;
 	int *deck = deck_ptr[t_player];
@@ -911,6 +1026,10 @@ void cultivate(int player){
 
 // Simple n^2 insertion sort on array[].player, descending.  Poorly suited if number is greater than about 30.
 void descending_insertion_sort_on_player(int number, target_t* array){
+	if (!array || number <= 1){
+		return;
+	}
+
 	target_t value;
 	int i, j;
 	for (i = 1; i < number; ++i){
@@ -925,6 +1044,11 @@ void descending_insertion_sort_on_player(int number, target_t* array){
 int select_multiple_cards_from_graveyard(int player, int targ_player, int must_select_all /*if < 0, not enforced; but failing to select all is considered cancelling */, int ai_selection_mode, test_definition_t* this_test /*optional*/, int max_targets, target_t* ret_location){
 	// no reason this won't work on higher except that 1) the sort will take forever, and 2) it won't be storable in a card's target array.
 	ASSERT(max_targets > 0 && max_targets <= 19);
+
+	if (!ret_location || max_targets <= 0){
+		return 0;
+	}
+	max_targets = MIN(max_targets, ZONE_MAX_TARGETS);
 
 	test_definition_t default_test;
 	if (this_test){
@@ -1010,6 +1134,11 @@ int select_multiple_cards_from_graveyard(int player, int targ_player, int must_s
 // test only needs to be defined during EVENT_CAST_SPELL.
 int spell_return_up_to_n_target_cards_from_your_graveyard_to_your_hand(int player, int card, event_t event, int max_cards, test_definition_t* test, int dont_kill_self)
 {
+  if (max_cards <= 0){
+	return 0;
+  }
+  max_cards = MIN(max_cards, ZONE_MAX_TARGETS);
+
   if (event == EVENT_CAN_CAST)
 	return 1;
 
@@ -1121,6 +1250,10 @@ int spell_return_one_or_two_cards_from_gy_to_hand(int player, int card, event_t 
 // Postcondition: For each i in [0..number), one of piles[0][i] and piles[1][i] will be set to source_deck[i], and the other iid_draw_a_card.
 void separate_into_two_piles(int who_separates, const int* source_deck, int number, void* piles_)
 {
+  if (!source_deck || !piles_ || number <= 0){
+	return;
+  }
+
   int (*piles)[number] = piles_;
   int i;
   for (i = 0; i < number; ++i)
@@ -1177,6 +1310,10 @@ void separate_into_two_piles(int who_separates, const int* source_deck, int numb
 int choose_between_two_piles(int chooser, int number, void* piles_, int ai_selection_mode, const char* choice_txt)
 {
   ASSERT(ai_selection_mode == AI_MIN_VALUE || ai_selection_mode == AI_MAX_VALUE);
+
+  if (!piles_ || number <= 0){
+	return 0;
+  }
 
   int (*piles)[number] = piles_;
 
@@ -1277,12 +1414,14 @@ void alphabetize_deck(int player, int* deck, int num_cards){
 	if( count < 10 || ! get_setting(SETTING_ALPHABETIZE_DECK) ){ return; }
 	if( player == AI ){ return; }
 
+	count = MIN(count, ZONE_MAX_CARDS);
+
 	//FILE *file = fopen("sort.txt", "w");
 	//int *deck = deck_ptr[player];
 
 	int i;
-	int deck2[500];
-	for(i=0;i<500;i++){
+	int deck2[ZONE_MAX_CARDS];
+	for(i=0;i<ZONE_MAX_CARDS;i++){
 		deck2[i] = -1;
 	}
 	for(i=0;i<count;i++){
@@ -1303,7 +1442,7 @@ void alphabetize_deck(int player, int* deck, int num_cards){
 				//fprintf(file," Skipping %s\n", c1->name );
 			}
 		}
-		for(j=i+1;j>=index;j--){
+		for(j=i;j>index;j--){
 			deck2[j] = deck2[j-1];
 		}
 		deck2[index] = card;
@@ -1315,7 +1454,7 @@ void alphabetize_deck(int player, int* deck, int num_cards){
 		//}
 
 	}
-	for(i=0;i<500;i++){
+	for(i=0;i<ZONE_MAX_CARDS;i++){
 		deck[i] = deck2[i];
 	}
 	//fclose(file);
@@ -1369,6 +1508,9 @@ void rearrange_top_x(int t_player, int who_chooses, int number){
 	if( count < number ){
 		number = count;
 	}
+	if( number <= 0 ){
+		return;
+	}
 	if( number == 1 ){
 		show_deck( who_chooses, deck, 1, "Top card of library", 0, 0x7375B0 );
 	}
@@ -1389,6 +1531,9 @@ void rearrange_top_x(int t_player, int who_chooses, int number){
 
 int show_bottom_of_deck(int player, int* deck, int num_cards, const char* prompt, int count_in_deck){
 	// This is a moderate hack - instead of passing deck[] to show_deck, we find the exact position so that the bottom num_cards cards are shown
+	if (!deck || num_cards <= 0 || count_in_deck < num_cards){
+		return -1;
+	}
 	return show_deck(player, &deck[count_in_deck - num_cards], num_cards, prompt, 0, 0x7375B0);
 }
 
@@ -1400,6 +1545,10 @@ void rearrange_bottom_x(int t_player, int who_chooses, int number){
 	int count = count_deck(t_player);
 	if (count < number){
 		number = count;
+	}
+
+	if (number <= 0){
+		return;
 	}
 
 	if (number == 1){
@@ -1426,6 +1575,8 @@ int select_best_card_from_top_x(int player, int t_player, int amount){
 		par = 1000;
 	}
 
+	int deck_count = count_deck(t_player);
+	amount = MIN(amount, deck_count);
 	while( count < amount ){
 			card_ptr_t* c = cards_ptr[ cards_data[deck[count]].id ];
 			if( player == t_player ){
@@ -1448,6 +1599,7 @@ int select_best_card_from_top_x(int player, int t_player, int amount){
 void put_top_x_on_bottom(int player, int t_player, int remaining ){
 
 	int *deck = deck_ptr[t_player];
+	remaining = MIN(remaining, count_deck(t_player));
 
 	while( remaining > 0 ){
 			if( remaining == 1 ){
@@ -1471,12 +1623,19 @@ void put_top_x_on_bottom(int player, int t_player, int remaining ){
 					remove_card_from_deck(t_player, selected);
 					remaining--;
 				}
+				else{
+					break;
+				}
 			}
 	}
 }
 
 void put_top_x_on_bottom_in_random_order(int player, int amount)
 {
+  if (amount <= 0)
+	return;
+
+  amount = MIN(amount, count_deck(player));
   if (amount <= 0)
 	return;
 
@@ -1506,30 +1665,43 @@ void put_top_x_on_bottom_in_random_order(int player, int amount)
 }
 
 void tutor_multiple_card_from_hand(int who_chooses, int t_player, int who_gets_the_card, int destination, int must_select, int ai_selection_mode, test_definition_t *this_test){
-	int hand_copy[2][hand_count[t_player]];
+	if (!this_test || !zone_player_is_valid(t_player) || hand_count[t_player] <= 0){
+		return;
+	}
+
+	int hand_copy[2][ZONE_HAND_SNAPSHOT_CAPACITY];
 	int hcc = 0;
 	int count = 0;
-	while( count < active_cards_count[t_player] ){
+	int active_count = bounded_zone_active_cards_count(t_player);
+	while( count < active_count ){
 			if( in_hand(t_player, count) ){
 				hand_copy[0][hcc] = get_original_internal_card_id(t_player, count);
 				hand_copy[1][hcc] = count;
 				hcc++;
+				if (hcc >= ZONE_HAND_SNAPSHOT_CAPACITY){
+					break;
+				}
 			}
 			count++;
 	}
+	if (hcc <= 0){
+		return;
+	}
+
 	this_test->zone = TARGET_ZONE_HAND;
 	int amount = MIN(this_test->qty, check_battlefield_for_special_card(t_player, -1, t_player, CBFSC_GET_COUNT, this_test));
 	if( amount ){
 		int i;
+		amount = MIN(amount, hcc);
 		int tutored[amount];
 		int tc = 0;
 		while( amount ){
-				int selected = select_card_from_zone(who_chooses, who_chooses, hand_copy[0], hcc, 0, ai_selection_mode, -1, this_test);
+				int selected = select_card_from_zone(who_chooses, t_player, hand_copy[0], hcc, 0, ai_selection_mode, -1, this_test);
 				if( selected != -1 ){
 					tutored[tc] = hand_copy[0][selected];
 					obliterate_card(t_player, hand_copy[1][selected]);
 					tc++;
-					for(i=selected; i<hcc; i++){
+					for(i=selected; i<hcc-1; i++){
 						hand_copy[0][i] = hand_copy[0][i+1];
 						hand_copy[1][i] = hand_copy[1][i+1];
 					}

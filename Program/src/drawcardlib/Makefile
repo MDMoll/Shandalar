@@ -1,10 +1,18 @@
-CC = gcc
+MINGW_PREFIX ?= $(shell if command -v i686-w64-mingw32-gcc >/dev/null 2>&1; then printf 'i686-w64-mingw32-'; elif command -v i386-mingw32-gcc >/dev/null 2>&1; then printf 'i386-mingw32-'; fi)
+CC = $(MINGW_PREFIX)gcc
 ASM = yasm
+OBJCOPY = $(MINGW_PREFIX)objcopy
+DLLTOOL = $(MINGW_PREFIX)dlltool
+WARNINGS_AS_ERRORS ?= 0
+WERROR ?=
+ifeq ($(WARNINGS_AS_ERRORS),1)
+WERROR := -Werror
+endif
 CFLAGS = -ggdb2 -O2 -m32 -fno-omit-frame-pointer -march=i586		\
 	-mpreferred-stack-boundary=2 -Wall -Wextra -Wpointer-arith	\
 	-Wbad-function-cast -Wcast-qual -Wcast-align -Wwrite-strings	\
 	-Wshadow -W -Wstrict-prototypes -Wnested-externs -Winline	\
-	-Werror -I.. -I.
+	$(WERROR) -I.. -I.
 AFLAGS = -a x86 -m x86 -p nasm -r nasm -f win32 -I.. -I.
 LDFLAGS = -Wl,--enable-stdcall-fixup -Wl,--defsym,___ImageBase=__image_base__ \
 	-Wl,--disable-dynamicbase -Wl,--disable-nxcompat \
@@ -41,8 +49,8 @@ $(INSTALLDIR)/$(TGTDBG): $(TGTDLL)
 
 $(TGTDLL): $(LIBFILES) $(COBJFILES) $(AOBJFILES)
 	$(CC) -shared -m32 -o $@ $(COBJFILES) $(AOBJFILES) $(DEFFILE) $(LDFLAGS)
-	objcopy --only-keep-debug $(TGTDLL) $(TGTDBG)
-	objcopy --strip-debug $(TGTDLL)
+	$(OBJCOPY) --only-keep-debug $(TGTDLL) $(TGTDBG)
+	$(OBJCOPY) --strip-debug $(TGTDLL)
 
 %.ao: %.asm
 	$(ASM) $(AFLAGS) -o $@ $<
@@ -51,7 +59,7 @@ $(TGTDLL): $(LIBFILES) $(COBJFILES) $(AOBJFILES)
 	$(COMPILE) -o $@ $<
 
 lib%.a: %.def
-	dlltool -k -d $< -l $@
+	$(DLLTOOL) -k -d $< -l $@
 
 clean:
 	$(RM) $(COBJFILES) $(AOBJFILES) $(LIBFILES) $(TGTDLL) $(TGTDBG) test.exe

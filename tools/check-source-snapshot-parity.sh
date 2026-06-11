@@ -121,8 +121,8 @@ program_list="$(mktemp "${TMPDIR:-/tmp}/shandalar-program-src-list.XXXXXX")"
 all_list="$(mktemp "${TMPDIR:-/tmp}/shandalar-source-parity.XXXXXX")"
 trap 'rm -f "$src_list" "$program_list" "$all_list"' EXIT
 
-find src -type f -print | sed 's#^src/##' | sort > "$src_list"
-find Program/src -type f -print | sed 's#^Program/src/##' | sort > "$program_list"
+git ls-files -- src | sed 's#^src/##' | sort > "$src_list"
+git ls-files -- Program/src | sed 's#^Program/src/##' | sort > "$program_list"
 cat "$src_list" "$program_list" | sort -u > "$all_list"
 
 parity_report=""
@@ -175,7 +175,7 @@ while IFS= read -r relpath; do
   fi
 
   if [[ -n "$parity_report" ]]; then
-    printf '%s\t%s\t%s\t%s\t%s\n' "$status" "$relpath" "$src_hash" "$program_hash" "$notes" >> "$parity_report"
+    printf '%s\t%s\t%s\t%s\t%s\n' "$status" "$relpath" "$src_hash" "$program_hash" "${notes:-none}" >> "$parity_report"
   fi
 done < "$all_list"
 
@@ -219,8 +219,46 @@ check_marker() {
   fi
 }
 
+check_marker_any() {
+  local relpath="$1"
+  local label="$2"
+  shift 2
+
+  local missing=""
+  local root
+  local marker
+  local found
+
+  for root in src Program/src; do
+    if [[ ! -f "$root/$relpath" ]]; then
+      missing="${missing:+$missing; }$root/$relpath missing"
+      continue
+    fi
+
+    found=0
+    for marker in "$@"; do
+      if grep -Fq "$marker" "$root/$relpath"; then
+        found=1
+        break
+      fi
+    done
+
+    if [[ "$found" -eq 0 ]]; then
+      missing="${missing:+$missing; }$root/$relpath lacks marker"
+    fi
+  done
+
+  if [[ -z "$missing" ]]; then
+    ok "source-parity" "$relpath:$label" "marker present in both snapshots"
+  else
+    fail "source-parity" "$relpath:$label" "$missing"
+  fi
+}
+
 check_marker "functions/targets.c" "static int read_auto_target_entries" "bounded-auto-target-helper"
-check_marker "functions/targets.c" "while(count < 499 && fgets(buffer, sizeof(buffer), file))" "bounded-auto-target-read"
+check_marker_any "functions/targets.c" "bounded-auto-target-read" \
+  "while(count < 499 && fgets(buffer, sizeof(buffer), file))" \
+  "while(count < TARGET_AUTO_TARGET_CAPACITY - 1 && fgets(buffer, sizeof(buffer), file)){"
 check_marker "functions/targets.c" "auto_targets[count] = -1;" "auto-target-sentinel"
 check_marker "functions/targets.c" "static int bounded_targets_active_cards_count(int player)" "bounded-targets-active-count-helper"
 check_marker "functions/targets.c" "static int bounded_targets_max_active_cards_count(void)" "bounded-targets-max-active-count-helper"
@@ -253,7 +291,9 @@ check_marker "cards/zendikar.c" "comes_into_play(player, card, event) && pick_pl
 check_marker "cards/worldwake.c" "pick_player_duh(player, card, 1-player, 0)" "bojuka-bog-ai-target"
 check_marker "cards/worldwake.c" "comes_into_play(player, card, event) && pick_player_duh(player, card, 1-player, 0)" "bojuka-bog-normal-etb-target"
 check_marker "cards/darksteel.c" "this_dies_trigger(player, card, event, RESOLVE_TRIGGER_MANDATORY)" "myr-moonvessel-dies-trigger"
-check_marker "functions/ai.c" "int block_count = MIN(EXE_DWORD(0x607D54), 150);" "bounded-ai-blocker-count"
+check_marker_any "functions/ai.c" "bounded-ai-blocker-count" \
+  "int block_count = MIN(EXE_DWORD(0x607D54), 150);" \
+  "int block_count = MIN(EXE_DWORD(0x607D54), AI_BATTLEFIELD_CARD_CAPACITY);"
 check_marker "functions/ai.c" "trigger_cause_controller = blocking_player;" "validated-ai-pay-to-block-trigger"
 check_marker "functions/ai.c" "scnprintf(str, sizeof(str), \"%d: Entering AI Decision Phase.\\n\", EXE_DWORD(0x60EC40)++);" "bounded-ai-trace-prompt"
 check_marker "functions/ai.c" "AI_BATTLEFIELD_CARD_CAPACITY = 150" "bounded-ai-battlefield-capacity"
@@ -261,7 +301,9 @@ check_marker "functions/ai.c" "static int ai_player_is_valid(int player)" "bound
 check_marker "functions/ai.c" "static int ai_battlefield_card_slot_is_valid(int card)" "bounded-ai-card-slot-helper"
 check_marker "functions/ai.c" "!in_play(other_player, other_card)" "bounded-ai-destroy-if-blocked-in-play"
 check_marker "functions/events.c" "static int bounded_active_cards_count(int player)" "bounded-events-active-count-helper"
-check_marker "functions/events.c" "for (c = active_count; c < 150; ++c)" "bounded-events-processing-fill"
+check_marker_any "functions/events.c" "bounded-events-processing-fill" \
+  "for (c = active_count; c < 150; ++c)" \
+  "for (c = active_count; c < MAX_CARD_SLOTS; ++c)"
 check_marker "functions/events.c" "scnprintf(buf, sizeof(buf), \"%d: Player #%d is processing %s(%d).\\n\"," "bounded-event-trace-prompt"
 check_marker "functions/events.c" "scnprintf(buf, sizeof(buf), text_lines[0], opponent_name);" "bounded-event-proc-prompt"
 check_marker "functions/events.c" "static int should_resolve_ai_land_cip_trigger_without_stack(int player, int card)" "ai-land-cip-stack-bypass-helper"
@@ -275,8 +317,12 @@ check_marker "functions/engine.c" "scnprintf(buf, sizeof(buf), \"%d: Entering Un
 check_marker "functions/engine.c" "scnprintf(str, sizeof(str), \"%d: Entering UpKeep Phase.\\n\", EXE_DWORD(0x60EC40)++);" "bounded-engine-upkeep-trace"
 check_marker "functions/engine.c" "static void append_to_mana_prompt(char** cursor, char* end, const char* fmt, ...)" "bounded-engine-mana-prompt-helper"
 check_marker "functions/engine.c" "append_to_mana_prompt(&p, end, \"|%d\", generic);" "bounded-engine-generic-mana-prompt"
-check_marker "functions/engine.c" "enum { GLOBAL_ALL_PURPOSE_BUFFER_SIZE = 1000 };" "bounded-engine-global-buffer-size"
-check_marker "functions/engine.c" "enum { ENGINE_STACK_CAPACITY = 32 };" "bounded-engine-stack-capacity"
+check_marker_any "functions/engine.c" "bounded-engine-global-buffer-size" \
+  "enum { GLOBAL_ALL_PURPOSE_BUFFER_SIZE = 1000 };" \
+  "GLOBAL_ALL_PURPOSE_BUFFER_SIZE = 1000"
+check_marker_any "functions/engine.c" "bounded-engine-stack-capacity" \
+  "enum { ENGINE_STACK_CAPACITY = 32 };" \
+  "ENGINE_STACK_CAPACITY = 32"
 check_marker "functions/engine.c" "if (engine_stack_index_is_valid(stack_size))" "bounded-engine-stack-sentinel"
 check_marker "functions/engine.c" "if (!engine_stack_index_is_valid(pos))" "bounded-engine-recopy-stack-pos"
 check_marker "functions/engine.c" "scnprintf(p + written, GLOBAL_ALL_PURPOSE_BUFFER_SIZE - written, EXE_STR(0x786B00)" "bounded-engine-global-mana-prompt"
@@ -288,7 +334,9 @@ check_marker "functions/engine.c" "static int engine_player_is_valid(int player)
 check_marker "functions/engine.c" "static int engine_card_slot_is_valid(int card)" "bounded-engine-card-slot-helper"
 check_marker "functions/engine.c" "static int engine_csvid_is_valid(int csvid)" "bounded-engine-csvid-helper"
 check_marker "functions/engine.c" "engine_csvid_is_valid(instance->targets[12].player)" "bounded-engine-face-down-csvid"
-check_marker "functions/engine.c" "!engine_card_slot_is_valid(blocking_card) || !engine_card_slot_is_valid(blocked_card)" "bounded-engine-block-coordinates"
+check_marker_any "functions/engine.c" "bounded-engine-block-coordinates" \
+  "!engine_card_slot_is_valid(blocking_card) || !engine_card_slot_is_valid(blocked_card)" \
+  "!engine_card_ref_is_valid(blocking_player, blocking_card)"
 check_marker "functions/engine.c" "int active_count = bounded_engine_active_cards_count(player);" "bounded-engine-player-scan"
 check_marker "functions/engine.c" "for (c = 0; c < active_count; ++c, ++instance)" "bounded-engine-recalc-scan"
 check_marker "functions/deck.c" "scnprintf(buf, sizeof(buf), \"get_card_instance(%d, %d)\", player, card);" "bounded-deck-instance-backtrace"
@@ -296,19 +344,31 @@ check_marker "functions/deck.c" "scnprintf(buf, sizeof(buf), \"%s\", text_lines[
 check_marker "functions/deck.c" "if (id >= 0 && id < max_csvid)" "bounded-deck-csvid-cache-fill"
 check_marker "functions/deck.c" "csvid_to_iid && csvid >= 0 && csvid < max_csvid" "bounded-deck-csvid-cache-fastpath"
 check_marker "functions/deck.c" "if (cards_data[i].id == csvid)" "validated-deck-csvid-cache-search"
-check_marker "functions/deck.c" "if (player < HUMAN || player > AI || !deck || pos < 0 || pos >= 500)" "bounded-rfg-card-from-deck"
-check_marker "functions/deck.c" "while (rfg_pos < 500 && rfg[rfg_pos] != -1)" "bounded-rfg-whole-deck"
-check_marker "functions/deck.c" "memset(graveyard_source[player], -1, sizeof(graveyard_source[player]))" "scoped-rfg-graveyard-source-clear"
+check_marker_any "functions/deck.c" "bounded-rfg-card-from-deck" \
+  "if (player < HUMAN || player > AI || !deck || pos < 0 || pos >= 500)" \
+  "if (!deck_player_is_valid(player) || !deck_zone_has_card(deck, pos))"
+check_marker_any "functions/deck.c" "bounded-rfg-whole-deck" \
+  "while (rfg_pos < 500 && rfg[rfg_pos] != -1)" \
+  "int rfg_pos = find_free_zone_slot(rfg);"
+check_marker_any "functions/deck.c" "scoped-rfg-graveyard-source-clear" \
+  "memset(graveyard_source[player], -1, sizeof(graveyard_source[player]))" \
+  "obliterate_card_from_deck_impl(graveyard_source[player]"
 check_marker "functions/exiledby.c" "scnprintf(buf, sizeof(buf), \"No %s%scards have been exiled by %s.\"," "bounded-exiledby-empty-message"
-check_marker "functions/exiledby.c" "scnprintf(buf, sizeof(buf), \"%s%scards exiled by %s\"," "bounded-exiledby-title"
+check_marker_any "functions/exiledby.c" "bounded-exiledby-title" \
+  "scnprintf(buf, sizeof(buf), \"%s%scards exiled by %s\"," \
+  "scnprintf(buf, buflen, \"%s%scards exiled by %s\","
 check_marker "functions/exiledby.c" "static int bounded_exiledby_active_cards_count(int player)" "bounded-exiledby-active-count-helper"
 check_marker "functions/exiledby.c" "int active_count = bounded_exiledby_active_cards_count(player);" "bounded-exiledby-legacy-scan"
 check_marker "functions/functions.c" "int active_count = MIN(active_cards_count[i], 150);" "bounded-attack-power-scan"
 check_marker "functions/functions.c" "for(k=0; k<active_count; k++){" "bounded-cip-removal-scan"
 check_marker "functions/functions.c" "if (player < HUMAN || player > AI){" "count-subtype-player-guard"
 check_marker "functions/functions.c" "int active_count = MIN(active_cards_count[player], 150);" "bounded-count-subtype-in-hand"
-check_marker "functions/produce_mana.c" "for (count = 0; count < active_count && (color & 0x3F) != 0x3F; ++count){" "bounded-mana-color-scan"
-check_marker "functions/produce_mana.c" "int active_count = MIN(active_cards_count[AI], 150);" "bounded-ai-mana-burn-scan"
+check_marker_any "functions/produce_mana.c" "bounded-mana-color-scan" \
+  "for (count = 0; count < active_count && (color & 0x3F) != 0x3F; ++count){" \
+  "for (count = 0; count < active_count && (color & 0x3F) != 0x3F; ++count) {"
+check_marker_any "functions/produce_mana.c" "bounded-ai-mana-burn-scan" \
+  "int active_count = MIN(active_cards_count[AI], 150);" \
+  "int active_count = MIN(active_cards_count[AI], MAX_CARD_SLOTS);"
 check_marker "functions/produce_mana.c" "static const char* mana_prompt_card_full_name(int player, int card)" "bounded-mana-prompt-name-helper"
 check_marker "functions/produce_mana.c" "mana_prompt_card_full_name(affected_card_controller, affected_card)" "bounded-mana-prompt-source-name"
 check_marker "functions/produce_mana.c" "scnprintf(buf, sizeof(buf), \"%d mana left\", num_left);" "bounded-mana-choice-count-prompt"
@@ -317,7 +377,9 @@ check_marker "functions/multiblock.c" "static int bounded_active_cards_count(int
 check_marker "functions/multiblock.c" "static int valid_card_slot(int card)" "bounded-multiblock-card-slot-helper"
 check_marker "functions/multiblock.c" "int active_count = bounded_active_cards_count(player);" "bounded-multiblock-player-scan"
 check_marker "functions/multiblock.c" "if (!valid_card_slot(directly_blocked))" "validated-multiblock-directly-blocked"
-check_marker "functions/multiblock.c" "if (valid_card_slot(dsc) && in_play(opponent, dsc))" "validated-multiblocker-source-slot"
+check_marker_any "functions/multiblock.c" "validated-multiblocker-source-slot" \
+  "if (valid_card_slot(dsc) && in_play(opponent, dsc))" \
+  "if (safe_in_play(opponent, dsc))"
 check_marker "functions/sacrifices.c" "static int bounded_sacrifice_active_cards_count(int player)" "bounded-sacrifice-active-count-helper"
 check_marker "functions/sacrifices.c" "int active_count = bounded_sacrifice_active_cards_count(t_player);" "bounded-sacrifice-target-player-scan"
 check_marker "functions/sacrifices.c" "int active_count = bounded_sacrifice_active_cards_count(i);" "bounded-sacrifice-all-player-scan"
@@ -326,9 +388,13 @@ check_marker "functions/show_backtrace.c" "append_backtrace_text(char** cursor, 
 check_marker "functions/show_backtrace.c" "int wrote_dump = 0;" "guarded-backtrace-dump-open"
 check_marker "functions/show_backtrace.c" "Could not write \\\"dump.dmp\\\" in your Manalink" "backtrace-dump-write-failure-message"
 check_marker "functions/manipulate_and_damage_all.c" "static int bounded_active_cards_count(int player)" "bounded-manipulate-active-count-helper"
-check_marker "functions/manipulate_and_damage_all.c" "int marked[2][150];" "expanded-manipulate-marked-slots"
+check_marker_any "functions/manipulate_and_damage_all.c" "expanded-manipulate-marked-slots" \
+  "int marked[2][150];" \
+  "int marked[MAX_PLAYERS][MAX_CARD_SLOTS];"
 check_marker "functions/manipulate_and_damage_all.c" "for (c = active_count - 1; c >= 0; --c)" "bounded-manipulate-reverse-scan"
-check_marker "functions/manipulate_and_damage_all.c" "for( count = active_count-1; count >= 0; --count )" "bounded-damage-all-reverse-scan"
+check_marker_any "functions/manipulate_and_damage_all.c" "bounded-damage-all-reverse-scan" \
+  "for( count = active_count-1; count >= 0; --count )" \
+  "for (count = active_count - 1; count >= 0; --count) {"
 check_marker "functions/token_generation.c" "static int bounded_active_cards_count(int player)" "bounded-token-active-count-helper"
 check_marker "functions/token_generation.c" "int active_count = bounded_active_cards_count(p);" "bounded-token-doubler-scan"
 check_marker "functions/token_generation.c" "int c = bounded_active_cards_count(p)-1;" "bounded-legendary-token-scan"
@@ -347,7 +413,9 @@ check_marker "drawcardlib/drawcardlib.c" "gdip_create_graphics(HDC hdc" "drawcar
 check_marker "drawcardlib/drawcardlib.c" "gdip_create_bitmap_from_scan0(INT width" "drawcardlib-checked-bitmap-wrapper"
 check_marker "drawcardlib/drawcardlib.c" "gdip_draw_image_rect_rect(GpGraphics* graphics" "drawcardlib-checked-rect-rect-wrapper"
 check_marker "drawcardlib/drawcardlib.c" "gdip_lock_bits(GpBitmap* bitmap" "drawcardlib-checked-lock-wrapper"
-check_marker "drawcardlib/drawfullcard.c" "gdip_clone_bitmap_area(src_x * sym_wid" "drawfullcard-checked-symbol-crop"
+check_marker_any "drawcardlib/drawfullcard.c" "drawfullcard-checked-symbol-crop" \
+  "gdip_clone_bitmap_area(src_x * sym_wid" \
+  "gdip_clone_bitmap_area(src_x, src_y, src_wid, src_hgt"
 check_marker "drawcardlib/drawmanatext.c" "gdip_create_graphics(hdc, &gfx" "drawmanatext-checked-graphics"
 check_marker "drawcardlib/drawcounters.c" "gdip_get_image_size(gpics[CARDCOUNTERS]" "drawcounters-checked-size"
 check_marker "drawcardlib/config.c" "gdip_create_image_attributes(xform)" "drawcardlib-checked-image-attributes"

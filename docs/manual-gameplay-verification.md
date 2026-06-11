@@ -53,7 +53,7 @@ The environment rows below are filled from the automated baseline generated on
 identify the current local `MTG` CrossOver test target and hashes, but they are
 not visible gameplay results. The local `MTG` Manalink and Shandalar DLLs now
 include the raw-mana snapshot, Piranha Marsh trigger-target, Bojuka Bog
-trigger-target, generic AI player-target selector, and AI land CIP resolver
+trigger-target, generic AI target selector, and AI land CIP resolver
 stack-bypass handling patches, but this remains static copied-install evidence
 only. A manual Bojuka Bog retest failed after the selector-side,
 preselection-only, trigger-time immediate, end-trigger suppression,
@@ -143,6 +143,7 @@ killed after the alarm, so D1-D5 remain manual-visible tests.
 | R3 | During declare attackers, select an ordinary attacker, then click it again before `Done`. | It leaves the declared-attacker selection without becoming tapped or marked as having attacked. | Needs testing |
 | R4 | Repeat R3 with multiple attackers. | Only the clicked attacker is removed; remaining attackers stay declared. | Needs testing |
 | R5 | Repeat R3 with vigilance, attack-cost, attack-trigger, or banding edge cases if available. | Behavior is recorded; do not claim stable until edge cases are understood. | Needs testing |
+| R6 | In a Shandalar adventure duel, trigger Loam Larva's enters-the-battlefield ability while ordinary basic lands remain in the library. | The `Select a basic land card.` picker displays selectable basic lands, and choosing one resolves without freezing. | Pass: user-confirmed 2026-06-11 Shandalar adventure-duel Loam Larva ETB displayed selectable basic lands and resolved as expected. |
 
 ## Result Template
 

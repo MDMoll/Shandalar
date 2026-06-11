@@ -137,7 +137,7 @@ extern int mana_paid[7];	// Mana paid in the last successful call to charge_mana
 extern int mana_pool[16];
 extern int mana_in_pool[2][8];	// Same array as mana_pool, but matches original microprose declaration.  Transitional until mana_pool[] uses are cleaned up.
 extern int available_slots;
-char card_coded[30000/8];
+extern char card_coded[30000 / 8];
 extern int creatures_dead_this_turn;
 extern int activation_card;
 extern int ai_is_speculating;
@@ -198,7 +198,7 @@ extern int PAY_MANA_RED;
 extern int PAY_MANA_WHITE;
 extern int PAY_MANA_ARTIFACT;
 
-char* set_legacy_effect_name_addr;
+extern char* set_legacy_effect_name_addr;
 
 int pick_creature_to_regen(target_definition_t td);
 int is_creature_dead(void);

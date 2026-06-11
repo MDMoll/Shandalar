@@ -1,4 +1,6 @@
 // -*- c-basic-offset:2 -*-
+#include <limits.h>
+#include <stdint.h>
 #include <windows.h>
 
 #include "manalink.h"
@@ -6,6 +8,40 @@
 void UNUSED1(void){}
 void UNUSED2(void){}
 void UNUSED3(void){}
+
+enum
+{
+  DISPLAY_MAX_ACTIVE_CARDS = 150,
+  DISPLAY_MAX_CARD_HWND_COUNT = 150,
+  DISPLAY_TOOLTIP_MAX = 100
+};
+
+static int display_player_is_valid(int player)
+{
+  return player >= HUMAN && player <= AI;
+}
+
+static int display_card_slot_is_valid(int card)
+{
+  return card >= 0 && card < DISPLAY_MAX_ACTIVE_CARDS;
+}
+
+static int display_player_card_slot_is_valid(int player, int card)
+{
+  return display_player_is_valid(player) && display_card_slot_is_valid(card);
+}
+
+static int display_csvid_is_valid(int csvid)
+{
+  return csvid >= 0 && csvid < available_slots && cards_ptr[csvid] != NULL;
+}
+
+static int bounded_display_card_hwnd_count(int count)
+{
+  if (count < 0)
+	return 0;
+  return MIN(count, DISPLAY_MAX_CARD_HWND_COUNT);
+}
 
 static const int cardclass_offset_player = 0;
 static const int cardclass_offset_card = 4;
@@ -67,16 +103,18 @@ WINGDIAPI BOOL WINAPI AlphaBlend(HDC,int,int,int,int,HDC,int,int,int,int,BLENDFU
 
 static void stretchblt_from_bmp(HDC hdc, RECT* dest, HBITMAP src_bmp, int src_x, int src_y, int src_wid, int src_hgt)
 {
-  if (!(hdc && dest && src_bmp))
+  if (!(hdc && dest && src_bmp) || src_wid <= 0 || src_hgt <= 0)
     return;
 
   EnterCriticalSection(critical_section_for_drawing);
+
   int saved_dc = SaveDC(hdc);
-  SelectObject(hdc_4EB7AC, src_bmp);
+  HGDIOBJ old_src_obj = SelectObject(hdc_4EB7AC, src_bmp);
+
   int dest_x = dest->left;
   int dest_y = dest->top;
-  int dest_wid = dest->right < dest->left ? src_wid : dest->right - dest->left;
-  int dest_hgt = dest->bottom < dest->top ? src_hgt : dest->bottom - dest->top;
+  int dest_wid = dest->right <= dest->left ? src_wid : dest->right - dest->left;
+  int dest_hgt = dest->bottom <= dest->top ? src_hgt : dest->bottom - dest->top;
 
   BLENDFUNCTION blend;
   blend.BlendOp = AC_SRC_OVER;
@@ -86,9 +124,11 @@ static void stretchblt_from_bmp(HDC hdc, RECT* dest, HBITMAP src_bmp, int src_x,
 
   AlphaBlend(hdc, dest_x, dest_y, dest_wid, dest_hgt, hdc_4EB7AC, src_x, src_y, src_wid, src_hgt, blend);
 
-  // Shouldn't we reselect the old object first?
+  if (old_src_obj)
+	SelectObject(hdc_4EB7AC, old_src_obj);
 
-  RestoreDC(hdc, saved_dc);
+  if (saved_dc)
+	RestoreDC(hdc, saved_dc);
 
   LeaveCriticalSection(critical_section_for_drawing);
 }
@@ -99,28 +139,49 @@ static void stretchblt_bmp(HDC hdc, RECT* dest, HBITMAP src_bmp)
     return;
 
   BITMAP bmp;
-  GetObject(src_bmp, sizeof(BITMAP), &bmp);
+  if (!GetObject(src_bmp, sizeof(BITMAP), &bmp))
+	return;
+
   stretchblt_from_bmp(hdc, dest, src_bmp, 0, 0, bmp.bmWidth, bmp.bmHeight);
 }
 
 static void premultiply_alpha_bitmap(BITMAP* bmp)
 {
+  if (!bmp || !bmp->bmBits || bmp->bmBitsPixel != 32 || bmp->bmWidth <= 0 || bmp->bmHeight == 0)
+	return;
+
+  int height = bmp->bmHeight;
+  if (height < 0)
+	{
+	  if (height == INT_MIN)
+		return;
+	  height = -height;
+	}
+
+  if (height > INT_MAX / bmp->bmWidth)
+	return;
+
   unsigned char* bits = (unsigned char*)bmp->bmBits;
-  int sz = bmp->bmWidth * bmp->bmHeight;
+  int sz = bmp->bmWidth * height;
   int px;
   for (px = 0; px < sz; ++px)
     {
-      bits[0] = bits[0] * bits[3] / 256;
-      bits[1] = bits[1] * bits[3] / 256;
-      bits[2] = bits[2] * bits[3] / 256;
+      bits[0] = bits[0] * bits[3] / 255;
+      bits[1] = bits[1] * bits[3] / 255;
+      bits[2] = bits[2] * bits[3] / 255;
       bits += 4;
     }
 }
 
 static void premultiply_alpha_hbitmap(HBITMAP hbmp)
 {
+  if (!hbmp)
+	return;
+
   BITMAP bmp;
-  GetObject(hbmp, sizeof(BITMAP), &bmp);
+  if (!GetObject(hbmp, sizeof(BITMAP), &bmp))
+	return;
+
   premultiply_alpha_bitmap(&bmp);
 }
 
@@ -128,7 +189,7 @@ STATIC_ASSERT(sizeof(uint64_t) == sizeof(unsigned long long), unsigned_long_long
 
 static unsigned long long get_icons(int player, int card, int is_damage_card)
 {
-  if (player < 0 || player > 1 || card < 0 || card >= 150)
+  if (!display_player_card_slot_is_valid(player, card))
 	return 0;
 
   if (get_setting(SETTING_ABILITY_ICON_MAX) < 0)
@@ -139,63 +200,61 @@ static unsigned long long get_icons(int player, int card, int is_damage_card)
   keyword_t kw = 0;
   int spkw = 0;
   int not_valid_card = 0;
-  type_t typ;
-  {
-    card_instance_t* instance = get_displayed_card_instance(player, card);
+  type_t typ = TYPE_NONE;
 
-    EnterCriticalSection(critical_section_for_display);
+  EnterCriticalSection(critical_section_for_display);
 
-    iid_t iid = instance->internal_card_id;
+  card_instance_t* instance = get_displayed_card_instance(player, card);
+  iid_t iid = instance ? instance->internal_card_id : -1;
 
-	/* This check is the equivalent of !in_play(player, card), using instance instead of calling get_card_instance()
-	 * internally. */
-    if (iid >= 0
-		  && (instance->state & (STATE_OUBLIETTED|STATE_INVISIBLE|STATE_IN_PLAY)) == STATE_IN_PLAY)
-      {
-		if (is_damage_card == -1)	// i.e., caller doesn't know
-		  is_damage_card = cards_data[iid].id == 901;
+  /* This check is the equivalent of !in_play(player, card), using instance instead of calling get_card_instance()
+   * internally. */
+  if (iid >= 0
+	  && (instance->state & (STATE_OUBLIETTED|STATE_INVISIBLE|STATE_IN_PLAY)) == STATE_IN_PLAY)
+    {
+	  if (is_damage_card == -1)	// i.e., caller doesn't know
+		is_damage_card = cards_data[iid].id == 901;
 
-		if (is_damage_card)
-		  {
-			spkw = instance->targets[16].card & (SP_KEYWORD_DEATHTOUCH | SP_KEYWORD_LIFELINK | SP_KEYWORD_WITHER);
+	  if (is_damage_card)
+		{
+		  spkw = instance->targets[16].card & (SP_KEYWORD_DEATHTOUCH | SP_KEYWORD_LIFELINK | SP_KEYWORD_WITHER);
 
-			if (instance->regen_status & KEYWORD_INFECT)
-			  rval |= 1ULL<<ICON_INFECT;
+		  if (instance->regen_status & KEYWORD_INFECT)
+			rval |= 1ULL<<ICON_INFECT;
 
-			if (instance->token_status & STATUS_FIRST_STRIKE_DAMAGE)
-			  rval |= 1ULL<<ICON_FIRST_STRIKE;
+		  if (instance->token_status & STATUS_FIRST_STRIKE_DAMAGE)
+			rval |= 1ULL<<ICON_FIRST_STRIKE;
 
-			if (instance->token_status & STATUS_TRAMPLE_DAMAGE)
-			  rval |= 1ULL<<ICON_TRAMPLE;
+		  if (instance->token_status & STATUS_TRAMPLE_DAMAGE)
+			rval |= 1ULL<<ICON_TRAMPLE;
 
-			typ = TYPE_EFFECT;
-		  }
-		else
-		  {
-			kw = (keyword_t)instance->regen_status;
-			spkw = get_special_abilities_by_instance(instance);
-			if (spkw == -1)
-			  spkw = 0;
-			//untap_status = (untap_status_t)instance->untap_status;
+		  typ = TYPE_EFFECT;
+		}
+	  else
+		{
+		  kw = (keyword_t)instance->regen_status;
+		  spkw = get_special_abilities_by_instance(instance);
+		  if (spkw == -1)
+			spkw = 0;
+		  //untap_status = (untap_status_t)instance->untap_status;
 
-			typ = (type_t)cards_data[iid].type;
+		  typ = (type_t)cards_data[iid].type;
 
-			// This is mildly dangerous; cards_data can change during speculation.  But it's rare, and magic.exe already does it lots.
-			// const card_data_t* cd = &cards_data[iid];
-			// if ((typ & (TYPE_INSTANT|TYPE_INTERRUPT)) && (cd->type & TYPE_PERMANENT))
-			// rval |= 1ULL<<ICON_FLASH;	// won't actually show up in Manalink since all icons are suppressed while off battlefield
+		  // This is mildly dangerous; cards_data can change during speculation.  But it's rare, and magic.exe already does it lots.
+		  // const card_data_t* cd = &cards_data[iid];
+		  // if ((typ & (TYPE_INSTANT|TYPE_INTERRUPT)) && (cd->type & TYPE_PERMANENT))
+		  // rval |= 1ULL<<ICON_FLASH;	// won't actually show up in Manalink since all icons are suppressed while off battlefield
 
-			if (is_humiliated_by_instance(instance))
-			  rval |= 1ULL<<ICON_LOST_ABILITIES;
-			else if (!can_use_activated_abilities_by_instance(instance))
-			  rval |= 1ULL<<ICON_CANT_ACTIVATE;
-		  }
-      }
-	else
-	  not_valid_card = 1;
+		  if (is_humiliated_by_instance(instance))
+			rval |= 1ULL<<ICON_LOST_ABILITIES;
+		  else if (!can_use_activated_abilities_by_instance(instance))
+			rval |= 1ULL<<ICON_CANT_ACTIVATE;
+		}
+    }
+  else
+	not_valid_card = 1;
 
-    LeaveCriticalSection(critical_section_for_display);
-  }
+  LeaveCriticalSection(critical_section_for_display);
 
   if (is_damage_card || not_valid_card || (typ & TYPE_EFFECT))
     return rval;
@@ -309,7 +368,7 @@ static void copy_rect_for_ability(RECT* dest, const RECT* src, int pos)
   int max_icons = get_setting(SETTING_ABILITY_ICON_MAX);
   if (max_icons < 0)
     max_icons = ICON_MAX + 1;
-  if (!src || pos >= max_icons)
+  if (!src || pos < 0 || pos >= max_icons)
     {
       SetRect(dest, 0,0, 0,0);
       return;
@@ -320,6 +379,8 @@ static void copy_rect_for_ability(RECT* dest, const RECT* src, int pos)
     size_plus_1 += 1;
   else
     size_plus_1 = 16 * (src->right - src->left) / 100 + 1;	// originally 17*, reduced to 16 so it can fit 6 across on upper rows
+
+  size_plus_1 = MAX(2, size_plus_1);
 
   int x = src->left + 1;
   int y = src->bottom - size_plus_1;
@@ -359,10 +420,13 @@ static void draw_abilities(HDC hdc, RECT* rect, int player, int card, int is_dam
       once = 0;
 
 	  char path[MAX_PATH];
-	  int ability_icon_file_as_int = get_setting(SETTING_ABILITY_ICON_FILE);
-	  scnprintf(path, MAX_PATH, "%s\\%s", path_CardArt, (const char*)ability_icon_file_as_int);
-	  bmp_abilities_pic = read_graphics_file2(path);
-	  premultiply_alpha_hbitmap(bmp_abilities_pic);
+	  const char* ability_icon_file = (const char*)(intptr_t)get_setting(SETTING_ABILITY_ICON_FILE);
+	  if (ability_icon_file && *ability_icon_file)
+		{
+		  scnprintf(path, sizeof(path), "%s\\%s", path_CardArt, ability_icon_file);
+		  bmp_abilities_pic = read_graphics_file2(path);
+		  premultiply_alpha_hbitmap(bmp_abilities_pic);
+		}
 	}
 
   if (!bmp_abilities_pic)
@@ -375,9 +439,20 @@ static void draw_abilities(HDC hdc, RECT* rect, int player, int card, int is_dam
   int saved_dc = SaveDC(hdc);
 
   BITMAP bmp;
-  GetObject(bmp_abilities_pic, sizeof(BITMAP), &bmp);
+  if (!GetObject(bmp_abilities_pic, sizeof(BITMAP), &bmp) || bmp.bmHeight <= 0)
+	{
+	  if (saved_dc)
+		RestoreDC(hdc, saved_dc);
+	  return;
+	}
 
   int src_size = bmp.bmHeight / 5;
+  if (src_size <= 0)
+	{
+	  if (saved_dc)
+		RestoreDC(hdc, saved_dc);
+	  return;
+	}
 
   RECT dest;
 
@@ -399,11 +474,15 @@ static void draw_abilities(HDC hdc, RECT* rect, int player, int card, int is_dam
 						  bmp_abilities_pic, src_x, src_y, src_size, src_size);
     }
 
-  RestoreDC(hdc, saved_dc);
+  if (saved_dc)
+	RestoreDC(hdc, saved_dc);
 }
 
 static int card_instances_will_have_same_icons(card_instance_t* inst1, card_instance_t* inst2)
 {
+  if (!inst1 || !inst2)
+	return 0;
+
   // By the time we get here, we already know that the cards have the same iid, so no change in flash, or legendary.
   if ((inst1->regen_status ^ inst2->regen_status)
       & (((KEYWORD_SHROUD<<1)-1) /*| KEYWORD_PROT_CREATURES*/ | KEYWORD_DEFENDER | KEYWORD_INFECT | KEYWORD_DOUBLE_STRIKE))
@@ -530,10 +609,17 @@ LRESULT __stdcall wndproc_CardClass_hook(HWND hwnd, UINT msg, WPARAM wparam, LPA
 				player = GetWindowLongA(hwnd, cardclass_offset_player);
 				card = GetWindowLongA(hwnd, cardclass_offset_card);
 
+				if (!display_player_card_slot_is_valid(player, card))
+				  return 0;
+
 				card_instance_t* instance = get_displayed_card_instance(player, card);
+				if (!instance || (int)instance->original_internal_card_id < 0)
+				  return 0;
+
 				int oici = instance->original_internal_card_id;
 				int csvid = cards_data[oici].id;
-				SendMessage(hwnd_FullCardClass, 0x401, csvid, 0);
+				if (display_csvid_is_valid(csvid))
+				  SendMessage(hwnd_FullCardClass, 0x401, csvid, 0);
 			  }
 			  return 0;
 
@@ -546,13 +632,16 @@ LRESULT __stdcall wndproc_CardClass_hook(HWND hwnd, UINT msg, WPARAM wparam, LPA
 				  player = GetWindowLongA(hwnd, cardclass_offset_player);
 				  card = GetWindowLongA(hwnd, cardclass_offset_card);
 
-				  card_instance_t* instance = get_card_instance(player, card);
-				  instance->token_status |= STATUS_OBLITERATED;	// prevents it from being put into graveyard
+				  if (display_player_card_slot_is_valid(player, card))
+					{
+					  card_instance_t* instance = get_card_instance(player, card);
+					  instance->token_status |= STATUS_OBLITERATED;	// prevents it from being put into graveyard
 
-				  if (in_play(player, card) && is_what(player, card, TYPE_PERMANENT))
-					kill_card(player, card, KILL_STATE_BASED_ACTION);	// Added
-				  else
-					kill_card(player, card, KILL_BURY);
+					  if (in_play(player, card) && is_what(player, card, TYPE_PERMANENT))
+						kill_card(player, card, KILL_STATE_BASED_ACTION);	// Added
+					  else
+						kill_card(player, card, KILL_BURY);
+					}
 
 				  option_PhaseStoppers[current_turn][current_phase] = old_phasestopper;
 				}
@@ -568,9 +657,16 @@ LRESULT __stdcall wndproc_CardClass_hook(HWND hwnd, UINT msg, WPARAM wparam, LPA
 		card = GetWindowLong(hwnd, cardclass_offset_card);
 		if (card == -1 && player != -1)
 		  return 0;
+		if (!display_player_card_slot_is_valid(player, card))
+		  return 0;
 
-		int stashed_instance_cast_to_int = GetWindowLong(hwnd, cardclass_offset_instance_copy);
-		card_instance_t* stashed = (card_instance_t *)stashed_instance_cast_to_int;
+		card_instance_t* stashed = (card_instance_t *)(intptr_t)GetWindowLong(hwnd, cardclass_offset_instance_copy);
+		if (!stashed)
+		  {
+			InvalidateRect(hwnd, 0, 0);
+			return 0;
+		  }
+
 		memcpy_displayed_card_instance_t(&actual, player, card);
 		if (!card_instances_should_be_displayed_identically(stashed, &actual)
 			|| (option_ShowAbilitiesOnCards && !card_instances_will_have_same_icons(stashed, &actual)))
@@ -591,7 +687,7 @@ LRESULT __stdcall wndproc_CardClass_hook(HWND hwnd, UINT msg, WPARAM wparam, LPA
 		  }
 
 		if ((actual.state & STATE_TAPPED)
-			|| actual.internal_card_id == -1)
+			|| actual.internal_card_id < 0)
 		  {
 			InvalidateRect(hwnd, 0, 0);
 			return 0;
@@ -604,7 +700,16 @@ LRESULT __stdcall wndproc_CardClass_hook(HWND hwnd, UINT msg, WPARAM wparam, LPA
 			return 0;
 		  }
 
+		if (!display_csvid_is_valid(csvid))
+		  {
+			InvalidateRect(hwnd, 0, 0);
+			return 0;
+		  }
+
 		HDC hdc = GetDC(hwnd);
+		if (!hdc)
+		  return 0;
+
 		set_palette_and_stretch_mode(hdc);
 		RECT r;
 		GetClientRect(hwnd, &r);
@@ -618,7 +723,7 @@ LRESULT __stdcall wndproc_CardClass_hook(HWND hwnd, UINT msg, WPARAM wparam, LPA
 		return 0;
 
 	  case 0x437:	// tooltips
-		;char tooltip[100];
+		;char tooltip[DISPLAY_TOOLTIP_MAX];
 		tooltip[0] = 0;
 
 		player = GetWindowLongA(hwnd, cardclass_offset_player);
@@ -629,7 +734,7 @@ LRESULT __stdcall wndproc_CardClass_hook(HWND hwnd, UINT msg, WPARAM wparam, LPA
 
 		if (player != -1 && card == -1)
 		  strcpy(tooltip, EXE_STR(0x6286f4));	// CUECARD_SMALLCARD[0] = Damage to player
-		else
+		else if (display_player_card_slot_is_valid(player, card))
 		  {
 			RECT client_rect, rect;
 			GetClientRect(hwnd, &client_rect);
@@ -660,12 +765,12 @@ LRESULT __stdcall wndproc_CardClass_hook(HWND hwnd, UINT msg, WPARAM wparam, LPA
 				 * option_ShowAbilitiesOnCards and works correctly for the icons on damage cards, both of which the
 				 * exe version neglects to do. */
 
-				strcpy(tooltip, ability_tooltip);
+				scnprintf(tooltip, sizeof(tooltip), "%s", ability_tooltip);
 			  }
 			else if (instance->damage_on_card > 0
 					 && (EXE_FN(void, 0x4d3770, RECT*, RECT*)(&rect, &client_rect),	// copy_damage_rect()
 						 PtInRect(&rect, pt)))
-			  sprintf(tooltip, EXE_STR(0x786230), instance->damage_on_card);	// CUECARD_SMALLCARD[2] = Damage: %d
+			  scnprintf(tooltip, sizeof(tooltip), EXE_STR(0x786230), instance->damage_on_card);	// CUECARD_SMALLCARD[2] = Damage: %d
 			else if (instance->special_counters > 0
 					 && (EXE_FN(void, 0x4d3b60, RECT*, RECT*, int)(&rect, &client_rect, instance->special_counters),	// copy_special_counter_rect()
 						 PtInRect(&rect, pt)))
@@ -701,7 +806,7 @@ LRESULT __stdcall wndproc_CardClass_hook(HWND hwnd, UINT msg, WPARAM wparam, LPA
 					get_counter_name_by_type(m1m1, COUNTER_M1_M1, instance->counters_m1m1);
 					char p1p1[100];
 					get_counter_name_by_type(p1p1, COUNTER_P1_P1, instance->counters);
-					scnprintf(tooltip, 100, "%s; %s", m1m1, p1p1);
+					scnprintf(tooltip, sizeof(tooltip), "%s; %s", m1m1, p1p1);
 				  }
 			  }
 			else if (!(instance->state & STATE_OWNED_BY_OPPONENT) != !player && pt.y < 12 * client_rect.bottom / 100)
@@ -724,14 +829,15 @@ LRESULT __stdcall wndproc_CardClass_hook(HWND hwnd, UINT msg, WPARAM wparam, LPA
 				  strcpy(tooltip, EXE_STR(0x786f08));	// CUECARD_SMALLCARD[7] = Dying
 				else
 				  {
-					int is_summonsick = ((instance->state & STATE_SUMMON_SICK)
+					int is_summonsick = (instance->internal_card_id >= 0
+										 && (instance->state & STATE_SUMMON_SICK)
 										 && (option_ShowAllCardsSummonSickness
 											 || (cards_data[instance->internal_card_id].type & TYPE_CREATURE)));
 					int is_phased = instance->state & STATE_OUBLIETTED;
 					if (is_summonsick && is_phased)
-					  sprintf(tooltip, "%s, %s",
-							  EXE_STR(0x728374),	// CUECARD_SMALLCARD[8] = Summoning sickness
-							  EXE_STR(0x62bcf0));	// CUECARD_SMALLCARD[9] = Phased
+					  scnprintf(tooltip, sizeof(tooltip), "%s, %s",
+								EXE_STR(0x728374),	// CUECARD_SMALLCARD[8] = Summoning sickness
+								EXE_STR(0x62bcf0));	// CUECARD_SMALLCARD[9] = Phased
 					else if (is_summonsick)
 					  strcpy(tooltip, EXE_STR(0x728374));	// CUECARD_SMALLCARD[8] = Summoning sickness
 					else if (is_phased)
@@ -763,35 +869,37 @@ LRESULT __stdcall wndproc_MainClass_hook(HWND hwnd, UINT msg, WPARAM wparam, LPA
             case 0x26c:
             case 0x26d:
             case 0x26e:
-              if (!debug_mode)
+			  {
+				if (!debug_mode)
+				  return 0;
+
+				int player = (cmd == 0x26b || cmd == 0x26d) ? 0 : 1;
+				int onto_bf = cmd == 0x26b || cmd == 0x26c;
+				int iid = choose_a_card(onto_bf
+										? (player == 0 ? "Pick a card to put on battlefield"
+										   : "Pick a card to put on opponent's battlefield")
+										: (player == 0 ? "Pick a card to put in your hand"
+										   : "Pick a card to put in opponent's hand"),
+										-1, -1);
+				if (iid < 0)
+				  return 0;
+
+				int old_phasestopper = option_PhaseStoppers[current_turn][current_phase];
+				option_PhaseStoppers[current_turn][current_phase] &= ~1;
+
+				int c = add_card_to_hand(player, iid);
+				if (c != -1)
+				  {
+					update_rules_engine(check_card_for_rules_engine(iid));
+					if (onto_bf)
+					  put_into_play(player, c);
+				  }
+
+				option_PhaseStoppers[current_turn][current_phase] = old_phasestopper;
+				EXE_FN(int, 0x437ec0, int, int)(0, 0xFF);	// redisplay_all()
+
 				return 0;
-
-			  int player = (cmd == 0x26b || cmd == 0x26d) ? 0 : 1;
-			  int onto_bf = cmd == 0x26b || cmd == 0x26c;
-			  int iid = choose_a_card(onto_bf
-									  ? (player == 0 ? "Pick a card to put on battlefield"
-										 : "Pick a card to put on opponent's battlefield")
-									  : (player == 0 ? "Pick a card to put in your hand"
-										 : "Pick a card to put in opponent's hand"),
-									  -1, -1);
-			  if (iid < 0)
-				return 0;
-
-			  int old_phasestopper = option_PhaseStoppers[current_turn][current_phase];
-			  option_PhaseStoppers[current_turn][current_phase] &= ~1;
-
-			  int c = add_card_to_hand(player, iid);
-			  if (c != -1)
-				{
-				  update_rules_engine(check_card_for_rules_engine(iid));
-				  if (onto_bf)
-					put_into_play(player, c);
-				}
-
-			  option_PhaseStoppers[current_turn][current_phase] = old_phasestopper;
-			  EXE_FN(int, 0x437ec0, int, int)(0, 0xFF);	// redisplay_all()
-
-			  return 0;
+			  }
 		  }
 		break;	// And fall through to call to wndproc_CardClass() below
 	}
@@ -813,8 +921,8 @@ static HBITMAP get_bmp_experience(void)
   static HBITMAP bmp_experience_pic = NULL;
   if (!bmp_experience_pic)
     {
-      char path[264];
-      sprintf(path, "%s\\exper.pic", path_CardArt);
+      char path[MAX_PATH];
+      scnprintf(path, sizeof(path), "%s\\exper.pic", path_CardArt);
       bmp_experience_pic = read_graphics_file(path);
       premultiply_alpha_hbitmap(bmp_experience_pic);
     }
@@ -823,6 +931,9 @@ static HBITMAP get_bmp_experience(void)
 
 static void paint_one_counter_type(HDC hdc, int width, int height, HBITMAP bmp, int num_counters, void (*blt_fn)(HDC, RECT*, HBITMAP))
 {
+  if (!hdc || !bmp || !blt_fn || width <= 0 || height <= 0 || num_counters <= 0)
+	return;
+
   // Is this ever overengineered.
   int counter_width = width;
   int counter_height = (4 * height) / 3;
@@ -907,6 +1018,9 @@ static void paint_one_counter_type(HDC hdc, int width, int height, HBITMAP bmp, 
       counter_height /= 19;	// 4height/57: < 1/14
     }
 
+  counter_width = MAX(1, counter_width);
+  counter_height = MAX(1, counter_height);
+
   int x = 0;
   int y = 0;
   RECT rc;
@@ -927,6 +1041,9 @@ static void paint_one_counter_type(HDC hdc, int width, int height, HBITMAP bmp, 
 static void paint_half_of_two_counter_types(HDC hdc, int width, int height, int offset_x,
 											HBITMAP bmp, int num_counters, void (*blt_fn)(HDC, RECT*, HBITMAP))
 {
+  if (!hdc || !bmp || !blt_fn || width <= 0 || height <= 0 || num_counters <= 0)
+	return;
+
   int counter_width = width;
   int counter_height = (4 * height) / 3;
   // width is halved for this, hence e.g. /10 becomes 5 across
@@ -996,17 +1113,20 @@ static void paint_half_of_two_counter_types(HDC hdc, int width, int height, int 
       counter_height /= 28;	// height/21
     }
 
+  counter_width = MAX(1, counter_width);
+  counter_height = MAX(1, counter_height);
+
   int x = 0;
   int y = 0;
   RECT rc;
   int i;
-  width /= 2;
+  int half_width = MAX(1, width / 2);
   for (i = 0; i < num_counters; ++i)
     {
       SetRect(&rc, offset_x + x, y, offset_x + x + counter_width, y + counter_height);
       blt_fn(hdc, &rc, bmp);
       x += counter_width;
-      if (x + counter_width > width)
+      if (x + counter_width > half_width)
 		{
 		  x = 0;
 		  y += counter_height;
@@ -1024,6 +1144,9 @@ static void paint_two_counter_types(HDC hdc, int width, int height,
 
 void paint_player_counters(HDC hdc, int width, int height, int player_counters_cast_to_int)
 {
+  if (!hdc || width <= 0 || height <= 0)
+	return;
+
   PlayerCounters counters = *(PlayerCounters*)(&player_counters_cast_to_int);
   if (counters.poison_ > 0 && counters.experience_ > 0)
     paint_two_counter_types(hdc, width, height,
@@ -1046,34 +1169,36 @@ LRESULT __stdcall wndproc_LifeClass_hook(HWND hwnd, UINT msg, WPARAM wparam, LPA
 
       case WM_USER + 0x37:	// hover
 		;
-		char dest[300];	// so there's no worries of overflow here
-		*dest = 0;
-		char* p = dest;
+		char dest[300];
+		char player_name[128];
+		int pos = 0;
+
+		dest[0] = 0;
+		player_name[0] = 0;
 
 		if (hwnd == hwnd_LifeClass_player)
-		  p += sprintf(p, "Your life: ");
+		  pos += scnprintf(dest + pos, sizeof(dest) - pos, "Your life: ");
 		else
 		  {
-			copy_opponent_name_until_dash(p);
-			while (*p)
-			  ++p;
-			p += sprintf(p, "'s life: ");
+			copy_opponent_name_until_dash(player_name);
+			player_name[sizeof(player_name) - 1] = 0;
+			pos += scnprintf(dest + pos, sizeof(dest) - pos, "%s's life: ", player_name);
 		  }
 
 		if (GetWindowLong(hwnd, lifeclass_offset_liched))
-		  p += sprintf(p, "LICH");
+		  pos += scnprintf(dest + pos, sizeof(dest) - pos, "LICH");
 		else
-		  p += sprintf(p, "%ld", GetWindowLong(hwnd, lifeclass_offset_life));
+		  pos += scnprintf(dest + pos, sizeof(dest) - pos, "%ld", GetWindowLong(hwnd, lifeclass_offset_life));
 
 		int stored_player_counters_cast_to_int = GetWindowLong(hwnd, lifeclass_offset_player_counters);
 		PlayerCounters stored_player_counters = *(PlayerCounters*)(&stored_player_counters_cast_to_int);
 
 		if (stored_player_counters.poison_)
-		  p += sprintf(p, " Poison counters: %d", stored_player_counters.poison_);
+		  pos += scnprintf(dest + pos, sizeof(dest) - pos, " Poison counters: %d", stored_player_counters.poison_);
 		if (stored_player_counters.experience_)
-		  p += sprintf(p, " Experience counters: %d", stored_player_counters.experience_);
+		  pos += scnprintf(dest + pos, sizeof(dest) - pos, " Experience counters: %d", stored_player_counters.experience_);
 
-		dest[99] = 0;	// actual maximum length
+		dest[DISPLAY_TOOLTIP_MAX - 1] = 0;	// actual maximum length
 
 		strcpy((char*)wparam, dest);
 		return 1;
@@ -1099,7 +1224,9 @@ int set_smallcard_size(int mainwindow_width)
 
   int sz = setting_smallcard_size;
   if (sz < 0)
-    sz = mainwindow_width / -sz;
+    sz = mainwindow_width > 0 ? mainwindow_width / -sz : 1;
+
+  sz = MAX(1, sz);
 
   smallcard_width = smallcard_height = sz;
 
@@ -1108,9 +1235,9 @@ int set_smallcard_size(int mainwindow_width)
 
 void update_hand_window(HWND hwnd)
 {
-  int num_cards = GetWindowLong(hwnd, 4);
+  int num_cards = bounded_display_card_hwnd_count(GetWindowLong(hwnd, 4));
   int cw = GetWindowLong(hwnd, 0);
-  HWND* card_hwnds = (HWND *)cw;
+  HWND* card_hwnds = (HWND *)(intptr_t)cw;
 
   int v19, v22, v2, v3;
   EXE_FN(void, 0x47d850, int, int, int, int, int, int,
@@ -1128,9 +1255,13 @@ void update_hand_window(HWND hwnd)
 	  || (hwnd == EXE_PTR_VOID(0x786dc4)	// hwnd_HandClass_opponent
 		  && ((EXE_DWORD(0x628c24) & 2) || EXE_DWORD(0x628c28))))
 	{
-	  int cards_to_show = MIN(num_cards, get_setting(SETTING_HAND_SIZE));
+	  int hand_size = get_setting(SETTING_HAND_SIZE);
+	  if (hand_size < 0)
+		hand_size = 0;
 
-	  if (cards_to_show > 0)
+	  int cards_to_show = MIN(num_cards, hand_size);
+
+	  if (cards_to_show > 0 && card_hwnds)
 		{
 		  int offset = EXE_DWORD(0x7A31A4);
 
@@ -1139,6 +1270,9 @@ void update_hand_window(HWND hwnd)
 		  int x = v2 + v3;
 		  int y = hand_window_height - v22 - smallcard_height;
 		  int j = GetWindowLong(hwnd, 28);
+		  if (j < 0 || j >= num_cards)
+			j = num_cards - 1;
+
 		  HWND hwnd_after = NULL;
 
 		  int i;
@@ -1172,9 +1306,12 @@ void update_hand_window(HWND hwnd)
 	}
   else
 	{
-	  int i;
-	  for (i = 0; i < num_cards; ++i)
-		MoveWindow(card_hwnds[i], -1, -1, 0, 0, 1);
+	  if (card_hwnds)
+		{
+		  int i;
+		  for (i = 0; i < num_cards; ++i)
+			MoveWindow(card_hwnds[i], -1, -1, 0, 0, 1);
+		}
 	  SetWindowPos(hwnd, 0, 0, 0, hand_window_width, hand_window_height, SWP_NOZORDER|SWP_NOMOVE);
 	}
 }
@@ -1270,6 +1407,9 @@ int play_sound_effect(wav_t soundnum)
   if (ai_is_speculating == 1)
     return 0;
 
+  if ((int)soundnum < 0 || soundnum > WAV_HIGHEST || !wav_filenames[soundnum])
+	return 0;
+
   typedef struct	// very little idea what any of these fields do.
   {
 	int field_0;
@@ -1304,10 +1444,8 @@ int play_sound_effect(wav_t soundnum)
   wav_t adj_soundnum = soundnum;
   if (!EXE_FN(int, 0x45a270, wav_t, wav_t*)(soundnum, &adj_soundnum))	// call_IsSndLoaded()
     {
-      char path[300];
-      strcpy(path, EXE_STR(0x715788));	// path_DuelSounds
-      strcat(path, "\\");
-      strcat(path, wav_filenames[soundnum]);
+      char path[MAX_PATH];
+      scnprintf(path, sizeof(path), "%s\\%s", EXE_STR(0x715788), wav_filenames[soundnum]);	// path_DuelSounds
       EXE_FN(int, 0x45a1c0, const char*, int, sound_t*)(path, adj_soundnum, &snd);	// call_LoadSnd()
     }
 
@@ -1318,14 +1456,22 @@ int play_sound_effect(wav_t soundnum)
 
 int get_displayed_pic_num_and_pic_csv_id_of_parent_playercard(target_t* ret_parent, int player, int card)
 {
-  if (player < 0 || player > 1
-	  || card < 0 || card >= 150)
+  if (!ret_parent)
+	return -1;
+
+  if (!display_player_card_slot_is_valid(player, card))
 	{
 	  ret_parent->player = ret_parent->card = -1;
 	  return -1;
 	}
 
   card_instance_t* inst = get_displayed_card_instance(player, card);
+  if (!inst)
+	{
+	  ret_parent->player = ret_parent->card = -1;
+	  return -1;
+	}
+
   ret_parent->player = inst->parent_controller;
   ret_parent->card = inst->parent_card;
 
@@ -1335,37 +1481,47 @@ int get_displayed_pic_num_and_pic_csv_id_of_parent_playercard(target_t* ret_pare
 }
 
 #define path_DuelArt		EXE_STR(0x739e30)
+
+static HBITMAP read_duel_art_asset(const char* filename)
+{
+  char path[MAX_PATH];
+  scnprintf(path, sizeof(path), "%s\\%s", path_DuelArt, filename);
+  return read_graphics_file(path);
+}
+
 void load_startduel_assets(HGDIOBJ* a1, COLORREF* a2, HGDIOBJ* a3, HGDIOBJ* a4, HGDIOBJ* a5, COLORREF* a6,
 						   COLORREF* a7)
 {
-  char path[264];
-
-  sprintf(path, "%s\\WINBK_StartDuel.bmp", path_DuelArt);
-  *a1 = read_graphics_file(path);
-  *a2 = 0;
-  sprintf(path, "%s\\WINBK_StartDuelButtonNormal.bmp", path_DuelArt);
-  *a3 = read_graphics_file(path);
-  sprintf(path, "%s\\WINBK_StartDuelButtonDepressed.bmp", path_DuelArt);
-  *a4 = read_graphics_file(path);
-  sprintf(path, "%s\\WINBK_StartDuelButtonDisabled.pic", path_DuelArt);
-  *a5 = read_graphics_file(path);
-  *a6 = 0x1000001;
-  *a7 = 0x10000BF;
+  if (a1)
+	*a1 = read_duel_art_asset("WINBK_StartDuel.bmp");
+  if (a2)
+	*a2 = 0;
+  if (a3)
+	*a3 = read_duel_art_asset("WINBK_StartDuelButtonNormal.bmp");
+  if (a4)
+	*a4 = read_duel_art_asset("WINBK_StartDuelButtonDepressed.bmp");
+  if (a5)
+	*a5 = read_duel_art_asset("WINBK_StartDuelButtonDisabled.pic");
+  if (a6)
+	*a6 = 0x1000001;
+  if (a7)
+	*a7 = 0x10000BF;
 }
 
 void load_startduel_assets2(HGDIOBJ* a1, COLORREF* a2, HGDIOBJ* a3, HGDIOBJ* a4, COLORREF* a5, COLORREF* a6)
 {
-  char path[264];
-
-  sprintf(path, "%s\\WINBK_StartDuel2.bmp", path_DuelArt);
-  *a1 = read_graphics_file(path);
-  *a2 = 0;
-  sprintf(path, "%s\\WINBK_StartDuelButtonNormal.bmp", path_DuelArt);
-  *a3 = read_graphics_file(path);
-  sprintf(path, "%s\\WINBK_StartDuelButtonDepressed.bmp", path_DuelArt);
-  *a4 = read_graphics_file(path);
-  *a5 = 0x1000001;
-  *a6 = 0x10000BF;
+  if (a1)
+	*a1 = read_duel_art_asset("WINBK_StartDuel2.bmp");
+  if (a2)
+	*a2 = 0;
+  if (a3)
+	*a3 = read_duel_art_asset("WINBK_StartDuelButtonNormal.bmp");
+  if (a4)
+	*a4 = read_duel_art_asset("WINBK_StartDuelButtonDepressed.bmp");
+  if (a5)
+	*a5 = 0x1000001;
+  if (a6)
+	*a6 = 0x10000BF;
 }
 
 // no need to link gdi32 just for this function when Magic.exe does it already anyway.
@@ -1375,20 +1531,22 @@ void load_startduel_assets2(HGDIOBJ* a1, COLORREF* a2, HGDIOBJ* a3, HGDIOBJ* a4,
 void load_endduel_assets(HGDIOBJ *a1, COLORREF *a2, COLORREF *a3, HBRUSH *a4, HPEN *a5, HPEN *a6, COLORREF *a7,
 						 COLORREF *a8)
 {
-  char path[264];
-
-  sprintf(path, "%s\\WINBK_EndDuel.bmp", path_DuelArt);
-  *a1 = read_graphics_file(path);
-  *a2 = 0x1000040u;
-  *a3 = 0x1000040u;
-  if (!(*a4 = manalink_CreateSolidBrush(0x100001Au)))
+  if (a1)
+	*a1 = read_duel_art_asset("WINBK_EndDuel.bmp");
+  if (a2)
+	*a2 = 0x1000040u;
+  if (a3)
+	*a3 = 0x1000040u;
+  if (a4 && !(*a4 = manalink_CreateSolidBrush(0x100001Au)))
     *a4 = manalink_GetStockObject(GRAY_BRUSH);
-  if (!(*a5 = manalink_CreatePen(0, 0, 0x100008Cu)))
+  if (a5 && !(*a5 = manalink_CreatePen(0, 0, 0x100008Cu)))
     *a5 = manalink_GetStockObject(WHITE_PEN);
-  if (!(*a6 = manalink_CreatePen(0, 0, 0x1000001u)))
+  if (a6 && !(*a6 = manalink_CreatePen(0, 0, 0x1000001u)))
     *a6 = manalink_GetStockObject(BLACK_PEN);
-  *a7 = 0x1000040u;
-  *a8 = 0x10000BFu;
+  if (a7)
+	*a7 = 0x1000040u;
+  if (a8)
+	*a8 = 0x10000BFu;
 }
 #undef manalink_CreatePen
 #undef manalink_CreateSolidBrush
@@ -1402,13 +1560,12 @@ void load_endduel_assets(HGDIOBJ *a1, COLORREF *a2, COLORREF *a3, HBRUSH *a4, HP
 #define hwnd_shell						(*(HWND*)(0x715780))
 int launch_mcu(void)
 {
-  char cmd_line[264];
+  char cmd_line[MAX_PATH];
 
   call_UnloadAllSnds();
   TENTATIVE_finalize_sound_system();
   game_type = 4;
-  strcpy(cmd_line, path_base);
-  strcat(cmd_line, "\\LaunchMCu.exe /MTGshell");
+  scnprintf(cmd_line, sizeof(cmd_line), "%s\\LaunchMCu.exe /MTGshell", path_base);
   int rval = WinExec(cmd_line, SW_SHOW);	// :(
   if (rval >= 0x20)
     rval = PostMessageA(hwnd_shell, WM_CLOSE, 0, 0);
@@ -1421,7 +1578,7 @@ int launch_mcu(void)
 
 void make_smallcard_visible(int player, int card)
 {
-  if (ai_is_speculating == 1 || !in_play(player, card))
+  if (ai_is_speculating == 1 || !display_player_card_slot_is_valid(player, card) || !in_play(player, card))
     return;
 
   HWND territory_hwnds[2] = { hwnd_TerritoryClass_player, hwnd_TerritoryClass_opponent };
@@ -1429,8 +1586,11 @@ void make_smallcard_visible(int player, int card)
   for (i = 0; i < 2; ++i)
     {
       HWND terr = territory_hwnds[i];
-      HWND* cards = (HWND*)(int)(GetWindowLong(terr, territoryclass_offset_card_hwnds));
-      int numcards = GetWindowLong(terr, territoryclass_offset_card_hwnd_length);
+      HWND* cards = (HWND*)(intptr_t)(GetWindowLong(terr, territoryclass_offset_card_hwnds));
+      int numcards = bounded_display_card_hwnd_count(GetWindowLong(terr, territoryclass_offset_card_hwnd_length));
+	  if (!cards)
+		continue;
+
 	  int j;
       for (j = 0; j < numcards; ++j)
 		if (!IsWindowVisible(cards[j])
@@ -1446,10 +1606,13 @@ void make_smallcard_visible(int player, int card)
 void draw_smallcard_activation_card(HDC hdc, RECT* card_rect, int csvidraw, int player, int card, int parent_player,
 									int parent_card)
 {
-  if (!hdc && !card_rect)
+  if (!hdc || !card_rect || !display_player_card_slot_is_valid(player, card))
 	return;
 
   card_instance_t* dispinst = get_displayed_card_instance(player, card);
+  if (!dispinst)
+	return;
+
   card_instance_t inst;
   EnterCriticalSection(critical_section_for_display);
   memcpy(&inst, dispinst, sizeof(inst));
@@ -1498,58 +1661,62 @@ void draw_smallcard_activation_card(HDC hdc, RECT* card_rect, int csvidraw, int 
 
 void draw_smallcard_special_effect_card(HDC hdc, RECT* card_rect, int csvidraw, int player, int card)
 {
-  if (!hdc || !card_rect)
+  if (!hdc || !card_rect || !display_player_card_slot_is_valid(player, card))
 	return;
 
   card_ptr_t cp;
   memset(&cp, 0, sizeof(cp));
 
   card_instance_t* dispinst = get_displayed_card_instance(player, card);
+  if (!dispinst)
+	return;
+
   card_instance_t inst;
   EnterCriticalSection(critical_section_for_display);
   memcpy(&inst, dispinst, sizeof(inst));
   LeaveCriticalSection(critical_section_for_display);
 
   csvid_t src_csvid = inst.display_pic_csv_id;
+  int valid_src_csvid = display_csvid_is_valid(src_csvid);
   uint16_t version = inst.display_pic_num;
 
   static char card_name[100];	// Shandalar only assigns 52 bytes, so should be plenty.
   switch (csvidraw)
 	{
 	  case 901:;
-		int l = sprintf(card_name, "%s: %d", str_Damage, inst.info_slot);
+		int l = scnprintf(card_name, sizeof(card_name), "%s: %d", str_Damage, inst.info_slot);
 		color_test_t cols = inst.color & COLOR_TEST_ANY_COLORED;
 		if (num_bits_set(cols) > 1)
-		  strcpy(card_name + l, " (Multi)");
+		  scnprintf(card_name + l, sizeof(card_name) - l, " (Multi)");
 		else if (cols)
-		  sprintf(card_name + l, " (%s)", strs_Colorless_Black_Blue_Green_Red_White[single_color_test_bit_to_color(cols)]);
+		  scnprintf(card_name + l, sizeof(card_name) - l, " (%s)", strs_Colorless_Black_Blue_Green_Red_White[single_color_test_bit_to_color(cols)]);
 		break;
 
 	  case 902:
-		strcpy(card_name, cards_txt[src_csvid].legacy_title_text);
+		scnprintf(card_name, sizeof(card_name), "%s", valid_src_csvid ? cards_txt[src_csvid].legacy_title_text : "");
 		break;
 
 	  case 903:;
-		const char* src = cards_txt[src_csvid].effect_title_text;
+		const char* src = valid_src_csvid ? cards_txt[src_csvid].effect_title_text : NULL;
 		if (!src)
 		  src = "";
 
 		if (src_csvid == CARD_ID_FAERIE_DRAGON || src_csvid == CARD_ID_WHIMSY)
-		  strcpy(card_name, src);
+		  scnprintf(card_name, sizeof(card_name), "%s", src);
 		else if (inst.eot_toughness > 0)
 		  {
-			strcpy(card_name, src);
+			scnprintf(card_name, sizeof(card_name), "%s", src);
 			legacy_name(card_name, player, card);
 		  }
 		else
-		  strcpy(card_name, src);
+		  scnprintf(card_name, sizeof(card_name), "%s", src);
 
 		if (!*card_name)
-		  strcpy(card_name, cards_ptr[src_csvid]->name);
+		  scnprintf(card_name, sizeof(card_name), "%s", valid_src_csvid ? cards_ptr[src_csvid]->name : "Effect");
 		break;
 
 	  case 905:
-		strcpy(card_name, get_card_or_subtype_name(inst.info_slot));
+		scnprintf(card_name, sizeof(card_name), "%s", get_card_or_subtype_name(inst.info_slot));
 		break;
 
 	  case 906:
@@ -1600,7 +1767,7 @@ void draw_smallcard_normal(HDC hdc, RECT* card_rect, int player, int card, int u
 	return;
 
   int csvid = get_displayed_csvid(player, card);
-  if (csvid == -1)
+  if (csvid == -1 || !display_csvid_is_valid(csvid))
 	return;
 
   int saved_dc = SaveDC(hdc);
@@ -1685,5 +1852,6 @@ void draw_smallcard_normal(HDC hdc, RECT* card_rect, int player, int card, int u
 		}
 	}
 
-  RestoreDC(hdc, saved_dc);
+  if (saved_dc)
+	RestoreDC(hdc, saved_dc);
 }

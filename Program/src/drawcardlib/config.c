@@ -454,10 +454,16 @@ del_fonts_and_imgs(void)
 {
   int i;
   for (i = 0; i < MAX_PICHANDLES_PLUS_1; ++i)
-	if (frames_dup_of[i] >= 0)
-	  pics[i] = NULL;	// just set null if this image is a shallow copy of another
-	else
-	  del_obj(&pics[i]);
+	{
+	  int dup_of = i <= FRAME_MAX_LOADED ? frames_dup_of[i] : -1;
+	  if (dup_of >= 0)
+		pics[i] = NULL;	// just set null if this image is a shallow copy of another
+	  else
+		del_obj(&pics[i]);
+	}
+
+  for (i = 0; i <= FRAME_MAX_LOADED; ++i)
+	frames_dup_of[i] = -1;
 
   for (i = 0; i < FRAME_MAX_LOADED + 2; ++i)
 	if (frames_pic_names[i])
@@ -822,13 +828,14 @@ read_cfg_file(Config* config)
 
 	  if (config == &configs[CFG_BASE])
 		frame_pic_name[i] = strdup(filename);
-	  else
-		{	// Add directory and canonicalize.
-		  char path[2 * MAX_PATH + 2];
-		  snprintf(path, 2 * MAX_PATH + 1, "%s\\%s", frame_base_dir, filename);
+		  else
+			{	// Add directory and canonicalize.
+			  char path[2 * MAX_PATH + 2];
+			  snprintf(path, sizeof(path), "%s\\%s", frame_base_dir, filename);
+			  path[sizeof(path) - 1] = 0;
 
-		  // replace [/\\]+ with \\ - it's obscene that PathCanonicalize() can't deal with multiple backslashes, or any forward slashes
-		  char* p, *q;
+			  // replace [/\\]+ with \\ - it's obscene that PathCanonicalize() can't deal with multiple backslashes, or any forward slashes
+			  char* p, *q;
 		  for (p = q = path; *q; ++p, ++q)
 			{
 			  if (*q == '/' || *q == '\\')
@@ -837,16 +844,26 @@ read_cfg_file(Config* config)
 					++q;
 				  *p = '\\';
 				}
+				  else
+					*p = *q;
+				}
+			  *p = 0;
+
+			  // simplify . and ..
+			  char canonicalized[MAX_PATH + 1];
+			  if (!PathCanonicalize(canonicalized, path))
+				{
+				  size_t copy_len = strlen(path);
+				  if (copy_len >= sizeof(canonicalized))
+					copy_len = sizeof(canonicalized) - 1;
+				  memcpy(canonicalized, path, copy_len);
+				  canonicalized[copy_len] = 0;
+				}
 			  else
-				*p = *q;
+				canonicalized[sizeof(canonicalized) - 1] = 0;
+
+			  frame_pic_name[i] = strdup(canonicalized);
 			}
-
-		  // simplify . and ..
-		  char canonicalized[MAX_PATH + 1];
-		  PathCanonicalize(canonicalized, path);
-
-		  frame_pic_name[i] = strdup(canonicalized);
-		}
 	}
 
 #undef TXT_AND_SHADOW

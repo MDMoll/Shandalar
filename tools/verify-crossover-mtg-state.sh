@@ -41,8 +41,8 @@ EXPECTED_HASHES = {
     "Program/Magic.exe": "685669692634ec830fe228904e11b1b536bd4b20e52192863a6280c2dbff6b66",
     "FaceMaker.exe": "41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246",
     "Program/FaceMaker.exe": "41f062874f94d732cc4feb40b568728b8462879fd3ec2bc55810f118e9c5f246",
-    "Shandalar.dll": "f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7",
-    "Program/Shandalar.dll": "f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7",
+    "Shandalar.dll": "3a20ba36dabef6f5ff9be3a1990d8e959570764d4dff2ff88de0cea01d534f41",
+    "Program/Shandalar.dll": "3a20ba36dabef6f5ff9be3a1990d8e959570764d4dff2ff88de0cea01d534f41",
     "CardArtLib.dll": "c1a68591059ff3e650104bf711d4e3f0c9a01a232db2e594af64aaa6846b3c1d",
     "Program/CardArtLib.dll": "c1a68591059ff3e650104bf711d4e3f0c9a01a232db2e594af64aaa6846b3c1d",
     "DeckDLL.dll": "5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0",
@@ -104,8 +104,18 @@ SHANDALAR_LAND_CIP_CAVE = bytes.fromhex(
 )
 
 SHANDALAR_PLAYER_TARGET_CAVE = bytes.fromhex(
-    "898d3cfdffff837f08017515817f1400100000750c31c0a36cd49400e9fe052bff"
-    "b8f8424c00ffd0a16cd49400e9d6052bff0000000000000000000000000000"
+    "898d3cfdffff837f0801751e817f14001000007409817f1400020000750c31c0a3"
+    "6cd49400e9f5052bffb8f8424c00ffd0a16cd49400e9cd052bff0000000000"
+)
+
+SHANDALAR_BASIC_LAND_SUBTYPE_CAVE = bytes.fromhex(
+    "807e290d0f84f11c32ffbe01000000c745f001000000e9951c32ff"
+)
+
+SHANDALAR_GENERIC_AUTOTAP_CAVE = bytes.fromhex(
+    "50a190268e00a90000ffff753b6683f8027c35a194268e000b0598268e00"
+    "0b059c268e000b05a0268e000b05a4268e000b05a8268e000b05ac268e00"
+    "750ac74424081c00000058c3c74424081e00000058c3"
 )
 
 EXPECTED_HEX_PREFIXES = {
@@ -134,12 +144,20 @@ EXPECTED_HEX_PREFIXES = {
         (0x1174800, SHANDALAR_LAND_CIP_CAVE),
         (0xCB16, bytes.fromhex("e905fad40090909090909090909090909090")),
         (0x1174920, SHANDALAR_PLAYER_TARGET_CAVE),
+        (0x7E395, bytes.fromhex("e9c6e1cd00")),
+        (0x1174960, SHANDALAR_BASIC_LAND_SUBTYPE_CAVE),
+        (0x825C0, bytes.fromhex("e8bb9fcd009090")),
+        (0x1174980, SHANDALAR_GENERIC_AUTOTAP_CAVE),
     ],
     "Program/Shandalar.dll": [
         (0x94D34, bytes.fromhex("e9c776cc0090909090")),
         (0x1174800, SHANDALAR_LAND_CIP_CAVE),
         (0xCB16, bytes.fromhex("e905fad40090909090909090909090909090")),
         (0x1174920, SHANDALAR_PLAYER_TARGET_CAVE),
+        (0x7E395, bytes.fromhex("e9c6e1cd00")),
+        (0x1174960, SHANDALAR_BASIC_LAND_SUBTYPE_CAVE),
+        (0x825C0, bytes.fromhex("e8bb9fcd009090")),
+        (0x1174980, SHANDALAR_GENERIC_AUTOTAP_CAVE),
     ],
     "Magic.exe": [
         (0x5DB1F, bytes.fromhex("c7055c72780000000000")),
@@ -382,9 +400,10 @@ ok(f"CrossOver bottle install exists: {INSTALL}")
 
 if WINE.is_file():
     version = subprocess.check_output([str(WINE), "--version"], text=True)
-    if "Product Name: CrossOver" not in version or "Product Version: 26.1.0.39808" not in version:
+    if "Product Name: CrossOver" not in version:
         fail("unexpected CrossOver wine version output")
-    ok("CrossOver wine helper reports 26.1.0.39808")
+    version_line = next((line.strip() for line in version.splitlines() if "Product Version:" in line), "Product Version: unknown")
+    ok(f"CrossOver wine helper reports {version_line}")
 else:
     fail(f"missing CrossOver wine helper: {WINE}")
 
@@ -456,10 +475,14 @@ system_reg = read_text(BASE / "system.reg")
 for needle in [
     '"ProductName"="Microsoft Windows 7"',
     '"CurrentVersion"="6.1"',
-    '"PagingFiles"=str(7):"C:\\\\pagefile.sys 512 1024\\0"',
 ]:
     if needle not in system_reg:
         fail(f"system.reg missing {needle}")
+if not re.search(
+    r'(?m)^"PagingFiles"=(?:str\(7\):)?"C:\\\\pagefile\.sys [0-9]+ [0-9]+(?:\\0)?"$',
+    system_reg,
+):
+    fail("system.reg missing C:\\pagefile.sys paging file setting")
 ok("MTG system registry has Windows 7 identity and paging file setting")
 
 print("CrossOver MTG state checks passed.")

@@ -21,9 +21,49 @@ $(OBJDIR)%.o: %.c $(BASEDIR)/manalink.h $(BASEDIR)/defs.h $(BASEDIR)/subtypes.h 
 $(OBJDIR)%.obj: %.cpp $(BASEDIR)/manalink.h $(BASEDIR)/defs.h $(BASEDIR)/subtypes.h $(BASEDIR)/card_id.h $(HFILES)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
+lint: lint-syntax lint-cppcheck lint-clang-tidy lint-format
+
+lint-syntax:
+	@set -e; \
+	for file in $(CFILES); do \
+		echo "CC -fsyntax-only $$file"; \
+		$(CC) $(CFLAGS) -fsyntax-only $$file; \
+	done; \
+	for file in $(CXXFILES); do \
+		echo "CXX -fsyntax-only $$file"; \
+		$(CXX) $(CXXFLAGS) -fsyntax-only $$file; \
+	done
+
+lint-cppcheck:
+	$(CPPCHECK) $(CPPCHECK_FLAGS) $(CFILES) $(CXXFILES)
+
+lint-clang-tidy:
+	@if [ ! -f compile_commands.json ]; then \
+		echo "compile_commands.json not found. Run 'make compile_commands' first."; \
+		exit 1; \
+	fi
+	@set -e; \
+	for file in $(CFILES) $(CXXFILES); do \
+		echo "clang-tidy $$file"; \
+		$(CLANG_TIDY) $(CLANG_TIDY_FLAGS) $$file; \
+	done
+
+lint-format:
+	@set -e; \
+	for file in $(CFILES) $(CXXFILES) $(HFILES); do \
+		echo "clang-format check $$file"; \
+		$(CLANG_FORMAT) $(CLANG_FORMAT_FLAGS) $$file; \
+	done
+
+format:
+	$(CLANG_FORMAT) -i $(CFILES) $(CXXFILES) $(HFILES)
+
+compile_commands:
+	$(BEAR) -- $(MAKE) clean all
+
 clean::
 	-$(RM) $(WILDOBJFILES) $(OUTPUT) $(OUTPUT:.dll=.dbg) $(LOCAL_LIBFILES)
 
-.PHONY: all clean
+.PHONY: all clean lint lint-syntax lint-cppcheck lint-clang-tidy lint-format format compile_commands
 
 .PRECIOUS: $(ALLOBJFILES) $(LOCAL_LIBFILES)

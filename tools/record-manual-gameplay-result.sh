@@ -153,6 +153,7 @@ required_test_ids = {
     "R3",
     "R4",
     "R5",
+    "R6",
 }
 
 if test_id:

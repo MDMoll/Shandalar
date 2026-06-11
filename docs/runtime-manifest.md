@@ -1,6 +1,6 @@
 # Runtime Manifest
 
-Generated from local inspection on 2026-05-31 and updated on 2026-06-08 in
+Generated from local inspection on 2026-05-31 and updated on 2026-06-11 in
 `/Users/mdmoll/Shandalar/Shandalar`.
 
 This manifest is for identity, review, and scan handoff. It is not a malware
@@ -20,8 +20,8 @@ scan, a license grant, or proof of gameplay stability.
 | `Program/ManalinkEh.dll` | `e715b92495677abf940b3bfda438477d66896532b24c1b05a4ea2bc2179c2e22` | PE32 DLL Intel 80386 | Program DLL patched at its own offsets for Samite-family damage-prevention activation, generic activated damage-prevention gating, AI clamping, AI raw-mana speculation snapshot restore safety, Myr Moonvessel dies-trigger resolution, Piranha Marsh/Bojuka Bog AI trigger targeting, generic AI player-only target selection, and AI land CIP resolver stack-bypass land handling. |
 | `zlib.dll` | `9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90` | PE32 DLL Intel 80386 | Root image/decompression support DLL. |
 | `Program/zlib.dll` | `9f8729ac49e0ccea86fe3b1a9b2c3fae9986ecd09db92853e7a588dbda85bf90` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `zlib.dll` added to close the adjacent Program loader gap in this checkout. |
-| `Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` | PE32 DLL Intel 80386 | Root Shandalar helper generation; contains `.cdxai` hooks for the AI land CIP resolver stack-bypass at `0x94d34`/`0x1174800` and the AI player-only target selector at `0xcb16`/`0x1174920`. |
-| `Program/Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `Shandalar.dll`; includes the same `.cdxai` AI land CIP resolver and AI player-only target selector patches. |
+| `Shandalar.dll` | `3a20ba36dabef6f5ff9be3a1990d8e959570764d4dff2ff88de0cea01d534f41` | PE32 DLL Intel 80386 | Root Shandalar helper generation; contains `.cdxai` hooks for the AI land CIP resolver stack-bypass at `0x94d34`/`0x1174800`, the AI pure player/in-play target selector at `0xcb16`/`0x1174920`, the basic-land library-selector guard at `0x7e395`/`0x1174960`, and the pure-generic autotap order guard at `0x825c0`/`0x1174980`. |
+| `Program/Shandalar.dll` | `3a20ba36dabef6f5ff9be3a1990d8e959570764d4dff2ff88de0cea01d534f41` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `Shandalar.dll`; includes the same `.cdxai` AI land CIP resolver, AI pure player/in-play target selector, basic-land library-selector, and pure-generic autotap order patches. |
 | `CardArtLib.dll` | `c1a68591059ff3e650104bf711d4e3f0c9a01a232db2e594af64aaa6846b3c1d` | PE32 DLL Intel 80386 | Root card-art helper rebuilt so GDI+ starts lazily outside `DllMain`, uses explicit notification hook/unhook handling, suppresses external codecs, validates image load status before caching, and keeps PE `DllCharacteristics` `0x0000` with `___ImageBase=__image_base__`. |
 | `Program/CardArtLib.dll` | `c1a68591059ff3e650104bf711d4e3f0c9a01a232db2e594af64aaa6846b3c1d` | PE32 DLL Intel 80386 | Byte-for-byte copy of root `CardArtLib.dll` for direct Program-path Shandalar launches. |
 | `DeckDLL.dll` | `5c122ea5442d209d0d74c7e75f7b1f53492b0bfcc042efce49300f3485e3fcb0` | PE32 DLL Intel 80386 | Root deck/card-data helper rebuilt from `src/deck` with the Shandalar minimum-deck-size guard and legacy-safe startup flags: no dynamic base/NX compatibility bits, plus `___ImageBase=__image_base__`. |

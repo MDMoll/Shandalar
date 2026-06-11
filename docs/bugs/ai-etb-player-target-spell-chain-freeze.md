@@ -62,6 +62,13 @@ old target-presentation selector for non-speculating AI pure player targets
 after legal candidates have already been built. Fresh manual Augur, Piranha
 Marsh, and Bojuka Bog retests are still required.
 
+On 2026-06-11, after the Loam Larva retest passed, a Merfolk Sovereign AI
+activation froze at the Merfolk Shaman opponent announcement. That ability
+targets an in-play Merfolk creature, so the Shandalar C++ targeter hook was
+broadened to skip the old selector for non-speculating AI pure
+`TARGET_ZONE_IN_PLAY` targets as well as pure player targets. Fresh Merfolk
+Sovereign retesting is required after restart.
+
 The later Glowing Anemone human `Trigger` / `Decline` freeze showed that the
 prompt/button instability cannot be treated as only AI targeting. Wine Debugger
 output from the same broader failure class showed a page fault at
@@ -170,11 +177,13 @@ original resolver path.
 
 The Augur failure showed that Shandalar adventure duels also need the generic
 player-target selector hardening in `Shandalar.dll`, not only `ManalinkEh.dll`.
-The follow-up patch hooks the C++ targeter at `0xcb16`, writes chosen candidate
-index `0` only when `[this+0x8] == AI` and `[this+0x14] == TARGET_ZONE_PLAYERS`,
-and otherwise calls the original selector. The guard is narrower than the whole
-targeter: mixed creature/player targets, human targets, and candidate
-construction keep the original path.
+The follow-up Merfolk Sovereign failure showed the same Shandalar C++ targeter
+could also freeze for pure in-play targets. The current Shandalar patch hooks
+the C++ targeter at `0xcb16`, writes chosen candidate index `0` only when
+`[this+0x8] == AI` and `[this+0x14]` is either `TARGET_ZONE_PLAYERS` or
+`TARGET_ZONE_IN_PLAY`, and otherwise calls the original selector. The guard is
+narrower than the whole targeter: mixed creature/player targets, human targets,
+speculation, and candidate construction keep the original path.
 
 The source snapshots also harden the graveyard/exile helper used by Bojuka Bog:
 they bound exile-zone scans, validate player/deck inputs, and clear only the
@@ -188,7 +197,7 @@ change in this pass is the resolver cave described above.
 | --- | --- | --- |
 | Piranha Marsh resolution target | `src/cards/zendikar.c`; `Program/src/cards/zendikar.c` | inline replacement at `0x3fe7a0`; Program `0x3c4930` |
 | Bojuka Bog resolution target | `src/cards/worldwake.c`; `Program/src/cards/worldwake.c` | inline replacement at `0x3f63e0`; Program `0x3bc630` |
-| Generic AI player-only selector | `src/functions/targets.c`; `Program/src/functions/targets.c` | ManalinkEh hook/cave `0x469583`/`0x495ad0`; Program `0x429453`/`0x452cd0`; Shandalar.dll C++ targeter hook/cave `0xcb16`/`0x1174920` in root and Program |
+| Generic AI target selector | `src/functions/targets.c`; `Program/src/functions/targets.c` | ManalinkEh player-only hook/cave `0x469583`/`0x495ad0`; Program `0x429453`/`0x452cd0`; Shandalar.dll C++ pure player/in-play targeter hook/cave `0xcb16`/`0x1174920` in root and Program |
 | AI land CIP resolver stack-bypass | `src/functions/events.c`; `Program/src/functions/events.c` | ManalinkEh resolver hook/cave `0x429acf`/`0x495b00`; Program `0x3ec7cf`/`0x452d00`; restored Piranha/Bojuka calls at `0x3fe77d`/`0x3f63bd` and Program `0x3c490d`/`0x3bc60d`; Shandalar.dll resolver hook `.cdxai` `0x94d34`/`0x1174800` in root and Program |
 | Shandalar MagSnd update-message callback | n/a binary compatibility patch | root and Program `Shandalar.exe` call at VA `0x4ce62e` / file offset `0xcda2e` |
 | Shandalar minimal WinMM timer callback | n/a binary compatibility patch | root and Program `Shandalar.exe` callback entry at VA `0x4ce8cd` / file offset `0xcdccd` |
@@ -206,8 +215,9 @@ selector cave in already-patched DLLs.
 
 The local `MTG` copied install was patched too. Backups were preserved as
 `ManalinkEh.before-ai-land-cip-stack-bypass-patch.dll` in the root and Program
-install folders and as `Shandalar.before-ai-land-cip-stack-bypass-patch.dll` and
-`Shandalar.before-ai-player-target-selection-patch.dll` beside the root and
+install folders and as `Shandalar.before-ai-land-cip-stack-bypass-patch.dll`,
+`Shandalar.before-ai-player-target-selection-patch.dll`, and
+`Shandalar.before-ai-in-play-target-selection-patch.dll` beside the root and
 Program Shandalar helper DLLs.
 
 ## Current Hashes
@@ -216,8 +226,8 @@ Program Shandalar helper DLLs.
 | --- | --- |
 | `Shandalar.exe` | `ebba01ad04aba5fb78841f37b6c264dfd17f1d6ca6ccfcc9851c2972b64f5f6b` |
 | `Program/Shandalar.exe` | `ebba01ad04aba5fb78841f37b6c264dfd17f1d6ca6ccfcc9851c2972b64f5f6b` |
-| `Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` |
-| `Program/Shandalar.dll` | `f74648745315163da15ffbe32e5bbdbc79e05aaf47c0714902c8d6898e5d00f7` |
+| `Shandalar.dll` | `3a20ba36dabef6f5ff9be3a1990d8e959570764d4dff2ff88de0cea01d534f41` |
+| `Program/Shandalar.dll` | `3a20ba36dabef6f5ff9be3a1990d8e959570764d4dff2ff88de0cea01d534f41` |
 | `Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` |
 | `Program/Statwin.dll` | `f1428cf548810f85df6f26b913d10dca16bc0f06a609a94c0cb0f0308347b0cf` |
 | `Drawcardlib.dll` | `7b585c3f2c57bdbda66ceaeecdd48a8e97d67bb32010c1455165fcb44cd2966c` |
@@ -226,10 +236,11 @@ Program Shandalar helper DLLs.
 | `Program/ManalinkEh.dll` | `e715b92495677abf940b3bfda438477d66896532b24c1b05a4ea2bc2179c2e22` |
 
 These hashes include the earlier damage-prevention, AI decision-time, raw-mana
-snapshot, Piranha Marsh, Bojuka Bog, generic AI player-target selector, and AI
-land CIP resolver stack-bypass handling patches. The Shandalar DLL hash is the
-one used by the copied CrossOver `MTG` adventure-duel launch path, and includes
-both the land-CIP resolver hook and the C++ targeter player-only hook.
+snapshot, Piranha Marsh, Bojuka Bog, generic AI target selector, AI land CIP
+resolver stack-bypass handling, and Loam Larva basic-land selector patches. The
+Shandalar DLL hash is the one used by the copied CrossOver `MTG`
+adventure-duel launch path, and includes the land-CIP resolver hook, the C++
+targeter pure player/in-play hook, and the basic-land subtype hook.
 
 ## Verification
 
@@ -301,17 +312,18 @@ The root and Program section virtual-size header at file offset `0x1a8` should
 now be `00020000`, mapping the shared cave slice that starts at `0x495b00` or
 `0x452d00`.
 
-The Shandalar player-target selector hook and cave bytes should be:
+The Shandalar AI target selector hook and cave bytes should be:
 
 ```text
 e905fad40090909090909090909090909090
-898d3cfdffff837f08017515817f1400100000750c31c0a36cd49400e9fe052bffb8f8424c00ffd0a16cd49400e9d6052bff0000000000000000000000000000
+898d3cfdffff837f0801751e817f14001000007409817f1400020000750c31c0a36cd49400e9f5052bffb8f8424c00ffd0a16cd49400e9cd052bff0000000000
 ```
 
 Manual proof still requires replaying duels where the opponent activates Augur
-of Skulls, casts Thoughtseize, and plays the reported Piranha Marsh and Bojuka
-Bog lands, then confirming the duel remains interactive. At least one additional
-AI-controlled land ETB trigger, one additional AI player-target activated
-ability, and one human `Trigger` / `Decline` prompt should still be tested
-separately because these patches now cover both the land-CIP resolver layer and
-the broader Shandalar prompt/sound-initialization layer.
+of Skulls, activates Merfolk Sovereign, casts Thoughtseize, and plays the
+reported Piranha Marsh and Bojuka Bog lands, then confirming the duel remains
+interactive. At least one additional AI-controlled land ETB trigger, one
+additional AI player-target activated ability, one additional AI in-play target
+activated ability, and one human `Trigger` / `Decline` prompt should still be
+tested separately because these patches now cover both the land-CIP resolver
+layer and the broader Shandalar prompt/sound-initialization layer.

@@ -8,6 +8,127 @@ WINGDIAPI BOOL WINAPI AlphaBlend(HDC,int,int,int,int,HDC,int,int,int,int,BLENDFU
 
 int suppress_next_counters = 0;
 
+static int
+get_displayed_instance_copy(int player, int card, card_instance_t* dest)
+{
+  if (!dest || player < 0 || player > 1 || card < 0 || card >= 151)
+	return 0;
+
+  card_instance_t* instance = get_displayed_card_instance(player, card);	// unsafe to dereference
+  if (!instance || !critical_section_for_display)
+	return 0;
+
+  EnterCriticalSection(critical_section_for_display);
+  memcpy(dest, instance, sizeof(card_instance_t));
+  LeaveCriticalSection(critical_section_for_display);
+
+  return 1;
+}
+
+static int
+enter_counter_drawing_section_if_needed(void)
+{
+  if (parent == PARENT_SHANDALAR && critical_section_for_drawing)
+	{
+	  EnterCriticalSection(critical_section_for_drawing);
+	  return 1;
+	}
+
+  return 0;
+}
+
+static void
+leave_counter_drawing_section_if_needed(int entered)
+{
+  if (entered)
+	LeaveCriticalSection(critical_section_for_drawing);
+}
+
+static int
+counter_image_slot_is_valid(int counter_type)
+{
+  if (counter_type < 0 || counter_type == 255)
+	return 0;
+
+  if (counters_num_columns <= 0 || counters_num_rows <= 0)
+	return 0;
+
+  return counter_type < counters_num_columns * counters_num_rows;
+}
+
+static int
+get_counter_atlas_cell_size(unsigned int* src_width, unsigned int* src_height)
+{
+  if (src_width)
+	*src_width = 0;
+  if (src_height)
+	*src_height = 0;
+
+  if (!src_width || !src_height || counters_num_columns <= 0 || counters_num_rows <= 0)
+	return 0;
+
+  if (counters_renderer == RENDERER_GDIPLUS)
+	{
+	  if (!gpics[CARDCOUNTERS])
+		make_gpic_from_pic(CARDCOUNTERS);
+
+	  if (!gdip_get_image_size(gpics[CARDCOUNTERS], src_width, src_height))
+		return 0;
+	}
+  else
+	{
+	  if (!pics[CARDCOUNTERS])
+		return 0;
+
+	  BITMAP bmp;
+	  if (GetObject(pics[CARDCOUNTERS], sizeof(BITMAP), &bmp) != sizeof(BITMAP)
+		  || bmp.bmWidth <= 0 || bmp.bmHeight <= 0)
+		return 0;
+
+	  *src_width = bmp.bmWidth;
+	  *src_height = bmp.bmHeight;
+	}
+
+  *src_width /= counters_num_columns;
+  *src_height /= counters_num_rows;
+
+  return *src_width > 0 && *src_height > 0;
+}
+
+static int
+calculate_scaled_counter_size(const RECT* rect, unsigned int src_width, unsigned int src_height,
+							  int* scaled_width, int* scaled_height)
+{
+  if (scaled_width)
+	*scaled_width = 0;
+  if (scaled_height)
+	*scaled_height = 0;
+
+  if (!rect || !scaled_width || !scaled_height || src_width == 0 || src_height == 0)
+	return 0;
+
+  int height = rect->bottom - rect->top;
+  if (height <= 0)
+	return 0;
+
+  int64_t width = (int64_t)height * src_width / src_height;
+  if (width <= 0 || width > INT_MAX)
+	return 0;
+
+  *scaled_width = (int)width;
+  *scaled_height = height;
+  return 1;
+}
+
+static void
+init_blendfunction(BLENDFUNCTION* blend)
+{
+  blend->BlendOp = AC_SRC_OVER;
+  blend->BlendFlags = 0;
+  blend->SourceConstantAlpha = 255;
+  blend->AlphaFormat = AC_SRC_ALPHA;
+}
+
 void
 draw_special_counters(HDC hdc, const RECT* rect, int player, int card)
 {
@@ -17,13 +138,10 @@ draw_special_counters(HDC hdc, const RECT* rect, int player, int card)
 	return;
 
   card_instance_t actual;
-  card_instance_t* instance = get_displayed_card_instance(player, card);	// unsafe to dereference
+  if (!get_displayed_instance_copy(player, card, &actual))
+	return;
 
-  EnterCriticalSection(critical_section_for_display);
-  memcpy(&actual, instance, sizeof(card_instance_t));
-  LeaveCriticalSection(critical_section_for_display);
-
-  instance = &actual;	// now safe
+  card_instance_t* instance = &actual;
 
   int counter_type = instance->special_counter_type;
   if (counter_type < 0 || counter_type >= COUNTER_end)
@@ -36,47 +154,37 @@ draw_special_counters(HDC hdc, const RECT* rect, int player, int card)
   if (suppress_next_counters && counter_type == COUNTER_LOYALTY)
 	return;
 
+  if (!counter_image_slot_is_valid(counter_type))
+	return;
+
   RECT r;
   get_special_counter_rect(&r, rect, num);
 
-  if (parent == PARENT_SHANDALAR)
-	EnterCriticalSection(critical_section_for_drawing);
+  int drawing_locked = enter_counter_drawing_section_if_needed();
 
   unsigned int src_width, src_height;
-  if (counters_renderer == RENDERER_GDIPLUS)
+  if (!get_counter_atlas_cell_size(&src_width, &src_height))
 	{
-	  if (counters_num_columns <= 0 || counters_num_rows <= 0
-		  || !gdip_get_image_size(gpics[CARDCOUNTERS], &src_width, &src_height))
-		{
-		  if (parent == PARENT_SHANDALAR)
-			LeaveCriticalSection(critical_section_for_drawing);
-		  return;
-		}
-	  src_width /= counters_num_columns;
-	  src_height /= counters_num_rows;
-	  if (src_width == 0 || src_height == 0)
-		{
-		  if (parent == PARENT_SHANDALAR)
-			LeaveCriticalSection(critical_section_for_drawing);
-		  return;
-		}
-	}
-  else
-	{
-	  BITMAP bmp;
-	  GetObject(pics[CARDCOUNTERS], sizeof(BITMAP), &bmp);
-	  src_width = bmp.bmWidth / counters_num_columns;
-	  src_height = bmp.bmHeight / counters_num_rows;
+	  leave_counter_drawing_section_if_needed(drawing_locked);
+	  return;
 	}
 
-  int scaled_height = r.bottom - r.top;
-  int scaled_width = scaled_height * src_width / src_height;
+  int scaled_width, scaled_height;
+  if (!calculate_scaled_counter_size(&r, src_width, src_height, &scaled_width, &scaled_height))
+	{
+	  leave_counter_drawing_section_if_needed(drawing_locked);
+	  return;
+	}
 
   int spacing;
   if (num <= 1)
 	spacing = scaled_width;
   else
-	spacing = (r.right - r.left - scaled_width) / (num - 1);
+	{
+	  spacing = (r.right - r.left - scaled_width) / (num - 1);
+	  if (spacing < 1)
+		spacing = 1;
+	}
 
   int src_xpos = (counter_type / counters_num_rows) * src_width;
   int src_ypos = (counter_type % counters_num_rows) * src_height;
@@ -85,16 +193,19 @@ draw_special_counters(HDC hdc, const RECT* rect, int player, int card)
 
   BLENDFUNCTION blend;
   int savedc = 0;
+  HGDIOBJ old_spare_bmp = NULL;
 
   if (counters_renderer != RENDERER_GDIPLUS)
 	{
-	  savedc = SaveDC(hdc);
-	  SelectObject(*spare_hdc, pics[CARDCOUNTERS]);
+	  if (!spare_hdc || !*spare_hdc || !pics[CARDCOUNTERS])
+		{
+		  leave_counter_drawing_section_if_needed(drawing_locked);
+		  return;
+		}
 
-	  blend.BlendOp = AC_SRC_OVER;
-	  blend.BlendFlags = 0;
-	  blend.SourceConstantAlpha = 255;
-	  blend.AlphaFormat = AC_SRC_ALPHA;
+	  savedc = SaveDC(hdc);
+	  old_spare_bmp = SelectObject(*spare_hdc, pics[CARDCOUNTERS]);
+	  init_blendfunction(&blend);
 	}
 
   int i;
@@ -113,10 +224,14 @@ draw_special_counters(HDC hdc, const RECT* rect, int player, int card)
 	}
 
   if (counters_renderer != RENDERER_GDIPLUS)
-	RestoreDC(hdc, savedc);
+	{
+	  if (old_spare_bmp)
+		SelectObject(*spare_hdc, old_spare_bmp);
+	  if (savedc)
+		RestoreDC(hdc, savedc);
+	}
 
-  if (parent == PARENT_SHANDALAR)
-	LeaveCriticalSection(critical_section_for_drawing);
+  leave_counter_drawing_section_if_needed(drawing_locked);
 }
 
 void
@@ -140,32 +255,18 @@ get_special_counter_rect(RECT* rect_dest, const RECT* rect_src, int num)
   r.bottom = r.top + 27 * (rect_src->bottom - rect_src->top) / 100;
 
   unsigned int src_width, src_height;
-  if (counters_renderer == RENDERER_GDIPLUS)
+  if (!get_counter_atlas_cell_size(&src_width, &src_height))
 	{
-	  if (counters_num_columns <= 0 || counters_num_rows <= 0
-		  || !gdip_get_image_size(gpics[CARDCOUNTERS], &src_width, &src_height))
-		{
-		  SetRect(rect_dest, 0, 0, 0, 0);
-		  return;
-		}
-	  src_width /= counters_num_columns;
-	  src_height /= counters_num_rows;
-	  if (src_width == 0 || src_height == 0)
-		{
-		  SetRect(rect_dest, 0, 0, 0, 0);
-		  return;
-		}
-	}
-  else
-	{
-	  BITMAP bmp;
-	  GetObject(pics[CARDCOUNTERS], sizeof(BITMAP), &bmp);
-	  src_width = bmp.bmWidth / counters_num_columns;
-	  src_height = bmp.bmHeight / counters_num_rows;
+	  SetRect(rect_dest, 0, 0, 0, 0);
+	  return;
 	}
 
-  int scaled_height = r.bottom - r.top;
-  int scaled_width = scaled_height * src_width / src_height;
+  int scaled_width, scaled_height;
+  if (!calculate_scaled_counter_size(&r, src_width, src_height, &scaled_width, &scaled_height))
+	{
+	  SetRect(rect_dest, 0, 0, 0, 0);
+	  return;
+	}
 
   int spacing;
   for (spacing = scaled_width;
@@ -179,17 +280,14 @@ get_special_counter_rect(RECT* rect_dest, const RECT* rect_src, int num)
 void
 draw_standard_counters(HDC hdc, const RECT* rect, int player, int card)
 {
-  if (!hdc || !rect)
+  if (!hdc || !rect || rect->bottom <= rect->top || rect->right <= rect->left)
 	return;
 
   card_instance_t actual;
-  card_instance_t* instance = get_displayed_card_instance(player, card);	// unsafe to dereference
+  if (!get_displayed_instance_copy(player, card, &actual))
+	return;
 
-  EnterCriticalSection(critical_section_for_display);
-  memcpy(&actual, instance, sizeof(card_instance_t));
-  LeaveCriticalSection(critical_section_for_display);
-
-  instance = &actual;	// now safe
+  card_instance_t* instance = &actual;
 
   int counters = instance->counters;
   int counters2 = instance->counters2;
@@ -222,58 +320,49 @@ draw_standard_counters(HDC hdc, const RECT* rect, int player, int card)
   if (!counters && !counters2 && !counters3 && !counters4 && !counters5 && !counters_m1m1)
 	return;
 
-  if (parent == PARENT_SHANDALAR)
-	EnterCriticalSection(critical_section_for_drawing);
+  int drawing_locked = enter_counter_drawing_section_if_needed();
 
   unsigned int src_width, src_height;
-  if (counters_renderer == RENDERER_GDIPLUS)
+  if (!get_counter_atlas_cell_size(&src_width, &src_height))
 	{
-	  if (counters_num_columns <= 0 || counters_num_rows <= 0
-		  || !gdip_get_image_size(gpics[CARDCOUNTERS], &src_width, &src_height))
-		{
-		  if (parent == PARENT_SHANDALAR)
-			LeaveCriticalSection(critical_section_for_drawing);
-		  return;
-		}
-	  src_width /= counters_num_columns;
-	  src_height /= counters_num_rows;
-	  if (src_width == 0 || src_height == 0)
-		{
-		  if (parent == PARENT_SHANDALAR)
-			LeaveCriticalSection(critical_section_for_drawing);
-		  return;
-		}
-	}
-  else
-	{
-	  BITMAP bmp;
-	  GetObject(pics[CARDCOUNTERS], sizeof(BITMAP), &bmp);
-	  src_width = bmp.bmWidth / counters_num_columns;
-	  src_height = bmp.bmHeight / counters_num_rows;
+	  leave_counter_drawing_section_if_needed(drawing_locked);
+	  return;
 	}
 
-  int scaled_height = rect->bottom - rect->top;
-  int scaled_width = scaled_height * src_width / src_height;
+  int scaled_width, scaled_height;
+  if (!calculate_scaled_counter_size(rect, src_width, src_height, &scaled_width, &scaled_height))
+	{
+	  leave_counter_drawing_section_if_needed(drawing_locked);
+	  return;
+	}
 
   int one_third_card_width = (rect->right - rect->left) / 3;
+  if (one_third_card_width <= 0)
+	{
+	  leave_counter_drawing_section_if_needed(drawing_locked);
+	  return;
+	}
 
   BLENDFUNCTION blend;
   RECT r;
   int spacing, dest_x, src_xpos, src_ypos, i, savedc = 0;
+  HGDIOBJ old_spare_bmp = NULL;
 
   if (counters_renderer != RENDERER_GDIPLUS)
 	{
-	  savedc = SaveDC(hdc);
-	  SelectObject(*spare_hdc, pics[CARDCOUNTERS]);
+	  if (!spare_hdc || !*spare_hdc || !pics[CARDCOUNTERS])
+		{
+		  leave_counter_drawing_section_if_needed(drawing_locked);
+		  return;
+		}
 
-	  blend.BlendOp = AC_SRC_OVER;
-	  blend.BlendFlags = 0;
-	  blend.SourceConstantAlpha = 255;
-	  blend.AlphaFormat = AC_SRC_ALPHA;
+	  savedc = SaveDC(hdc);
+	  old_spare_bmp = SelectObject(*spare_hdc, pics[CARDCOUNTERS]);
+	  init_blendfunction(&blend);
 	}
 
 #define COUNTERS(which, init_x, init_y, imgnum, lambda)	do {																\
-  if (which > 0 && imgnum != 255)																							\
+  if ((which) > 0 && counter_image_slot_is_valid(imgnum))																	\
 	{																														\
 	  for (spacing = scaled_width; scaled_width + spacing * ((which) - 1) > one_third_card_width && spacing > 2; --spacing)	\
 		{}																													\
@@ -327,10 +416,14 @@ draw_standard_counters(HDC hdc, const RECT* rect, int player, int card)
   COUNTERS(counters5, middle_of_dest, bottom_third_of_dest, counter_type_5,);
 
   if (counters_renderer != RENDERER_GDIPLUS)
-	RestoreDC(hdc, savedc);
+	{
+	  if (old_spare_bmp)
+		SelectObject(*spare_hdc, old_spare_bmp);
+	  if (savedc)
+		RestoreDC(hdc, savedc);
+	}
 
-  if (parent == PARENT_SHANDALAR)
-	LeaveCriticalSection(critical_section_for_drawing);
+  leave_counter_drawing_section_if_needed(drawing_locked);
 
 #undef COUNTERS
 }

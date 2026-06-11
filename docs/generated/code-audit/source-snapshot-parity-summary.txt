@@ -1,0 +1,11 @@
+Source Snapshot Parity Summary
+repo_root: /Users/mdmoll/Shandalar/Shandalar
+total_relative_paths: 322
+same: 77
+different: 145
+missing_in_src: 0
+missing_in_program: 100
+exact_match_files: 3
+parity_failures: 0
+warnings: 1
+report: docs/generated/code-audit/source-snapshot-parity.tsv

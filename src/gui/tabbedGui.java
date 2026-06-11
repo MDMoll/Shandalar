@@ -1668,7 +1668,7 @@ if (chkMagicAll.isSelected()){
     }
 
     /**
-     * Marks the check boxes corrisponding to the bitflags of the world magics.
+     * Marks the checkboxes corresponding to the bitflags of the world magics.
      * @param bitFlags The flags showing which world magics are collected.
      */
     public void markMagicBoxes(int bitFlags) {
@@ -1816,13 +1816,15 @@ return bitFlags;
                     String[] parts = line.split(":", 2);
                     if (parts[0].trim().equals("shandDir")){
                         openGameFile = "";
-                        for (int i = 1; i < parts.length; i++)
+                        for (int i = 1; i < parts.length; i++) {
                         openGameFile = openGameFile.concat(parts[i].trim());
+                        }
                     }
                     if (parts[0].trim().equals("deckDir")){
                         openDuelFile = "";
-                        for (int i = 1; i < parts.length; i++)
+                        for (int i = 1; i < parts.length; i++) {
                         openDuelFile = openDuelFile.concat(parts[i].trim());
+                        }
                     }
                 }
                 bf.close();

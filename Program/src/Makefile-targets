@@ -22,7 +22,7 @@ $(OBJDIR)%.obj: %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 clean::
-	-$(RM) $(WILDOBJFILES) $(OUTPUT) $(LOCAL_LIBFILES)
+	-$(RM) $(WILDOBJFILES) $(OUTPUT) $(OUTPUT:.dll=.dbg) $(LOCAL_LIBFILES)
 
 .PHONY: all clean
 

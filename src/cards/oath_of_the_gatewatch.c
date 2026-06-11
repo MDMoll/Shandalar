@@ -1672,7 +1672,7 @@ int card_gravity_negator(int player, int card, event_t event){
 
 	if (xtrigger_condition() == XTRIGGER_ATTACKING && affect_me(player, card) && reason_for_trigger_controller == player){
 		if(  has_colorless_only_mana(player, 1) ){
-			if( resolve_declare_attackers_trigger(player, card, event, RESOLVE_TRIGGER_AI(player)) ){
+			if( resolve_declare_attackers_trigger(player, card, event, (declare_attackers_trigger_t)RESOLVE_TRIGGER_AI(player)) ){
 				if( charge_colorless_mana_only(player, 1) ){
 					target_definition_t td2;
 					default_target_definition(player, card, &td2, TYPE_CREATURE);
@@ -4600,7 +4600,7 @@ int card_loam_larva(int player, int card, event_t event){
 		test_definition_t test;
 		new_default_test_definition(&test, TYPE_LAND, "Select a basic land card.");
 		test.subtype = SUBTYPE_BASIC;
-		new_global_tutor(player, player, TUTOR_DECK, TUTOR_DECK, 0, AI_FIRST_FOUND, &test);
+		new_global_tutor(player, player, TUTOR_FROM_DECK, TUTOR_DECK, 0, AI_FIRST_FOUND, &test);
 	}
 
 	return 0;
@@ -5370,7 +5370,7 @@ int card_captains_claws(int player, int card, event_t event){
 
 	if( in_play(player, card) && is_equipping(player, card) ){
 		card_instance_t *instance = get_card_instance(player, card);
-		if( declare_attackers_trigger(player, card, event, RESOLVE_TRIGGER_MANDATORY,
+		if( declare_attackers_trigger(player, card, event, (declare_attackers_trigger_t)RESOLVE_TRIGGER_MANDATORY,
 									instance->damage_target_player, instance->damage_target_card) )
 		{
 			token_generation_t token;

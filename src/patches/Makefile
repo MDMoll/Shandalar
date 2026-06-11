@@ -1,4 +1,5 @@
-CC = gcc
+MINGW_PREFIX ?= $(shell if command -v i686-w64-mingw32-gcc >/dev/null 2>&1; then printf 'i686-w64-mingw32-'; elif command -v i386-mingw32-gcc >/dev/null 2>&1; then printf 'i386-mingw32-'; fi)
+CC = $(MINGW_PREFIX)gcc
 CFLAGS = -ggdb2 -O2 -m32 -fno-omit-frame-pointer -march=i586		\
 	-mpreferred-stack-boundary=2 -Wall -Wextra -Wpointer-arith	\
 	-Wbad-function-cast -Wcast-qual -Wcast-align -Wwrite-strings	\
@@ -14,9 +15,12 @@ INSTALLDIR = ../..
 
 all: testwhichgcc $(TGTS)
 
-# A trap to keep me from accidentally compiling with cygwin gcc.
+# A trap to keep me from accidentally compiling with host or Cygwin gcc.
 testwhichgcc:
-	if [ "$$(which gcc)" != "/d/mingw/bin/gcc" ]; then echo "which gcc is $$(which gcc) instead of /d/mingw/bin/gcc"; false; else true; fi
+	@target="$$( $(CC) -dumpmachine 2>/dev/null )"; \
+	case "$$target" in *mingw32*|*mingw64*) true ;; \
+	  *) echo "$(CC) targets $$target instead of MinGW"; false ;; \
+	esac
 
 install: testwhichgcc $(patsubst %,$(INSTALLDIR)/%,$(TGTS))
 

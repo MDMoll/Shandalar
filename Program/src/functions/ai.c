@@ -32,11 +32,25 @@ int check_timer_for_ai_speculation(void)
 int pay_mana_maximally_satisfied(int* pay_mana_array, int x_val, int max_x_val);
 int try_to_pay_for_mana_by_autotapping(int player, int* amt, int* unknown_v46, int autotap_flags, int unknown_v47);
 
+static int mana_payment_is_pure_multi_generic_cost(void)
+{
+	if ((PAY_MANA_COLORLESS & 0xffff0000) || PAY_MANA_COLORLESS < 2){
+		return 0;
+	}
+
+	return PAY_MANA_BLACK == 0
+		&& PAY_MANA_BLUE == 0
+		&& PAY_MANA_GREEN == 0
+		&& PAY_MANA_RED == 0
+		&& PAY_MANA_WHITE == 0
+		&& PAY_MANA_ARTIFACT == 0;
+}
+
 void human_autotap_for_mana(int player, int* amt, int* unknown_v46, int unknown_v47){
 	// First is standard autotapping, straight out of the exe.
 
 	// 1. Try to pay by tapping relevant basic lands.
-	if (!pay_mana_maximally_satisfied(&PAY_MANA_COLORLESS, x_value, max_x_value)){
+	if (!mana_payment_is_pure_multi_generic_cost() && !pay_mana_maximally_satisfied(&PAY_MANA_COLORLESS, x_value, max_x_value)){
 		try_to_pay_for_mana_by_autotapping(player, amt, unknown_v46,
 										   AUTOTAP_NO_CREATURES|AUTOTAP_NO_ARTIFACTS|AUTOTAP_NO_DONT_AUTO_TAP|AUTOTAP_NO_NONBASIC_LANDS,
 										   unknown_v47);

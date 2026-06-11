@@ -118,29 +118,19 @@ public class duelDeck extends ArrayList<duelCard> {
 
     private String randomMsg() {
         Random ran = new Random();
-        switch (ran.nextInt(10)){
-            case 0:
-                return "Shame, I liked that one as well.";
-            case 1:
-                return "Oh no, that was my favourite!";
-            case 2:
-                return "(Actually I dropped it down the back of the sofa.)";
-            case 3:
-                return "A player of your calibre doesn't need it anyway. ";
-            case 4:
-                return "Honest.";
-            case 5:
-                return "I looked really hard for it but it is just not there.";
-            case 6:
-                return "The deck is better without it anyway.";
-            case 7:
-                return "Besides, no-one uses that card.";
-            case 8:
-                return "I think the wizards stole it.";
-            case 9:
-                return "I recommend Plauge Rats instead.";
-            default : return "You shouldn't see this line";
-        }
+        return switch (ran.nextInt(10)) {
+            case 0 -> "Shame, I liked that one as well.";
+            case 1 -> "Oh no, that was my favourite!";
+            case 2 -> "(Actually I dropped it down the back of the sofa.)";
+            case 3 -> "A player of your calibre doesn't need it anyway. ";
+            case 4 -> "Honest.";
+            case 5 -> "I looked really hard for it but it is just not there.";
+            case 6 -> "The deck is better without it anyway.";
+            case 7 -> "Besides, no-one uses that card.";
+            case 8 -> "I think the wizards stole it.";
+            case 9 -> "I recommend Plague Rats instead.";
+            default -> "You shouldn't see this line";
+        };
 
     }
 }

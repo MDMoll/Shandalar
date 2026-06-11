@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "manalink.h"
 
 static int bounded_active_cards_count(int player)
@@ -5,14 +7,52 @@ static int bounded_active_cards_count(int player)
 	return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], 150) : 0;
 }
 
+enum
+{
+	TOKEN_CARD_SLOT_CAPACITY = 150,
+	TOKEN_TARGET_ARRAY_CAPACITY = 19,
+	TOKEN_MARKED_CARD_CAPACITY = 151,
+	TOKEN_MAX_GENERATED_PER_BATCH = 150
+};
+
+static int token_player_is_valid(int player)
+{
+	return player >= HUMAN && player <= AI;
+}
+
+static int token_card_slot_is_valid(int card)
+{
+	return card >= 0 && card < TOKEN_CARD_SLOT_CAPACITY;
+}
+
+static int token_permanent_is_valid(int player, int card)
+{
+	return token_player_is_valid(player) && token_card_slot_is_valid(card) && in_play(player, card);
+}
+
+static int token_iid_is_valid(int iid)
+{
+	return iid >= 0;
+}
+
+static int token_source_is_valid(int player, int card)
+{
+	return token_player_is_valid(player) && token_card_slot_is_valid(card) && get_card_instance(player, card)->internal_card_id >= 0;
+}
+
 void default_token_definition(int player, int card, int id, token_generation_t *token)
 {
+  if (!token)
+	return;
+
+  memset(token, 0, sizeof(*token));
+
   token->id = id;
   token->eff_player = player;
   token->eff_card = card;
   token->t_player = player;
 
-  if (player >= 0 && card >= 0)	// Find the real source if this was given either an activation card or an effect card
+  if (token_player_is_valid(player) && token_card_slot_is_valid(card))	// Find the real source if this was given either an activation card or an effect card
 	{
 	  card_instance_t* instance = get_card_instance(player, card);
 	  if (instance->internal_card_id == activation_card)
@@ -30,7 +70,7 @@ void default_token_definition(int player, int card, int id, token_generation_t *
 			}
 		}
 	}
-  if (player >= 0 && card >= 0)
+  if (token_player_is_valid(player) && token_card_slot_is_valid(card))
 	{
 	  token->s_player = player;
 	  token->s_card = card;
@@ -63,6 +103,16 @@ static int get_copyable_special_infos(int t_player, int t_card);
 // Create a token definition that's a copy of (t_player,t_card).
 void copy_token_definition(int player, int card, token_generation_t* token, int t_player, int t_card)
 {
+  if (!token)
+	return;
+
+  if (!token_permanent_is_valid(t_player, t_card))
+	{
+	  default_token_definition(player, card, CARD_ID_RULES_ENGINE, token);
+	  token->qty = 0;
+	  return;
+	}
+
   int csvid = get_id(t_player, t_card);
   default_token_definition(player, card, csvid, token);
   token->no_sleight = 1;
@@ -84,14 +134,17 @@ void copy_token_definition(int player, int card, token_generation_t* token, int 
 	  token->color_forced = instance->targets[7].card;
 	  token->special_flags2 = instance->targets[8].card;
 	  token->special_infos = get_copyable_special_infos(t_player, t_card);
-		if( check_special_flags2(t_player, t_card, SF2_ENCHANTED_EVENING) ){
-			token->special_flags2 = SF2_ENCHANTED_EVENING;
-		}
+	  if( check_special_flags2(t_player, t_card, SF2_ENCHANTED_EVENING) ){
+		token->special_flags2 |= SF2_ENCHANTED_EVENING;
+	  }
 	}
 }
 
 int copy_token_characteristics_for_clone(int player, int card, int t_player, int t_card)
 {
+  if (!token_player_is_valid(player) || !token_card_slot_is_valid(card) || !token_permanent_is_valid(t_player, t_card))
+	return 0;
+
   int csvid = get_id(t_player, t_card);
   if (cards_ptr[csvid]->card_type == 8)	// A token defined in manalink.csv
 	{
@@ -110,10 +163,10 @@ int copy_token_characteristics_for_clone(int player, int card, int t_player, int
 
 	  set_special_infos(player, card, get_copyable_special_infos(t_player, t_card));
 
-		if( check_special_flags2(t_player, t_card, SF2_ENCHANTED_EVENING) ){
-			set_special_flags2(player, card, SF2_ENCHANTED_EVENING);
-		}
-		
+	  if( check_special_flags2(t_player, t_card, SF2_ENCHANTED_EVENING) ){
+		set_special_flags2(player, card, SF2_ENCHANTED_EVENING);
+	  }
+
 	  return 1;
 	}
   else
@@ -126,15 +179,18 @@ int token_characteristic_setting_effects(int player, int card, event_t event, in
 	if (card == -1){
 		return 0;
 	}
+	if (!token_player_is_valid(player) || !token_card_slot_is_valid(card) || !token_player_is_valid(t_player) || !token_card_slot_is_valid(t_card)){
+		return 0;
+	}
 	if (check_special_flags2(player, card, SF2_TEMPORARY_COPY_OF_TOKEN)){
 		return 0;
 	}
 	card_instance_t* instance = get_card_instance(player, card);
 	if( event == EVENT_POWER && affect_me(t_player, t_card) && instance->targets[5].player >= 0 ){
-		event_result += instance->targets[5].player - get_base_power(player, card);
+		event_result += instance->targets[5].player - get_base_power(t_player, t_card);
 	}
 	if( event == EVENT_TOUGHNESS && affect_me(t_player, t_card) && instance->targets[5].card >= 0 ){
-		event_result += instance->targets[5].card - get_base_toughness(player, card);
+		event_result += instance->targets[5].card - get_base_toughness(t_player, t_card);
 	}
 	if( event == EVENT_ABILITIES && affect_me(t_player, t_card) && instance->targets[6].player > 0 ){
 		event_result |= instance->targets[6].player;
@@ -146,7 +202,7 @@ int token_characteristic_setting_effects(int player, int card, event_t event, in
 			}
 		}	// otherwise handled by setting initial_color in set_token()
 	}
-	if( instance->targets[7].player > 0 && instance->targets[7].player > 0 ){
+	if( instance->targets[7].player > 0 ){
 		// Deliberately use the attached-to card as the effect source, not the attachment
 		special_abilities(t_player, t_card, event, instance->targets[7].player, t_player, t_card);
 	}
@@ -166,6 +222,10 @@ int generic_token(int player, int card, event_t event){
 }
 
 static void set_token(int player, int card, token_generation_t *token ){
+	if (!token || !token_player_is_valid(player) || !token_card_slot_is_valid(card)){
+		return;
+	}
+
 	card_instance_t *instance = get_card_instance(player, card);
 	instance->damage_source_player = token->s_player;
 	instance->damage_source_card = token->s_card;
@@ -194,19 +254,28 @@ static void set_token(int player, int card, token_generation_t *token ){
 
 	instance->targets[7].card = forced | 0x80;
 
-	set_special_flags2(player, card, token->special_flags2);
+	if (token->special_flags2){
+		set_special_flags2(player, card, token->special_flags2);
+	}
 
 	convert_to_token(player, card);
 	set_special_infos(player, card, token->special_infos);
 }
 
 void convert_to_token(int player, int card){
+	if (!token_player_is_valid(player) || !token_card_slot_is_valid(card)){
+		return;
+	}
+
 	card_instance_t *instance = get_card_instance(player, card);
 	instance->token_status |= STATUS_TOKEN;
 }
 
 static int get_updated_tokens_number(int player, int number)
 {
+  if (number <= 0)
+	return 0;
+
   card_instance_t* instance;
   int p, c;
   for (p = 0; p <= 1; ++p)
@@ -223,25 +292,37 @@ static int get_updated_tokens_number(int player, int number)
 				// else fall through
 			  case CARD_ID_SELESNYA_LOFT_GARDENS:	// everyone: doubles
 			  case CARD_ID_PRIMAL_VIGOR:
-				number *= 2;
+				if (number > TOKEN_MAX_GENERATED_PER_BATCH / 2)
+				  number = TOKEN_MAX_GENERATED_PER_BATCH;
+				else
+				  number *= 2;
 				break;
 			}
 	}
-  return number;
+  return MIN(number, TOKEN_MAX_GENERATED_PER_BATCH);
 }
 
 static int is_reserved_id(int csvid){
 	int iid = get_internal_card_id_from_csv_id(csvid);
-	return (cards_data[iid].cc[2] == 3	// vanguard card, edh, etc.
-			|| cards_data[iid].type == TYPE_EFFECT);
+	return (token_iid_is_valid(iid) &&
+			(cards_data[iid].cc[2] == 3	// vanguard card, edh, etc.
+			 || cards_data[iid].type == TYPE_EFFECT));
 }
 
 void set_special_infos(int player, int card, int infos){
+	if (!token_player_is_valid(player) || !token_card_slot_is_valid(card)){
+		return;
+	}
+
 	card_instance_t *instance = get_card_instance(player, card);
 	instance->targets[14].player = infos;
 }
 
 int get_special_infos(int player, int card){
+	if (!token_player_is_valid(player) || !token_card_slot_is_valid(card)){
+		return 0;
+	}
+
 	card_instance_t *instance = get_card_instance(player, card);
 	if( instance->targets[14].player > -1 ){
 		return instance->targets[14].player;
@@ -323,7 +404,15 @@ static int get_copyable_special_infos(int t_player, int t_card)
 }
 
 static int real_generate_token(int player, int int_id, token_generation_t *token, int delay_put_into_play){
+	if (!token_player_is_valid(player) || !token_iid_is_valid(int_id) || !token){
+		return -1;
+	}
+
 	int card_added = add_card_to_hand( player, int_id );
+	if (card_added == -1){
+		return -1;
+	}
+
 	set_token(player, card_added, token);
 	if (delay_put_into_play){
 		get_card_instance(player, card_added)->state |= STATE_INVISIBLE;
@@ -335,15 +424,27 @@ static int real_generate_token(int player, int int_id, token_generation_t *token
 }
 
 void generate_token(token_generation_t *token){
+	if (!token || !token_player_is_valid(token->t_player) || token->qty <= 0){
+		return;
+	}
+
 	int int_id = get_internal_card_id_from_csv_id(token->id);
+	if (!token_iid_is_valid(int_id)){
+		return;
+	}
+
 	if(!(cards_data[int_id].type & TYPE_ARTIFACT) && (token->action & TOKEN_ACTION_CONVERT_INTO_ARTIFACT)){// not is_what() - deliberately ignore SF2_MYCOSYNTH_LATTICE
 		int_id = create_a_card_type(int_id);
+		if (!token_iid_is_valid(int_id)){
+			return;
+		}
 		cards_data[int_id].type |= TYPE_ARTIFACT;
 	}
 	int number = token->qty;
 	if( ! is_what(-1, int_id, TYPE_EFFECT) ){
 		number = get_updated_tokens_number(token->t_player, number);
 	}
+	number = MIN(number, TOKEN_MAX_GENERATED_PER_BATCH);
 
 	int i;
 	int card_added = -1;
@@ -351,13 +452,21 @@ void generate_token(token_generation_t *token){
 	ASSERT(token->eff_card != -1 || !(token->keep_track_of_tokens_generated > 0 || token->legacy == 1 ||
 									  (token->action & (TOKEN_ACTION_EQUIP | TOKEN_ACTION_HASTE | TOKEN_ACTION_PUMP_POWER | TOKEN_ACTION_PUMP_TOUGHNESS))));
 
-	card_instance_t *source = token->keep_track_of_tokens_generated ? get_card_instance(token->eff_player, token->eff_card) : NULL;
+	card_instance_t *source = NULL;
+	if (token->keep_track_of_tokens_generated > 0
+		&& token_player_is_valid(token->eff_player)
+		&& token_card_slot_is_valid(token->eff_card)){
+		source = get_card_instance(token->eff_player, token->eff_card);
+	}
 	for( i = 0; i < number; i++){
 		card_added = real_generate_token(token->t_player, int_id, token, 1);
+		if (card_added == -1){
+			break;
+		}
 
 		card_instance_t* instance = get_card_instance(token->t_player, card_added);
 
-		if (token->legacy == 1){
+		if (token->legacy == 1 && token_source_is_valid(token->eff_player, token->eff_card)){
 			create_targetted_legacy_effect(token->eff_player, token->eff_card, token->special_code_for_legacy, token->t_player, card_added);
 		}
 
@@ -368,18 +477,21 @@ void generate_token(token_generation_t *token){
 			instance->state |= STATE_ATTACKING;
 			choose_who_attack(token->t_player, card_added);
 		}
-		if (token->action & TOKEN_ACTION_BLOCKING){
+		if ((token->action & TOKEN_ACTION_BLOCKING)
+			&& token_card_slot_is_valid(token->action_argument)
+			&& in_play(1 - token->t_player, token->action_argument)){
 			card_instance_t* to_block = get_card_instance(1 - token->t_player, token->action_argument);
 			instance->blocking = to_block->blocking == 255 ? token->action_argument : to_block->blocking;
 			instance->state |= STATE_UNKNOWN8000|STATE_BLOCKING;
 		}
-		if ((token->action & TOKEN_ACTION_EQUIP) && i == 0){
+		if ((token->action & TOKEN_ACTION_EQUIP) && i == 0 && token_source_is_valid(token->eff_player, token->eff_card)){
 			equip_target_creature(token->eff_player, token->eff_card, token->t_player, card_added);
 		}
 		if (token->action & TOKEN_ACTION_DONT_COPY_TOKEN_SOURCE){
 			set_special_flags(token->t_player, card_added, SF_DONT_COPY_TOKEN_SOURCE);
 		}
-		if (token->action & (TOKEN_ACTION_HASTE | TOKEN_ACTION_PUMP_POWER | TOKEN_ACTION_PUMP_TOUGHNESS)){
+		if ((token->action & (TOKEN_ACTION_HASTE | TOKEN_ACTION_PUMP_POWER | TOKEN_ACTION_PUMP_TOUGHNESS))
+			&& token_source_is_valid(token->eff_player, token->eff_card)){
 			pump_ability_until_eot(token->eff_player, token->eff_card, token->t_player, card_added,
 								   (token->action & TOKEN_ACTION_PUMP_POWER) ? token->action_argument : 0,
 								   (token->action & TOKEN_ACTION_PUMP_TOUGHNESS) ? token->action_argument : 0,
@@ -394,7 +506,7 @@ void generate_token(token_generation_t *token){
 			(*token->special_code_on_generation)(token, card_added, i);
 		}
 
-		if( (int)token->keep_track_of_tokens_generated > i ){
+		if( source && (int)token->keep_track_of_tokens_generated > i && i < TOKEN_TARGET_ARRAY_CAPACITY ){
 			source->targets[i].player = token->t_player;
 			source->targets[i].card = card_added;
 		}
@@ -432,12 +544,12 @@ void generate_token(token_generation_t *token){
 		}
 	}
 	if( token->keep_track_of_tokens_generated > 0  ){
-		token->keep_track_of_tokens_generated = MIN(token->keep_track_of_tokens_generated, (unsigned int)number);
+		token->keep_track_of_tokens_generated = MIN(token->keep_track_of_tokens_generated, (unsigned int)MIN(number, TOKEN_TARGET_ARRAY_CAPACITY));
 	}
 }
 
 void copy_token(int player, int card, int tok_player, int tok_card ){
-	if( tok_player < 0 || tok_card < 0 ){
+	if( !token_player_is_valid(player) || tok_player < 0 || tok_card < 0 || !token_permanent_is_valid(tok_player, tok_card) ){
 		return;
 	}
 
@@ -447,13 +559,16 @@ void copy_token(int player, int card, int tok_player, int tok_card ){
 }
 
 static int generate_token_by_id_impl(int player, int card, int csvid, int number, int reserved){
-	if (number <= 0){
+	if (number <= 0 || !token_player_is_valid(player)){
 		return 0;
 	}
 
 	token_generation_t token;
 	default_token_definition(player, card, csvid, &token);
 	int int_id = get_internal_card_id_from_csv_id(csvid);
+	if (!token_iid_is_valid(int_id)){
+		return 0;
+	}
 	if (reserved){
 		token.no_sleight = 1;
 		number = 1;
@@ -463,11 +578,15 @@ static int generate_token_by_id_impl(int player, int card, int csvid, int number
 			number = 1;
 		}
 	}
+	number = MIN(number, TOKEN_MAX_GENERATED_PER_BATCH);
 
 	int i;
 	int card_added = -1;
 	for( i = 0; i < number; i++){
 		card_added = real_generate_token(player, int_id, &token, 0);
+		if (card_added == -1){
+			break;
+		}
 	}
 
 	return card_added;
@@ -483,12 +602,19 @@ void generate_tokens_by_id(int player, int card, int csvid, int howmany){
 
 int generate_reserved_token_by_id(int player, int csvid){
 	ASSERT(is_reserved_id(csvid));
+	if (!is_reserved_id(csvid)){
+		return -1;
+	}
 	// It's only safe to use -1 for card because we're sending 1 for reserved, and therefore will be setting no_sleight=1
 	return generate_token_by_id_impl(player, -1, csvid, 1, 1);
 }
 
 void copy_all_tokens(int player, int card, int type, test_definition_t *test){
-	int c, marked[151] = {0};
+	if (!token_player_is_valid(player)){
+		return;
+	}
+
+	int c, marked[TOKEN_MARKED_CARD_CAPACITY] = {0};
 	int active_count = bounded_active_cards_count(player);
 	for (c = 0; c < active_count; ++c){
 		if (in_play(player, c) && is_token(player, c)){
@@ -497,7 +623,7 @@ void copy_all_tokens(int player, int card, int type, test_definition_t *test){
 			}
 		}
 	}
-	
+
 	for (c = active_count-1; c >-1 ; c--){
 		if (marked[c]){
 			copy_token(player, card, player, c);

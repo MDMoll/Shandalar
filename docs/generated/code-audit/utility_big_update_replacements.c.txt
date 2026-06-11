@@ -1,0 +1,1001 @@
+/*
+ * Utility/helpers.c conservative update snippets.
+ *
+ * This is not intended as a standalone translation unit.  Copy the helper block
+ * near the top of the file, then replace the matching functions below.
+ *
+ * Themes:
+ *   - centralize repeated 150/500/151 limits;
+ *   - avoid several small-buffer overflows;
+ *   - fix a few obvious wrong-player / stale-index bugs;
+ *   - make large reanimation paths use saved iids instead of reading from a
+ *     graveyard slot after that slot has shifted.
+ */
+
+/* ------------------------------------------------------------------------- */
+/* Add near the top, after discard_controller.                               */
+/* ------------------------------------------------------------------------- */
+
+enum
+{
+  UTILITY_BATTLEFIELD_CARD_CAPACITY = 150,
+  UTILITY_ZONE_CARD_CAPACITY = 500,
+  UTILITY_HAND_CARD_CAPACITY = 151,
+  UTILITY_CMC_BUCKETS = 17,
+  UTILITY_MAX_CMC_BUCKET = UTILITY_CMC_BUCKETS - 1
+};
+
+static int utility_player_is_valid(int player)
+{
+  return player >= HUMAN && player <= AI;
+}
+
+static int utility_active_cards_count(int player)
+{
+  return utility_player_is_valid(player) ? MIN(active_cards_count[player], UTILITY_BATTLEFIELD_CARD_CAPACITY) : 0;
+}
+
+static int utility_player_matches(int actual_player, int requested_player)
+{
+  return requested_player == ANYBODY || actual_player == requested_player;
+}
+
+static int utility_cmc_bucket(int cmc)
+{
+  if (cmc < 0)
+    return 0;
+  if (cmc > UTILITY_MAX_CMC_BUCKET)
+    return UTILITY_MAX_CMC_BUCKET;
+  return cmc;
+}
+
+static int utility_instance_iid(card_instance_t* instance)
+{
+  if (!instance)
+    return -1;
+
+  int iid = instance->internal_card_id;
+  if (iid == -1)
+    iid = instance->backup_internal_card_id;
+
+  return iid;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace get_attack_power().                                               */
+/* ------------------------------------------------------------------------- */
+
+int get_attack_power(int player, int card)
+{
+  card_instance_t* inst;
+  int p, c;
+
+  for (p = HUMAN; p <= AI; ++p)
+    {
+      int active_count = utility_active_cards_count(p);
+      for (c = 0; c < active_count; ++c)
+        {
+          if (!(inst = in_play(p, c)))
+            continue;
+
+          switch (cards_data[inst->internal_card_id].id)
+            {
+              case CARD_ID_ASSAULT_FORMATION:
+              case CARD_ID_THE_GREAT_FOREST:
+                if (p != player)
+                  break;
+                // else fall through
+              case CARD_ID_DORAN_THE_SIEGE_TOWER:
+                if (!is_humiliated(p, c))
+                  return get_toughness(player, card);
+                break;
+            }
+        }
+    }
+
+  return get_power(player, card);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace is_valid_card().                                                  */
+/* ------------------------------------------------------------------------- */
+
+int is_valid_card(int id)
+{
+  if (id < 0 || id >= available_slots)
+    return 0;
+
+  if (!(card_coded[id / 8] & (1 << (id % 8))))
+    return 0;
+
+  int crd = get_internal_card_id_from_csv_id(id);
+  if (crd < 0)
+    return 0;
+
+  card_ptr_t* c = cards_ptr[id];
+  if (!c)
+    return 0;
+
+  // No tokens, vanguard cards, or pure effects.
+  if (cards_data[crd].cc[2] == 3 || c->expansion == 4096 || cards_data[crd].type == TYPE_EFFECT)
+    return 0;
+
+  // Ante cards.
+  switch (id)
+    {
+      case CARD_ID_CONTRACT_FROM_BELOW:
+      case CARD_ID_DARKPACT:
+      case CARD_ID_BRONZE_TABLET:
+      case CARD_ID_JEWELED_BIRD:
+      case CARD_ID_DEMONIC_ATTORNEY:
+      case CARD_ID_REBIRTH:
+      case CARD_ID_TEMPEST_EFREET:
+      case CARD_ID_RULES_ENGINE:
+      case CARD_ID_DEADBOX:
+      case 916:
+        return 0;
+    }
+
+  return 1;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace get_card_name_by_instance().                                      */
+/* ------------------------------------------------------------------------- */
+
+const char* get_card_name_by_instance(card_instance_t* instance)
+{
+  int iid = utility_instance_iid(instance);
+  if (iid < 0)
+    return "";
+
+  return cards_ptr[cards_data[iid].id]->name;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace reveal_target_player_hand().                                      */
+/* ------------------------------------------------------------------------- */
+
+void reveal_target_player_hand(int player)
+{
+  if (!utility_player_is_valid(player))
+    return;
+
+  int cards_array[UTILITY_HAND_CARD_CAPACITY];
+  int revealed = 0;
+  int i, active_count = utility_active_cards_count(player);
+
+  for (i = 0; i < active_count && revealed < UTILITY_HAND_CARD_CAPACITY; ++i)
+    {
+      if (in_hand(player, i))
+        {
+          card_instance_t *rev_card = get_card_instance(player, i);
+          cards_array[revealed++] = rev_card->internal_card_id;
+        }
+    }
+
+  if (revealed > 0)
+    show_deck(1 - player, cards_array, revealed, "Cards revealed", 0, 0x7375B0);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace get_most_common_cmc_nonland() and get_most_common_cmc_in_hand().  */
+/* ------------------------------------------------------------------------- */
+
+int get_most_common_cmc_nonland(int player)
+{
+  int c, cmc[UTILITY_CMC_BUCKETS] = {0};
+  int active_count = utility_active_cards_count(player);
+
+  for (c = 0; c < active_count; ++c)
+    {
+      if (in_play(player, c) && is_what(player, c, TYPE_PERMANENT) && !is_what(player, c, TYPE_LAND))
+        ++cmc[utility_cmc_bucket(get_cmc(player, c))];
+    }
+
+  int i, result = -1, par = 0;
+  for (i = 0; i < UTILITY_CMC_BUCKETS; ++i)
+    {
+      if (cmc[i] > par)
+        {
+          par = cmc[i];
+          result = i;
+        }
+    }
+
+  return result;
+}
+
+int get_most_common_cmc_in_hand(int player, type_t type)
+{
+  int c, cmc[UTILITY_CMC_BUCKETS] = {0};
+  int active_count = utility_active_cards_count(player);
+
+  for (c = 0; c < active_count; ++c)
+    {
+      if (in_hand(player, c) && is_what(player, c, type))
+        ++cmc[utility_cmc_bucket(get_cmc(player, c))];
+    }
+
+  int i, result = -1, par = 0;
+  for (i = 0; i < UTILITY_CMC_BUCKETS; ++i)
+    {
+      if (cmc[i] > par)
+        {
+          par = cmc[i];
+          result = i;
+        }
+    }
+
+  return result;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace upkeep_trigger_mode_impl().                                       */
+/* Bug fix: previous code assigned a boolean to upk.                          */
+/* ------------------------------------------------------------------------- */
+
+int upkeep_trigger_mode_impl(int player, int card, event_t event, resolve_trigger_t trigger_mode, int no_check)
+{
+  int upk = 0;
+
+  if (trigger_condition == TRIGGER_UPKEEP
+      && affect_me(player, card)
+      && (is_what(player, card, TYPE_EFFECT) || !is_humiliated(player, card))
+      && (no_check || (upk = count_upkeeps(current_turn)) > 0))
+    {
+      if (event == EVENT_TRIGGER)
+        {
+          if (trigger_mode == RESOLVE_TRIGGER_DUH)
+            trigger_mode = duh_mode(player) ? RESOLVE_TRIGGER_MANDATORY : RESOLVE_TRIGGER_OPTIONAL;
+          event_result |= trigger_mode;
+        }
+
+      if (event == EVENT_RESOLVE_TRIGGER)
+        return no_check ? 1 : upk;
+    }
+
+  return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace generic_shade_amt_can_pump().                                     */
+/* Bug fix: no division by zero for free abilities with only a limit.         */
+/* ------------------------------------------------------------------------- */
+
+int generic_shade_amt_can_pump(int player, int card, int pump, int life_to_pay, int cless, int black, int blue, int green, int red, int white, int limit)
+{
+  if (pump <= 0 || !can_use_activated_abilities(player, card))
+    return 0;
+
+  int amt;
+
+  cless = get_cost_mod_for_activated_abilities(player, card, cless, black, blue, green, red, white);
+
+  switch (!!cless + !!black + !!blue + !!green + !!red + !!white)
+    {
+      case 0:
+        if (life_to_pay > 0)
+          amt = life[player] / life_to_pay;
+        else if (limit >= 0)
+          amt = limit;
+        else
+          return 0;  // Unbounded free activations are not useful for AI pump estimation.
+        break;
+
+      case 1:
+        if (cless)
+          amt = has_mana(player, COLOR_ANY, 1) / cless;
+        else if (black)
+          amt = has_mana(player, COLOR_BLACK, 1) / black;
+        else if (blue)
+          amt = has_mana(player, COLOR_BLUE, 1) / blue;
+        else if (green)
+          amt = has_mana(player, COLOR_GREEN, 1) / green;
+        else if (red)
+          amt = has_mana(player, COLOR_RED, 1) / red;
+        else
+          amt = has_mana(player, COLOR_WHITE, 1) / white;
+        break;
+
+      default:
+        {
+          int upper_bound = has_mana(player, COLOR_ANY, 1) / (cless + black + blue + green + red + white);
+
+#define CHECK_COLOR(chg, col) do                       \
+          {                                            \
+            if (chg)                                   \
+              {                                        \
+                int c = has_mana(player, col, 1) / chg; \
+                upper_bound = MIN(upper_bound, c);     \
+              }                                        \
+          } while (0)
+
+          CHECK_COLOR(black, COLOR_BLACK);
+          CHECK_COLOR(blue, COLOR_BLUE);
+          CHECK_COLOR(green, COLOR_GREEN);
+          CHECK_COLOR(red, COLOR_RED);
+          CHECK_COLOR(white, COLOR_WHITE);
+#undef CHECK_COLOR
+
+          if (upper_bound <= 0)
+            return 0;
+
+          int lower_bound = 0;
+
+          while (upper_bound != lower_bound)
+            {
+              int mid = (upper_bound + lower_bound + 1) / 2;
+              if (has_mana_multi(player, cless * mid, black * mid, blue * mid, green * mid, red * mid, white * mid))
+                lower_bound = mid;
+              else
+                upper_bound = mid - 1;
+            }
+
+          if (upper_bound <= 0)
+            return 0;
+
+          amt = upper_bound;
+        }
+        break;
+    }
+
+  if (life_to_pay > 0)
+    {
+      if (!can_pay_life(player, 1))
+        return 0;
+
+      int amt_life = (life[player] - 1) / life_to_pay;
+      if (amt_life <= 0)
+        return 0;
+      else if (amt_life < amt)
+        amt = amt_life;
+    }
+
+  if (limit >= 0 && amt > limit)
+    amt = limit;
+
+  return amt * pump;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace reanimate_permanent_impl().                                       */
+/* Bug fix: do not read grave[selected] after remove_card_from_grave().       */
+/* ------------------------------------------------------------------------- */
+
+static int reanimate_permanent_impl(int player, int card, int target_graveyard, int selected, reanimate_mode_t action,
+                                    counter_t counter_type, int (*effect_fn)(int, int, event_t), void (*before_etb)(int, int))
+{
+  // player = who gets the reanimated card
+  // target_graveyard = the player who owns the graveyard in which the card to reanimate is
+
+  if (selected == -1)
+    return -1;
+
+  if (action < 0)
+    action = 0;
+
+  const int *grave = get_grave(target_graveyard);
+  int ca_player = player;
+  int card_added = -1;
+  int reanimated_iid = -1;
+
+  if (action & REANIMATE_SPECIAL_R_ALL)
+    {
+      card_added = selected;
+      card_instance_t* added = get_card_instance(ca_player, card_added);
+      reanimated_iid = added->original_internal_card_id >= 0 ? added->original_internal_card_id : added->internal_card_id;
+    }
+  else
+    {
+      reanimated_iid = grave[selected];
+      if (reanimated_iid == -1)
+        return -1;
+
+      if (!(action & REANIMATE_RETURN_TO_HAND)
+          && is_what(-1, reanimated_iid, TYPE_CREATURE)
+          && check_battlefield_for_id(ANYBODY, CARD_ID_GRAFDIGGERS_CAGE))
+        return -1;
+
+      card_added = add_card_to_hand(ca_player, reanimated_iid);
+      if (card_added == -1)
+        return -1;
+
+      remove_card_from_grave(target_graveyard, selected);
+    }
+
+  if ((action & REANIMATE_ATTACH_AS_AURA) && player >= 0 && card >= 0)
+    {
+      set_special_flags(player, card, SF_TARGETS_ALREADY_SET);
+      attach_aura_to_target(player, card, EVENT_RESOLVE_SPELL, ca_player, card_added);
+    }
+
+  int effect_src = card >= 0 ? card : card_added;
+
+  if (counter_type != COUNTER_invalid)
+    {
+      ++hack_silent_counters;
+      add_counter(ca_player, card_added, counter_type);
+      --hack_silent_counters;
+    }
+
+  if (action & REANIMATE_TAP)
+    get_card_instance(ca_player, card_added)->state |= STATE_TAPPED;  // not tap_card() to avoid EVENT_TAP_CARD
+
+  if (action & REANIMATE_PLUS1_PLUS1_COUNTER)
+    add_1_1_counter(ca_player, card_added);
+
+  if (action & REANIMATE_MINUS1_MINUS1_COUNTER)
+    add_minus1_minus1_counters(ca_player, card_added, 1);
+
+  if (effect_fn)
+    create_targetted_legacy_effect(player, effect_src, effect_fn, ca_player, card_added);
+
+  if (action == REANIMATE_UNEARTH)
+    {
+      convert_to_token(ca_player, card_added);
+      set_special_flags(ca_player, card_added, SF_UNEARTH);
+      set_special_flags2(ca_player, card_added, SF2_WILL_BE_EXILED_IF_PUTTED_IN_GRAVE);
+    }
+
+  if (action & REANIMATE_ADD_BLACK_ZOMBIE)
+    {
+      change_color(player, effect_src, ca_player, card_added, COLOR_TEST_BLACK, CHANGE_COLOR_ADD | CHANGE_COLOR_NO_SOUND);
+      add_a_subtype(ca_player, card_added, SUBTYPE_ZOMBIE);
+    }
+
+  if (action & REANIMATE_HASTE_AND_EXILE_AT_EOT)
+    create_targetted_legacy_effect(player, effect_src, &haste_and_remove_eot, ca_player, card_added);
+
+  if (action & REANIMATE_HASTE_AND_EXILE_AT_YOUR_UPKEEP)
+    create_targetted_legacy_effect(player, effect_src, &haste_and_exile_your_upkeep, ca_player, card_added);
+
+  if (action & REANIMATE_HASTE_UNTIL_EOT)
+    pump_ability_until_eot(player, effect_src, ca_player, card_added, 0, 0, 0, SP_KEYWORD_HASTE);
+
+  if (action & REANIMATE_RETURN_TO_PLAY_TRANSFORMED)
+    transform(ca_player, card_added);
+
+  if (player != target_graveyard)
+    {
+      if (player == HUMAN)
+        add_state(ca_player, card_added, STATE_OWNED_BY_OPPONENT);
+      else
+        remove_state(ca_player, card_added, STATE_OWNED_BY_OPPONENT);
+    }
+
+  if (before_etb)
+    (*before_etb)(ca_player, card_added);
+
+  if (!(action & (REANIMATE_NO_CONTROL_LEGACY |
+                  REANIMATE_UNEARTH |
+                  REANIMATE_ADD_BLACK_ZOMBIE |
+                  REANIMATE_HASTE_AND_EXILE_AT_EOT |
+                  REANIMATE_ATTACH_AS_AURA |
+                  REANIMATE_RETURN_TO_HAND))
+      && !effect_fn)
+    {
+      if (effect_src != -1 && ((player != target_graveyard) || get_owner(ca_player, card_added) != player))
+        create_targetted_legacy_effect(player, effect_src, &empty, ca_player, card_added);
+    }
+
+  if (!(action & REANIMATE_RETURN_TO_HAND))
+    {
+      set_special_flags3(ca_player, card_added, SF3_REANIMATED);
+      put_into_play(ca_player, card_added);
+      if (action == REANIMATE_UNEARTH && in_play(ca_player, card_added))
+        create_targetted_legacy_effect(player, effect_src, &effect_unearth, ca_player, card_added);
+    }
+
+  return card_added;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace new_reanimate_all_impl().                                         */
+/* Bug fixes: correct RFG owner, pass counter/effect/before_etb through.      */
+/* ------------------------------------------------------------------------- */
+
+static int new_reanimate_all_impl(int player, int card, int targ_player, test_definition_t *this_test, reanimate_mode_t action,
+                                  counter_t counter_type, int (*effect_fn)(int, int, event_t), void (*before_etb)(int, int))
+{
+  int csvid = card == -1 ? -1 : get_id(player, card);
+  int result = 0;
+  int i;
+  int grafdiggers_cage_flag = check_battlefield_for_id(ANYBODY, CARD_ID_GRAFDIGGERS_CAGE);
+  int to_reanimate[2][UTILITY_ZONE_CARD_CAPACITY];
+  int trc[2] = {0, 0};
+
+  // Step 1: remove matching cards from graveyards and store their iids.
+  for (i = HUMAN; i <= AI; ++i)
+    {
+      if (!utility_player_matches(i, targ_player))
+        continue;
+
+      int lower_limit = (i == targ_player && csvid == CARD_ID_CLEANSING_MEDITATION) ? get_card_instance(player, card)->info_slot : -1;
+      const int* grave = get_grave(i);
+      int count;
+
+      for (count = count_graveyard(i) - 1; count > lower_limit; --count)
+        {
+          int iid = grave[count];
+          if (iid == -1)
+            continue;
+
+          if (is_what(-1, iid, TYPE_PERMANENT) && new_make_test(i, iid, -1, this_test))
+            {
+              if (!is_what(-1, iid, TYPE_CREATURE) || !grafdiggers_cage_flag)
+                {
+                  if (trc[i] < UTILITY_ZONE_CARD_CAPACITY)
+                    {
+                      to_reanimate[i][trc[i]++] = iid;
+
+                      if (action & REANIMATE_SPECIAL_LIVING_DEAD)
+                        rfg_card_from_grave(i, count);
+                      else
+                        remove_card_from_grave(i, count);
+
+                      ++result;
+                    }
+                }
+            }
+        }
+    }
+
+  // Intermediate step: Living Death-style effects sacrifice all creatures.
+  if (action & REANIMATE_SPECIAL_LIVING_DEAD)
+    {
+      test_definition_t this_test2;
+      default_test_definition(&this_test2, TYPE_CREATURE);
+      APNAP(p, { new_manipulate_all(player, card, p, &this_test2, KILL_SACRIFICE); });
+    }
+
+  // Step 2: create hand instances from the stored iids.
+  if (action & REANIMATE_ALL_UNDER_CASTERS_CONTROL)
+    {
+      int ntrc = 0;
+
+      for (i = 0; i < trc[player] && ntrc < UTILITY_ZONE_CARD_CAPACITY; ++i)
+        {
+          int iid = to_reanimate[player][i];
+          if ((action & REANIMATE_SPECIAL_LIVING_DEAD) && !check_rfg(player, cards_data[iid].id))
+            continue;
+
+          if (action & REANIMATE_SPECIAL_LIVING_DEAD)
+            remove_card_from_rfg(player, cards_data[iid].id);
+
+          int card_added = add_card_to_hand(player, iid);
+          if (card_added != -1)
+            to_reanimate[player][ntrc++] = card_added;
+        }
+
+      int opponent = 1 - player;
+      for (i = 0; i < trc[opponent] && ntrc < UTILITY_ZONE_CARD_CAPACITY; ++i)
+        {
+          int iid = to_reanimate[opponent][i];
+          if ((action & REANIMATE_SPECIAL_LIVING_DEAD) && !check_rfg(opponent, cards_data[iid].id))
+            continue;
+
+          if (action & REANIMATE_SPECIAL_LIVING_DEAD)
+            remove_card_from_rfg(opponent, cards_data[iid].id);
+
+          int card_added = add_card_to_hand(player, iid);
+          if (card_added != -1)
+            {
+              get_card_instance(player, card_added)->state ^= STATE_OWNED_BY_OPPONENT;
+              to_reanimate[player][ntrc++] = card_added;
+            }
+        }
+
+      trc[player] = ntrc;
+      trc[opponent] = 0;
+    }
+  else
+    {
+      for (i = HUMAN; i <= AI; ++i)
+        {
+          int k, write = 0;
+          for (k = 0; k < trc[i]; ++k)
+            {
+              int iid = to_reanimate[i][k];
+              if ((action & REANIMATE_SPECIAL_LIVING_DEAD) && !check_rfg(i, cards_data[iid].id))
+                continue;
+
+              if (action & REANIMATE_SPECIAL_LIVING_DEAD)
+                remove_card_from_rfg(i, cards_data[iid].id);
+
+              int card_added = add_card_to_hand(i, iid);
+              if (card_added != -1)
+                to_reanimate[i][write++] = card_added;
+            }
+          trc[i] = write;
+        }
+    }
+
+  // Step 3: put the prepared hand cards onto the battlefield.
+  action |= REANIMATE_SPECIAL_R_ALL;
+  if (action & REANIMATE_ALL_UNDER_CASTERS_CONTROL)
+    {
+      int k;
+      for (k = 0; k < trc[player]; ++k)
+        reanimate_permanent_impl(player, card, player, to_reanimate[player][k], action, counter_type, effect_fn, before_etb);
+    }
+  else
+    {
+      APNAP(p, {
+        int k;
+        for (k = 0; k < trc[p]; ++k)
+          reanimate_permanent_impl(p, -1, p, to_reanimate[p][k], action, counter_type, effect_fn, before_etb);
+      };);
+    }
+
+  return result;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace pick_targets_for_multidamage().                                   */
+/* Bug fix: AI fallback wrote own-creature targets at trgts+1.                */
+/* ------------------------------------------------------------------------- */
+
+int pick_targets_for_multidamage(int player, int card, int max_targets, int damages, target_definition_t *td, const char *prompt)
+{
+  card_instance_t *instance = get_card_instance(player, card);
+
+  load_text(0, prompt);
+  int trgts = 0;
+
+  if (player != AI)
+    {
+      int players[2] = {0, 0};
+      while (trgts < max_targets && can_target(td))
+        {
+          if (select_target(player, card, td, text_lines[0], &(instance->targets[trgts])))
+            {
+              if (instance->targets[trgts].card == -1)
+                {
+                  if (players[instance->targets[trgts].player] != 1)
+                    {
+                      players[instance->targets[trgts].player] = 1;
+                      ++trgts;
+                    }
+                  else if (td->allow_cancel != 0)
+                    break;
+                }
+              else
+                {
+                  state_untargettable(instance->targets[trgts].player, instance->targets[trgts].card, 1);
+                  ++trgts;
+                }
+            }
+          else if (td->allow_cancel != 0)
+            break;
+        }
+
+      int i;
+      for (i = 0; i < trgts; ++i)
+        {
+          if (instance->targets[i].card != -1)
+            state_untargettable(instance->targets[i].player, instance->targets[i].card, 0);
+        }
+    }
+  else
+    {
+      if (td->zone == TARGET_ZONE_CREATURE_OR_PLAYER)
+        {
+          instance->targets[0].player = 1 - player;
+          instance->targets[0].card = -1;
+          if (would_validate_target(player, card, td, 0))
+            ++trgts;
+        }
+
+      int count = 0;
+      int opp_count = utility_active_cards_count(1 - player);
+      while (count < opp_count && trgts < max_targets)
+        {
+          if (in_play(1 - player, count)
+              && is_what(1 - player, count, TYPE_CREATURE)
+              && !is_protected_from_me(player, card, 1 - player, count)
+              && get_toughness(1 - player, count) <= damages)
+            {
+              instance->targets[trgts].player = 1 - player;
+              instance->targets[trgts].card = count;
+              ++trgts;
+            }
+          ++count;
+        }
+
+      if (trgts < max_targets && td->allow_cancel == 0)
+        {
+          count = 0;
+          while (count < opp_count && trgts < max_targets)
+            {
+              if (in_play(1 - player, count)
+                  && is_what(1 - player, count, TYPE_CREATURE)
+                  && !is_protected_from_me(player, card, 1 - player, count)
+                  && get_toughness(1 - player, count) > damages)
+                {
+                  instance->targets[trgts].player = 1 - player;
+                  instance->targets[trgts].card = count;
+                  ++trgts;
+                }
+              ++count;
+            }
+        }
+
+      if (trgts < max_targets && td->allow_cancel == 0)
+        {
+          count = 0;
+          int own_count = utility_active_cards_count(player);
+          while (count < own_count && trgts < max_targets)
+            {
+              if (in_play(player, count)
+                  && is_what(player, count, TYPE_CREATURE)
+                  && !is_protected_from_me(player, card, player, count)
+                  && get_toughness(player, count) > damages)
+                {
+                  instance->targets[trgts].player = player;
+                  instance->targets[trgts].card = count;
+                  ++trgts;
+                }
+              ++count;
+            }
+        }
+
+      if (trgts < max_targets && td->allow_cancel == 0)
+        {
+          count = 0;
+          int own_count = utility_active_cards_count(player);
+          while (count < own_count && trgts < max_targets)
+            {
+              if (in_play(player, count)
+                  && is_what(player, count, TYPE_CREATURE)
+                  && !is_protected_from_me(player, card, player, count))
+                {
+                  instance->targets[trgts].player = player;
+                  instance->targets[trgts].card = count;
+                  ++trgts;
+                }
+              ++count;
+            }
+        }
+    }
+
+  return trgts;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace get_back_your_permanents().                                       */
+/* Bug fix: first loop used active_cards_count[1-player] for both players.    */
+/* ------------------------------------------------------------------------- */
+
+void get_back_your_permanents(int player, int card, type_t typ)
+{
+  card_instance_t* inst;
+  int p, c;
+
+  // First, destroy any effect cards controlling permanents stolen from player.
+  for (p = HUMAN; p <= AI; ++p)
+    {
+      int active_count = utility_active_cards_count(p);
+      for (c = 0; c < active_count; ++c)
+        {
+          if ((inst = in_play(p, c))
+              && inst->internal_card_id == LEGACY_EFFECT_ALADDIN
+              && inst->damage_target_player == 1 - player
+              && is_stolen(inst->damage_target_player, inst->damage_target_card)
+              && is_what(inst->damage_target_player, inst->damage_target_card, typ))
+            kill_card(p, c, KILL_REMOVE);
+        }
+    }
+
+  // Anything left over.
+  for (c = utility_active_cards_count(1 - player) - 1; c >= 0; --c)
+    {
+      if (in_play(1 - player, c) && is_what(1 - player, c, typ) && is_stolen(1 - player, c))
+        gain_control(player, card, 1 - player, c);
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace check_battlefield_for_targettable_id().                           */
+/* Bug fix: ANYBODY branch checked player instead of t_player.                */
+/* ------------------------------------------------------------------------- */
+
+int check_battlefield_for_targettable_id(int player, int card, int t_player, int id, int mode)
+{
+  if (id == -1)
+    return 0;
+
+  int p;
+  for (p = HUMAN; p <= AI; ++p)
+    {
+      if (!utility_player_matches(p, t_player))
+        continue;
+
+      int count, active_count = utility_active_cards_count(p);
+      for (count = 0; count < active_count; ++count)
+        {
+          if (in_play(p, count) && get_id(p, count) == id && !is_protected_from_me(player, card, p, count))
+            {
+              if (mode == 0)
+                return 1;
+              if (mode == 1)
+                return count;
+            }
+        }
+    }
+
+  return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace reveal_cards_from_hand().                                         */
+/* Bug fix: previous loop used while(count != -1), which never terminates.    */
+/* ------------------------------------------------------------------------- */
+
+int reveal_cards_from_hand(int player, int card, test_definition_t *this_test)
+{
+  this_test->id = CARD_ID_RULES_ENGINE;
+  this_test->id_flag = 1;
+
+  int ha[UTILITY_HAND_CARD_CAPACITY];
+  int hac = 0;
+  int rev[UTILITY_HAND_CARD_CAPACITY];
+  int revealed = 0;
+
+  int count, active_count = utility_active_cards_count(player);
+  for (count = 0; count < active_count && hac < UTILITY_HAND_CARD_CAPACITY; ++count)
+    {
+      if (in_hand(player, count))
+        {
+          card_instance_t *crd = get_card_instance(player, count);
+          ha[hac++] = crd->internal_card_id;
+        }
+    }
+
+  if (hac > 0)
+    {
+      int choice = 0;
+      if (player == HUMAN)
+        choice = do_dialog(player, player, card, -1, -1, " Auto mode\n Manual mode", 0);
+
+      if (choice == 1)
+        {
+          while (1)
+            {
+              int selected = show_deck(HUMAN, ha, hac, "Select a card to reveal.", 0, 0x7375B0);
+              if (selected != -1 && new_make_test(player, ha[selected], -1, this_test))
+                {
+                  rev[revealed++] = ha[selected];
+                  ha[selected] = get_internal_card_id_from_csv_id(CARD_ID_RULES_ENGINE);
+                }
+              else
+                break;
+            }
+        }
+      else
+        {
+          for (count = 0; count < hac; ++count)
+            {
+              if (new_make_test(player, ha[count], -1, this_test))
+                rev[revealed++] = ha[count];
+            }
+        }
+
+      if (revealed > 0)
+        show_deck(HUMAN, rev, revealed, "Cards revealed", 0, 0x7375B0);
+    }
+
+  return revealed;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace exile_top_x_card_you_may_play_them().                             */
+/* Bug fix: previous code exiled from player, not t_player.                   */
+/* ------------------------------------------------------------------------- */
+
+int exile_top_x_card_you_may_play_them(int player, int card, int howmany, test_definition_t *test, int t_player, mpcfe_mode_t flags)
+{
+  int amount = MIN(howmany, count_deck(t_player));
+  int result = 0;
+
+  if (amount)
+    {
+      char buffer[100];
+      int pos = scnprintf(buffer, 100, "Cards exiled");
+      if (card != -1)
+        scnprintf(buffer + pos, 100 - pos, " by %s", cards_ptr[get_id(player, card)]->name);
+
+      int *deck = deck_ptr[t_player];
+      show_deck(player, deck, amount, buffer, 0, 0x7375B0);
+
+      int count = 0;
+      while (deck_ptr[t_player][0] != -1 && count < amount)
+        {
+          int iid = deck_ptr[t_player][0];
+          rfg_top_card_of_deck(t_player);
+
+          if (new_make_test(t_player, iid, -1, test))
+            {
+              create_may_play_card_from_exile_effect(player, card, t_player, cards_data[iid].id, flags);
+              ++result;
+            }
+
+          ++count;
+        }
+    }
+
+  return result;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace charge_mana_for_multi_x().                                        */
+/* Guard against invalid num_x.                                              */
+/* ------------------------------------------------------------------------- */
+
+int charge_mana_for_multi_x(int player, int color, int num_x)
+{
+  if (num_x <= 0)
+    {
+      spell_fizzled = 1;
+      return 0;
+    }
+
+  if (player == HUMAN && ai_is_speculating != 1)
+    {
+      int old_hack_xx = hack_xx;
+      hack_xx = num_x;
+      charge_mana(player, color, -1);
+      hack_xx = old_hack_xx;
+      if (spell_fizzled != 1)
+        return x_value;
+    }
+  else
+    {
+      int mana_avail = has_mana(player, color, 1);
+      mana_avail /= num_x;
+
+      if (mana_avail <= 0)
+        {
+          spell_fizzled = 1;
+          return 0;
+        }
+
+      mana_avail *= num_x;
+      charge_mana(player, color, mana_avail);
+      if (spell_fizzled != 1)
+        return mana_avail;
+    }
+
+  return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Replace can_pay_life_impl().                                              */
+/* ------------------------------------------------------------------------- */
+
+int can_pay_life_impl(int player, int amount, int flags)
+{
+  if (amount <= 0)
+    return 1;
+
+  int i;
+  for (i = HUMAN; i <= AI; ++i)
+    {
+      int count, active_count = utility_active_cards_count(i);
+      for (count = 0; count < active_count; ++count)
+        {
+          if (in_play(i, count))
+            {
+              int id = get_id(i, count);
+              if (i == player && id == CARD_ID_PLATINUM_EMPERION && !is_humiliated(i, count))
+                return 0;
+              if ((flags & CPL_PAY_LIFE_FOR_SPELLS_OR_ACTIVATED_ABILITY)
+                  && id == CARD_ID_ANGEL_OF_JUBILATION
+                  && !is_humiliated(i, count))
+                return 0;
+            }
+        }
+    }
+
+  return life[player] >= amount ? 1 : 0;
+}

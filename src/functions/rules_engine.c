@@ -1,13 +1,44 @@
 #include <ctype.h>
 #include <limits.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "manalink.h"
 
 extern int mulligans_complete[2];
 
+enum
+{
+  MAX_BATTLEFIELD_CARDS = 150,
+  MAX_DECK_CARDS = 500,
+  MAX_VANGUARD_AVATARS = 10,
+  MAX_RULES_ENGINE_OPTIONS = 100,
+  RULES_ENGINE_DIALOG_BUFFER_SIZE = 3000
+};
+
+static int valid_player(int player)
+{
+  return player >= HUMAN && player <= AI;
+}
+
+static int bounded_active_cards_count(int player)
+{
+  return valid_player(player) ? MIN(active_cards_count[player], MAX_BATTLEFIELD_CARDS) : 0;
+}
+
+static int valid_active_card_slot(int player, int card)
+{
+  return valid_player(player) && card >= 0 && card < bounded_active_cards_count(player);
+}
+
+static card_instance_t* safe_in_hand(int player, int card)
+{
+  return valid_active_card_slot(player, card) ? in_hand(player, card) : NULL;
+}
+
 int hack_allow_sorcery_if_rules_engine_is_only_effect = 0;
 
-static int vanguard_avatar[2][10];
+static int vanguard_avatar[2][MAX_VANGUARD_AVATARS];
 static int vcount[2] = {0, 0};
 #ifdef CARDS_IN_HAND_THIS_TURN	// unused
 static int cards_in_hand_this_turn[2][100];
@@ -50,7 +81,7 @@ typedef struct
 STATIC_ASSERT(sizeof(rules_engine_globals_t) == sizeof(((card_instance_t*)(NULL))->targets), sizeof_rules_engine_globals_t_must_match_target_array);
 
 int get_setting(int thing){
-	return settings[thing];
+	return thing >= 0 && thing < SETTING_MAX_PLUS_1 ? settings[thing] : 0;
 }
 
 typedef enum {
@@ -102,6 +133,18 @@ int unlimited_allowed_in_deck(int csvid)
 	  return 1;
 
   return 0;
+}
+
+static int add_invisible_card_to_hand_for_display(int player, int csvid)
+{
+	int iid = get_internal_card_id_from_csv_id(csvid);
+	int card_added = add_card_to_hand(player, iid);
+	if (card_added != -1){
+		card_instance_t *target = get_card_instance(player, card_added);
+		target->state |= STATE_INVISIBLE;
+		--hand_count[player];
+	}
+	return card_added;
 }
 
 static int check_deck_legality(void){
@@ -156,25 +199,25 @@ static int check_deck_legality(void){
 										 CARD_ID_DUH, CARD_ID_JACK_IN_THE_MOX };	// un-sets
 
 	int *deck = deck_ptr[HUMAN];
-	int new_deck[500];
+	int new_deck[MAX_DECK_CARDS];
 	int i;
 	unsigned int j=0;
-	for(i = 0; i < 500; i++){
+	for(i = 0; i < MAX_DECK_CARDS; i++){
 		new_deck[i] = -1;
 	}
-	for(i = 0; i < 500; i++){
-		if( deck[i] > -1 ){
+	for(i = 0; i < MAX_DECK_CARDS; i++){
+		if( deck && deck[i] > -1 ){
 			new_deck[i] = cards_data[ deck[i] ].id;
 		}
 		else{
 			new_deck[i] = -1;
 			j = i;
-			i = 500;
+			i = MAX_DECK_CARDS;
 		}
 	}
 	int count = 0;
 	/*
-	while( count < active_cards_count[HUMAN]){
+	while( count < bounded_active_cards_count(HUMAN)){
 		if(! in_play(HUMAN, count) ){
 			new_deck[j++] = get_id(HUMAN, count);
 		}
@@ -190,17 +233,13 @@ static int check_deck_legality(void){
 	// This counts the number of every single card in existence (!) in the deck, rather than just the cards in the deck.
 	for(i=0;i<available_slots;i++){
 		count = 0;
-		for(j = 0;j<500;j++){
+		for(j = 0;j<MAX_DECK_CARDS;j++){
 			if( new_deck[j] == i ){ count++; }
 		}
 
 		if( count > 4 ){
 			if (!unlimited_allowed_in_deck(i)){
-				int card_added =  add_card_to_hand(HUMAN, get_internal_card_id_from_csv_id(i)  );
-				card_instance_t *target = get_card_instance(HUMAN, card_added);
-				target->state |= STATE_INVISIBLE;
-				--hand_count[HUMAN];
-				return card_added;
+				return add_invisible_card_to_hand_for_display(HUMAN, i);
 			}
 		}
 
@@ -235,11 +274,7 @@ static int check_deck_legality(void){
 	if( legacy_legal || vintage_legal ){
 		return -1;
 	}
-	int card_added =  add_card_to_hand(HUMAN, get_internal_card_id_from_csv_id(illegal_card)  );
-	card_instance_t *target = get_card_instance(HUMAN, card_added);
-	target->state |= STATE_INVISIBLE;
-	--hand_count[HUMAN];
-	return card_added;
+	return illegal_card >= 0 ? add_invisible_card_to_hand_for_display(HUMAN, illegal_card) : 0;
 }
 
 void read_settings(void){
@@ -273,16 +308,19 @@ void read_settings(void){
 #define CFGSTR(str, settingnum)													\
 						if (strncasecmp(p, str ":", strlen(str ":")) == 0){		\
 							const char* q = p + strlen(str ":");				\
-							while (isspace(*q))									\
+							while (isspace((unsigned char)*q))					\
 								++q;											\
 							char* dup = strdup(q);								\
-							char* r = dup + strlen(dup) - 1;					\
-							while (r > dup && isspace(*r)){						\
-								*r = 0;											\
-								--r;											\
+							if (!dup)											\
+								continue;										\
+							size_t len = strlen(dup);							\
+							while (len > 0 && isspace((unsigned char)dup[len - 1])){ \
+								dup[--len] = 0;									\
 							}													\
 							if (*dup)											\
 								settings[settingnum] = (int)dup;				\
+							else												\
+								free(dup);										\
 							continue;											\
 						}
 					case '/': case 0:
@@ -338,6 +376,7 @@ void read_settings(void){
 						CFG("VerifyHandCount", SETTING_VERIFY_HAND_COUNT);
 						break;
 #undef CFG
+#undef CFGSTR
 				}
 				popup("config.txt", "Unknown line in config.txt: \"%s\"", buffer);
 			}
@@ -384,7 +423,8 @@ static void read_and_adjust_settings(void){
 	for (p = 0; p <= 1; ++p){
 		rules_engine_card[p] = -1;
 		deadbox_card[p] = -1;
-		for (c = 0; c < 150; ++c){
+		int active_count = bounded_active_cards_count(p);
+		for (c = 0; c < active_count; ++c){
 			if (in_play(p, c)){
 				int csvid = get_id(p, c);
 				if (csvid == CARD_ID_RULES_ENGINE){
@@ -406,7 +446,7 @@ int get_card_image_number(int csvid, int player, int card)
 
   // This surely belongs somewhere else.  But so do settings.
 
-  if (__builtin_expect(csvid < 0 || player < 0 || card < 0, 0))
+  if (__builtin_expect(csvid < 0 || csvid >= available_slots || player < 0 || card < 0 || !cards_ptr[csvid], 0))
 	return 0;
 
   int num_pics = cards_ptr[csvid]->num_pics;
@@ -448,26 +488,27 @@ void pregame(void){
 		if( vcount[p] == 0 ){
 			mulligans_complete[p] = 0;
 			int *deck = deck_ptr[p];
-			for (i = 0; i < 500 && deck[i] != -1; i++){
+			for (i = 0; deck && i < MAX_DECK_CARDS && deck[i] != -1; i++){
 				if (cards_data[deck[i]].cc[2] == 3){
 					int csvid = cards_data[deck[i]].id;
 					if (csvid == CARD_ID_AVATAR_MOMIR_VIG){
 						singleplayer_mode = SPM_MOMIR;
 					}
-					if( vcount[p] < 10 ){
+					if( vcount[p] < MAX_VANGUARD_AVATARS ){
 						vanguard_avatar[p][vcount[p]] = csvid;
 						vcount[p]++;
 					}
 				}
 			}
-			for (c = 0; c < active_cards_count[p]; ++c){
+			int active_count = bounded_active_cards_count(p);
+			for (c = 0; c < active_count; ++c){
 				card_instance_t* instance = get_card_instance(p, c);
 				if (instance->internal_card_id >= 0 && cards_data[instance->internal_card_id].cc[2] == 3){
 					int csvid = cards_data[instance->internal_card_id].id;
 					if (csvid == CARD_ID_AVATAR_MOMIR_VIG){
 						singleplayer_mode = SPM_MOMIR;
 					}
-					if( vcount[p] < 10 ){
+					if( vcount[p] < MAX_VANGUARD_AVATARS ){
 						vanguard_avatar[p][vcount[p]] = csvid;
 						vcount[p]++;
 					}
@@ -496,7 +537,7 @@ void pregame(void){
 	if( vcount[AI] == 0 && get_setting(SETTING_ARCHENEMY) && !get_setting(SETTING_CHALLENGE_MODE)){
 		int draft_found = 0;
 		int k;
-		for(k=0; k<10; k++){
+		for(k=0; k<MAX_VANGUARD_AVATARS; k++){
 			if( vanguard_avatar[HUMAN][k] == CARD_ID_DRAFT ){
 				draft_found++;
 				break;
@@ -556,19 +597,23 @@ static void vanguard_check(void){
 	for(p=0;p<2;p++){
 		if( ! get_setting(SETTING_CHALLENGE_MODE) ){
 			int k;
-			for(k=0; k<vcount[p]; k++){
+			for(k=0; k<vcount[p] && k<MAX_VANGUARD_AVATARS; k++){
 				if( vanguard_avatar[p][k] != -1 ){
 					if( ! is_hidden_agenda(vanguard_avatar[p][k]) ){
 						int card_added = add_card_to_hand(p, get_internal_card_id_from_csv_id(vanguard_avatar[p][k]));
-						put_into_play(p, card_added);
+						if (card_added != -1){
+							put_into_play(p, card_added);
+						}
 						vanguard_avatar[p][k] = -1;
 					}
 					else{
 						int card_added = add_card_to_hand(p, get_internal_card_id_from_csv_id(CARD_ID_CONSPIRACY_HIDDEN_AGENDA));
-						card_instance_t *instance= get_card_instance(p, card_added);
-						instance->targets[13].player = CARD_ID_CONSPIRACY_HIDDEN_AGENDA ;
-						instance->targets[13].card = vanguard_avatar[p][k];
-						put_into_play(p, card_added);
+						if (card_added != -1){
+							card_instance_t *instance= get_card_instance(p, card_added);
+							instance->targets[13].player = CARD_ID_CONSPIRACY_HIDDEN_AGENDA ;
+							instance->targets[13].card = vanguard_avatar[p][k];
+							put_into_play(p, card_added);
+						}
 						vanguard_avatar[p][k] = -1;
 					}
 				}
@@ -625,6 +670,10 @@ static void resolve_graveyard_upkeep_triggers(int player, int card, event_t even
 									  ){
 										// put a copy of the card into your hand
 										int card_added =  add_card_to_hand(player, graveyard[i] );
+										if (card_added == -1){
+											--i;
+											continue;
+										}
 
 										instance->number_of_targets = 1;
 										card_instance_t *target = get_card_instance(player, card_added);
@@ -649,6 +698,10 @@ static void resolve_graveyard_upkeep_triggers(int player, int card, event_t even
 								else{
 										if( graveyard[i+1] != -1 && (cards_data[ graveyard[i+1] ].type & TYPE_CREATURE) ){
 											int card_added =  add_card_to_hand(player, graveyard[i] );
+											if (card_added == -1){
+												--i;
+												continue;
+											}
 											card_instance_t *target = get_card_instance(player, card_added);
 											target->state |= STATE_INVISIBLE;
 											--hand_count[player];
@@ -782,8 +835,25 @@ static int is_unearth(const card_data_t* cd)
 }
 */
 
+static void append_rules_engine_option(char* buffer, int buffer_size, int* pos, int opts[MAX_RULES_ENGINE_OPTIONS][2], int* opts_count,
+									   int option_card, int option_mode, const char* fmt, const char* name)
+{
+	if (*opts_count >= MAX_RULES_ENGINE_OPTIONS){
+		return;
+	}
+	if (*pos < buffer_size){
+		*pos += scnprintf(buffer + *pos, buffer_size - *pos, fmt, name);
+	}
+	opts[*opts_count][0] = option_card;
+	opts[*opts_count][1] = option_mode;
+	++*opts_count;
+}
+
 static int activate_cards_in_hand(int player, int card, event_t event){
 #pragma message "All of the special cases here are *odious*.  Should be migrated to their card functions, checking the return value from the events to see what to do."
+	if (!valid_player(player)){
+		return 0;
+	}
 	if (IS_AI(player) && !get_setting(SETTING_AI_USES_RULES_ENGINE)){
 		return 0;
 	}
@@ -795,9 +865,10 @@ static int activate_cards_in_hand(int player, int card, event_t event){
 	if( event == EVENT_CAN_ACTIVATE ){
 		//return 1;
 		if( hand_count[player] > 0 ){
-			for(i=0;i<active_cards_count[player]; i++){
-				card_instance_t *hand_instance = get_card_instance(player, i);
-				if( ! ( hand_instance->state & STATE_INVISIBLE ) && ! ( hand_instance->state & STATE_IN_PLAY )  ){
+			int active_count = bounded_active_cards_count(player);
+			for(i=0;i<active_count; i++){
+				card_instance_t *hand_instance = safe_in_hand(player, i);
+				if( hand_instance ){
 					int id = hand_instance->internal_card_id;
 					if( id > -1 ){
 						if( cards_data[id].cc[2] == 4 || cards_data[id].cc[2] == 16 || get_id(player, i) == CARD_ID_DRAGON_WINGS ||
@@ -824,6 +895,9 @@ static int activate_cards_in_hand(int player, int card, event_t event){
 					card_d->id == CARD_ID_MARSHALING_CRY || card_d->id == CARD_ID_UNDEAD_GLADIATOR || card_d->id == CARD_ID_VINEWEFT
 				  ){
 					int fake = add_card_to_hand(player, graveyard[i]);
+					if (fake == -1){
+						continue;
+					}
 					add_state(player, fake, STATE_INVISIBLE);
 					--hand_count[player];
 
@@ -846,14 +920,17 @@ static int activate_cards_in_hand(int player, int card, event_t event){
 	}
 	else if( event == EVENT_ACTIVATE ){
 		hack_allow_sorcery_if_rules_engine_is_only_effect = 1;	// must not return from this function without clearing this
-		unsigned int cb = 3000;
-		char buffer[cb];
-		int opts[100][2];
+		unsigned int cb = RULES_ENGINE_DIALOG_BUFFER_SIZE;
+		char buffer[RULES_ENGINE_DIALOG_BUFFER_SIZE];
+		int opts[MAX_RULES_ENGINE_OPTIONS][2];
+		memset(opts, 0, sizeof(opts));
 		int opts_count = 1;
 		int pos = scnprintf(buffer, cb, " Cancel\n" );
-		for (i = 0; i < active_cards_count[player]; i++){
-			card_instance_t *hand_instance = get_card_instance(player, i);
-			if( ! ( hand_instance->state & STATE_INVISIBLE ) && ! ( hand_instance->state & STATE_IN_PLAY )  ){
+
+		int active_count = bounded_active_cards_count(player);
+		for (i = 0; i < active_count; i++){
+			card_instance_t *hand_instance = safe_in_hand(player, i);
+			if( hand_instance ){
 				int id = hand_instance->internal_card_id;
 				if( id > -1 ){
 					if( cards_data[id].cc[2] == 4 || cards_data[id].cc[2] == 16 ||
@@ -866,10 +943,7 @@ static int activate_cards_in_hand(int player, int card, event_t event){
 						int (*ptFunction)(int, int, event_t) = (void*)cards_data[id].code_pointer;
 						if( ptFunction(player, i, EVENT_CAN_ACTIVATE_FROM_HAND ) ){
 							card_ptr_t* c = cards_ptr[ get_id(player, i) ];
-							pos += scnprintf(buffer + pos, cb-pos, " Activate %s\n", c->name );
-							opts[opts_count][0] = i;
-							opts[opts_count][1] = GA_EXTRA_ACTIVATE_FROM_HAND;
-							opts_count++;
+							append_rules_engine_option(buffer, cb, &pos, opts, &opts_count, i, GA_EXTRA_ACTIVATE_FROM_HAND, " Activate %s\n", c->name);
 						}
 					}
 				}
@@ -887,6 +961,9 @@ static int activate_cards_in_hand(int player, int card, event_t event){
 					card_d->id == CARD_ID_MARSHALING_CRY || card_d->id == CARD_ID_UNDEAD_GLADIATOR || card_d->id == CARD_ID_VINEWEFT
 				  ){
 					int fake = add_card_to_hand(player, graveyard[i]);
+					if (fake == -1){
+						continue;
+					}
 					add_state(player, fake, STATE_INVISIBLE);
 					--hand_count[player];
 
@@ -898,72 +975,42 @@ static int activate_cards_in_hand(int player, int card, event_t event){
 						if( (card_d->type & TYPE_CREATURE) ){
 							if( ! cage_flag ){
 								if( result & GA_PLAYABLE_FROM_GRAVE ){
-									pos += scnprintf(buffer + pos, cb-pos, " Play %s\n", c->name );
-									opts[opts_count][0] = i;
-									opts[opts_count][1] = result;
-									opts_count++;
+									append_rules_engine_option(buffer, cb, &pos, opts, &opts_count, i, result, " Play %s\n", c->name);
 								}
 								if( result & GA_UNEARTH ){
-									pos += scnprintf(buffer + pos, cb-pos, " Unearth %s\n", c->name );
-									opts[opts_count][0] = i;
-									opts[opts_count][1] = result;
-									opts_count++;
+									append_rules_engine_option(buffer, cb, &pos, opts, &opts_count, i, result, " Unearth %s\n", c->name);
 								}
 								if( result & GA_RETURN_TO_PLAY ){
-									pos += scnprintf(buffer + pos, cb-pos, " Return %s to play\n", c->name );
-									opts[opts_count][0] = i;
-									opts[opts_count][1] = result;
-									opts_count++;
+									append_rules_engine_option(buffer, cb, &pos, opts, &opts_count, i, result, " Return %s to play\n", c->name);
 								}
 							}
 							if( result & GA_BASIC ){
 								// GA_SCAVENGE is two bits
 								if( (result & GA_SCAVENGE) == GA_SCAVENGE ){
-									pos += scnprintf(buffer + pos, cb-pos, " Scavenge %s\n", c->name );
-									opts[opts_count][0] = i;
-									opts[opts_count][1] = result;
-									opts_count++;
+									append_rules_engine_option(buffer, cb, &pos, opts, &opts_count, i, result, " Scavenge %s\n", c->name);
 								}
 								else{
-									pos += scnprintf(buffer + pos, cb-pos, " Activate %s\n", c->name );
-									opts[opts_count][0] = i;
-									opts[opts_count][1] = result;
-									opts_count++;
+									append_rules_engine_option(buffer, cb, &pos, opts, &opts_count, i, result, " Activate %s\n", c->name);
 								}
 							}
 							if( result & GA_RETURN_TO_HAND ){
-								pos += scnprintf(buffer + pos, cb-pos, " Return %s to hand\n", c->name );
-								opts[opts_count][0] = i;
-								opts[opts_count][1] = result;
-								opts_count++;
+								append_rules_engine_option(buffer, cb, &pos, opts, &opts_count, i, result, " Return %s to hand\n", c->name);
 							}
 							if( result & GA_PUT_ON_TOP_OF_DECK ){
-								pos += scnprintf(buffer + pos, cb-pos, " Put %s on top of deck\n", c->name );
-								opts[opts_count][0] = i;
-								opts[opts_count][1] = result;
-								opts_count++;
+								append_rules_engine_option(buffer, cb, &pos, opts, &opts_count, i, result, " Put %s on top of deck\n", c->name);
 							}
 						}
 						else{
 							if( result & GA_RETURN_TO_HAND ){
-								pos += scnprintf(buffer + pos, cb-pos, " Return %s to hand\n", c->name );
-								opts[opts_count][0] = i;
-								opts[opts_count][1] = result;
-								opts_count++;
+								append_rules_engine_option(buffer, cb, &pos, opts, &opts_count, i, result, " Return %s to hand\n", c->name);
 							}
 							else{
 								if( ! cage_flag && can_legally_play_iid(player, graveyard[i]) ){
 									if(card_d->cc[2] == 10 ){
-										pos += scnprintf(buffer + pos, cb-pos, " Retrace %s\n", c->name );
-										opts[opts_count][0] = i;
-										opts[opts_count][1] = result;
-										opts_count++;
+										append_rules_engine_option(buffer, cb, &pos, opts, &opts_count, i, result, " Retrace %s\n", c->name);
 									}
 									else{
-										pos += scnprintf(buffer + pos, cb-pos, " Flashback %s\n", c->name );
-										opts[opts_count][0] = i;
-										opts[opts_count][1] = result;
-										opts_count++;
+										append_rules_engine_option(buffer, cb, &pos, opts, &opts_count, i, result, " Flashback %s\n", c->name);
 									}
 								}
 							}
@@ -973,10 +1020,12 @@ static int activate_cards_in_hand(int player, int card, event_t event){
 				}
 		}
 		if( check_rfg(player, CARD_ID_TORRENT_ELEMENTAL) && can_sorcery_be_played(player, event) && has_mana_hybrid(player, 2, COLOR_BLACK, COLOR_GREEN, 3)){
-			pos += scnprintf(buffer + pos, cb-pos, " Return Torrent Elemental to play\n");
-			opts[opts_count][0] = CARD_ID_TORRENT_ELEMENTAL;
-			opts[opts_count][1] = 0;	// in particular, don't set any bits in GA_GRAVE_ABILITY_MASK
-			opts_count++;
+			if (opts_count < MAX_RULES_ENGINE_OPTIONS){
+				pos += scnprintf(buffer + pos, cb-pos, " Return Torrent Elemental to play\n");
+				opts[opts_count][0] = CARD_ID_TORRENT_ELEMENTAL;
+				opts[opts_count][1] = 0;	// in particular, don't set any bits in GA_GRAVE_ABILITY_MASK
+				opts_count++;
+			}
 		}
 		for (i = 0; i < 5; i++){
 			instance->targets[i].player = -1;
@@ -984,7 +1033,7 @@ static int activate_cards_in_hand(int player, int card, event_t event){
 		}
 
 		int choice = do_dialog(player, player, card, -1, -1, buffer, 1);
-		if( choice == 0 ){
+		if( choice <= 0 || choice >= opts_count ){
 			spell_fizzled = 1;
 			hack_allow_sorcery_if_rules_engine_is_only_effect = 0;
 			return 0;
@@ -1033,6 +1082,11 @@ static int activate_cards_in_hand(int player, int card, event_t event){
 
 		if( opts[choice][1] & GA_GRAVE_ABILITY_MASK ){
 			int fake = add_card_to_hand(player, graveyard[opts[choice][0]]);
+			if (fake == -1){
+				spell_fizzled = 1;
+				hack_allow_sorcery_if_rules_engine_is_only_effect = 0;
+				return 0;
+			}
 			add_state(player, fake, STATE_INVISIBLE);
 			--hand_count[player];
 
@@ -1078,8 +1132,10 @@ static int activate_cards_in_hand(int player, int card, event_t event){
 			if( instance->targets[2].card > -1 ){
 				if( instance->targets[2].card == CARD_ID_TORRENT_ELEMENTAL ){
 					int card_added = add_card_to_hand(player, get_internal_card_id_from_csv_id(CARD_ID_TORRENT_ELEMENTAL));
-					add_state(player, card_added, STATE_TAPPED);
-					put_into_play(player, card_added);
+					if (card_added != -1){
+						add_state(player, card_added, STATE_TAPPED);
+						put_into_play(player, card_added);
+					}
 					return 0;
 				}
 
@@ -1112,6 +1168,9 @@ static int activate_cards_in_hand(int player, int card, event_t event){
 				*/
 
 				int card_added = add_card_to_hand(player, instance->targets[2].card);
+				if (card_added == -1){
+					return 0;
+				}
 				add_state(player, card_added, STATE_INVISIBLE);	--hand_count[player];
 
 				if( mode & GA_BASIC ){
@@ -1154,7 +1213,8 @@ static int activate_cards_in_hand(int player, int card, event_t event){
 	// reset card with Forecast
 	if( event == EVENT_CLEANUP && (get_rules_engine_infos(player) & REF_FORECAST) ){
 		int count;
-		for (count = 0; count < active_cards_count[player]; ++count){
+		int active_count = bounded_active_cards_count(player);
+		for (count = 0; count < active_count; ++count){
 			if( in_hand(player, count) ){
 				card_data_t* card_d = get_card_data(player, count);
 				if( card_d->cc[2] == 16 ){
@@ -1168,7 +1228,7 @@ static int activate_cards_in_hand(int player, int card, event_t event){
 }
 
 int get_flashback(int player, int card){
-	if( check_special_flags(player, card, SF_FLASHBACK) ){
+	if( valid_active_card_slot(player, card) && check_special_flags(player, card, SF_FLASHBACK) ){
 		return 1;
 	}
 	return 0;
@@ -1199,7 +1259,8 @@ static void track_hand(int player, int card, event_t event ){
 
 	int p;
 	for (p=0;p<2;p++){
-		for(i=0;i<active_cards_count[p]; i++){
+		int active_count = bounded_active_cards_count(p);
+		for(i=0;i<active_count; i++){
 			card_instance_t *card_instance = get_card_instance(p, i);
 			if( ! ( card_instance->state & STATE_INVISIBLE ) && ! ( card_instance->state & STATE_IN_PLAY )  ){
 				int j=0;
@@ -1209,7 +1270,9 @@ static void track_hand(int player, int card, event_t event ){
 					}
 					j++;
 				}
-				cards_in_hand_this_turn[p][j] = i;
+				if (j < 100){
+					cards_in_hand_this_turn[p][j] = i;
+				}
 			}
 		}
 	}
@@ -1224,13 +1287,13 @@ static void track_hand(int player, int card, event_t event ){
 #endif
 
 static int get_rules_engine_card(int player){
-	return rules_engine_card[player];
+	return valid_player(player) ? rules_engine_card[player] : -1;
 }
 
 void increment_storm_count(int player, int mode){
 	// increment the storm count and stormcreature count if it's the case
 	int rec = get_rules_engine_card(player);
-	if( rec == -1 ){
+	if( rec == -1 || !valid_active_card_slot(player, rec) ){
 		return;
 	}
 	++hack_silent_counters;
@@ -1274,7 +1337,8 @@ static void reset_storm_count(int player, int card){
 		int i;
 		for(i=0; i<2; i++){
 			int count = 0;
-			while(count < active_cards_count[i]){
+			int active_count = bounded_active_cards_count(i);
+			while(count < active_count){
 					if( in_play(i, count) ){
 						card_instance_t *instance= get_card_instance(i, count);
 						if( has_subtype(i, count, SUBTYPE_WEREWOLF) && instance->targets[9].card != 66 ){
@@ -1299,7 +1363,7 @@ static void reset_storm_count(int player, int card){
 	else{
 		int p, crd;
 		for (p = 0; p <= 1; ++p){
-			if ((crd = get_rules_engine_card(p)) >= 0){
+			if ((crd = get_rules_engine_card(p)) >= 0 && valid_active_card_slot(p, crd)){
 				set_trap_condition(p, TRAP_STORM_BLACK, 0);
 				set_trap_condition(p, TRAP_STORM_BLUE, 0);
 				set_trap_condition(p, TRAP_STORM_GREEN, 0);
@@ -1318,7 +1382,13 @@ static void keep_storm_count(int player, int card, event_t event ){
 	if( player == HUMAN && trigger_condition == TRIGGER_SPELL_CAST && affect_me(player, card) &&
 		player == reason_for_trigger_controller && event == EVENT_END_TRIGGER
 	  ){
+		if (!valid_active_card_slot(trigger_cause_controller, trigger_cause)){
+			return;
+		}
 		card_instance_t *played = get_card_instance(trigger_cause_controller, trigger_cause);
+		if (played->internal_card_id < 0){
+			return;
+		}
 		if( ! ( cards_data[ played->internal_card_id].type & TYPE_LAND )
 			//&& ! ( cards_data[ played->internal_card_id].cc[2] == 15 )
 		  ){
@@ -1345,7 +1415,7 @@ static void keep_storm_count(int player, int card, event_t event ){
 int get_specific_storm_count(int player){
 
 	int rec = get_rules_engine_card(player);
-	if( rec == -1 ){
+	if( rec == -1 || !valid_active_card_slot(player, rec) ){
 		return 0;
 	}
 	return count_counters(player, rec, COUNTER_ENERGY);
@@ -1358,7 +1428,7 @@ int get_storm_count(void){
 
 int get_stormcreature_count(int k){
 	int rec = get_rules_engine_card(k);
-	if( rec == -1 ){
+	if( rec == -1 || !valid_active_card_slot(k, rec) ){
 		return 0;
 	}
 	return count_counters(k, rec, COUNTER_CHARGE);
@@ -1441,7 +1511,7 @@ static void static_graveyard_abilities(int player, int card, event_t event){
 	card_instance_t *instance = get_card_instance(player, card);
 	int i=0;
 	const int *graveyard = get_grave(player);
-	if( graveyard[0] == -1 ){
+	if( !graveyard || graveyard[0] == -1 ){
 		return;
 	}
 
@@ -1617,7 +1687,9 @@ static void static_graveyard_abilities(int player, int card, event_t event){
 							if( cards_data[graveyard[count]].id == CARD_ID_SWORD_OF_THE_MEEK && (trig_mode & GT_CIP_SWORD_OF_THE_MEEK) ){
 								if( duh_mode(player) || do_dialog(player, player, card, -1, -1, " Return Sword of the Meek	to play\n Pass", 0) == 0 ){
 									int sword = reanimate_permanent(player, card, player, count, REANIMATE_DEFAULT);
-									equip_target_creature(player, sword, otp, otc);
+									if (sword != -1){
+										equip_target_creature(player, sword, otp, otc);
+									}
 								}
 							}
 							if( cards_data[graveyard[count]].id == CARD_ID_DEARLY_DEPARTED && (trig_mode & GT_CIP_DEARLY_DEPARTED) ){
@@ -1664,8 +1736,10 @@ static void static_graveyard_abilities(int player, int card, event_t event){
 								}
 								if( choice == 0 ){
 									int card_added = add_card_to_hand(player, graveyard[count] );
-									remove_card_from_grave(player, count);
-									put_into_play(player, card_added);
+									if (card_added != -1){
+										remove_card_from_grave(player, count);
+										put_into_play(player, card_added);
+									}
 								}
 							}
 							if( cards_data[graveyard[count]].cc[2] == 18 && (trig_mode & GT_CIP_DRAGON_ENCHANTMENTS) ){
@@ -1678,8 +1752,10 @@ static void static_graveyard_abilities(int player, int card, event_t event){
 								}
 								if( choice == 0 ){
 									int card_added = add_card_to_hand(player, graveyard[count] );
-									remove_card_from_grave(player, count);
-									put_into_play_aura_attached_to_target(player, card_added, trigger_cause_controller, trigger_cause);
+									if (card_added != -1){
+										remove_card_from_grave(player, count);
+										put_into_play_aura_attached_to_target(player, card_added, trigger_cause_controller, trigger_cause);
+									}
 								}
 							}
 							if( cards_data[graveyard[count]].id == CARD_ID_AKOUM_FIREBIRD && (trig_mode & GT_CIP_AKOUM_FIREBIRD) ){
@@ -1758,8 +1834,12 @@ static void static_graveyard_abilities(int player, int card, event_t event){
 									}
 								}
 							}
-							if( cards_data[graveyard[count]].id == CARD_ID_KOZILEKS_RETURN && (trig & GC_KOZILEKS_RETURN) ){
+							if( cards_data[graveyard[count]].id == CARD_ID_KOZILEKS_RETURN && (trig & GT_SC_KOZILEKS_RETURN) ){
 								int card_added = add_card_to_hand(player, graveyard[count] );
+								if (card_added == -1){
+									--count;
+									continue;
+								}
 								add_state(player, card_added, STATE_INVISIBLE);
 
 								int ai_choice = 0;
@@ -2097,7 +2177,8 @@ static int initial_upkeep_triggers(int player, int card, event_t event ){
 			if( ! is_unlocked(player, card, event, 7) ){ serum_found = 0; }
 			while( serum_found == 1 ){
 				serum_found = 0;
-				for(i=0;i<active_cards_count[p];i++){
+				int active_count = bounded_active_cards_count(p);
+				for(i=0;i<active_count;i++){
 					if( in_hand(p, i) && get_id(p, i ) == CARD_ID_SERUM_POWDER ){
 						choice = do_dialog(p, p, i, -1, -1, " Take Serum Powder Mulligan\n Keep Hand", 0);
 						serum_found = 1;
@@ -2109,7 +2190,8 @@ static int initial_upkeep_triggers(int player, int card, event_t event ){
 				}
 
 				int hand_size = 0;
-				for(i=0;i<active_cards_count[player];i++){
+				active_count = bounded_active_cards_count(player);
+				for(i=0;i<active_count;i++){
 					if( in_hand(player, i) ){
 						hand_size++;
 						kill_card(player, i, KILL_REMOVE);
@@ -2133,7 +2215,8 @@ static int initial_upkeep_triggers(int player, int card, event_t event ){
 					}
 
 					// put your hand back into the deck
-					for (i = 0; i < active_cards_count[p]; ++i){
+					active_count = bounded_active_cards_count(p);
+					for (i = 0; i < active_count; ++i){
 						if (in_hand(player, i)){
 							put_on_top_of_deck(player, i);
 						}
@@ -2145,7 +2228,7 @@ static int initial_upkeep_triggers(int player, int card, event_t event ){
 		}
 		for(i=0; i<2; i++){
 			// leylines and chancellors
-			int count = active_cards_count[i]-1;
+			int count = bounded_active_cards_count(i)-1;
 			while( count > -1 ){
 					if( in_hand(i, count) ){
 						int id = get_id(i, count );
@@ -2170,7 +2253,9 @@ static int initial_upkeep_triggers(int player, int card, event_t event ){
 							int choice2 = do_dialog(i, i, count, -1, -1, " Reveal Chancellor of the Annex\n Pass", 0);
 							if( choice2 == 0 ){
 								int leg = create_legacy_effect(i, count, card_coa_special_effect);
-								set_special_infos(i, leg, 66);
+								if (leg != -1){
+									set_special_infos(i, leg, 66);
+								}
 							}
 						}
 						if( id == CARD_ID_CHANCELLOR_OF_THE_DROSS ){
@@ -2208,7 +2293,7 @@ static int initial_upkeep_triggers(int player, int card, event_t event ){
 								*/
 							}
 						}
-						if( id == CARD_ID_GEMSTONE_CAVERNS && hand_count[player] > 1 ){
+						if( id == CARD_ID_GEMSTONE_CAVERNS && hand_count[i] > 1 ){
 							int choice2 = do_dialog(i, i, count, -1, -1, " Reveal Gemstone Caverns\n Pass", 0);
 							if( choice2 == 0 ){
 								target_definition_t td;
@@ -2282,7 +2367,8 @@ static int initial_upkeep_triggers(int player, int card, event_t event ){
 				if( get_setting(SETTING_CRIPPLE_AI) ){
 					// put every card back into the deck
 					int count = 0;
-					while( count < active_cards_count[AI]){
+					int active_count = bounded_active_cards_count(AI);
+					while( count < active_count){
 						if(! in_play(AI, count) ){
 							put_on_top_of_deck(AI, count);
 						}
@@ -2321,10 +2407,13 @@ static int initial_upkeep_triggers(int player, int card, event_t event ){
 
 static int count_cards_actually_in_hand(int player){
 	int c, total = 0;
-	for (c = 0; c < active_cards_count[player]; ++c){
-		if (in_hand(player, c)
-			&& !(cards_data[get_card_instance(player, c)->internal_card_id].type & TYPE_EFFECT)){	// e.g. "draw a card"
-			++total;
+	int active_count = bounded_active_cards_count(player);
+	for (c = 0; c < active_count; ++c){
+		if (in_hand(player, c)){
+			card_instance_t* inst = get_card_instance(player, c);
+			if (inst->internal_card_id >= 0 && !(cards_data[inst->internal_card_id].type & TYPE_EFFECT)){	// e.g. "draw a card"
+				++total;
+			}
 		}
 	}
 	return total;
@@ -2366,7 +2455,7 @@ static void debug_settings(int player, int card, event_t event){
 	}
 
 	// give all creatures haste
-	if( get_setting(SETTING_AUTO_HASTE) ){
+	if( get_setting(SETTING_AUTO_HASTE) && valid_active_card_slot(affected_card_controller, affected_card) ){
 		haste(affected_card_controller, affected_card, event);
 	}
 
@@ -2400,7 +2489,7 @@ static int gauntlet_settings(int player, int card, event_t event ){
 	}
 
 	// during the pit challenge, legends have shroud
-	if( get_challenge4() == 1 && event == EVENT_ABILITIES ){
+	if( get_challenge4() == 1 && event == EVENT_ABILITIES && valid_active_card_slot(affected_card_controller, affected_card) ){
 		if( has_creature_type(affected_card_controller, affected_card, SUBTYPE_LEGEND ) ){
 			event_result |= KEYWORD_SHROUD;
 		}
@@ -2409,10 +2498,13 @@ static int gauntlet_settings(int player, int card, event_t event ){
 	// during the enchanted challenge, enchantments are indestructible
 	if( get_challenge4() == 6 ){
 		int c=0;
-		for(c=0;c< active_cards_count[AI];c++){
-			card_data_t* card_d = get_card_data(AI, c);
-			if((card_d->type & TYPE_ENCHANTMENT) && in_play(AI, c)){
-				indestructible(AI, c, event);
+		int active_count = bounded_active_cards_count(AI);
+		for(c=0;c<active_count;c++){
+			if(in_play(AI, c)){
+				card_data_t* card_d = get_card_data(AI, c);
+				if(card_d->type & TYPE_ENCHANTMENT){
+					indestructible(AI, c, event);
+				}
 			}
 		}
 	}
@@ -2420,10 +2512,13 @@ static int gauntlet_settings(int player, int card, event_t event ){
 	// if we won the enchanted challenge, your enchantments are indestructible
 	if( event == EVENT_GRAVEYARD_FROM_PLAY && is_unlocked(HUMAN, card, event, 36) ){
 		int c=0;
-		for(c=0;c< active_cards_count[HUMAN];c++){
-			card_data_t* card_d = get_card_data(HUMAN, c);
-			if((card_d->type & TYPE_ENCHANTMENT) && in_play(HUMAN, c)){
-				indestructible(HUMAN, c, event);
+		int active_count = bounded_active_cards_count(HUMAN);
+		for(c=0;c<active_count;c++){
+			if(in_play(HUMAN, c)){
+				card_data_t* card_d = get_card_data(HUMAN, c);
+				if(card_d->type & TYPE_ENCHANTMENT){
+					indestructible(HUMAN, c, event);
+				}
 			}
 		}
 	}
@@ -2450,9 +2545,11 @@ static int gauntlet_settings(int player, int card, event_t event ){
 		if(trigger_condition == TRIGGER_SPELL_CAST && event == EVENT_END_TRIGGER && affect_me(player, card)
 		   && player == reason_for_trigger_controller && trigger_cause_controller == HUMAN && player == HUMAN)
 		{
-			card_instance_t *played= get_card_instance(trigger_cause_controller, trigger_cause);
-			if( ! ( cards_data[ played->internal_card_id].type & TYPE_LAND ) ){
-				create_legacy_effect(player, card, &effect_challenge3 );
+			if (valid_active_card_slot(trigger_cause_controller, trigger_cause)){
+				card_instance_t *played= get_card_instance(trigger_cause_controller, trigger_cause);
+				if( played->internal_card_id >= 0 && ! ( cards_data[ played->internal_card_id].type & TYPE_LAND ) ){
+					create_legacy_effect(player, card, &effect_challenge3 );
+				}
 			}
 		}
 	}
@@ -2460,13 +2557,15 @@ static int gauntlet_settings(int player, int card, event_t event ){
 		if(trigger_condition == TRIGGER_SPELL_CAST && affect_me(player, card)
 		   && player == reason_for_trigger_controller && trigger_cause_controller == AI && player == AI)
 		{
-			card_instance_t *played= get_card_instance(trigger_cause_controller, trigger_cause);
-			if( ! ( cards_data[ played->internal_card_id].type & TYPE_LAND ) ){
-				if(event == EVENT_TRIGGER){
-					event_result |= RESOLVE_TRIGGER_MANDATORY;
-				}
-				else if(event == EVENT_RESOLVE_TRIGGER){
-					do_cascade(trigger_cause_controller, trigger_cause, -1);
+			if (valid_active_card_slot(trigger_cause_controller, trigger_cause)){
+				card_instance_t *played= get_card_instance(trigger_cause_controller, trigger_cause);
+				if( played->internal_card_id >= 0 && ! ( cards_data[ played->internal_card_id].type & TYPE_LAND ) ){
+					if(event == EVENT_TRIGGER){
+						event_result |= RESOLVE_TRIGGER_MANDATORY;
+					}
+					else if(event == EVENT_RESOLVE_TRIGGER){
+						do_cascade(trigger_cause_controller, trigger_cause, -1);
+					}
 				}
 			}
 		}
@@ -2552,8 +2651,10 @@ static void vengeful_pharaoh_effect(int player, int card, event_t event ){
 						card_instance_t *instance = get_card_instance(player, card);
 						kill_card(instance->targets[0].player, instance->targets[0].card, KILL_DESTROY);
 						int card_added = add_card_to_hand(player, grave[count]);
-						remove_card_from_grave(player, count);
-						put_on_top_of_deck(player, card_added);
+						if (card_added != -1){
+							remove_card_from_grave(player, count);
+							put_on_top_of_deck(player, card_added);
+						}
 					}
 					count--;
 				}
@@ -2724,6 +2825,9 @@ static void shape_rules_engine(int infos){
 		int z;
 		for (z = 0; z < 2; z++){
 			rules_engine_card[z] = generate_reserved_token_by_id(z, CARD_ID_RULES_ENGINE); // rules engine
+			if (rules_engine_card[z] < 0){
+				continue;
+			}
 			card_instance_t *instance = get_card_instance(z, rules_engine_card[z]);
 			instance->info_slot = infos;
 			// Initialize everything from targets[5] up to end of targets array to 0
@@ -2738,11 +2842,16 @@ static int check_decks_for_rules_engine(void){
 	int result = 0;
 	for(z=0; z < 2; z++){
 		int *deck = deck_ptr[z];
-		for(i=0; i < count_deck(z); i++ ){
-			result |= check_card_for_rules_engine(deck[i]);
+		int deck_count = count_deck(z);
+		for(i=0; deck && i < deck_count && i < MAX_DECK_CARDS; i++ ){
+			if (deck[i] >= 0){
+				result |= check_card_for_rules_engine(deck[i]);
+			}
 		}
-		for (i = 0; i < active_cards_count[z]; ++i){
-			result |= check_card_for_rules_engine(get_card_instance(z, i)->internal_card_id);
+		int active_count = bounded_active_cards_count(z);
+		for (i = 0; i < active_count; ++i){
+			card_instance_t* inst = get_card_instance(z, i);
+			result |= check_card_for_rules_engine(inst->internal_card_id);
 		}
 	}
 	return result;
@@ -2760,10 +2869,10 @@ void recalculate_rules_engine_and_deadbox(void)
   else
 	{
 	  int db = get_deadbox_card(HUMAN);
-	  if (db != -1)
+	  if (db != -1 && valid_active_card_slot(HUMAN, db))
 		kill_card(HUMAN, db, KILL_SACRIFICE);
 	  db = get_deadbox_card(AI);
-	  if (db != -1)
+	  if (db != -1 && valid_active_card_slot(AI, db))
 		kill_card(AI, db, KILL_SACRIFICE);
 	  deadbox_card[HUMAN] = deadbox_card[AI] = -1;
 	}
@@ -2771,23 +2880,23 @@ void recalculate_rules_engine_and_deadbox(void)
   if (flags & ~REF_DEADBOX)
 	{
 	  int re = get_rules_engine_card(HUMAN);
-	  if (re == -1)
+	  if (re == -1 || !valid_active_card_slot(HUMAN, re))
 		shape_rules_engine(flags);
 	  else
 		{
 		  get_card_instance(HUMAN, re)->info_slot = flags;
 		  re = get_rules_engine_card(AI);
-		  if (re != -1)
+		  if (re != -1 && valid_active_card_slot(AI, re))
 			get_card_instance(AI, re)->info_slot = flags;
 		}
 	}
   else
 	{
 	  int re = get_rules_engine_card(HUMAN);
-	  if (re != -1)
+	  if (re != -1 && valid_active_card_slot(HUMAN, re))
 		kill_card(HUMAN, re, KILL_SACRIFICE);
 	  re = get_rules_engine_card(AI);
-	  if (re != -1)
+	  if (re != -1 && valid_active_card_slot(AI, re))
 		kill_card(AI, re, KILL_SACRIFICE);
 	  rules_engine_card[HUMAN] = rules_engine_card[AI] = -1;
 	}
@@ -2798,7 +2907,7 @@ void update_rules_engine(int infos){
 		return;
 	}
 	int re = get_rules_engine_card(HUMAN);
-	if( re < 0 ){
+	if( re < 0 || !valid_active_card_slot(HUMAN, re) ){
 		if( infos != 8192 ){
 			shape_rules_engine(infos);
 		}
@@ -2807,8 +2916,10 @@ void update_rules_engine(int infos){
 		int i;
 		for(i=0; i<2; i++){
 			int re_card = get_rules_engine_card(i);
-			card_instance_t *instance = get_card_instance( i, re_card );
-			instance->info_slot |= infos;
+			if (re_card >= 0 && valid_active_card_slot(i, re_card)){
+				card_instance_t *instance = get_card_instance( i, re_card );
+				instance->info_slot |= infos;
+			}
 		}
 	}
 	if( infos & 8192 ){
@@ -2823,7 +2934,7 @@ static void check_trap_conditions(int player, int card, event_t event);
 
 int get_rules_engine_infos(int player){
 	int re = get_rules_engine_card(player);
-	if( re > -1 ){
+	if( re > -1 && valid_active_card_slot(player, re) ){
 		card_instance_t *instance = get_card_instance(player,re);
 		return instance->info_slot;
 	}
@@ -2831,7 +2942,7 @@ int get_rules_engine_infos(int player){
 }
 
 int get_deadbox_card(int player){
-	return deadbox_card[player];
+	return valid_player(player) ? deadbox_card[player] : -1;
 }
 
 void game_startup(void){
@@ -2871,6 +2982,9 @@ void game_startup(void){
 }
 
 void set_starting_life_total(int player, int amount ){
+	if (!valid_player(player)){
+		return;
+	}
 	if( amount > 20 ){
 		gain_life(player, amount - 20);
 	}
@@ -2881,16 +2995,19 @@ void set_starting_life_total(int player, int amount ){
 }
 
 int get_starting_life_total(int player){
-	return starting_life_total[player];
+	return valid_player(player) ? starting_life_total[player] : 20;
 }
 
 static void increase_trap_condition_impl(int player, int trap, int val, int add /*otherwise set*/)
 {
+  if (!valid_player(player))
+	return;
+
   if (add && val == 0)
 	return;
 
   int rec = get_rules_engine_card(player);
-  if (rec < 0)
+  if (rec < 0 || !valid_active_card_slot(player, rec))
 	return;
 
   card_instance_t* instance = get_card_instance(player, rec);
@@ -3008,8 +3125,11 @@ static void increase_trap_condition_impl(int player, int trap, int val, int add 
 
 int get_trap_condition(int player, int trap)
 {
+  if (!valid_player(player))
+	return 0;
+
   int rec = get_rules_engine_card(player);
-  if (rec < 0)
+  if (rec < 0 || !valid_active_card_slot(player, rec))
 	return 0;
 
   card_instance_t* instance = get_card_instance(player, rec);
@@ -3069,6 +3189,9 @@ int get_trap_condition(int player, int trap)
 // Clear the per-turn trap conditions out at start of turn
 static void clear_temporary_traps(card_instance_t* instance)
 {
+  if (!instance)
+	return;
+
   // Strictly speaking, this is undefined behavior, but should work on everything Manalink can.
   rules_engine_globals_t* globals = (rules_engine_globals_t*)(&instance->targets[0].player);
 
@@ -3083,14 +3206,15 @@ static void check_trap_conditions(int player, int card, event_t event){
 	if( player != HUMAN ){ return; }
 
 	// Oran Rief the Vastwood + Novijen, Heart of Progress + Hixus, Prison Warden
-	if( event == EVENT_CAST_SPELL && is_what(affected_card_controller, affected_card, TYPE_CREATURE) ){
+	if( event == EVENT_CAST_SPELL && valid_active_card_slot(affected_card_controller, affected_card) && is_what(affected_card_controller, affected_card, TYPE_CREATURE) ){
 		set_special_flags(affected_card_controller, affected_card, SF_JUST_CAME_INTO_PLAY);
 	}
 
 	// how many unblocked creatures
 	int i, p = current_turn;
 	if( event == EVENT_DECLARE_BLOCKERS ){
-		for(i=0;i<active_cards_count[p];i++){
+		int active_count = bounded_active_cards_count(p);
+		for(i=0;i<active_count;i++){
 			if( is_unblocked(p, i) ){
 				increase_trap_condition(current_turn, TRAP_UNBLOCKED_CREATURES, 1);
 			}
@@ -3115,7 +3239,8 @@ static void check_trap_conditions(int player, int card, event_t event){
 
 	if(event == EVENT_DECLARE_BLOCKERS){
 		int count = 0;
-		while(count < active_cards_count[current_turn]){
+		int active_count = bounded_active_cards_count(current_turn);
+		while(count < active_count){
 			if( is_what(current_turn, count, TYPE_CREATURE) && is_attacking(current_turn, count)  ){
 				set_trap_condition(current_turn, TRAP_RAID, 1);
 				break;
@@ -3131,7 +3256,8 @@ static void check_trap_conditions(int player, int card, event_t event){
 	// how many creatures are attacking?
 	if(event == EVENT_DECLARE_BLOCKERS){
 		int count = 0;
-		while(count < active_cards_count[current_turn]){
+		int active_count = bounded_active_cards_count(current_turn);
+		while(count < active_count){
 			if( is_what(current_turn, count, TYPE_CREATURE) && is_attacking(current_turn, count)  ){
 				increase_trap_condition(current_turn, TRAP_NUMBER_OF_ATTACKING_CREATURES, 1);
 				if( get_color(current_turn, count) & COLOR_TEST_WHITE ){
@@ -3267,7 +3393,7 @@ int card_rules_engine(int player, int card, event_t event ){
 	}
 	#endif
 
-	// (1<<13) --> Deabox
+	// (1<<13) --> Deadbox
 	if( instance->info_slot & REF_VENGEFUL_PHARAOH ){
 		vengeful_pharaoh_effect(player, card, event);                 // 16384
 	}
@@ -3290,4 +3416,3 @@ int card_rules_engine(int player, int card, event_t event ){
 
 	return 0;
 }
-

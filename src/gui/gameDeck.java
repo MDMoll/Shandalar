@@ -2,166 +2,142 @@ package gui;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import javax.swing.JOptionPane;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
 
 /**
- * A store for game cards. Over-rides the ArrayList's to String method
- * to make one that returns the name and id of the items held.
+ * A store for game cards.
+ *
+ * <p>This class keeps the legacy ArrayList shape used by the rest of the GUI,
+ * but provides card-aware helpers for Shandalar deck operations.</p>
+ *
  * @author Ryan
  */
 public class gameDeck extends ArrayList<gameCard> {
 
-     static String nl = System.getProperty("line.separator");
-    
+    private static final String LINE_SEPARATOR = System.lineSeparator();
+
+    /**
+     * Returns the normal, non-debug representation of this deck.
+     *
+     * @return String representation of this deck.
+     */
+    @Override
+    public String toString() {
+        return toString(false);
+    }
+
     /**
      * A String representation of the values contained by the fields
      * of this object. If we are in debug mode we return more information.
+     *
      * @param debug Boolean indicating if we should display debugging information
-     * @return String
+     * @return String representation of this deck.
      */
     public String toString(boolean debug) {
-        String out = "";
-        if (debug) {
-            for (gameCard c : this) {
-                out = out.concat(c.getQuantity() + " " + c.getID() + " " + c.getDeck() +" " + c.getName() + nl);
-            }
-        } else {
-            for (gameCard c : this) {
-                out = out.concat(c.getQuantity() + " " + c.getName() + nl);
-            }
+        if (isEmpty()) {
+            return "Deck Empty!";
         }
-        if (out.isEmpty()) {
-            out = "Deck Empty!";
+
+        StringBuilder out = new StringBuilder();
+        for (gameCard card : this) {
+            out.append(card.getQuantity()).append(' ');
+            if (debug) {
+                out.append(card.getID()).append(' ')
+                        .append(card.getDeck()).append(' ');
+            }
+            out.append(card.getName()).append(LINE_SEPARATOR);
         }
-        return out;
+        return out.toString();
     }
 
     /**
-     * Returns the amount of cards in this deck. This is different from the getSize()
-     * method which returns the size of the ArrayList as each entity in the list also
-     * contains a quantity.
+     * Returns the amount of cards in this deck. This is different from size()
+     * because each entity in the list also contains a quantity.
+     *
      * @return int The amount of cards contained by this deck.
      */
     public int amountOfCards() {
-        int i = 0;
-        for (gameCard card : this){
-            i = i + card.getQuantity();
-        }
-        return i;
+        return stream()
+                .mapToInt(gameCard::getQuantity)
+                .sum();
     }
-    
+
     /**
      * When we first retrieve the game deck from Shandalar we have a deck made up
-     * of lots of individual cards. This method groups all the matching ones together 
+     * of lots of individual cards. This method groups all matching cards together,
      * making it the same as the format used by Duel decks.
-     * 
-     * This method removes the individual deck numbers for each card in the returned deck
-     * as the duel format doesn't store deck information.
+     *
+     * <p>This method preserves the first encountered card instance for each name,
+     * then updates its quantity to the total quantity found.</p>
+     *
+     * @return A new grouped game deck.
      */
     public gameDeck group() {
         try {
-            gameCard previousCard = null;
-            gameDeck tempDeck = new gameDeck();
-            // if there is only one card in the deck then deal with it here
-            if (this.size() == 1) {
-                tempDeck.add(this.get(0).clone());
-                return tempDeck;
+            Map<String, gameCard> groupedCards = new LinkedHashMap<>();
+            for (gameCard card : this) {
+                gameCard groupedCard = groupedCards.get(card.getName());
+                if (groupedCard == null) {
+                    groupedCard = card.clone();
+                    groupedCard.setQuantity(card.getQuantity());
+                    groupedCards.put(groupedCard.getName(), groupedCard);
+                } else {
+                    groupedCard.setQuantity(groupedCard.getQuantity() + card.getQuantity());
+                }
             }
-            int i = 1;
-            int x = 0;
 
-            // group the cards
-            for (gameCard c : this) {
-                ++x;                         // increase our count of card instances
-                if (previousCard == null) {  // if this is the first card just copy it and move on
-                    previousCard = c.clone();
-                    continue;
-                }
-                if (previousCard.getName().equals(c.getName())) { // if the last card and this card are the same
-                    ++i;                                          // increase our count of this card
-                } else {                                          // if they are different
-                    previousCard.setQuantity(i);                  // set the quantity to the amount recorded
-                    if (tempDeck.contains(previousCard)) {        // if it is already in the temp deck
-                        gameCard gc = tempDeck.get(previousCard); // get the previous instance
-                        int totalQuantity = gc.getQuantity() + previousCard.getQuantity();
-                        gc.setQuantity(totalQuantity);            // and increase its quantity to the new value
-                    } else {
-                        tempDeck.add(previousCard);               // otherwise add it in
-                    }
-                    i = 1;                                        // and reset the quantity counter
-                }
-                previousCard = c.clone();                         // set the preious card to the current one
-                if (x == this.size()) {                           // if we're on the last card                   
-                    previousCard.setQuantity(i);                  // add it in using the same check as above
-                    if (tempDeck.contains(previousCard)) {        
-                        gameCard gc = tempDeck.get(previousCard); 
-                        int totalQuantity = gc.getQuantity() + previousCard.getQuantity();
-                        gc.setQuantity(totalQuantity);            
-                    } else {
-                        tempDeck.add(previousCard);
-                    }
-                }
-            }
-            return tempDeck;
+            gameDeck groupedDeck = new gameDeck();
+            groupedDeck.addAll(groupedCards.values());
+            return groupedDeck;
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error whilst grouping cards in gameDeck class." + nl + "e.getMessage():"
-                    + e.getMessage(), null, JOptionPane.ERROR_MESSAGE);
-            return null;
+            throw new IllegalStateException("Error while grouping cards in gameDeck.", e);
         }
     }
 
     /**
-     * Creates a new deck containing only the cards that are stored in the given 
+     * Creates a new deck containing only the cards that are stored in the given
      * deck number.
+     *
      * @param number The deck number of the stored cards to return.
-     * @return 
+     * @return A new deck containing cards assigned to the requested deck number.
      */
     public gameDeck getSubDeck(int number) {
-        try{
-            gameDeck tempDeck = new gameDeck();
-            for (gameCard c : this){
-                String deck = c.getDeck().substring(0, 2);
-                int deckMask = Integer.parseInt(deck, 16);                
-                if (number == 3) number = 4;
-                // bit comparison for deck bitflags
-                if ((deckMask & number) == number){
-                    tempDeck.add(c);
-                }
+        int deckNumber = normalizeDeckNumber(number);
+        gameDeck tempDeck = new gameDeck();
+        for (gameCard card : this) {
+            int deckMask = deckMaskOf(card);
+            // bit comparison for deck bitflags
+            if ((deckMask & deckNumber) == deckNumber) {
+                tempDeck.add(card);
             }
-            return tempDeck;
-            } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error whilst getting subDeck in gameDeck class." + nl + "e.getMessage():"
-                    + e.getMessage(), null, JOptionPane.ERROR_MESSAGE);
-            return null;
         }
+        return tempDeck;
     }
-    
+
     /**
      * Converts this game deck into a duel deck as used in Duel.
      * This is done by calling the convert method for each card in the
      * deck and adding them to a duelDeck object which is then returned.
-     * 
-     * We lose the deck information of each card by doing this because it isn't stored
-     * in the duel deck format.
+     *
+     * <p>We lose the deck information of each card by doing this because it isn't
+     * stored in the duel deck format.</p>
+     *
      * @param cardMap The mapping of the cards' name to the cards' ids.
      * @return duelDeck
      */
     public duelDeck convert(allCards cardMap) {
-        try {
-            duelDeck outDeck = new duelDeck();
-            for (gameCard c : this) {
-                duelCard convertedCard = c.convert(cardMap);
-                if (convertedCard == null) {
-                    continue;
-                }
+        Objects.requireNonNull(cardMap, "cardMap");
+
+        duelDeck outDeck = new duelDeck();
+        for (gameCard card : this) {
+            duelCard convertedCard = card.convert(cardMap);
+            if (convertedCard != null) {
                 outDeck.add(convertedCard);
             }
-            return outDeck;
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error whilst converting from game deck to duel deck in gameDeck class." + nl + "e.getMessage():"
-                    + e.getMessage(), null, JOptionPane.ERROR_MESSAGE);
-            return null;
         }
+        return outDeck;
     }
 
     /**
@@ -171,69 +147,104 @@ public class gameDeck extends ArrayList<gameCard> {
      * used.
      * Cards that make up part of another deck have their other commitments preserved.
      * Any cards that aren't needed by any deck are kept in hand.
-     * @param gameDeck The game deck to create in this game deck.
+     *
      * @param deckNumber The slot to inject this deck into.
-     * @return 
+     * @param newSubDeck The game deck to create in this game deck.
+     * @return A new game deck with the requested deck slot updated.
      */
     public gameDeck setDeck(int deckNumber, gameDeck newSubDeck) {
-        if (deckNumber == 3) deckNumber = 4;
+        Objects.requireNonNull(newSubDeck, "newSubDeck");
+
+        int normalizedDeckNumber = normalizeDeckNumber(deckNumber);
         gameDeck newGameDeck = new gameDeck();
-        boolean found;                
-        //we need to use iterators here as we are manipulating the lists as we travel
-        for (Iterator heldIt = this.iterator(); heldIt.hasNext();){ //for each held card
-            gameCard heldC = (gameCard) heldIt.next();
-            found = false;                                      
-            for (Iterator neededIt = newSubDeck.iterator(); neededIt.hasNext();){//and each card we need
-                gameCard neededC = (gameCard) neededIt.next();
-                if (heldC.getID().equals(neededC.getID())){     //if they match 
-                    heldC.setDeck(deckNumber, true);            //set the cards new deck
-                    newGameDeck.add(heldC);                     //add it in to new deck
-                    heldIt.remove();                            //remove from held
-                    neededIt.remove();                          //remove from needed
+
+        // We need to use iterators here as we are manipulating the lists as we travel.
+        for (Iterator<gameCard> heldIterator = iterator(); heldIterator.hasNext();) {
+            gameCard heldCard = heldIterator.next();
+            boolean found = false;
+
+            for (Iterator<gameCard> neededIterator = newSubDeck.iterator(); neededIterator.hasNext();) {
+                gameCard neededCard = neededIterator.next();
+                if (Objects.equals(heldCard.getID(), neededCard.getID())) {
+                    heldCard.setDeck(normalizedDeckNumber, true);
+                    newGameDeck.add(heldCard);
+                    heldIterator.remove();
+                    neededIterator.remove();
                     found = true;
                     break;
                 }
-            }//we've been round all the cards we need and this one isn't needed
-            if (!found){
-                heldC.unSetDeck(deckNumber); //remove it from the deck we are making
-                newGameDeck.add(heldC);      //but add it into the hand anyway
-                heldIt.remove();
+            }
+
+            // We've been around all the cards we need and this one isn't needed.
+            if (!found) {
+                heldCard.unSetDeck(normalizedDeckNumber);
+                newGameDeck.add(heldCard);
+                heldIterator.remove();
             }
         }
-        //come this point we've been round all the cards we have and used the ones we could
-        //but we might still need more in which case we'll need to add them in
-        for (gameCard neededC: newSubDeck){
-            neededC.setDeck(deckNumber, true);
-            newGameDeck.add(neededC);
+
+        // At this point we've used all the held cards we could, but we might still
+        // need more cards, so add them in.
+        for (gameCard neededCard : newSubDeck) {
+            neededCard.setDeck(normalizedDeckNumber, true);
+            newGameDeck.add(neededCard);
         }
         return newGameDeck;
     }
-     
+
     /**
      * Checks if this deck contains the given card based solely on ID.
-     * @param gc The card to check if it contains.
-     * @return boolean true if it contains it.
+     *
+     * @param gameCard The card to check if this deck contains.
+     * @return true if this deck contains a card with the same ID.
      */
-    public boolean contains(gameCard gc){
-        for (gameCard c: this){
-            if (c.getID().equals(gc.getID())){
-                return true;
-            }
-        }
-        return false;
+    public boolean contains(gameCard gameCard) {
+        return containsById(gameCard);
     }
- 
+
     /**
-     * Returns the first instance of the given card from the deck.
-     * @param gc The card to return
-     * @return 
+     * Checks if this deck contains the given card based solely on ID.
+     *
+     * @param candidate The object to check if this deck contains.
+     * @return true if this deck contains a card with the same ID.
      */
-    public gameCard get(gameCard gc){
-        for (gameCard c: this){
-            if (c.getName().equals(gc.getName())){
-                return c;
+    @Override
+    public boolean contains(Object candidate) {
+        return candidate instanceof gameCard gameCard && containsById(gameCard);
+    }
+
+    /**
+     * Returns the first instance of the given card from the deck, matching by ID.
+     *
+     * @param gameCard The card to return.
+     * @return The matching card, or null if no matching card exists.
+     */
+    public gameCard get(gameCard gameCard) {
+        if (gameCard == null) {
+            return null;
+        }
+
+        for (gameCard card : this) {
+            if (Objects.equals(card.getID(), gameCard.getID())) {
+                return card;
             }
         }
         return null;
+    }
+
+    private boolean containsById(gameCard gameCard) {
+        return get(gameCard) != null;
+    }
+
+    private static int normalizeDeckNumber(int deckNumber) {
+        return deckNumber == 3 ? 4 : deckNumber;
+    }
+
+    private static int deckMaskOf(gameCard card) {
+        String deck = Objects.requireNonNull(card.getDeck(), "card.deck");
+        if (deck.length() < 2) {
+            throw new IllegalArgumentException("Invalid deck code for " + card.getName() + ": " + deck);
+        }
+        return Integer.parseInt(deck.substring(0, 2), 16);
     }
 }

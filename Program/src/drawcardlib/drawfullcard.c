@@ -125,7 +125,7 @@ blt_powertoughness_box(HDC hdc, const RECT* dest_rect, PicHandleNames frame, GpI
   if (!hdc || !dest_rect || !pics[ptbox])
 	return 0;
 
-  typedef enum
+  enum
   {
 	PTY_WHITE = 0,
 	PTY_BLUE,
@@ -135,14 +135,14 @@ blt_powertoughness_box(HDC hdc, const RECT* dest_rect, PicHandleNames frame, GpI
 	PTY_COLORLESS,
 	PTY_GOLD,
 	PTY_ARTIFACT
-  } PowerToughnessY;
+  };
 
-  typedef enum
+  enum
   {
 	PTX_NORMAL = 0,
 	PTX_GOLD,
 	PTX_DUAL_LAND
-  } PowerToughnessX;
+  };
 
   int src_x = PTX_NORMAL, src_y, light = 0;
 
@@ -392,7 +392,7 @@ blt_type_icon(HDC hdc, const RECT* dest_rect, const card_ptr_t* cp, PicHandleNam
   int src_x = -1;
 
   // Find card type(s).  Surprisingly complex.
-  typedef enum
+  enum
   {
 	ICON_TYPE_ARTIFACT = 0,
 	ICON_TYPE_CREATURE,
@@ -402,7 +402,7 @@ blt_type_icon(HDC hdc, const RECT* dest_rect, const card_ptr_t* cp, PicHandleNam
 	ICON_TYPE_MULTIPLE,
 	ICON_TYPE_PLANESWALKER,
 	ICON_TYPE_SORCERY
-  } IconType;
+  };
 
   const card_data_t* cd;
 
@@ -426,11 +426,11 @@ blt_type_icon(HDC hdc, const RECT* dest_rect, const card_ptr_t* cp, PicHandleNam
 		default:	// two or more bits set
 		  src_x = ICON_TYPE_MULTIPLE;
 	  }
-  else
+	else
 	{
-	  const int16_t* typ;
-	  for (typ = &cp->types[0]; typ <= &cp->types[5]; ++typ)
-		switch (*typ)
+	  int type_idx;
+	  for (type_idx = 0; type_idx <= 5; ++type_idx)
+		switch (cp->types[type_idx])
 		  {
 			case SUBTYPE_ARTIFACT:		src_x = src_x != -1 ? ICON_TYPE_MULTIPLE : ICON_TYPE_ARTIFACT;	break;
 			case SUBTYPE_CREATURE:		src_x = src_x != -1 ? ICON_TYPE_MULTIPLE : ICON_TYPE_CREATURE;	break;
@@ -771,11 +771,12 @@ get_fullcard_title_text_override_color(PicHandleNames framenum, GpImageAttribute
 	switch (BASE_FRAME(framenum))
 	  {
 		case FRAME_MODERN_SPELL_HYBRID_WHITE_BLACK:
-		  if (cfg->fullcard_title_on_white_black_visible)
-			return cfg->fullcard_title_on_white_black_color.colorref;
+			  if (cfg->fullcard_title_on_white_black_visible)
+				return cfg->fullcard_title_on_white_black_color.colorref;
 
-		  // otherwise, fall through
-		case FRAME_MODERN_LAND_COLORLESS:
+			  // otherwise, fall through
+			  __attribute__((fallthrough));
+			case FRAME_MODERN_LAND_COLORLESS:
 		case FRAME_MODERN_LAND_WHITE:
 		case FRAME_MODERN_LAND_GOLD_MIN ... FRAME_MODERN_LAND_GOLD_MAX:
 		case FRAME_MODERN_LAND_GOLD:
@@ -819,6 +820,7 @@ get_fullcard_rulestext_color(PicHandleNames framenum)
 		  if (cfg->fullcard_rules_on_white_black_land_visible)
 			return cfg->fullcard_rules_on_white_black_land_color.colorref;
 		  // otherwise, fall through
+		  __attribute__((fallthrough));
 		case FRAME_MODERN_LAND_BLACK:				case FRAME_MODERN_ARTIFACT_LAND_BLACK:
 		case FRAME_MODERN_LAND_BLUE:				case FRAME_MODERN_ARTIFACT_LAND_BLUE:
 		case FRAME_MODERN_LAND_GREEN:				case FRAME_MODERN_ARTIFACT_LAND_GREEN:
@@ -890,8 +892,7 @@ draw_art_first(HDC hdc, uint32_t csvid, int pic_version, PicHandleNames framenum
 			return TFM_COLORLESS_ALSO_NORMAL_FULLCARD_ART;
 		  else
 			return TFM_COLORLESS;
-			draw_fullcard_art(hdc, &cfg->fullcard_art, csvid, pic_version);
-		}
+	    }
 	}
   else
 	{

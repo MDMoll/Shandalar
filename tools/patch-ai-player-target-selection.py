@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Patch AI player-only targets to bypass the generic selector.
+"""Patch fragile AI target-selection paths to bypass the generic selector.
 
 The source fix short-circuits select_target_impl() when the AI is resolving a
 non-speculating TARGET_ZONE_PLAYERS target. Candidate construction has already
@@ -9,8 +9,9 @@ targeting or mixed creature/player AI decisions.
 
 Shandalar adventure duels load Shandalar.dll, whose C++ Target::real_select_target()
 has the same failure class but a different implementation. The guarded
-Shandalar hook skips its old activation/target presentation selector only for
-pure player targets and only after legal candidates have already been built.
+Shandalar hook skips its old activation/target presentation selector for pure
+player targets and pure in-play permanent targets, and only after legal
+candidates have already been built.
 """
 
 from __future__ import annotations
@@ -156,13 +157,38 @@ def build_shandalar_hook(spec: ShandalarPatchSpec) -> bytes:
     return jmp_rel32(spec.hook_vma, spec.cave_vma) + b"\x90" * (SHANDALAR_HOOK_LENGTH - 5)
 
 
-def build_shandalar_cave(spec: ShandalarPatchSpec) -> bytes:
+def build_shandalar_player_only_cave(spec: ShandalarPatchSpec) -> bytes:
     patch = bytearray()
 
     patch += b"\x89\x8d\x3c\xfd\xff\xff"  # mov [ebp-0x2c4], ecx
     patch += b"\x83\x7f\x08\x01"  # cmp dword [edi+0x8], AI
     patch += b"\x75\x15"  # jne original selector path
     patch += b"\x81\x7f\x14\x00\x10\x00\x00"  # cmp dword [edi+0x14], TARGET_ZONE_PLAYERS
+    patch += b"\x75\x0c"  # jne original selector path
+    patch += b"\x31\xc0"  # xor eax, eax
+    patch += mov_abs_eax(spec.chosen_index_addr)  # mov [chosen_index], eax
+    patch += jmp_rel32(spec.cave_vma + len(patch), spec.choose_vma)
+
+    patch += b"\xb8" + struct.pack("<I", spec.selector_vma)  # mov eax, old selector
+    patch += b"\xff\xd0"  # call eax
+    patch += mov_eax_abs(spec.chosen_index_addr)  # mov eax, [chosen_index]
+    patch += jmp_rel32(spec.cave_vma + len(patch), spec.original_continue_vma)
+
+    if len(patch) > SHANDALAR_CAVE_LENGTH:
+        raise AssertionError(f"Shandalar cave length is {len(patch)}, exceeds {SHANDALAR_CAVE_LENGTH}")
+    patch += bytes(SHANDALAR_CAVE_LENGTH - len(patch))
+    return bytes(patch)
+
+
+def build_shandalar_cave(spec: ShandalarPatchSpec) -> bytes:
+    patch = bytearray()
+
+    patch += b"\x89\x8d\x3c\xfd\xff\xff"  # mov [ebp-0x2c4], ecx
+    patch += b"\x83\x7f\x08\x01"  # cmp dword [edi+0x8], AI
+    patch += b"\x75\x1e"  # jne original selector path
+    patch += b"\x81\x7f\x14\x00\x10\x00\x00"  # cmp dword [edi+0x14], TARGET_ZONE_PLAYERS
+    patch += b"\x74\x09"  # je choose candidate zero
+    patch += b"\x81\x7f\x14\x00\x02\x00\x00"  # cmp dword [edi+0x14], TARGET_ZONE_IN_PLAY
     patch += b"\x75\x0c"  # jne original selector path
     patch += b"\x31\xc0"  # xor eax, eax
     patch += mov_abs_eax(spec.chosen_index_addr)  # mov [chosen_index], eax
@@ -201,7 +227,7 @@ def build_old_shandalar_cave(spec: ShandalarPatchSpec) -> bytes:
 
 def build_misaligned_ai_guard_shandalar_cave(spec: ShandalarPatchSpec) -> bytes:
     """Previous AI-guard build with the first jne landing two bytes early."""
-    cave = bytearray(build_shandalar_cave(spec))
+    cave = bytearray(build_shandalar_player_only_cave(spec))
     cave[11] = 0x13
     return bytes(cave)
 
@@ -280,6 +306,7 @@ def patch_shandalar_file(path: Path, spec: ShandalarPatchSpec, apply: bool, back
     data = bytearray(path.read_bytes())
     hook = build_shandalar_hook(spec)
     cave = build_shandalar_cave(spec)
+    player_only_cave = build_shandalar_player_only_cave(spec)
     old_cave = build_old_shandalar_cave(spec) + bytes(SHANDALAR_CAVE_LENGTH - OLD_SHANDALAR_CAVE_LENGTH)
     misaligned_cave = build_misaligned_ai_guard_shandalar_cave(spec)
     label = f"{path} hook @ 0x{spec.hook_offset:x}, cave @ 0x{spec.cave_offset:x}"
@@ -296,11 +323,12 @@ def patch_shandalar_file(path: Path, spec: ShandalarPatchSpec, apply: bool, back
             f"{spec.hook_preimage.hex()} or patched {hook.hex()}"
         )
 
-    if current_cave not in (old_cave, misaligned_cave) and not all_zeroes(current_cave):
+    if current_cave not in (old_cave, misaligned_cave, player_only_cave) and not all_zeroes(current_cave):
         raise SystemExit(
             f"FAIL: {path} cave has {current_cave.hex()}, expected zero-filled cave "
-            f"old patched cave {old_cave.hex()}, misaligned AI-guard cave "
-            f"{misaligned_cave.hex()}, or patched {cave.hex()}"
+            f"old patched cave {old_cave.hex()}, player-only patched cave "
+            f"{player_only_cave.hex()}, misaligned AI-guard cave {misaligned_cave.hex()}, "
+            f"or patched {cave.hex()}"
         )
 
     if not apply:

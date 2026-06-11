@@ -1,48 +1,70 @@
-CC = gcc
+MINGW_PREFIX ?= $(shell if command -v i686-w64-mingw32-gcc >/dev/null 2>&1; then printf 'i686-w64-mingw32-'; elif command -v i386-mingw32-gcc >/dev/null 2>&1; then printf 'i386-mingw32-'; fi)
+CC = $(MINGW_PREFIX)gcc
 ASM = yasm
+OBJCOPY = $(MINGW_PREFIX)objcopy
+DLLTOOL = $(MINGW_PREFIX)dlltool
+CP = /bin/cp -f
+RM = rm -f
+
+CPPFLAGS = -I.. -I.
+WARNINGS_AS_ERRORS ?= 0
+WERROR ?=
+ifeq ($(WARNINGS_AS_ERRORS),1)
+WERROR := -Werror
+endif
 CFLAGS = -ggdb2 -O2 -m32 -fno-omit-frame-pointer -march=i586		\
 	-mpreferred-stack-boundary=2 -Wall -Wextra -Wpointer-arith	\
 	-Wbad-function-cast -Wcast-qual -Wcast-align -Wwrite-strings	\
 	-Wshadow -W -Wstrict-prototypes -Wnested-externs -Winline	\
-	-Werror -I.. -I.
+	$(WERROR)
+DEPFLAGS = -MMD -MP
 AFLAGS = -a x86 -m x86 -p nasm -r nasm -f win32 -I.. -I.
+
+EXTERNDLLS = image.dll Cardartlib.dll
 LDFLAGS = -Wl,--enable-stdcall-fixup -Wl,--defsym,___ImageBase=__image_base__ \
 	-Wl,--disable-dynamicbase -Wl,--disable-nxcompat \
 	-L. $(patsubst %.dll,-l%,$(EXTERNDLLS)) -lgdi32 -lgdiplus -lshlwapi -lMsimg32
-COMPILE = $(CC) $(CFLAGS) -c
-RM = rm -f
 
-HFILES := $(wildcard *.h)
-COBJFILES := $(patsubst %.c,%.o,$(wildcard *.c))
-AOBJFILES := $(patsubst %.asm,%.ao,$(subst DrawCard.asm,,$(wildcard *.asm)))
-TESTAOBJFILES := $(patsubst %.asm,%.ao,$(wildcard t/*.asm))
-EXTERNDLLS = image.dll Cardartlib.dll
+COMPILE = $(CC) $(CPPFLAGS) $(CFLAGS) $(DEPFLAGS) -c
+
+HFILES := $(sort $(wildcard *.h))
+CFILES := $(sort $(wildcard *.c))
+AFILES := $(filter-out DrawCard.asm,$(sort $(wildcard *.asm)))
+TESTAFILES := $(sort $(wildcard t/*.asm))
+
+COBJFILES := $(patsubst %.c,%.o,$(CFILES))
+AOBJFILES := $(patsubst %.asm,%.ao,$(AFILES))
+TESTAOBJFILES := $(patsubst %.asm,%.ao,$(TESTAFILES))
+DEPFILES := $(COBJFILES:.o=.d)
+
 LIBFILES = $(patsubst %.dll,lib%.a,$(EXTERNDLLS))
 TGTDLL = Drawcardlib.dll
 TGTDBG = $(patsubst %.dll,%.dbg,$(TGTDLL))
 DEFFILE = $(patsubst %.dll,%.def,$(TGTDLL))
 INSTALLDIR = ../..
 
+.PHONY: all test testwhichgcc clean install
+
 all: testwhichgcc $(TGTDLL)
 
-test: $(LIBFILES) $(COBJFILES) $(AOBJFILES) $(TESTAOBJFILES)
-	$(CC) -m32 -o $@ $(COBJFILES) $(AOBJFILES) $(TESTAOBJFILES) $(LDFLAGS) -lwinmm
+test: test.exe
 	./test.exe
 
-.PHONY: testwhichgcc clean
+test.exe: $(LIBFILES) $(COBJFILES) $(AOBJFILES) $(TESTAOBJFILES)
+	$(CC) -m32 -o $@ $(COBJFILES) $(AOBJFILES) $(TESTAOBJFILES) $(LDFLAGS) -lwinmm
 
 install: testwhichgcc $(INSTALLDIR)/$(TGTDLL) $(INSTALLDIR)/$(TGTDBG)
 
 $(INSTALLDIR)/$(TGTDLL): $(TGTDLL)
-	/bin/cp -f $(TGTDLL) $(INSTALLDIR)/$(TGTDLL)
+	$(CP) $(TGTDLL) $(INSTALLDIR)/$(TGTDLL)
 
 $(INSTALLDIR)/$(TGTDBG): $(TGTDLL)
-	/bin/cp -f $(TGTDBG) $(INSTALLDIR)/$(TGTDBG)
+	$(CP) $(TGTDBG) $(INSTALLDIR)/$(TGTDBG)
 
-$(TGTDLL): $(LIBFILES) $(COBJFILES) $(AOBJFILES)
+$(TGTDLL): $(LIBFILES) $(COBJFILES) $(AOBJFILES) $(DEFFILE)
 	$(CC) -shared -m32 -o $@ $(COBJFILES) $(AOBJFILES) $(DEFFILE) $(LDFLAGS)
-	objcopy --only-keep-debug $(TGTDLL) $(TGTDBG)
-	objcopy --strip-debug $(TGTDLL)
+	$(OBJCOPY) --only-keep-debug $(TGTDLL) $(TGTDBG)
+	$(OBJCOPY) --strip-debug $(TGTDLL)
 
 %.ao: %.asm
 	$(ASM) $(AFLAGS) -o $@ $<
@@ -51,7 +73,13 @@ $(TGTDLL): $(LIBFILES) $(COBJFILES) $(AOBJFILES)
 	$(COMPILE) -o $@ $<
 
 lib%.a: %.def
-	dlltool -k -d $< -l $@
+	$(DLLTOOL) -k -d $< -l $@
+
+testwhichgcc:
+	@$(CC) -dumpmachine >/dev/null
+	@$(ASM) --version >/dev/null
 
 clean:
-	$(RM) $(COBJFILES) $(AOBJFILES) $(LIBFILES) $(TGTDLL) $(TGTDBG) test.exe
+	$(RM) $(COBJFILES) $(AOBJFILES) $(TESTAOBJFILES) $(DEPFILES) $(LIBFILES) $(TGTDLL) $(TGTDBG) test.exe
+
+-include $(DEPFILES)

@@ -367,7 +367,7 @@ int card_sun_titan(int player, int card, event_t event){
 		}
 	}
 
-	if( declare_attackers_trigger(player, card, event, RESOLVE_TRIGGER_AI(player), player, card) ){
+	if( declare_attackers_trigger(player, card, event, (declare_attackers_trigger_t)RESOLVE_TRIGGER_AI(player), player, card) ){
 		test_definition_t this_test;
 		new_default_test_definition(&this_test, TYPE_PERMANENT, "Select a permanent with CMC 3 or less.");
 		this_test.cmc = 4;
@@ -1177,7 +1177,7 @@ int card_combust(int player, int card, event_t event){
 int card_cyclops_gladiator( int player, int card, event_t event){
 	/* Whenever ~ attacks, you may have it deal damage equal to its power to target creature defending player controls. If you do, that creature deals damage
 	 * equal to its power to ~. */
-	if (declare_attackers_trigger(player, card, event, RESOLVE_TRIGGER_AI(player), player, card)){
+	if (declare_attackers_trigger(player, card, event, (declare_attackers_trigger_t)RESOLVE_TRIGGER_AI(player), player, card)){
 		target_definition_t td;
 		default_target_definition(player, card, &td, TYPE_CREATURE);
 		td.allowed_controller = 1-player;
@@ -1980,7 +1980,7 @@ int card_primeval_titan(int player, int card, event_t event)
 	/* Whenever ~ enters the battlefield or attacks, you may search your library for up to two land cards, put them onto the battlefield tapped, then shuffle
 	 * your library. */
 	if( comes_into_play_mode(player, card, event, RESOLVE_TRIGGER_AI(player)) ||
-		declare_attackers_trigger(player, card, event, RESOLVE_TRIGGER_AI(player), player, card)
+		declare_attackers_trigger(player, card, event, (declare_attackers_trigger_t)RESOLVE_TRIGGER_AI(player), player, card)
 	  ){
 		tutor_lands(player, TUTOR_PLAY_TAPPED, 2);
 		shuffle(player);
@@ -2512,5 +2512,4 @@ int card_dark_tutelage(int player, int card, event_t event){
 
 	return global_enchantment(player, card, event);
 }
-
 

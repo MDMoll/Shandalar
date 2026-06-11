@@ -1,16 +1,28 @@
 // -*- c-basic-offset:2 -*-
 #include "manalink.h"
 
-// These are fairly common here, but shouldn't be used elsewhere
+/*
+ * Core engine glue.
+ *
+ * This file patches and front-ends several pieces of the original executable's
+ * event loop: recalculation, phase changes, combat legality, mana charging,
+ * stack construction, and some startup / display helpers.
+ *
+ * Most of these functions deliberately preserve Shandalar's global-state model.
+ * Avoid broad rewrites here.  The safe wins are local guardrails, clearer
+ * contracts, and keeping mutation order close to the original engine.
+ */
+
+// These are fairly common here, but shouldn't be used elsewhere.
 #define push_affected_card_stack	EXE_FN(void, 0x435C80, void)
 #define pop_affected_card_stack		EXE_FN(void, 0x435CD0, void)
 
-static int bounded_engine_active_cards_count(int player)
-{
-  return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], 150) : 0;
-}
-
-enum { ENGINE_CARD_INSTANCE_CAPACITY = 151 };
+enum {
+  ENGINE_MAX_ACTIVE_CARD_SLOTS = 150,
+  ENGINE_CARD_INSTANCE_CAPACITY = 151,
+  ENGINE_STACK_CAPACITY = 32,
+  GLOBAL_ALL_PURPOSE_BUFFER_SIZE = 1000
+};
 
 static int engine_player_is_valid(int player)
 {
@@ -22,14 +34,20 @@ static int engine_card_slot_is_valid(int card)
   return card >= 0 && card < ENGINE_CARD_INSTANCE_CAPACITY;
 }
 
+static int engine_card_ref_is_valid(int player, int card)
+{
+  return engine_player_is_valid(player) && engine_card_slot_is_valid(card);
+}
+
+static int bounded_engine_active_cards_count(int player)
+{
+  return engine_player_is_valid(player) ? MIN(active_cards_count[player], ENGINE_MAX_ACTIVE_CARD_SLOTS) : 0;
+}
+
 static int engine_csvid_is_valid(int csvid)
 {
   return csvid >= 0 && csvid < available_slots;
 }
-
-enum { ENGINE_STACK_CAPACITY = 32 };
-
-enum { GLOBAL_ALL_PURPOSE_BUFFER_SIZE = 1000 };
 
 static int engine_stack_index_is_valid(int index)
 {
@@ -45,8 +63,11 @@ void count_colors_of_lands_in_play(void)
 {
   // 0x4725C0
 
-  /* Essentially rewritten, as the exe version was poorly treated by previous injections.  It included such gems as counting Blinking Spirit like a Bayou, and
-   * similarly for about a dozen other random Homelands/Ice Age cards.  It's more reliable to just query the card instead of checking id by id anyway. */
+  /*
+   * The exe version was brittle after previous injections.  It had id-by-id
+   * special cases that could count unrelated cards as dual lands.  Querying
+   * current land characteristics is slower, but much more trustworthy.
+   */
 
   int i;
   for (i = 0; i < 8; ++i)
@@ -142,9 +163,14 @@ void count_colors_of_lands_in_play(void)
   colors_of_lands_in_play[0] &= COLOR_TEST_ANY_COLORED;
   colors_of_lands_in_play[1] &= COLOR_TEST_ANY_COLORED;
 
-  /* This is called both from recalculate_all_cards_in_play() and from reassess_all_cards(); in the latter, it's before the checks for whether cards are
-   * playable.  So this is a handy spot to check this, less wasteful than doing so continuously, and always gets done in time. */
-  if ((player_bits[current_turn] & PB_COUNT_TOTAL_PLAYABLE_LANDS)
+  /*
+   * This is called both from recalculate_all_cards_in_play() and from
+   * reassess_all_cards().  The latter happens before playability checks, so this
+   * is a good place to re-enable land play if an effect grants an extra land
+   * after one has already been played.
+   */
+  if (engine_player_is_valid(current_turn)
+	  && (player_bits[current_turn] & PB_COUNT_TOTAL_PLAYABLE_LANDS)
 	  && (land_can_be_played & LCBP_LAND_HAS_BEEN_PLAYED)
 	  && lands_played < total_playable_lands(current_turn))
 	land_can_be_played &= ~LCBP_LAND_HAS_BEEN_PLAYED;
@@ -153,6 +179,15 @@ void count_colors_of_lands_in_play(void)
 void recalculate_all_cards_in_play(void)
 {
   // Original at 0x4351C0
+
+  /*
+   * Recalculation is intentionally multi-pass:
+   *
+   *  1. Reset player-wide continuous-effect bits.
+   *  2. Recompute type, color, abilities, and mana.
+   *  3. Recompute creature stats and state-based counter cleanup.
+   *  4. Send EVENT_STATIC_EFFECTS after the above state is coherent.
+   */
 
   player_bits[0] &= ~PB_CANT_HAVE_OR_GAIN_ABILITIES_MASK;
   player_bits[1] &= ~PB_CANT_HAVE_OR_GAIN_ABILITIES_MASK;
@@ -177,9 +212,13 @@ void recalculate_all_cards_in_play(void)
 	  int active_count = bounded_engine_active_cards_count(p);
 	  for (c = 0; c < active_count; ++c, ++instance)
 		if (instance->internal_card_id != -1
-			&& (instance->state & (STATE_OUBLIETTED|STATE_IN_PLAY)) == STATE_IN_PLAY)	// These two (almost) equivalent to in_play(), which also excludes cards with STATE_INVISIBLE set
+			&& (instance->state & (STATE_OUBLIETTED|STATE_IN_PLAY)) == STATE_IN_PLAY)
 		  {
-			// Original order here: regen status gets all five recalc flags; SET_COLOR; CHANGE_TYPE.  Abilities not forced to recalc.
+			/*
+			 * Original order: all recalc flags, SET_COLOR, CHANGE_TYPE.
+			 * Abilities were not forced to recalc, but doing so here keeps
+			 * modern continuous effects from reading stale keyword state.
+			 */
 			instance->regen_status |= KEYWORD_RECALC_CHANGE_TYPE;
 			get_abilities(p, c, EVENT_CHANGE_TYPE, -1);
 			instance->regen_status |= KEYWORD_RECALC_SET_COLOR|KEYWORD_RECALC_ABILITIES|KEYWORD_RECALC_POWER|KEYWORD_RECALC_TOUGHNESS;
@@ -205,13 +244,18 @@ void recalculate_all_cards_in_play(void)
 			if (is_what(p, c, TYPE_CREATURE))
 			  {
 				get_abilities(p, c, EVENT_TOUGHNESS, -1);
-				if (instance->internal_card_id == -1)	// destroyed during get_abilities by lethal damage or toughness < 0
+				if (instance->internal_card_id == -1)
 				  continue;
+
 				get_abilities(p, c, EVENT_POWER, -1);
 			  }
 
-			/* 704.5r If a permanent has both a +1/+1 counter and a -1/-1 counter on it, N +1/+1 and N -1/-1 counters are removed from it, where N is the smaller
-			 * of the number of +1/+1 and -1/-1 counters on it. */
+			/*
+			 * 704.5r: If a permanent has both +1/+1 and -1/-1 counters,
+			 * remove N of each, where N is the smaller count.  Avoid doing
+			 * this while a creature is already dying from zero toughness, since
+			 * removing counters could accidentally save it.
+			 */
 			if (instance->counters > 0 && instance->counters_m1m1 > 0 && is_what(p, c, TYPE_PERMANENT)
 				&& !(instance->toughness <= 0 && is_what(p, c, TYPE_CREATURE)))
 			  {
@@ -220,13 +264,11 @@ void recalculate_all_cards_in_play(void)
 				instance->counters_m1m1 -= n;
 			  }
 
-			/* There may well be a better place for this.  recalculate_all_cards_in_play() is called, at least, after a card or effect card resolves, a turn
-			 * begins, at the end of untap, the start of the main phase, and when a permanent is killed. */
 			dispatch_event_with_attacker_to_one_card(p, c, EVENT_STATIC_EFFECTS, 1-p, -1);
 		  }
 	}
 
-  if (ai_is_speculating == 0)	// Usually only checked for != 1.  Makes a difference during startup, I think.
+  if (ai_is_speculating == 0)
 	{
 	  if (!(player_bits[0] & PB_HAND_REVEALED) != !(EXE_DWORD(0x628C24) & (1<<0)))
 		{
@@ -250,26 +292,35 @@ void recalculate_all_cards_in_play(void)
 
 void phase_changed(int player, int new_phase)
 {
-  //0x435F20
+  // 0x435F20
+
+  if (!engine_player_is_valid(player))
+	return;
+
   if (ai_is_speculating != 1)
 	EXE_FN(void, 0x4377e0, int, int)(player, new_phase);	// TENTATIVE_update_display_for_changed_phase(player, new_phase)
 
   cancel = 0;
 
-  // Begin additions
   dispatch_event(player, 0, EVENT_PHASE_CHANGED);
-  // End additions
 }
 
 int target_player_skips_untap(int player, int card, event_t event);
 
 int untap_phase(int player)
 {
-  // Return 1 to skip the rest of the turn (without even a cleanup step!).  The exe only does this if a player dies.
+  /*
+   * Return 1 to skip the rest of the turn, without even a cleanup step.  The
+   * exe only does this if a player dies.
+   */
+
+  if (!engine_player_is_valid(player))
+	return 0;
+
   player_bits[0] &= ~PB_SEND_EVENT_UNTAP_CARD_TO_ALL;
   player_bits[1] &= ~PB_SEND_EVENT_UNTAP_CARD_TO_ALL;
-  event_flags &= ~EF_ATTACKER_CHOOSES_BLOCKERS;	// Should get zerod at end of turn, but might as well be sure.
-  dispatch_event(player, 0, EVENT_BEGIN_TURN);	// even if untap step will end up being skipped
+  event_flags &= ~EF_ATTACKER_CHOOSES_BLOCKERS;
+  dispatch_event(player, 0, EVENT_BEGIN_TURN);
 
   if (trace_mode & 2)
 	{
@@ -278,13 +329,14 @@ int untap_phase(int player)
 	  EXE_FN(void, 0x4A7D80, const char*)(buf);
 	}
 
-  /* The comprehensive rules don't say whether a temporary "You skip your next untap step" effect like Yosei, the Morning Star's goes away when there's a
-   * continuous one like Stasis's on the battlefield, and I can't find a ruling.  I'm going to assume the active player chooses, and that he always chooses to
-   * use the temporary one (so if the Stasis goes away, he'll untap sooner). */
+  /*
+   * If both a one-shot skip effect and a continuous skip effect apply, assume
+   * the active player consumes the one-shot effect first.  That lets the player
+   * untap sooner once the continuous effect leaves.
+   */
 
   card_instance_t* instance;
 
-  // Effects that make a specific player skip his next untap phase.  Also check for Shimmer here.
   int shimmering_lands = 0;
   int p, c;
   for (p = 0; p < 2; ++p)
@@ -298,13 +350,11 @@ int untap_phase(int player)
 				kill_card(p, c, KILL_REMOVE);
 				return 0;
 			  }
-			else if (cards_data[instance->internal_card_id].id == CARD_ID_SHIMMER){
+			else if (cards_data[instance->internal_card_id].id == CARD_ID_SHIMMER)
 			  shimmering_lands |= instance->info_slot;
-			}
 		  }
 	}
 
-  // Permanents that make everyone skip their untap phase
   if (check_battlefield_for_id(2, CARD_ID_STASIS)
 	  || check_battlefield_for_id(2, CARD_ID_THE_EON_FOG)
 	  || check_battlefield_for_id(2, CARD_ID_SANDS_OF_TIME))
@@ -312,26 +362,22 @@ int untap_phase(int player)
 
   untap_phasing(player, shimmering_lands);
 
-  EXE_FN(int, 0x43A700, int)(player);	// The original version (with the Stasis check removed from the start, and the parts below removed)
+  EXE_FN(int, 0x43A700, int)(player);
 
-  int untapped[151] = {0};
+  int untapped[ENGINE_CARD_INSTANCE_CAPACITY] = {0};
   int active_count = bounded_engine_active_cards_count(player);
   for (c = 0; c < active_count; ++c)
 	if ((instance = in_play(player, c)))
 	  {
 		if ((instance->untap_status & 3) == 3)
 		  {
-			// Begin additions
 			untapped[c] = 1;
-			// End additions
 			instance->state &= ~STATE_TAPPED;
 		  }
 
-		// This is done in a separate loop in the exe; I don't think that's necessary.
 		SET_BYTE0(instance->untap_status) = 0;
 	  }
 
-  // Begin additions
   count_colors_of_lands_in_play();
   count_mana();
 
@@ -343,7 +389,6 @@ int untap_phase(int player)
 		else
 		  dispatch_event_with_attacker_to_one_card(player, c, EVENT_UNTAP_CARD, 1-player, -1);
 	  }
-  // End additions
 
   recalculate_all_cards_in_play();
   EXE_FN(void, 0x472260, void)();	// TENTATIVE_reassess_all_cards()
@@ -351,9 +396,7 @@ int untap_phase(int player)
   if (!EXE_DWORD(0x7a34d0))
 	EXE_FN(int, 0x439c90, int)(1);	// TENTATIVE_check_for_stops(1)
 
-  // Begin additions
   dispatch_event(player, 0, EVENT_END_OF_UNTAP_STEP);
-  // End additions
 
   EXE_FN(void, 0x43a060, void)();	// mana_burn()
 
@@ -363,9 +406,13 @@ int untap_phase(int player)
 extern int hack_ai_decision_phase_upkeep;
 int ai_decision_phase(int player, int *phase_code_to_go_to, int *becomes_second_arg_of_main_phase_and_discard_phase, int *becomes_third_arg_of_main_phase);
 void mana_burn(void);
+
 int upkeep_phase(int player)
 {
   // 0x43acf0
+
+  if (!engine_player_is_valid(player))
+	return 0;
 
   if (trace_mode & 2)
 	{
@@ -378,7 +425,6 @@ int upkeep_phase(int player)
   EXE_DWORD(0x7A34D0) = 0;
   EXE_DWORD(0x60A43C) = 0;
 
-  // I strongly suspect this has to do with phase stops.
   if (trace_mode & 2)
 	{
 	  if (EXE_DWORD(0x4EF1AC) == -1)
@@ -389,35 +435,37 @@ int upkeep_phase(int player)
   else if (ai_is_speculating != 1)
 	EXE_DWORD(0x60A54C) = (EXE_DWORD(0x4EF1AC) != -1 && (EXE_DWORD(0x4EF1AC) != 4 || EXE_DWORD(0x4EF1B0) != player));
 
-  // Begin additions
-  /* Normally ai speculation runs until end of turn and ai_decision_phase() returns a code to make switch_phase() go back to where speculation started, but
-   * main_phase() seems to assume no speculation takes place before it. */
+  /*
+   * Normally AI speculation runs until end of turn and ai_decision_phase()
+   * returns a code that makes switch_phase() resume where speculation started.
+   * main_phase() appears to assume no speculation before it, so upkeep runs a
+   * shorter speculative loop.
+   */
   if (ai_is_speculating != 1 && !(trace_mode & 2))
 	{
 	  EXE_FN(void, 0x472260, void)();	// TENTATIVE_reassess_all_cards()
-	  EXE_FN(void, 0x435140, int, int)(17, 10);	// TENTATIVE_backup_data_for_ai_frontend_0(17, 5)	// first arg is unique to each call of TENTATIVE_backup_data_for_ai_frontend_0(), ends up in EXE_DWORD(0x60EC3C), and is interpreted in ai_decision_phase(); the latter is a relative amount of time to spend speculating, and is always 30 in exe calls.  Lower here since we're only speculating until end of phase.
+	  EXE_FN(void, 0x435140, int, int)(17, 10);	// TENTATIVE_backup_data_for_ai_frontend_0(17, 10)
 	}
+
  speculate_more:
   if (EXE_DWORD(0x60EC3C) == 17)
 	{
-	  //card_instance_t* instance = get_card_instance(1,9);
 	  EXE_FN(void, 0x498ED0, void)();	// TENTATIVE_restore_data_for_ai_frontend_0()
 	  EXE_DWORD(0x72835C) = 0;
 	  ai_modifier = 0;
 	}
- // End additions
 
   current_phase = PHASE_BEGIN_UPKEEP;
   phase_changed(player, PHASE_BEGIN_UPKEEP);
-  dispatch_trigger(player, TRIGGER_UPKEEP, EXE_STR(0x739C20), 0);	//PROMPT_SPECIALFEPHASE[8]
+  dispatch_trigger(player, TRIGGER_UPKEEP, EXE_STR(0x739C20), 0);	// PROMPT_SPECIALFEPHASE[8]
 
   EXE_DWORD(0x60A43C) = 1;
   current_phase = PHASE_UPKEEP;
   EXE_FN(void, 0x437620, void)();	// set_all_upkeep_flags_to_0();
-  EXE_FN(int, 0x436A20, int, int, const char*, int)(-1, current_phase, EXE_STR(0x60EEAC)/*PROMPT_CHECKFEPHASE[5]*/, EVENT_UPKEEP_PHASE);	// allow_response()
+  EXE_FN(int, 0x436A20, int, int, const char*, int)(-1, current_phase, EXE_STR(0x60EEAC)/*PROMPT_CHECKFEPHASE[5]*/, EVENT_UPKEEP_PHASE);
   EXE_DWORD(0x60A43C) = 0;
 
-  dispatch_trigger2(player, TRIGGER_END_UPKEEP, EXE_STR(0x78FA70), 0, 0, 0);	//PROMPT_SPECIALFEPHASE[9]
+  dispatch_trigger2(player, TRIGGER_END_UPKEEP, EXE_STR(0x78FA70), 0, 0, 0);	// PROMPT_SPECIALFEPHASE[9]
 
   EXE_DWORD(0x60A54C) = 0;
   EXE_DWORD(0x620860) = 1;
@@ -427,13 +475,11 @@ int upkeep_phase(int player)
   EXE_DWORD(0x7A2FD8) = 0;
   mana_burn();
 
-  // Begin additions
   int phase_code_to_go_to, becomes_second_arg_of_main_phase_and_discard_phase, becomes_third_arg_of_main_phase;
   hack_ai_decision_phase_upkeep = 1;
   ai_decision_phase(player, &phase_code_to_go_to, &becomes_second_arg_of_main_phase_and_discard_phase, &becomes_third_arg_of_main_phase);
   if (phase_code_to_go_to == 4)
 	goto speculate_more;
-  // End additions
 
   return is_anyone_dead();
 }
@@ -441,8 +487,9 @@ int upkeep_phase(int player)
 int is_legal_block_impl(int blocking_player, int blocking_card, int blocked_player, int blocked_card, keyword_t abils, int landwalks)
 {
   // 0x434f90
-  if (!engine_player_is_valid(blocking_player) || !engine_player_is_valid(blocked_player)
-	  || !engine_card_slot_is_valid(blocking_card) || !engine_card_slot_is_valid(blocked_card))
+
+  if (!engine_card_ref_is_valid(blocking_player, blocking_card)
+	  || !engine_card_ref_is_valid(blocked_player, blocked_card))
 	return 0;
 
   card_instance_t* blocking_inst = get_card_instance(blocking_player, blocking_card);
@@ -461,29 +508,25 @@ int is_legal_block_impl(int blocking_player, int blocking_card, int blocked_play
 	  if (colorbits & abils & KEYWORD_PROT_COLORED)
 		return 0;
 	}
+
   if (is_what(blocking_player, blocking_card, TYPE_ARTIFACT)
 	  && (abils & KEYWORD_PROT_ARTIFACTS))
 	return 0;
 
-  if(abils & landwalks & KEYWORD_BASIC_LANDWALK ){
-	if( (abils & landwalks & KEYWORD_SWAMPWALK) && !(player_bits[blocked_player] & PB_SWAMPWALK_DISABLED) ){
-	  return 0;
+  if (abils & landwalks & KEYWORD_BASIC_LANDWALK)
+	{
+	  if ((abils & landwalks & KEYWORD_SWAMPWALK) && !(player_bits[blocked_player] & PB_SWAMPWALK_DISABLED))
+		return 0;
+	  if ((abils & landwalks & KEYWORD_ISLANDWALK) && !(player_bits[blocked_player] & PB_ISLANDWALK_DISABLED))
+		return 0;
+	  if ((abils & landwalks & KEYWORD_FORESTWALK) && !(player_bits[blocked_player] & PB_FORESTWALK_DISABLED))
+		return 0;
+	  if ((abils & landwalks & KEYWORD_MOUNTAINWALK) && !(player_bits[blocked_player] & PB_MOUNTAINWALK_DISABLED))
+		return 0;
+	  if ((abils & landwalks & KEYWORD_PLAINSWALK) && !(player_bits[blocked_player] & PB_PLAINSWALK_DISABLED))
+		return 0;
 	}
-	if( (abils & landwalks & KEYWORD_ISLANDWALK) && !(player_bits[blocked_player] & PB_ISLANDWALK_DISABLED) ){
-	  return 0;
-	}
-	if( (abils & landwalks & KEYWORD_FORESTWALK) && !(player_bits[blocked_player] & PB_FORESTWALK_DISABLED) ){
-	  return 0;
-	}
-	if( (abils & landwalks & KEYWORD_MOUNTAINWALK) && !(player_bits[blocked_player] & PB_MOUNTAINWALK_DISABLED) ){
-	  return 0;
-	}
-	if( (abils & landwalks & KEYWORD_PLAINSWALK) && !(player_bits[blocked_player] & PB_PLAINSWALK_DISABLED) ){
-	  return 0;
-	}
-  }
 
-  // Begin additions
   card_instance_t* blocked_inst = get_card_instance(blocked_player, blocked_card);
   if (blocked_inst->internal_card_id < 0)
 	return 0;
@@ -502,12 +545,11 @@ int is_legal_block_impl(int blocking_player, int blocking_card, int blocked_play
   if ((sp_keywords_blocked & SP_KEYWORD_HORSEMANSHIP) && !(sp_keywords_blocking & SP_KEYWORD_HORSEMANSHIP))
 	return 0;
   if ((sp_keywords_blocked & SP_KEYWORD_FEAR)
-	  && !((get_color(blocking_player, blocking_card) & COLOR_TEST_BLACK) || is_what(blocking_player, blocking_card, TYPE_ARTIFACT)))	// Intentionally not sleightable
+	  && !((get_color(blocking_player, blocking_card) & COLOR_TEST_BLACK) || is_what(blocking_player, blocking_card, TYPE_ARTIFACT)))
 	return 0;
   if ((sp_keywords_blocked & SP_KEYWORD_INTIMIDATE)
 	  && !(has_my_colors(blocking_player, blocking_card, blocked_player, blocked_card) || is_what(blocking_player, blocking_card, TYPE_ARTIFACT)))
 	return 0;
-  // End additions
 
   int result = dispatch_event_with_attacker(blocking_player, blocking_card, EVENT_BLOCK_LEGALITY, blocked_player, blocked_card);
 
@@ -516,32 +558,35 @@ int is_legal_block_impl(int blocking_player, int blocking_card, int blocked_play
 
 int is_legal_block(int blocking_player, int blocking_card, int blocked_player, int blocked_card)
 {
-  // Two copies, at 0x434f30 and 0x4b9220.
+  /*
+   * No broad changes here.  The exe inlines this pattern in several combat
+   * paths, usually computing abils and landwalks once and checking several
+   * blockers against the same blocked card.
+   */
 
-  /* No changes here, but moved into C for clarity.
-   *
-   * It's probably a bad idea overall to change this; it's inlined in about a half dozen places for efficiency, only computing abils and landwalks once and then
-   * checking multiple blocking_card's against blocked_card.
-   *
-   * landwalks_controlled() is based on basiclandtypes_controlled[][], which is set in count_colors_of_lands_in_play(), overridden above. */
-
-  if (!engine_player_is_valid(blocking_player) || !engine_player_is_valid(blocked_player)
-	  || !engine_card_slot_is_valid(blocking_card) || !engine_card_slot_is_valid(blocked_card))
+  if (!engine_card_ref_is_valid(blocking_player, blocking_card)
+	  || !engine_card_ref_is_valid(blocked_player, blocked_card))
 	return 0;
 
   int abils = get_abilities(blocked_player, blocked_card, EVENT_ABILITIES, -1);
 
   int player1_landwalks, player0_landwalks, landwalks;
-  EXE_FN(void, 0x499DF0, int*, int*)(&player1_landwalks, &player0_landwalks);	// landwalks_controlled(&player1_landwalks, &player0_landwalks)
-  landwalks = (blocking_player == 1) ? player1_landwalks : player0_landwalks;
+  EXE_FN(void, 0x499DF0, int*, int*)(&player1_landwalks, &player0_landwalks);	// landwalks_controlled()
+  landwalks = (blocking_player == AI) ? player1_landwalks : player0_landwalks;
 
   return is_legal_block_impl(blocking_player, blocking_card, blocked_player, blocked_card, abils, landwalks);
 }
 
 static int check_attack_legality_if_enchanting_affected_card(int player, int card)
 {
-  //0x4b7110
-  // The exe version is a callback for call_function_for_each_card_in_play(), and the temporaries are saved in can_attack_instead of here.
+  /*
+   * Some attack restrictions live on Auras or other attached effects.  This
+   * helper checks cards in play in id order, matching the original callback
+   * style more closely than timestamp-ordered dispatch_event_raw().
+   */
+
+  if (!engine_card_ref_is_valid(player, card))
+	return 0;
 
   push_affected_card_stack();
 
@@ -549,33 +594,25 @@ static int check_attack_legality_if_enchanting_affected_card(int player, int car
   affected_card_controller = player;
   affected_card = card;
 
-  // Begin call_function_for_each_card_in_play()
-  /* (This differs from dispatch_event_raw() in that the cards are examined in id order, not in timestamp order.  Also, it calls an arbitrary function instead
-   * of calling each card's own function with a given event.) */
-  {
-	int p, c;
-	for (p = 0; p < 2; ++p)
-	  {
-		int active_count = bounded_engine_active_cards_count(p);
-		for (c = 0; c < active_count; ++c)
-		  if (in_play(p, c))
-			{
-			  // Begin exe version of check_attack_legality_if_enchanting_affected_card()
-			  card_instance_t* instance = get_card_instance(player, card);
-			  if (affect_me(instance->damage_target_player, instance->damage_target_card) && affected_card != -1)
-				{
-				  call_card_function_i(instance, player, card, EVENT_ATTACK_LEGALITY);
-				  if (cancel == 1)
-					{
-					  ++event_result;
-					  cancel = 0;
-					}
-				}
-			  // End exe version of check_attack_legality_if_enchanting_affected_card()
-			}
-	  }
-  }
-  // End call_function_for_each_card_in_play()
+  int p, c;
+  for (p = 0; p < 2; ++p)
+	{
+	  int active_count = bounded_engine_active_cards_count(p);
+	  for (c = 0; c < active_count; ++c)
+		if (in_play(p, c))
+		  {
+			card_instance_t* instance = get_card_instance(p, c);
+			if (affect_me(instance->damage_target_player, instance->damage_target_card) && affected_card != -1)
+			  {
+				call_card_function_i(instance, p, c, EVENT_ATTACK_LEGALITY);
+				if (cancel == 1)
+				  {
+					++event_result;
+					cancel = 0;
+				  }
+			  }
+		  }
+	}
 
   int result = event_result;
 
@@ -586,7 +623,11 @@ static int check_attack_legality_if_enchanting_affected_card(int player, int car
 
 int can_attack(int player, int card)
 {
-  //0x434c30
+  // 0x434c30
+
+  if (!engine_card_ref_is_valid(player, card))
+	return 0;
+
   card_instance_t* instance = get_card_instance(player, card);
 
   if (instance->internal_card_id >= 0
@@ -630,6 +671,10 @@ int can_attack(int player, int card)
 int effect_asterisk(int player, int card, event_t event)
 {
   // 0x4a1bb0
+
+  if (!engine_card_ref_is_valid(player, card))
+	return 0;
+
   card_instance_t* instance = get_card_instance(player, card);
   if (!affect_me(instance->damage_target_player, instance->damage_target_card)
 	  || affected_card == -1
@@ -653,27 +698,6 @@ int effect_asterisk(int player, int card, event_t event)
   switch (category)
 	{
 	  case ASTERISK_BASICLAND_TYPES_OF_INFO_SLOT:
-		/* Dakkon Blackblade 0x403840 (replaced in C): ASTERISK_BASICLAND_TYPES_OF_INFO_SLOT
-		 *                                             |ASTERISK_AFFECTS_TOUGHNESS|ASTERISK_AFFECTS_POWER
-		 *                                             |ASTERISK_COUNT_CONTROLLER
-		 *                                             info_slot = COLOR_ANY */
-		/* People of the Woods 0x42a910: ASTERISK_BASICLAND_TYPES_OF_INFO_SLOT
-		 *                               |ASTERISK_AFFECTS_TOUGHNESS
-		 *                               |ASTERISK_COUNT_CONTROLLER
-		 *                               info_slot = COLOR_GREEN, token_status |= STATUS_BASICLAND_DEPENDANT */
-		/* Nightmare 0x4c5450 (replaced in C): ASTERISK_BASICLAND_TYPES_OF_INFO_SLOT
-		 *                                     |ASTERISK_AFFECTS_TOUGHNESS|ASTERISK_AFFECTS_POWER
-		 *                                     |ASTERISK_COUNT_CONTROLLER
-		 *                                     info_slot = COLOR_BLACK, token_status |= STATUS_BASICLAND_DEPENDANT */
-		/* Angry Mob 0x4c54c0: ASTERISK_BASICLAND_TYPES_OF_INFO_SLOT
-		 *                     |ASTERISK_AFFECTS_TOUGHNESS|ASTERISK_AFFECTS_POWER
-		 *                     |ASTERISK_COUNT_OPPONENT (set only during controller's turn)
-		 *                     info_slot = COLOR_BLACK */
-		/* Gaea's Liege 0x4c5570: ASTERISK_BASICLAND_TYPES_OF_INFO_SLOT
-		 *                        |ASTERISK_AFFECTS_TOUGHNESS|ASTERISK_AFFECTS_POWER
-		 *                        |ASTERISK_COUNT_OPPONENT (set only while STATE_ATTACKING)
-		 *                        |ASTERISK_COUNT_CONTROLLER (set only while not STATE_ATTACKING)
-		 *                        info_slot = COLOR_GREEN */
 		if (instance->eot_toughness & ASTERISK_COUNT_CONTROLLER)
 		  modifier += basiclandtypes_controlled[tp][get_hacked_color(tp, tc, instance->info_slot)];
 
@@ -683,18 +707,6 @@ int effect_asterisk(int player, int card, event_t event)
 		break;
 
 	  case ASTERISK_IID_OF_INFO_SLOT:
-		/* Beast of Burden 0x403c00: ASTERISK_TYPE_OF_INFO_SLOT__MUST_ALSO_SET_IID_OF_INFO_SLOT|ASTERISK_IID_OF_INFO_SLOT
-		 *                           |ASTERISK_AFFECTS_TOUGHNESS|ASTERISK_AFFECTS_POWER
-		 *                           |ASTERISK_COUNT_OPPONENT|ASTERISK_COUNT_CONTROLLER
-		 *                           info_slot = TYPE_CREATURE */
-		/* Gaea's Avenger 0x452cd0: ASTERISK_TYPE_OF_INFO_SLOT__MUST_ALSO_SET_IID_OF_INFO_SLOT|ASTERISK_IID_OF_INFO_SLOT
-		 *                          |ASTERISK_AFFECTS_TOUGHNESS|ASTERISK_AFFECTS_POWER
-		 *                          |ASTERISK_COUNT_OPPONENT
-		 *                          info_slot = TYPE_ARTIFACT */
-		/* Plague Rats 0x4c5790: ASTERISK_IID_OF_INFO_SLOT
-		 *                           |ASTERISK_AFFECTS_TOUGHNESS|ASTERISK_AFFECTS_POWER
-		 *                           |ASTERISK_COUNT_OPPONENT|ASTERISK_COUNT_CONTROLLER
-		 *                           info_slot = (creature's internal_card_id) */
 		for (p = 0; p < 2; ++p)
 		  if (count_who & (p == tp ? ASTERISK_COUNT_CONTROLLER : ASTERISK_COUNT_OPPONENT))
 			{
@@ -714,9 +726,6 @@ int effect_asterisk(int player, int card, event_t event)
 		break;
 
 	  case ASTERISK_NONWALL_CREATURES:
-		/* Keldon Warlord 0x4c57f0: ASTERISK_NONWALL_CREATURES
-		 *                          |ASTERISK_AFFECTS_TOUGHNESS|ASTERISK_AFFECTS_POWER
-		 *                          |ASTERISK_COUNT_CONTROLLER */
 		for (p = 0; p < 2; ++p)
 		  if (count_who & (p == tp ? ASTERISK_COUNT_CONTROLLER : ASTERISK_COUNT_OPPONENT))
 			{
@@ -728,10 +737,6 @@ int effect_asterisk(int player, int card, event_t event)
 		break;
 
 	  case ASTERISK_CREATURES_IN_GRAVEYARD_PLUS_POWER_IN_BYTE0_TOUGHNESS_IN_BYTE1_OF_INFO_SLOT:
-		/* Lhurgoyf 0x40df80: ASTERISK_CREATURES_IN_GRAVEYARD_PLUS_POWER_IN_BYTE0_TOUGHNESS_IN_BYTE1_OF_INFO_SLOT
-		 *                    |ASTERISK_AFFECTS_TOUGHNESS|ASTERISK_AFFECTS_POWER
-		 *                    |ASTERISK_COUNT_OPPONENT|ASTERISK_COUNT_CONTROLLER
-		 *                    info_slot = 0x100 */
 		for (p = 0; p < 2; ++p)
 		  if (count_who & (p == tp ? ASTERISK_COUNT_CONTROLLER : ASTERISK_COUNT_OPPONENT))
 			for (c = 0; c < 500; ++c)
@@ -748,10 +753,6 @@ int effect_asterisk(int player, int card, event_t event)
 		break;
 
 	  case ASTERISK_HAND_COUNT:
-		/* Maro 0x40e4a0 (replaced in C): ASTERISK_HAND_COUNT
-		 *                                |ASTERISK_AFFECTS_TOUGHNESS|ASTERISK_AFFECTS_POWER
-		 *                                |ASTERISK_COUNT_CONTROLLER
-		 *                                info_slot = 0 */
 		if (count_who & ASTERISK_COUNT_CONTROLLER)
 		  modifier += hand_count[player];
 		if (count_who & ASTERISK_COUNT_OPPONENT)
@@ -759,10 +760,6 @@ int effect_asterisk(int player, int card, event_t event)
 		break;
 
 	  case ASTERISK_SUBTYPE_OF_INFO_SLOT:
-		/* Swarm of Rats 0x4140f0: ASTERISK_SUBTYPE_OF_INFO_SLOT
-		 *                         |ASTERISK_AFFECTS_POWER
-		 *                         |ASTERISK_COUNT_CONTROLLER
-		 *                         info_slot = SUBTYPE_RAT */
 		for (p = 0; p < 2; ++p)
 		  if (count_who & (p == tp ? ASTERISK_COUNT_CONTROLLER : ASTERISK_COUNT_OPPONENT))
 			{
@@ -774,7 +771,6 @@ int effect_asterisk(int player, int card, event_t event)
 		break;
 
 	  case ASTERISK_POWER_IN_BYTE0_TOUGHNESS_IN_BYTE1_OF_INFO_SLOT:
-		// Unused
 		if (event == EVENT_POWER)
 		  modifier = BYTE0(instance->info_slot);
 		else
@@ -782,7 +778,6 @@ int effect_asterisk(int player, int card, event_t event)
 		break;
 
 	  case ASTERISK_POWER_IN_BYTE0_TOUGHNESS_IN_BYTE1_MIN1_OF_INFO_SLOT:
-		// Unused
 		if (event == EVENT_POWER)
 		  modifier = BYTE0(instance->info_slot);
 		else
@@ -801,8 +796,11 @@ int effect_asterisk(int player, int card, event_t event)
 
   event_result += modifier;
 
-  /* counter_power/toughness on the effect card, not what it's attached to.  The Sorceress Queen effect looks for this effect when determining the attached
-   * card's characteristic-defining power/toughness. */
+  /*
+   * These counters are on the effect card, not the attached card.  The
+   * Sorceress Queen effect reads them when deriving the attached card's
+   * characteristic-defining power/toughness.
+   */
   if (event == EVENT_POWER)
 	instance->counter_power = modifier;
   else
@@ -816,7 +814,14 @@ HackForceEffectChangeSource hack_force_effect_change_source = {{-1,-1}, {-1,-1}}
 
 int create_legacy_effect_exe(int player, int card, int iid, int t_player, int t_card)
 {
-  // Not a replacement for the original function at 0x4a09a0, but a front end to make things right if called with an activation card or another effect.
+  /*
+   * Front-end to the exe's legacy-effect creator.  Activation cards and legacy
+   * effects need source fixups so the created effect points at the real source,
+   * not the transient wrapper.
+   */
+
+  if (!engine_card_ref_is_valid(player, card))
+	return -1;
 
   if (hack_force_effect_change_source.from.player != -1
 	  && player == hack_force_effect_change_source.from.player
@@ -824,6 +829,9 @@ int create_legacy_effect_exe(int player, int card, int iid, int t_player, int t_
 	{
 	  player = hack_force_effect_change_source.to.player;
 	  card = hack_force_effect_change_source.to.card;
+
+	  if (!engine_card_ref_is_valid(player, card))
+		return -1;
 	}
 
   card_instance_t* instance = get_card_instance(player, card);
@@ -832,7 +840,7 @@ int create_legacy_effect_exe(int player, int card, int iid, int t_player, int t_
   if (instance->internal_card_id == activation_card)
 	return EXE_FN(int, 0x4a09a0, int, int, int, int, int)(instance->parent_controller, instance->parent_card, iid, t_player, t_card);
 
-  if (instance->internal_card_id < 0)	// Maybe use original_internal_card_id?
+  if (instance->internal_card_id < 0)
 	return EXE_FN(int, 0x4a09a0, int, int, int, int, int)(player, card, iid, t_player, t_card);
 
   csvid = cards_data[instance->internal_card_id].id;
@@ -870,12 +878,15 @@ int create_legacy_effect_exe(int player, int card, int iid, int t_player, int t_
 // Creates a sourceless effect card, with name/text/image from iid.
 int create_legacy_effect_from_iid(int player, int iid, int (*func_ptr)(int, int, event_t), int t_player, int t_card)
 {
+  if (!engine_player_is_valid(player) || iid < 0 || !func_ptr)
+	return -1;
+
   int legacy_card = add_card_to_hand(player, LEGACY_EFFECT_CUSTOM);
   if (legacy_card == -1)
 	return -1;
 
   card_instance_t* legacy = get_card_instance(player, legacy_card);
-  legacy->state = (player == 1) ? STATE_IN_PLAY | STATE_OWNED_BY_OPPONENT : STATE_IN_PLAY;
+  legacy->state = (player == AI) ? STATE_IN_PLAY | STATE_OWNED_BY_OPPONENT : STATE_IN_PLAY;
   --hand_count[player];
 
   card_data_t* cd = &cards_data[iid];
@@ -892,7 +903,7 @@ int create_legacy_effect_from_iid(int player, int iid, int (*func_ptr)(int, int,
   legacy->damage_target_player = t_player;
   legacy->damage_target_card = t_card;
 
-  if (t_player != -1 && t_card != -1)
+  if (t_player != -1 && t_card != -1 && engine_card_ref_is_valid(t_player, t_card))
 	{
 	  card_instance_t* attached_to = get_card_instance(t_player, t_card);
 	  attached_to->regen_status |= KEYWORD_RECALC_ALL;
@@ -914,6 +925,7 @@ static void append_to_mana_prompt(char** cursor, char* end, const char* fmt, ...
   va_start(args, fmt);
   int written = vscnprintf(*cursor, end - *cursor, fmt, args);
   va_end(args);
+
   if (written > 0)
 	*cursor += written;
 }
@@ -921,12 +933,12 @@ static void append_to_mana_prompt(char** cursor, char* end, const char* fmt, ...
 void format_manacost_into_global_allpurpose_buffer(int ignored, int* mana_cost_array, int x_so_far, int max_x)
 {
   // 0x42f1f0
+  (void)ignored;
 
   char intro[300];
   intro[0] = 0;
 
-  if (stack_size > 0)
-	// sprintf_CastingActivatingOrProcessing_CardName(...)
+  if (stack_size > 0 && engine_stack_index_is_valid(stack_size - 1))
 	EXE_FN(void, 0x436980, char*, int, int, int)(intro, stack_data[stack_size - 1].generating_event,
 												 stack_cards[stack_size - 1].player, stack_cards[stack_size - 1].card);
 
@@ -937,11 +949,11 @@ void format_manacost_into_global_allpurpose_buffer(int ignored, int* mana_cost_a
 
   if (mana_cost_array[COLOR_COLORLESS] == -1 || mana_cost_array[COLOR_ARTIFACT] == -1)
 	{
-	  // Begin additions
 	  int our_xx = hack_xx;
 	  const char* cost;
 	  if (hack_xx == 1
 		  && stack_size > 0
+		  && engine_stack_index_is_valid(stack_size - 1)
 		  && stack_data[stack_size - 1].generating_event == EVENT_RESOLVE_SPELL
 		  && (cost = cards_ptr[get_id(stack_cards[stack_size - 1].player, stack_cards[stack_size - 1].card)]->mana_cost_text)
 		  && strstr(cost, "|X|X"))
@@ -953,7 +965,6 @@ void format_manacost_into_global_allpurpose_buffer(int ignored, int* mana_cost_a
 
 	  int divisor = our_xx == 2 ? 2 : our_xx == 3 ? 3 : 1;
 	  const char* fmt = divisor == 1 ? "|X" : divisor == 2 ? "|X|X" : "|X|X|X";
-	  // End additions
 
 	  if (max_x == -1)
 		append_to_mana_prompt(&p, end, EXE_STR(0x728578)/*PROMPT_GRABMANA[1]*/, fmt, x_so_far / divisor);
@@ -994,12 +1005,13 @@ void format_manacost_into_global_allpurpose_buffer(int ignored, int* mana_cost_a
 			append_to_mana_prompt(&p, end, "%s", mana_symbol);
 	  }
 
-  p = global_all_purpose_buffer_ptr();	// global_all_purpose_buffer[]
+  p = global_all_purpose_buffer_ptr();
   int written = scnprintf(p, GLOBAL_ALL_PURPOSE_BUFFER_SIZE, "%s, ", intro);
   if (written < 0)
 	written = 0;
   else if (written >= GLOBAL_ALL_PURPOSE_BUFFER_SIZE)
 	written = GLOBAL_ALL_PURPOSE_BUFFER_SIZE - 1;
+
   scnprintf(p + written, GLOBAL_ALL_PURPOSE_BUFFER_SIZE - written, EXE_STR(0x786B00)/*PROMPT_GRABMANA[0]*/, str);
 }
 
@@ -1025,7 +1037,7 @@ extern int pay_mana_xbugrwaU[8];
 #define single_color_test_bit_to_color_t		EXE_FN(color_t, 0x4358f0, color_test_t)
 #define TENTATIVE_update_mana_spent				EXE_FN(void, 0x430260, int*)
 
-#define EXE_2D_ARR(typ, dim1, dim2, addr)		((typ(*)[dim2])addr)	// dim1 for documentation only
+#define EXE_2D_ARR(typ, dim1, dim2, addr)		((typ(*)[dim2])addr)
 
 #define TENTATIVE_color_clicked_in_mana_summary_pane	EXE_DWORD(0x60a52c)
 #define global_all_purpose_buffer				((char*)(0x60a690))
@@ -1035,6 +1047,9 @@ extern int pay_mana_xbugrwaU[8];
 
 int charge_mana(int player, color_t color, int amount)
 {
+  if (!engine_player_is_valid(player))
+	return 0;
+
   int old_affected_card_controller = affected_card_controller;
   int old_affected_card = affected_card;
 
@@ -1049,29 +1064,10 @@ int charge_mana(int player, color_t color, int amount)
 	  int old_land_can_be_played = land_can_be_played;
 	  land_can_be_played |= LCBP_CHARGING_MANA;
 
-#if 0	// Apparently MicroProse's attempt at Power Artifact.  We won't be using it.
-      if (pay_mana_xbugrwaU[7] > 0)
-		{
-		  if (color)
-			{
-			  if (pay_mana_xbugrwaU[0] > 0)
-				{
-				  int diff = pay_mana_xbugrwaU[0] - 2*pay_mana_xbugrwaU[7];
-				  pay_mana_xbugrwaU[0] = MAX(diff, 1);
-				}
-			}
-		  else if (amount != -1)
-			{
-			  int diff = amount - 2*pay_mana_xbugrwaU[7];
-			  amount = MAX(diff, 1);
-			}
-		}
-#endif
-
       pay_mana_xbugrwaU[color] += amount;
 
       int amt_of_nonartifact_mana = has_mana(player, COLOR_ARTIFACT, 1) - has_mana(player, COLOR_ANY, 1);
-      int autotap_matching_colors_in_pool = 1;	// a parameter in Shandalar
+      int autotap_matching_colors_in_pool = 1;
       int autotap_colored_in_pool_for_colorless, autotap_pool_for_x, autotap_sources_human, autotap_sources_ai;
       if (!ldoubleclicked
 		  && !IS_AI(player))
@@ -1081,7 +1077,6 @@ int charge_mana(int player, color_t color, int amount)
 		}
       else
 		{
-		  //autotap_matching_colors_in_pool = 1;
 		  autotap_colored_in_pool_for_colorless = autotap_pool_for_x = autotap_sources_human = 1;
 		  if (!IS_AI(player))
 			autotap_sources_ai = 0;
@@ -1132,24 +1127,17 @@ int charge_mana(int player, color_t color, int amount)
 				{
 				  EXE_FN(int, 0x499050, void)();	// TENTATIVE_ai_retrieve_values_on_chosen_branch()
 
-				  if (EXE_DWORD(0x7a2fe4) == 99)	// TENTATIVE_ai_branch_value_99_is_abort
-					EXE_DWORD(0x7a2fe4) = 0;		// TENTATIVE_ai_branch_value_99_is_abort
+				  if (EXE_DWORD(0x7a2fe4) == 99)
+					EXE_DWORD(0x7a2fe4) = 0;
 
-				  x = EXE_DWORD(0x7a2fe4);		// TENTATIVE_ai_branch_value_99_is_abort
+				  x = EXE_DWORD(0x7a2fe4);
 				}
 			}
 
 		  max_x_value = x;
 		}
 
-#if 0	// as above
-      if (pay_mana_xbugrwaU[7] <= 0)
-		x_value = 0;
-      else
-		x_value = 2 * pay_mana_xbugrwaU[7];
-#else
-      x_value = 0;	// Shandalar: = additional_x_avail (a parameter)
-#endif
+      x_value = 0;
 
       if (max_x_value == 0)
 		{
@@ -1191,7 +1179,7 @@ int charge_mana(int player, color_t color, int amount)
 
       if (autotap_sources_ai
 		  && !pay_mana_maximally_satisfied(pay_mana_xbugrwaU, x_value, max_x_value))
-		{	// AI-only autotapping
+		{
 		  try_to_pay_for_mana_by_autotapping(player, amtspaid, &total_paid, AUTOTAP_NO_CREATURES|AUTOTAP_NO_DONT_AUTO_TAP, 1);
 
 		  if (!pay_mana_maximally_satisfied(pay_mana_xbugrwaU, x_value, max_x_value))
@@ -1288,7 +1276,7 @@ int charge_mana(int player, color_t color, int amount)
 								land_can_be_played &= ~LCBP_CHARGING_MANA;
 
 								if (!was_tapped && (inst->state & STATE_TAPPED))
-								  dispatch_event(player, card, EVENT_TAP_CARD);// Needs to either dispatch EVENT_PLAY_ABILITY instead, or also dispatch EVENT_TAPPED_TO_PLAY_ABILITY
+								  dispatch_event(player, card, EVENT_TAP_CARD);
 								play_sound_effect(WAV_TAP);
 								resolve_top_card_on_stack();
 
@@ -1337,7 +1325,6 @@ int charge_mana(int player, color_t color, int amount)
 			  {
 				if (mana_pool[player][TENTATIVE_color_clicked_in_mana_summary_pane] > 0)
 				  {
-					// Apply directly
 					if (TENTATIVE_color_clicked_in_mana_summary_pane != COLOR_ARTIFACT || pay_mana_xbugrwaU[COLOR_ARTIFACT])
 					  {
 						int col_to_apply_to = -1;
@@ -1360,7 +1347,6 @@ int charge_mana(int player, color_t color, int amount)
 						  }
 					  }
 
-					// Apply via raw_mana_may_be_spent_as_color[][]
 					{
 					  color_test_t colors = 0;
 					  int n;
@@ -1435,6 +1421,9 @@ int charge_mana(int player, color_t color, int amount)
 
 int autotap_mana_source(int player, int card)
 {
+  if (!engine_card_ref_is_valid(player, card))
+	return 0;
+
   card_instance_t* inst = get_card_instance(player, card);
   if (inst->state & STATE_TAPPED)
     return 0;
@@ -1454,7 +1443,7 @@ int autotap_mana_source(int player, int card)
   int* old_charge_mana_addr_of_max_x_value = charge_mana_addr_of_max_x_value;
   charge_mana_addr_of_max_x_value = &old_max_x_value;
 
-  old_x_value = x_value;                              // inject before this
+  old_x_value = x_value;
   x_value = 0;
   old_max_x_value = max_x_value;
   max_x_value = -1;
@@ -1535,42 +1524,20 @@ void human_assign_blockers(int player)
 {
   // 0x434960
 
-  if (ai_is_speculating == 1)
+  if (!engine_player_is_valid(player) || ai_is_speculating == 1)
 	return;
 
-  // Begin additions
   int who_chooses;
   if (event_flags & EF_ATTACKER_CHOOSES_BLOCKERS)
 	{
 	  who_chooses = player;
-	  if (current_turn == AI)	// Nothing blocks
+	  if (current_turn == AI)
 		return;
 	}
   else
 	who_chooses = 1-player;
-  // End additions
 
   EXE_FN(void, 0x472260, void)();	// TENTATIVE_reassess_all_cards()
-
-  // Begin removals
-#if 0
-  // This seems to be the remains of primitive AI handling; the values it computes aren't used.
-  int indices[16], powers[16], highest_power = 0, pos = 0, c;
-  for (c = 0; active_cards_count[player] > c; ++c)
-	{
-	  card_instance_t* instance = get_card_instance(player, c);
-	  if (instance->internal_card_id != -1 && (instance->state & STATE_ATTACKING))
-		{
-		  int pow = get_abilities(player, c, EVENT_POWER, -1);
-		  indices[pos] = c;
-		  powers[pos] = pow;
-		  ++pos;
-		  if (highest_power < pow)
-			highest_power = pow;
-		}
-	}
-#endif
-  // End removals
 
   target_definition_t td_choose_blocker;
   base_target_definition(1-player, 0, &td_choose_blocker, TARGET_TYPE_NONCREATURE_CAN_BLOCK | TYPE_CREATURE);
@@ -1580,7 +1547,7 @@ void human_assign_blockers(int player)
   td_choose_blocker.zone = TARGET_ZONE_0x2000 | TARGET_ZONE_IN_PLAY;
   td_choose_blocker.special = TARGET_SPECIAL_ALLOW_MULTIBLOCKER;
   td_choose_blocker.illegal_state = TARGET_STATE_BLOCKING | TARGET_STATE_TAPPED;
-  td_choose_blocker.allow_cancel = 2;	// I suspect this is what makes the "Done" button.
+  td_choose_blocker.allow_cancel = 2;
 
   target_definition_t td_block_which_attacker;
   base_target_definition(player, 0, &td_block_which_attacker, TYPE_CREATURE);
@@ -1611,7 +1578,6 @@ void human_assign_blockers(int player)
 	  if (!forbid_attack
 		  && select_target(player, -1000, &td_block_which_attacker, text_lines[1], &blocked))
 		{
-		  // 0x4350e0 clears blocking, checks legality, and then, if it was illegal, restores the previous values
 		  if (EXE_FN(int, 0x4350E0, int, int, int, int)(blocker.player, blocker.card, blocked.player, blocked.card))	// try_block()
 			{
 			  int band = get_card_instance(blocked.player, blocked.card)->blocking;
@@ -1621,9 +1587,6 @@ void human_assign_blockers(int player)
 			  card_instance_t* instance = get_card_instance(blocker.player, blocker.card);
 			  instance->blocking = band;
 			  instance->state |= STATE_BLOCKING;
-			  // Begin removals
-			  // if (band_before_being_set_to_blocked.card != 255)	// Suppresse the block sound when blocking a band
-			  // End removals
 			  play_sound_effect(WAV_BLOCK2);
 
 			  EXE_FN(void, 0x472260, void)();	// TENTATIVE_reassess_all_cards()
@@ -1631,7 +1594,7 @@ void human_assign_blockers(int player)
 			  if (event_flags & EA_SELECT_BLOCK)
 				dispatch_trigger2(current_turn, TRIGGER_BLOCKER_CHOSEN, EXE_STR(0x790074)/*PROMPT_BLOCKERSELECTION[0]*/, 0, blocker.player, blocker.card);
 			}
-		  else // if (ai_is_speculating != 1)	// Redundant, already checked above
+		  else
 			{
 			  load_text(0, "PROMPT_CHOOSEBLOCKERS");
 			  set_centerwindow_txt(text_lines[2]);
@@ -1646,10 +1609,13 @@ void allow_response_to_activation(int player, int card)
 {
   // originally part of 0x4346e0
 
+  if (!engine_card_ref_is_valid(player, card))
+	return;
+
   const char* name = EXE_FN(const char*, 0x439690, int, int)(player, card);	// get_displayable_cardname_from_player_card()
   scnprintf(global_all_purpose_buffer_ptr(), GLOBAL_ALL_PURPOSE_BUFFER_SIZE, EXE_STR(0x786264)/*PROMPT_CHECKFEPHASE[3]*/, name);
 
-  int a1 = (EXE_DWORD(0x60A54C) && (player == 0 || (trace_mode & 2))) ? -1 : -2;
+  int a1 = (EXE_DWORD(0x60A54C) && (player == HUMAN || (trace_mode & 2))) ? -1 : -2;
   EXE_FN(int, 0x436A20, int, int, const char*, int)(a1, current_phase, EXE_STR(0x60A690), EVENT_ACTIVATE);	// allow_response()
 }
 
@@ -1657,15 +1623,19 @@ int finalize_activation(int player, int card)
 {
   // 0x4346e0
 
+  if (!engine_card_ref_is_valid(player, card))
+	return 1;
+
   if (cancel == 1)
 	return 1;
 
   card_instance_t* instance = get_card_instance(player, card);
-  int iid = get_card_instance(player, card)->internal_card_id;
-  // Begin additions
+  int iid = instance->internal_card_id;
   if (iid == -1)
 	iid = instance->backup_internal_card_id;
-  // End additions
+
+  if (iid < 0)
+	return 1;
 
   int tapping_for_mana = (cards_data[iid].extra_ability & EA_MANA_SOURCE) && tapped_for_mana_color != -1;
 
@@ -1680,11 +1650,12 @@ int finalize_activation(int player, int card)
 }
 
 extern target_t totally_bletcherous_hack_dont_reset_x_value;
+
 void put_card_or_activation_onto_stack(int player, int card, event_t event, int a4, int a5)
 {
   // 0x436550
 
-  if (!engine_stack_index_is_valid(stack_size))
+  if (!engine_card_ref_is_valid(player, card) || !engine_stack_index_is_valid(stack_size))
 	return;
 
   card_instance_t* instance = get_card_instance(player, card);
@@ -1694,13 +1665,14 @@ void put_card_or_activation_onto_stack(int player, int card, event_t event, int 
   stack_data[stack_size].unknown_sdt = a4;
 
   int stack_card;
-  if (event == EVENT_RESOLVE_SPELL || event == EVENT_RESOLVE_TRIGGER || instance->internal_card_id <= 4)	// a basic land
+  if (event == EVENT_RESOLVE_SPELL || event == EVENT_RESOLVE_TRIGGER || instance->internal_card_id <= 4)
 	stack_card = card;
   else
 	{
 	  stack_card = add_card_to_hand(player, activation_card);
 	  if (stack_card == -1)
 		return;
+
 	  card_instance_t* stack_inst = get_card_instance(player, stack_card);
 	  int orig_timestamp = stack_inst->timestamp;
 	  memcpy(stack_inst, instance, sizeof(card_instance_t));
@@ -1709,18 +1681,15 @@ void put_card_or_activation_onto_stack(int player, int card, event_t event, int 
 	  stack_inst->kill_code = 0;
 	  if (instance->internal_card_id != -1)
 		stack_inst->original_internal_card_id = instance->internal_card_id;
-	  // Begin additions
 	  else
 		stack_inst->original_internal_card_id = instance->backup_internal_card_id;
-	  // End additions
-	  stack_inst->state |= STATE_IN_PLAY;		--hand_count[player];
+
+	  stack_inst->state |= STATE_IN_PLAY;
+	  --hand_count[player];
 	  stack_inst->parent_controller = player;
 	  stack_inst->parent_card = card;
 	  stack_inst->timestamp = orig_timestamp;
-
-	  // Begin additions
-	  stack_inst->token_status &= ~STATUS_DYING;	// so kill_card() will reap it, even if the original card sacrificed itself as an activation card
-	  // End additions
+	  stack_inst->token_status &= ~STATUS_DYING;
 	}
 
   stack_cards[stack_size].player = player;
@@ -1765,7 +1734,10 @@ void recopy_card_onto_stack(int a1)
 	  int pp = stack_inst->parent_controller;
 	  int ts = stack_inst->timestamp;
 
-	  card_instance_t* parent_inst = get_card_instance(stack_inst->parent_controller, stack_inst->parent_card);
+	  if (!engine_card_ref_is_valid(pp, pc))
+		return;
+
+	  card_instance_t* parent_inst = get_card_instance(pp, pc);
 
 	  if (parent_inst->state & STATE_DONT_RECOPY_ONTO_STACK)
 		parent_inst->state &= ~STATE_DONT_RECOPY_ONTO_STACK;
@@ -1783,28 +1755,20 @@ void recopy_card_onto_stack(int a1)
 
 		  if (parent_inst->internal_card_id != -1)
 			stack_inst->original_internal_card_id = parent_inst->internal_card_id;
-		  // Begin additions
 		  else
 			stack_inst->original_internal_card_id = parent_inst->backup_internal_card_id;
-		  // End additions
 
-		  if ((int)stack_inst->original_internal_card_id < damage_card
-			  || (int)stack_inst->original_internal_card_id >= damage_card + 47)
+		  if ((int)stack_inst->original_internal_card_id >= 0
+			  && ((int)stack_inst->original_internal_card_id < damage_card
+				  || (int)stack_inst->original_internal_card_id >= damage_card + 47))
 			{
 			  stack_inst->display_pic_csv_id = cards_data[stack_inst->original_internal_card_id].id;
-			  // Begin removals
-			  // stack_inst->display_pic_num = 0
-			  // End removals
-			  // Begin additions
 			  stack_inst->display_pic_num = get_card_image_number(stack_inst->display_pic_csv_id, pp, pc);
-			  // End additions
 			}
 		}
 
-	  // Begin additions
 	  if (stack_inst->internal_card_id == activation_card)
-		stack_inst->token_status &= ~STATUS_DYING;	// so kill_card() will reap it, even if the original card sacrificed itself as an activation card
-	  // End additions
+		stack_inst->token_status &= ~STATUS_DYING;
 	}
 
   if (ai_is_speculating != 1)
@@ -1818,14 +1782,21 @@ static void comes_into_play_trigger(int player, int card)
 {
   // 0x401bb0.  Not moved out of exe, since it has a non-standard calling convention and is only called from put_card_on_stack3().
 
+  if (!engine_card_ref_is_valid(player, card))
+	return;
+
   push_affected_card_stack();
   get_card_instance(player, card)->regen_status |= KEYWORD_RECALC_ALL;
-  dispatch_trigger2(current_turn, TRIGGER_COMES_INTO_PLAY, EXE_STR(0x787108), 0, player, card);	//PROMPT_SPECIALFEPHASE[0]
+  dispatch_trigger2(current_turn, TRIGGER_COMES_INTO_PLAY, EXE_STR(0x787108), 0, player, card);	// PROMPT_SPECIALFEPHASE[0]
   pop_affected_card_stack();
 }
+
 int put_card_on_stack3(int player, int card)
 {
   // 0x433e10
+
+  if (!engine_card_ref_is_valid(player, card))
+	return 0;
 
   card_instance_t* instance = get_card_instance(player, card);
 
@@ -1833,41 +1804,35 @@ int put_card_on_stack3(int player, int card)
   if (iid == -1)
 	{
 	  obliterate_top_card_of_stack();
-	  land_can_be_played &= ~LCBP_SPELL_BEING_PLAYED;	// Addition
+	  land_can_be_played &= ~LCBP_SPELL_BEING_PLAYED;
 	  return 0;
 	}
 
-  dispatch_trigger2(current_turn, TRIGGER_SPELL_CAST, EXE_STR(0x715a04), 0, player, card);	//PROMPT_SPECIALFEPHASE[6]
+  dispatch_trigger2(current_turn, TRIGGER_SPELL_CAST, EXE_STR(0x715a04), 0, player, card);	// PROMPT_SPECIALFEPHASE[6]
 
-  // Begin additions - allows TRIGGER_SPELL_CAST to safely counter a spell or change its iid
-  land_can_be_played &= ~LCBP_SPELL_BEING_PLAYED;	// moved from lower, just after STATE_IN_PLAY is set
+  /*
+   * TRIGGER_SPELL_CAST can counter a spell or change its iid.  Re-read iid
+   * after the trigger before letting the spell continue to resolve.
+   */
+  land_can_be_played &= ~LCBP_SPELL_BEING_PLAYED;
   iid = instance->internal_card_id;
   if (iid == -1)
 	{
 	  obliterate_top_card_of_stack();
 	  return 0;
 	}
-  // End additions
 
   card_data_t* cd = get_card_data(player, card);
 
-  if (!is_what(player, card, TYPE_LAND)
-	// && !(is_what(player, card, TYPE_INTERRUPT) && (cd->extra_ability & EA_MANA_SOURCE)	// Removed by patch_make_manasource_interrupts_interruptible.pl
-	  )
+  if (!is_what(player, card, TYPE_LAND))
 	{
 	  const char* name = EXE_FN(const char*, 0x439690, int, int)(player, card);	// get_displayable_cardname_from_player_card()
 	  scnprintf(global_all_purpose_buffer_ptr(), GLOBAL_ALL_PURPOSE_BUFFER_SIZE, EXE_STR(0x737bc0)/*PROMPT_CHECKFEPHASE[2]*/, name);
-	  EXE_FN(int, 0x436A20, int, int, const char*, int)(-2, current_phase, EXE_STR(0x60A690)/*global_all_purpose_buffer*/, EVENT_CAST_SPELL);	// allow_response()
+	  EXE_FN(int, 0x436A20, int, int, const char*, int)(-2, current_phase, EXE_STR(0x60A690)/*global_all_purpose_buffer*/, EVENT_CAST_SPELL);
 	}
+
   instance->state &= ~STATE_INVISIBLE;
   instance->state |= STATE_IN_PLAY;
-
-  // Begin removals
-  // if (instance->internal_card_id != iid)
-  //   {
-  //     obliterate_top_card_of_stack();
-  //     return 0;
-  //   }
 
   uint8_t type = cd->type;
   types_of_cards_on_bf[player] |= type;
@@ -1879,7 +1844,7 @@ int put_card_on_stack3(int player, int card)
 		play_sound_effect(WAV_ARTIFACT);
 	  if (type & TYPE_ENCHANTMENT)
 		{
-		  if (cd->cc[2] == 9)	// a Planeswalker
+		  if (cd->cc[2] == 9)
 			play_sound_effect(WAV_PLANESWALKER);
 		  else
 			play_sound_effect(WAV_ENCHANT);
@@ -1894,20 +1859,20 @@ int put_card_on_stack3(int player, int card)
 
   EXE_FN(void, 0x436740, void)();	// resolve_top_card_on_stack()
 
-  if (!(instance->internal_card_id == -1 && is_what(-1, iid, TYPE_PERMANENT)))	// Either an Aura whose target became invalid, or something like Mox Diamond
+  if (!(instance->internal_card_id == -1 && is_what(-1, iid, TYPE_PERMANENT)))
 	comes_into_play_trigger(player, card);
 
   EXE_FN(void, 0x477070, void)();	// resolve_damage_cards_and_prevent_damage()
   event_flags &= ~EF_RERUN_DAMAGE_PREVENTION;
   EXE_DWORD(0x4EF1B4) = 0x477B30;	// = &kill_card_guts()
   EXE_FN(int, 0x477a90, void)();	// regenerate_or_graveyard_triggers()
-  EXE_FN(void, 0x477070, void)();	// resolve_damage_cards_and_prevent_damage() (again!)
+  EXE_FN(void, 0x477070, void)();	// resolve_damage_cards_and_prevent_damage()
   EXE_DWORD(0x4EF19C) = -1;			// card_on_stack_iid
 
   if (cd->type & TYPE_LAND)
 	++lands_played;
 
-  if (cancel == 1)	// Essentially never; will be cleared within both regenerate_or_graveyard_triggers() and resolve_damage_cards_and_prevent_damage()
+  if (cancel == 1)
 	{
 	  if (ai_is_speculating != 1)
 		{
@@ -1929,24 +1894,14 @@ int put_card_on_stack3(int player, int card)
 }
 
 extern int event_rval;	// set only when calling our event dispatching functions directly
+
 int is_a_tappable_mana_source(int player, int card)
 {
   // 0x43a280
 
-#if 0	// Exe version
-  card_instance_t* instance;
-  card_data_t* cd;
-  if (!(instance = in_play(player, card)))
+  if (!engine_card_ref_is_valid(player, card))
 	return 0;
-  if (!((cd = &cards_data[instance->internal_card_id])->extra_ability & EA_MANA_SOURCE))
-	return 0;
-  if (instance->state & STATE_TAPPED)
-	return 0;
-  if ((instance->state & STATE_SUMMON_SICK) && (cd->type & TYPE_CREATURE))
-	return 0;
-  return 1;
-#else
-  // Begin additions
+
   card_instance_t* instance = in_play(player, card);
   if (instance && (cards_data[instance->internal_card_id].extra_ability & EA_MANA_SOURCE))
 	{
@@ -1955,41 +1910,33 @@ int is_a_tappable_mana_source(int player, int card)
 	}
   else
 	return 0;
-  // End additions
-#endif
 }
 
 void event_activate_then_duplicate_into_stack(int player, int card, int event, int new_attacking_card_controller, int new_attacking_card);
+
 // Interface for exe calls.
 void tap_card_for_mana(int player, int card)
 {
-#if 0	// Exe version
-  needed_mana_colors = COLOR_TEST_ANY_COLORED;
-  tapped_for_mana_color = -1;
-  dispatch_event_with_attacker_to_one_card(player, card, EVENT_ACTIVATE, 1-player, -1);
-  if (cancel == 1)
-	cancel = 0;
-  else
-	{
-	  if (get_card_instance(player, card)->state & STATE_TAPPED)
-		dispatch_event(player, card, EVENT_TAP_CARD);
-	  resolve_damage_cards_and_prevent_damage();
-	  regenerate_or_graveyard_triggers();
-	}
-  needed_mana_colors = 0;
-#else
   force_activation_for_mana(player, card, COLOR_TEST_COLORLESS);
-#endif
 }
 
 // Note that this doesn't check EVENT_CAN_ACTIVATE itself, or whether {player,card} has EA_MANA_SOURCE.
 void force_activation_for_mana(int player, int card, color_test_t colors)
 {
+  if (!engine_card_ref_is_valid(player, card))
+	return;
+
   put_card_or_activation_onto_stack(player, card, EVENT_RESOLVE_ACTIVATION, player, 0);
   needed_mana_colors = colors;
   tapped_for_mana_color = -1;
   int was_tapped = is_tapped(player, card);
-  event_activate_then_duplicate_into_stack(player, card, EVENT_ACTIVATE, 1-player, -1);	// Yeah, the one that says "do not call directly".  I'm calling it directly because I'm duplicating the exe function it fixes.
+
+  /*
+   * This calls the repaired activation dispatcher directly because this function
+   * is duplicating the exe's tap-for-mana activation path.
+   */
+  event_activate_then_duplicate_into_stack(player, card, EVENT_ACTIVATE, 1-player, -1);
+
   needed_mana_colors = 0;
   if (cancel == 1)
 	{
@@ -2015,11 +1962,17 @@ int card_instances_should_be_displayed_identically(card_instance_t* inst1, card_
 {
   // 0x48c9d0
 
-  // (Changes in ability icons and unknown0x70 are detected separately.)
+  if (inst1 == NULL || inst2 == NULL)
+	return inst1 == inst2;
+
+  /*
+   * Changes in ability icons and unknown0x70 are detected separately.
+   * This comparison covers the rest of the visible card state.
+   */
   return (inst1 == inst2
 		  || !(inst1->internal_card_id != inst2->internal_card_id
 			   || ((inst1->state ^ inst2->state) & (STATE_SUMMON_SICK|STATE_TAPPED|STATE_OWNED_BY_OPPONENT|STATE_TARGETTED|STATE_CANNOT_TARGET|STATE_OUBLIETTED
-													|STATE_IS_TRIGGERING))	// added
+													|STATE_IS_TRIGGERING))
 			   || inst1->damage_on_card != inst2->damage_on_card
 			   || inst1->power != inst2->power
 			   || inst1->toughness != inst2->toughness
@@ -2040,16 +1993,20 @@ int card_instances_should_be_displayed_identically(card_instance_t* inst1, card_
 			   || inst1->display_pic_num != inst2->display_pic_num
 			   || inst1->untap_status != inst2->untap_status
 			   || inst1->kill_code != inst2->kill_code
-			   || inst1->counters_m1m1 != inst2->counters_m1m1	// added
-			   || inst1->targets[18].player != inst2->targets[18].player	// added; counter types
-			   || inst1->targets[18].card != inst2->targets[18].card	// added; counter types
+			   || inst1->counters_m1m1 != inst2->counters_m1m1
+			   || inst1->targets[18].player != inst2->targets[18].player
+			   || inst1->targets[18].card != inst2->targets[18].card
 			   ));
 }
 
 int determine_start_duel_winner(void)
 {
-  // Replacement for the last part of start_duel().
-  // This isn't actually reached most of the time - I think it never is, but that's difficult to prove.  Usually, lose_the_game() calls ExitThread() instead.
+  /*
+   * Replacement for the last part of start_duel().
+   *
+   * This is probably unreachable in most games because lose_the_game() usually
+   * exits the thread first, but keeping it correct is cheap.
+   */
   int lost0 = life[0] <= 0 || POISON_COUNTERS(0) >= 10;
   int lost1 = life[1] <= 0 || POISON_COUNTERS(1) >= 10;
 
@@ -2083,7 +2040,7 @@ int is_anyone_dead(void)
   return 0;
 }
 
-// Returns the most common color either in Deck[] (if plr == -1), or in initial_library[plr].
+// Returns the most common color either in Deck[] if plr == -1, or in initial_library[plr].
 int sub_495BE0(int plr)
 {
   int num_per_col[COLOR_WHITE + 1] = {0};
@@ -2092,7 +2049,7 @@ int sub_495BE0(int plr)
   if (plr == -1)
 	{
 	  for (i = 0; i < 500; ++i)
-		if (Deck[i] != -1 && !(Deck[i] & 0x88000))	// 0x8000 = offered as ante; 0x80000 = not in current deck (moved from 0x4000)
+		if (Deck[i] != -1 && !(Deck[i] & 0x88000))	// 0x8000 = offered as ante; 0x80000 = not in current deck
 		  {
 			color_test_t cols = cards_data[Deck[i] & 0x7FFF].color;
 			if (cols & COLOR_TEST_BLACK)
@@ -2107,7 +2064,7 @@ int sub_495BE0(int plr)
 			  ++num_per_col[COLOR_BLUE];
 		  }
 	}
-  else
+  else if (engine_player_is_valid(plr))
 	{
 	  for (i = 0; i < 200; ++i)
 		{
@@ -2133,9 +2090,15 @@ int sub_495BE0(int plr)
 			}
 		}
 	}
+  else
+	return COLOR_BLACK;
 
-  // Not quite the same as the original, which checks in the order black, white, green, red, blue, for no apparent reason.  The order matters for ties.
-  int highest_idx = 0, highest_num = -1;
+  /*
+   * Ties are resolved by color enum order.  The original checked black, white,
+   * green, red, blue for no clear reason.
+   */
+  int highest_idx = COLOR_BLACK;
+  int highest_num = -1;
   for (i = COLOR_BLACK; i <= COLOR_WHITE; ++i)
 	if (num_per_col[i] > highest_num)
 	  {

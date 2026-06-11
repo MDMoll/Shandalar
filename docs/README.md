@@ -32,6 +32,7 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | [magic-vs-shandalar-runtime.md](magic-vs-shandalar-runtime.md) | How Shandalar and Magic launch paths relate. |
 | [command-line.md](command-line.md) | `--help`, `--e`, `--p`, and command-line evidence. |
 | [building.md](building.md) | Source/build observations and blockers. |
+| [deck-injector.md](deck-injector.md) | JDK 21 build and verification notes for the Java Deck Injector support tool. |
 | [architecture.md](architecture.md) | High-level repo organization. |
 | [source-map.md](source-map.md) | Source snapshot and tooling map from the deep codebase audit. |
 | [build-health.md](build-health.md) | Build dry-run results, missing toolchain notes, and build blockers. |
@@ -53,6 +54,9 @@ when you need the deeper evidence, cleanup notes, or test checklists.
 | [bugs/ai-raw-mana-snapshot.md](bugs/ai-raw-mana-snapshot.md) | AI speculation raw-mana snapshot restore fix. |
 | [bugs/ai-etb-player-target-spell-chain-freeze.md](bugs/ai-etb-player-target-spell-chain-freeze.md) | AI-controlled land ETB Spell Chain freeze investigation, failed Bojuka/Piranha retests, and current resolver-layer candidate evidence. |
 | [bugs/piranha-marsh-spell-chain-freeze.md](bugs/piranha-marsh-spell-chain-freeze.md) | Piranha Marsh ETB trigger target-prompt freeze investigation and patch evidence. |
+| [bugs/loam-larva-basic-land-picker.md](bugs/loam-larva-basic-land-picker.md) | Loam Larva adventure-duel basic-land library picker regression and Shandalar.dll subtype patch evidence. |
+| [bugs/merfolk-sovereign-ai-activation-freeze.md](bugs/merfolk-sovereign-ai-activation-freeze.md) | Merfolk Sovereign AI activated-ability freeze and widened Shandalar targeter patch evidence. |
+| [bugs/jungle-basin-generic-autotap-overpay.md](bugs/jungle-basin-generic-autotap-overpay.md) | Jungle Basin plus pure-generic autotap overpay investigation and Shandalar.dll ordering patch evidence. |
 | [bugs/duel-start-coinflip-animation.md](bugs/duel-start-coinflip-animation.md) | Duel-start coin-flip animation default and `MTG` registry setting. |
 | [bugs/summoned-wizard-deck-handoff.md](bugs/summoned-wizard-deck-handoff.md) | Witch/summoned wizard deck handoff freeze and root-deck sync. |
 | [bugs/declared-attacker-undo.md](bugs/declared-attacker-undo.md) | Declared-attacker undo patch notes. |
@@ -91,3 +95,4 @@ For a current generated handoff summary, run
 | Doc | Use it for |
 | --- | --- |
 | [generated/README.md](generated/README.md) | Map for generated command-output snapshots. |
+| [generated/enemy-decks/README.md](generated/enemy-decks/README.md) | Enemy deck manifest, same-id variant candidates, and deck-family source inventory. |

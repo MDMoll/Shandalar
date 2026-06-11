@@ -23,8 +23,10 @@ typedef int (*Int_fn_etc)(...);
 static Int_fn_int
 get_import_int_fn(const char* proc_name)
 {
-  return reinterpret_cast<Int_fn_int>(
-    reinterpret_cast<void*>(GetProcAddress(GetModuleHandle(NULL), proc_name)));
+  HMODULE module = GetModuleHandle(NULL);
+  return module && proc_name
+    ? reinterpret_cast<Int_fn_int>(reinterpret_cast<void*>(GetProcAddress(module, proc_name)))
+    : NULL;
 }
 
 enum DBFlags
@@ -303,6 +305,9 @@ struct Packs
   void clear(void)	{ num = 0; }
   void add(csvid_t csvid, int amt)
   {
+    if (amt <= 0 || num >= static_cast<int>(sizeof table / sizeof table[0]))
+      return;
+
     table[num].csvid = csvid;
     table[num].amt = amt;
     ++num;
@@ -439,6 +444,9 @@ static char* global_external_deckname = NULL;
 static void
 copy_short_deckname(const char* source)
 {
+  if (!source)
+    source = "";
+
   size_t len = strlen(source);
   if (len > 12)
     len = 12;
@@ -766,6 +774,18 @@ const Restriction restrictions[] =
 
 #define CHECKMENU_IF(menu, cmd, val)	CheckMenuItem((menu), (cmd), MF_BYCOMMAND | ((val) ? MF_CHECKED : MF_UNCHECKED))
 
+#define ARRAY_SIZE(a)	(sizeof(a) / sizeof((a)[0]))
+
+static bool
+checked_mul_int(int a, int b, int* out)
+{
+  if (!out || a < 0 || b < 0 || (b && a > INT_MAX / b))
+    return false;
+
+  *out = a * b;
+  return true;
+}
+
 // only used to choose which background music to play, so that's ok.  Evaluates lo twice.
 #define RANDRANGE(lo, hi)	(static_cast<int>((static_cast<double>(rand()) / (static_cast<double>(RAND_MAX) + 1.0)) * ((hi) - (lo) + 1) + (lo)))
 
@@ -849,16 +869,23 @@ static int
 load_text(const char* file_name, const char* section_name)
 {
   char path[MAX_PATH];
-  strcpy(path, file_name);
-  if (!strchr(path, '.'))
-    strcat(path, ".txt");
+  if (!file_name || !section_name)
+    return -1;
+
+  int path_len = strchr(file_name, '.')
+    ? snprintf(path, sizeof(path), "%s", file_name)
+    : snprintf(path, sizeof(path), "%s.txt", file_name);
+
+  if (path_len < 0 || path_len >= static_cast<int>(sizeof(path)))
+    return -1;
 
   File f(path, "rt");
   if (!f.ok())
     return -1;
 
   char section_line[160];
-  sprintf(section_line, "@%s", section_name);
+  if (snprintf(section_line, sizeof(section_line), "@%s", section_name) >= static_cast<int>(sizeof(section_line)))
+    return -1;
 
   char line[160];
   do
@@ -869,7 +896,7 @@ load_text(const char* file_name, const char* section_name)
 
   f.readline(line, 160);
   int num_text = atoi(line);
-  if (num_text < 0 || num_text >= 500)
+  if (num_text < 0 || num_text >= static_cast<int>(ARRAY_SIZE(text_lines)))
     return -1;
 
   for (int i = 0; i < num_text; ++i)
@@ -882,7 +909,11 @@ load_text(const char* file_name, const char* section_name)
 static void
 textout(HDC hdc, int x, int y, const char* txt)
 {
-  TextOut(hdc, x, y, txt, strlen(txt));
+  if (!hdc || !txt)
+    return;
+
+  size_t len = strlen(txt);
+  TextOut(hdc, x, y, txt, len > static_cast<size_t>(INT_MAX) ? INT_MAX : static_cast<int>(len));
 }
 
 static void textoutf(HDC hdc, int x, int y, const char* fmt, ...) __attribute__((format(printf, 4, 5)));
@@ -894,6 +925,12 @@ textoutf(HDC hdc, int x, int y, const char* fmt, ...)
   va_start(args, fmt);
   int len = vsnprintf(buf, 512, fmt, args);
   va_end(args);
+
+  if (len < 0)
+    return;
+  if (len >= static_cast<int>(sizeof(buf)))
+    len = sizeof(buf) - 1;
+
   TextOut(hdc, x, y, buf, len);
 }
 
@@ -901,21 +938,28 @@ static int
 popup_loaded(HWND hwnd, const char* title, const char* msg, int msgbox_params = MB_ICONINFORMATION)
 {
   char txt[128];
-  load_text("Menus", msg);
-  strcpy(txt, text_lines[0]);
+  if (load_text("Menus", msg) < 1)
+    return MessageBox(hwnd, msg, title, msgbox_params);
+  snprintf(txt, sizeof(txt), "%s", text_lines[0]);
 
-  load_text("Menus", title);
+  if (load_text("Menus", title) < 1)
+    return MessageBox(hwnd, txt, title, msgbox_params);
   return MessageBox(hwnd, txt, text_lines[0], msgbox_params);
 }
 
 static int
 popup_loaded(HWND hwnd, const char* title, const char* msg, const char* sprintf_arg, int msgbox_params = MB_ICONINFORMATION)
 {
-  char txt[128 + strlen(sprintf_arg)];
-  load_text("Menus", msg);
-  sprintf(txt, text_lines[0], sprintf_arg);
+  char txt[512];
+  if (!sprintf_arg)
+    sprintf_arg = "";
 
-  load_text("Menus", title);
+  if (load_text("Menus", msg) < 1)
+    return MessageBox(hwnd, msg, title, msgbox_params);
+  snprintf(txt, sizeof(txt), text_lines[0], sprintf_arg);
+
+  if (load_text("Menus", title) < 1)
+    return MessageBox(hwnd, txt, title, msgbox_params);
   return MessageBox(hwnd, txt, text_lines[0], msgbox_params);
 }
 
@@ -1026,16 +1070,24 @@ read_db_guts(void)
 	cards_dat.READ(&global_available_slots, 4);
 	cards_dat.READ(&record_size, 4);
 
-	if (!(global_raw_cards_ptr = (card_ptr_t*)malloc(152 * global_available_slots))
-	    || !(card_coded = (char*)malloc((global_available_slots + 7) >> 3))
+	if (global_available_slots <= 0 || record_size <= 0 || global_available_slots > INT_MAX - 7)
+	  return 0;
+
+	int raw_cards_size;
+	if (!checked_mul_int(global_available_slots, 152, &raw_cards_size))
+	  return 0;
+
+	int card_coded_size = (global_available_slots + 7) >> 3;
+	if (!(global_raw_cards_ptr = (card_ptr_t*)malloc(raw_cards_size))
+	    || !(card_coded = (char*)malloc(card_coded_size))
 	    || !(global_base_txt = (char*)malloc(record_size)))
 	  return 0;
 
-	cards_dat.READ(global_raw_cards_ptr, 152 * global_available_slots);
+	cards_dat.READ(global_raw_cards_ptr, raw_cards_size);
 	cards_dat.READ(global_base_txt, record_size);
 
 	cards_dat.READ(&record_size, 4);
-	if (record_size > ((global_available_slots + 7) >> 3))
+	if (record_size < 0 || record_size > card_coded_size)
 	  {
 	    fatal_err("Fatal error: inconsistent available_slots and card_coded record_size in Cards.dat");
 	    return 0;
@@ -1141,7 +1193,10 @@ read_db_guts(void)
     if (record_size != global_available_slots)
       return 0;
 
-    int raw_dbinfo_size = 16 * record_size;
+    int raw_dbinfo_size;
+    if (!checked_mul_int(record_size, 16, &raw_dbinfo_size))
+      return 0;
+
     if (!(global_raw_dbinfo = (char*)malloc(raw_dbinfo_size)))
       return 0;
 
@@ -1158,11 +1213,18 @@ read_db_guts(void)
       return 0;
 
     rarity_dat.READ(&global_num_expansions, 4);
+    if (global_num_expansions <= 0 || global_num_expansions > (INT_MAX - 7) / 3)
+      return 0;
+
     if (global_num_expansions >= 32 * EXPANSION_LIST_SIZE)
       fatal("Too many expansions\nRead %d from rarity.dat\nThis versions of DeckDll.dll supports only %d", global_num_expansions, 32 * EXPANSION_LIST_SIZE - 1);
 
     global_expansion_size = (3 * global_num_expansions + 7) >> 3;
-    int raw_rarities_size = record_size * global_expansion_size;
+    int raw_rarities_size;
+    if (!checked_mul_int(record_size, global_expansion_size, &raw_rarities_size)
+	|| raw_rarities_size > INT_MAX - 4)
+      return 0;
+
     if (!(global_raw_rarities = (char*)malloc(raw_rarities_size + 4)))
       return 0;
 
@@ -1200,7 +1262,11 @@ read_db(void)
 static void
 make_orig_rarities(void)
 {
+  FREEZ(global_origrarities);
+
   global_origrarities = (OrigRarities*)malloc(sizeof(OrigRarities) * global_available_slots);
+  if (!global_origrarities)
+    fatal("Could not allocate original rarity table");
 
   for (int i = 0; i < global_available_slots; ++i)
     {
@@ -1442,7 +1508,7 @@ delete_pics(void)
     DELETE_OBJ(global_pics[i]);
 }
 
-static const char*
+static char*
 load_pics(void)
 {
   const char* picnames[NUM_PICS] =
@@ -1463,7 +1529,11 @@ load_pics(void)
   for (int i = 0; i < NUM_PICS; ++i)
     {
       char path[MAX_PATH * 3 + 60];
-      sprintf(path, global_dbart_pattern, global_cfg_skin_name[0] ? global_cfg_skin_name : ".", picnames[i]);
+      if (snprintf(path, sizeof(path), global_dbart_pattern, global_cfg_skin_name[0] ? global_cfg_skin_name : ".", picnames[i]) >= static_cast<int>(sizeof(path)))
+	{
+	  rval = strdup("<deck-builder bitmap path too long>");
+	  break;
+	}
       if (!(global_pics[i] = LoadImage(path, global_palette, 0, 0)))
 	{
 	  rval = strdup(path);
@@ -1609,8 +1679,15 @@ delete_resources(void)
   delete_pics();
   DELETE_OBJ(global_palette);
   delete_brushes();
-  DELETE_DC(global_hdc);
+
+  if (global_hdc && global_old_bmp_obj)
+    {
+      SelectObject(global_hdc, global_old_bmp_obj);
+      global_old_bmp_obj = NULL;
+    }
+
   DELETE_OBJ(global_hbmp);
+  DELETE_DC(global_hdc);
   delete_fonts();
   SetCurrentDirectory(global_previous_directory);
 }
@@ -1799,11 +1876,12 @@ DeckBuilderMain(HWND parent_hwnd, int db_flags_1, int db_flags_2)
       return 0;
     }
 
-  if (const char* load_pic_err = load_pics())
+  if (char* load_pic_err = load_pics())
     {
       char buf[strlen(load_pic_err) + 80];
       sprintf(buf, "Fatal: Couldn't load deck builder bitmap:\n%s", load_pic_err);
       fatal_err(buf);
+      free(load_pic_err);
       return 0;
     }
 
@@ -1974,11 +2052,19 @@ init_deckbuilder(void)
   InitCommonControls();
 
   GetModuleFileName(NULL, global_base_directory, MAX_PATH + 1);
-  *strrchr(global_base_directory, '\\') = 0;
+  {
+    char* slash = strrchr(global_base_directory, '\\');
+    if (!slash)
+      {
+	fatal_err("Fatal: Couldn't determine base directory");
+	return false;
+      }
+    *slash = 0;
+  }
 
-  sprintf(global_manalink_ini_path, "%s\\Manalink.ini", global_base_directory);
-  sprintf(global_playdeck_path, "%s\\PlayDeck\\", global_base_directory);
-  sprintf(global_dbart_pattern, "%s\\DBArt\\%%s\\%%s.pic", global_base_directory);
+  snprintf(global_manalink_ini_path, sizeof(global_manalink_ini_path), "%s\\Manalink.ini", global_base_directory);
+  snprintf(global_playdeck_path, sizeof(global_playdeck_path), "%s\\PlayDeck\\", global_base_directory);
+  snprintf(global_dbart_pattern, sizeof(global_dbart_pattern), "%s\\DBArt\\%%s\\%%s.pic", global_base_directory);
 
   read_manalink_ini();
 
@@ -2065,7 +2151,11 @@ init_sound_dll(HWND hwnd, int a2, int a3)
 {
   if (!init_sound_dll_impl(hwnd, a2, a3))
     {
-      FreeLibrary(global_hmodule_magsnd_dll);
+      if (global_hmodule_magsnd_dll)
+	FreeLibrary(global_hmodule_magsnd_dll);
+      global_hmodule_magsnd_dll = NULL;
+      global_sound_status = 0;
+      global_sound_unk1 = global_sound_unk2 = false;
       clear_sound_imports_table();
     }
 }
@@ -2763,9 +2853,24 @@ dlgproc_FilterSubtype(HWND hdlg, UINT msg, WPARAM wparam, LPARAM lparam)
 
 	int num;
 	num = load_text("Menus", global_filter_subtype_dlg_mode ? "EXPANSIONNAMES" : "CREATURETYPES");
+	if (num <= 0)
+	  {
+	    EndDialog(hdlg, -1);
+	    return 1;
+	  }
+	if (num > MAX_FILTER_SUBTYPE_SIZE)
+	  num = MAX_FILTER_SUBTYPE_SIZE;
 
 	data1 = reinterpret_cast<int*>(malloc(MAX_FILTER_SUBTYPE_SIZE * sizeof(int)));
 	data2 = reinterpret_cast<int*>(malloc(MAX_FILTER_SUBTYPE_SIZE * sizeof(int)));
+	if (!data1 || !data2)
+	  {
+	    FREEZ(data1);
+	    FREEZ(data2);
+	    EndDialog(hdlg, -1);
+	    return 1;
+	  }
+
 	SendDlgItemMessage(hdlg, RES_FILTERLIST_LISTBOX, WM_SETREDRAW, FALSE, 0);
 
 	bool checked;
@@ -2805,7 +2910,12 @@ dlgproc_FilterSubtype(HWND hdlg, UINT msg, WPARAM wparam, LPARAM lparam)
 	    int idx = i >> 5;
 	    int bit = 1 << (i & 0x1F);
 
-	    bool sel = global_filter_subtype_dlg_mode ? (global_filter_expansion_list[idx] & bit) : (global_filter_creature_list[idx] & bit);
+	    bool sel = false;
+	    if (global_filter_subtype_dlg_mode)
+	      sel = idx < EXPANSION_LIST_SIZE && (global_filter_expansion_list[idx] & bit);
+	    else
+	      sel = idx < CREATURE_LIST_SIZE && (global_filter_creature_list[idx] & bit);
+
 	    SendDlgItemMessage(hdlg, RES_FILTERLIST_LISTBOX, LB_SETSEL, sel, data2[i]);
 	  }
 
@@ -2864,9 +2974,15 @@ dlgproc_FilterSubtype(HWND hdlg, UINT msg, WPARAM wparam, LPARAM lparam)
 		    int bit = 1 << (data1[buf[i]] & 0x1f);
 
 		    if (global_filter_subtype_dlg_mode)
-		      global_filter_expansion_list[idx] |= bit;
+		      {
+			if (idx < EXPANSION_LIST_SIZE)
+			  global_filter_expansion_list[idx] |= bit;
+		      }
 		    else
-		      global_filter_creature_list[idx] |= bit;
+		      {
+			if (idx < CREATURE_LIST_SIZE)
+			  global_filter_creature_list[idx] |= bit;
+		      }
 		  }
 
 	      EndDialog(hdlg, 1);
@@ -3696,8 +3812,8 @@ filter_cards_in_lists(HWND hwnd_listbox, HWND hwnd_horzlist)
   for (csvid_t csvid(0); csvid.raw < global_available_slots; ++csvid.raw, ++cp)
     if (check_filters(csvid) && (global_search_string[0] == '\0'
 				 || (global_search_string[0] == '*' && global_search_string[1] == '\0')
-				 || PathMatchSpec(cp->name, global_search_string)
-				 || PathMatchSpec(cp->rules_text, global_search_string)))
+				 || PathMatchSpec(cp->name ? cp->name : "", global_search_string)
+				 || PathMatchSpec(cp->rules_text ? cp->rules_text : "", global_search_string)))
       {
 	int idx = SendMessage(hwnd_listbox, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(cp->full_name));
 	SendMessage(hwnd_listbox, LB_SETITEMDATA, idx, csvid.raw);
@@ -3760,6 +3876,9 @@ wndproc_SearchClass(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 static void
 insert_cards_into_deck(csvid_t csvid, int num, DeckEntry* tgt_deck)
 {
+  if (!csvid.ok() || num <= 0 || !tgt_deck)
+    return;
+
   for (int i = 0; i < global_edited_deck_num_entries; ++i)
     if (tgt_deck[i].DeckEntry_csvid == csvid)
       {
@@ -3767,6 +3886,9 @@ insert_cards_into_deck(csvid_t csvid, int num, DeckEntry* tgt_deck)
 	global_deck_num_cards += num;
 	return;
       }
+
+  if (global_edited_deck_num_entries >= static_cast<int>(ARRAY_SIZE(global_edited_deck)))
+    return;
 
   tgt_deck[global_edited_deck_num_entries++] = {csvid, num, cards_ptr[csvid.raw].full_name};
   global_deck_num_cards += num;
@@ -4070,11 +4192,19 @@ TENTATIVE_scroll(HWND hwnd_listbox, HWND hwnd_horzlist)
   int data = SendMessage(hwnd_listbox, LB_GETITEMDATA, selected, 0);
   int numitems = SendMessage(hwnd_listbox, LB_GETCOUNT, 0, 0);
 
-  uint8_t mem[global_available_slots];
-  memset(mem, 0, global_available_slots);
+  if (global_available_slots <= 0)
+    return;
+
+  uint8_t* mem = static_cast<uint8_t*>(calloc(global_available_slots, sizeof(uint8_t)));
+  if (!mem)
+    return;
 
   for (int i = 0; i < numitems; ++i)
-    mem[SendMessage(hwnd_listbox, LB_GETITEMDATA, i, 0)] = 1;
+    {
+      int item = SendMessage(hwnd_listbox, LB_GETITEMDATA, i, 0);
+      if (item >= 0 && item < global_available_slots)
+	mem[item] = 1;
+    }
 
   for (int i = 0; i < global_available_slots; ++i)
     {
@@ -4086,6 +4216,7 @@ TENTATIVE_scroll(HWND hwnd_listbox, HWND hwnd_horzlist)
 	  SendMessage(hwnd_horzlist, 0x8005, idx, csvid.raw);
 	}
     }
+  FREEZ(mem);
 
   numitems = SendMessage(hwnd_listbox, LB_GETCOUNT, 0, 0);
   int found = 0;
@@ -5074,7 +5205,6 @@ wndproc_DeckSurfaceClass(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		       bmp.bmWidth, bmp.bmHeight,
 		       SRCCOPY);
 
-	ReleaseDC(hwnd, hdc);
 	for (int i = 0; i < 5; ++i)
 	  DELETE_DC(mosaics[i]);
 
@@ -5370,10 +5500,13 @@ wndproc_CardClass(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	return 0;
 
       case WM_CREATE:
-	csvid.raw = *(int*)(lparam);
+	{
+	  CREATESTRUCT* create = reinterpret_cast<CREATESTRUCT*>(lparam);
+	  csvid.raw = create ? reinterpret_cast<int>(create->lpCreateParams) : -1;
+	}
 	SetWindowLong(hwnd, CARD_CSVID_INDEX, csvid.raw);
 	SetWindowLong(hwnd, CARD_AMOUNT_INDEX, 1);
-	return (!csvid.ok() || csvid.raw > global_available_slots) ? -1 : 0;
+	return (!csvid.ok() || csvid.raw >= global_available_slots) ? -1 : 0;
 
       case WM_DESTROY:
 	return 0;
@@ -5618,6 +5751,7 @@ hashstr(const char* str)
   for (const char* p = str; *p; ++p)
     {
       unsigned int bits = *p & 0x1F;
+      bits = static_cast<unsigned char>(*p) & 0x1F;
       val ^= bits << pos;
       pos = (pos + 5) & 0xF;
     }
@@ -5721,6 +5855,7 @@ deck_parse_line(char* txt, csvid_t* csvid, int* num)
   for (PairIntPtr* q = hashmap[key]; q; q = q->next)
     if (!strcasecmp(p, cards_ptr[q->val].full_name))
       {
+	csvid->raw = q->val;
 	found = true;
 	break;
       }
@@ -5773,7 +5908,8 @@ load_deck(char* filename)
 
 #define STAGE(varname_stem, sz)		\
   char varname_stem[sz + 1];		\
-  f.readline(varname_stem, sz + 1);	\
+  if (!f.readline(varname_stem, sz + 1))	\
+    return false;				\
   if (varname_stem[0] != ';')		\
     return false
 
@@ -6980,7 +7116,8 @@ check_card_global_deck_availability(csvid_t csvid)
 static bool
 check_expansion_list_filter(csvid_t csvid)
 {
-  for (int expid = 0; expid < global_num_expansions; ++expid)
+  int max_expansions = MIN(global_num_expansions, EXPANSION_LIST_SIZE * 32);
+  for (int expid = 0; expid < max_expansions; ++expid)
     if ((1 << (static_cast<uint32_t>(expid) & 0x1F)) & global_filter_expansion_list[expid / 32])
       {
 	int bit_pos = expid * 3;
@@ -7272,6 +7409,9 @@ check_abilities(csvid_t csvid, int num_abils, char* abils)
 static bool
 check_filters(csvid_t csvid)
 {
+  if (!cards_ptr || !global_raw_dbinfo || csvid.raw < 0 || csvid.raw >= global_available_slots)
+    return false;
+
   const card_ptr_t* cp = &cards_ptr[csvid.raw];
 
   if (!strcmp(cp->full_name, "Blank")

@@ -5,22 +5,108 @@
 int hack_silent_counters = 0;
 int counters_added = 0;	// backed up and saved
 
+/*
+ * Counter storage is intentionally packed into card_instance_t fields that the
+ * original Shandalar exe already knows how to display.  The dedicated +1/+1 and
+ * -1/-1 slots drive power/toughness directly; all other counter types share a
+ * small set of visible and hidden byte-sized slots.
+ *
+ * Keep changes here conservative.  A lot of card code assumes the storage
+ * layout below, including targets[18]'s byte-level labels.  The guardrails in
+ * this file are meant to keep bad player/card refs and stale labels from
+ * corrupting the card instance, not to redesign the counter system.
+ */
+
 /* Relevant data in card_instance_t:
  * special_counters: number of "special" counters (preferred type determined by card csvid; stored in special_counter_type)
  * counters2: drawn in upper right of lower section.  Originally -0/-2 counters for Spirit Shackle; now arbitrary.
  * counters3: drawn in upper center of lower section.  Originally -1/-1 counters for Unstable Mutation; now arbitrary.
  * counters4: drawn in upper left of lower section.  Originally -0/-1 counters for Orcish Catapult; now arbitrary.
  * counters: drawn lower left of lower section.  Always +1/+1 counters (originally using text from Dwarven Weaponsmith).
- * counters5: drawn in lower right of lower section.  Originally +1/+1 counters from Ashnod's Transmogrant; now arbitray.
+ * counters5: drawn in lower right of lower section.  Originally +1/+1 counters from Ashnod's Transmogrant; now arbitrary.
  * counters_m1m1: drawn in lower left of lower section with +1/+1 counters.  Originally unused.  Always -1/-1 counters.
  * targets[18].player: byte0: type of counters2.  byte1: type of counters3.  byte2: type of counters4.  byte3: type of counters5.
  * targets[18].card: byte0: non-displayed counters slot A.  byte1: non-displayed counters slot B.  byte2: type of byte0.  byte3: type of byte1.
  */
 
-static void play_counters_sound(wav_t wav){
-	if (hack_silent_counters <= 0){
-		play_sound_effect(wav);
-	}
+enum {
+  COUNTERS_MAX_PLAYERS = 2,
+  COUNTERS_MAX_CARD_SLOTS = 150,
+  COUNTERS_MAX_COUNTER_VALUE = 255,
+  COUNTERS_NUM_STORAGE_SLOTS = 9,
+  COUNTERS_NUM_DIALOG_CHOICES = 10
+};
+
+static int counters_is_real_player(int player)
+{
+  return player >= HUMAN && player <= AI;
+}
+
+static int counters_is_card_slot(int card)
+{
+  return card >= 0 && card < COUNTERS_MAX_CARD_SLOTS;
+}
+
+static int counters_is_card_ref(int player, int card)
+{
+  return counters_is_real_player(player) && counters_is_card_slot(card);
+}
+
+static int counters_active_cards_count(int player)
+{
+  return counters_is_real_player(player) ? MIN(active_cards_count[player], COUNTERS_MAX_CARD_SLOTS) : 0;
+}
+
+static card_instance_t* counters_card_instance_or_null(int player, int card)
+{
+  return counters_is_card_ref(player, card) ? get_card_instance(player, card) : NULL;
+}
+
+static int counter_type_is_invalid(counter_t type)
+{
+  return type == COUNTER_invalid || (uint8_t)type == (uint8_t)COUNTER_invalid;
+}
+
+static int counter_type_can_be_stored(counter_t type)
+{
+  return !counter_type_is_invalid(type) && type >= 0 && type <= COUNTER_end;
+}
+
+static int counter_label_is_invalid(uint8_t label)
+{
+  return label == (uint8_t)COUNTER_invalid;
+}
+
+static int counter_label_matches(uint8_t label, counter_t type)
+{
+  return label == (uint8_t)type;
+}
+
+static uint8_t* counter_slot_bytes(card_instance_t* instance)
+{
+  return (uint8_t*)(&instance->targets[18].player);
+}
+
+static int resolve_counter_card_ref(int* player, int* card)
+{
+  card_instance_t* instance = counters_card_instance_or_null(*player, *card);
+  if (!instance)
+    return 0;
+
+  if (instance->internal_card_id == activation_card)
+    {
+      *player = instance->parent_controller;
+      *card = instance->parent_card;
+      instance = counters_card_instance_or_null(*player, *card);
+    }
+
+  return instance != NULL;
+}
+
+static void play_counters_sound(wav_t wav)
+{
+  if (hack_silent_counters <= 0)
+    play_sound_effect(wav);
 }
 
 int get_counter_type_by_id(int csvid)
@@ -528,7 +614,7 @@ int get_counter_type_by_id(int csvid)
 	  case CARD_ID_CEPHALID_VANDAL:			return COUNTER_SHRED;
 	  case CARD_ID_CHROMATIC_ARMOR:			return COUNTER_SLEIGHT;
 	  case CARD_ID_GUTTER_GRIME:			return COUNTER_SLIME;
-	  case CARD_ID_SMOKESTACK:				return COUNTER_SOOT;
+	  case CARD_ID_SMOKESTACK:			return COUNTER_SOOT;
 
 	  case CARD_ID_DEATHSPORE_THALLID:
 	  case CARD_ID_ELVISH_FARMER:
@@ -701,12 +787,15 @@ int get_counter_type_by_id(int csvid)
 		return COUNTER_ENERGY;
 
 	  default:
-		return -1;
+		return COUNTER_invalid;
 	}
 }
 
 int get_counter_type_by_instance(card_instance_t* instance)
 {
+  if (!instance)
+    return COUNTER_invalid;
+
   int iid = instance->internal_card_id;
 
   if (iid == -1)
@@ -714,6 +803,9 @@ int get_counter_type_by_instance(card_instance_t* instance)
 
   if (iid == activation_card)
 	iid = instance->original_internal_card_id;
+
+  if (iid < 0)
+    return COUNTER_invalid;
 
   int csvid;
   if (iid == LEGACY_EFFECT_CUSTOM)
@@ -731,15 +823,19 @@ int get_counter_type_by_instance(card_instance_t* instance)
 
 void get_counter_name_by_type(char* dest, counter_t counter_type, int num)
 {
-  if (num <= 0)
-	dest = 0;
-  else
-	{
-	  if (counter_type > COUNTER_end)
-		counter_type = COUNTER_end;
+  if (!dest)
+    return;
 
-	  scnprintf(dest, 100, "%s: %d", counter_names[counter_type], num);
-	}
+  if (num <= 0)
+    {
+      dest[0] = 0;
+      return;
+    }
+
+  if (!counter_type_can_be_stored(counter_type))
+	counter_type = COUNTER_end;
+
+  scnprintf(dest, 100, "%s: %d", counter_names[counter_type], num);
 }
 
 void get_special_counters_name(char* dest, int csvid, int num)
@@ -750,10 +846,21 @@ void get_special_counters_name(char* dest, int csvid, int num)
 
 static int get_updated_counters_number_as_cost(int player, int card, counter_t type, int number)
 {
-  if (card >= 0 && get_id(player, card) == CARD_ID_MELIRAS_KEEPERS && !is_humiliated(player, card))
+  if (number <= 0)
+    return number;
+
+  if (!counter_type_can_be_stored(type))
+    return 0;
+
+  if (counters_is_card_ref(player, card)
+      && get_id(player, card) == CARD_ID_MELIRAS_KEEPERS
+      && !is_humiliated(player, card))
 	return 0;
 
-  if (type == COUNTER_M1_M1 && (card < 0 || is_what(player, card, TYPE_CREATURE)) && check_battlefield_for_id(player, CARD_ID_MELIRA_SYLVOK_OUTCAST))
+  if (type == COUNTER_M1_M1
+      && counters_is_real_player(player)
+      && (card < 0 || (counters_is_card_slot(card) && is_what(player, card, TYPE_CREATURE)))
+      && check_battlefield_for_id(player, CARD_ID_MELIRA_SYLVOK_OUTCAST))
 	return 0;
 
   return number;
@@ -764,17 +871,20 @@ int get_updated_counters_number(int player, int card, counter_t type, int number
   if (number <= 0)
 	return number;
 
+  if (!counter_type_can_be_stored(type))
+    return 0;
+
   number = get_updated_counters_number_as_cost(player, card, type, number);
   if (!number)
 	return 0;
 
-  if (card >= 0 && is_what(player, card, TYPE_EFFECT))
+  if (counters_is_card_ref(player, card) && is_what(player, card, TYPE_EFFECT))
 	return number;
 
   card_instance_t* instance;
   int p, c;
   for (p = 0; p <= 1; ++p)
-	for (c = 0; c < active_cards_count[p]; ++c)
+	for (c = 0; c < counters_active_cards_count(p); ++c)
 	  if ((instance = in_play(p, c)))
 		switch (cards_data[instance->internal_card_id].id)
 		  {
@@ -787,10 +897,10 @@ int get_updated_counters_number(int player, int card, counter_t type, int number
 			  break;
 
 			case CARD_ID_HARDENED_SCALES:
-				if (p == player)
-					if (type == COUNTER_P1_P1)
-						number++;
-						break;
+			  if (p == player && type == COUNTER_P1_P1)
+				++number;
+			  break;
+
 			case CARD_ID_CORPSEJACK_MENACE:		// self only: doubles +1/+1
 			  if (p != player)
 				continue;
@@ -804,9 +914,20 @@ int get_updated_counters_number(int player, int card, counter_t type, int number
   return number;
 }
 
+static int clamp_counter_delta(uint8_t current, int delta)
+{
+  if (delta > 0 && current + delta > COUNTERS_MAX_COUNTER_VALUE)
+    return COUNTERS_MAX_COUNTER_VALUE - current;
+
+  if (delta < 0 && current + delta < 0)
+    return -current;
+
+  return delta;
+}
+
 static void add_or_remove_counters_impl(int player, int card, counter_t type, int num)
 {
-  if (num == 0)
+  if (num == 0 || !counter_type_can_be_stored(type) || !counters_is_card_ref(player, card))
 	return;
 
   int orig_num = num;
@@ -814,8 +935,9 @@ static void add_or_remove_counters_impl(int player, int card, counter_t type, in
   int p, t;
 
   card_instance_t* instance = get_card_instance(player, card);
-  uint8_t* t18 = (void*)(&instance->targets[18].player);
-  uint8_t* position = NULL, *label = NULL;
+  uint8_t* t18 = counter_slot_bytes(instance);
+  uint8_t* position = NULL;
+  uint8_t* label = NULL;
 
   switch (type)
 	{
@@ -846,177 +968,157 @@ static void add_or_remove_counters_impl(int player, int card, counter_t type, in
 		break;
 	}
 
-  if (num != 0)
-	{
-	  // Unless we're using a dedicated slot, try to find a slot already using this counter type.
-	  // If adding counters, assign a new slot if necessary; if removing, return if no slot previously assigned.
-	  if (!position)
-		{
-#define CHECK_COMMON(pos, lbl)			\
-		  if (lbl == type)				\
-			{							\
-			  if (pos == 0)				\
-				/* Should have been cleared already, but we'll do it now, then keep looking. */	\
-				lbl = COUNTER_invalid;	\
-			  else						\
-				{						\
-				  position = &pos;		\
-				  label = &lbl;			\
-				  goto found;			\
-				}						\
-			}
+  // Unless we're using a dedicated slot, try to find a slot already using this counter type.
+  // If adding counters, assign a new slot if necessary; if removing, return if no slot was previously assigned.
+  if (!position)
+    {
+#define CHECK_COMMON(pos, lbl)                            \
+      if (counter_label_matches((uint8_t)(lbl), type))    \
+        {                                                 \
+          if ((pos) == 0)                                 \
+            (lbl) = (uint8_t)COUNTER_invalid;             \
+          else                                            \
+            {                                             \
+              position = &(pos);                          \
+              label = &(lbl);                             \
+              goto found;                                 \
+            }                                             \
+        }
 
-		  // counters2, counters3, counters4, counters5: slot free if counter storage is 0.  Label stored in bytes 0-3 of targets[18].player.
-#define CHECK_IN_COUNTERS(pos, lbl_byte)		CHECK_COMMON(instance->pos, t18[lbl_byte])
-		  // Bytes 0 and 1 of targets[18].card: slot free if label is COUNTER_invalid.  Label stored in bytes 2 and 3 of targets[18].card.
-		  // (Those correspond to t18[4] and t18[5] for the slots, and t18[6] and t18[7] for the labels, respectively.)
-#define CHECK_IN_TARGETS(pos_byte, lbl_byte)	CHECK_COMMON(t18[pos_byte], t18[lbl_byte])
+#define CHECK_IN_COUNTERS(pos, lbl_byte) CHECK_COMMON(instance->pos, t18[lbl_byte])
+#define CHECK_IN_TARGETS(pos_byte, lbl_byte) CHECK_COMMON(t18[pos_byte], t18[lbl_byte])
 
-		  CHECK_COMMON(instance->special_counters, instance->special_counter_type);
-		  CHECK_IN_COUNTERS(counters2, 0);
-		  CHECK_IN_COUNTERS(counters3, 1);
-		  CHECK_IN_COUNTERS(counters4, 2);
-		  CHECK_IN_COUNTERS(counters5, 3);
-		  CHECK_IN_TARGETS(4, 6);
-		  CHECK_IN_TARGETS(5, 7);
+      CHECK_COMMON(instance->special_counters, instance->special_counter_type);
+      CHECK_IN_COUNTERS(counters2, 0);
+      CHECK_IN_COUNTERS(counters3, 1);
+      CHECK_IN_COUNTERS(counters4, 2);
+      CHECK_IN_COUNTERS(counters5, 3);
+      CHECK_IN_TARGETS(4, 6);
+      CHECK_IN_TARGETS(5, 7);
 
 #undef CHECK_IN_COUNTERS
 #undef CHECK_IN_TARGETS
+#undef CHECK_COMMON
 
-		  // No slot has this type assigned.  If removing counters, then we're done.
-		  if (num < 0)
-			return;
+      // No slot has this type assigned.  If removing counters, then we're done.
+      if (num < 0)
+        return;
 
-		  // Find a free slot to assign to this type.
+      // Find a free slot to assign to this type.
 
-		  // If nothing in the special_counters slot and we're adding a counter of the preferred type, use that.
-		  if (instance->special_counters == 0)
-			{
-			  unsigned int preferred_type = get_counter_type_by_instance(instance);
-			  if (preferred_type == type)
-				{
-				  position = &instance->special_counters;
-				  label = &instance->special_counter_type;
-				  goto found;
-				}
-			}
+      // If nothing in the special_counters slot and we're adding a counter of the preferred type, use that.
+      if (instance->special_counters == 0)
+        {
+          unsigned int preferred_type = get_counter_type_by_instance(instance);
+          if (preferred_type == (unsigned int)type)
+            {
+              position = &instance->special_counters;
+              label = &instance->special_counter_type;
+              goto found;
+            }
+        }
 
-		  // counters2, counters3, counters4, counters5: slot free if counter storage is 0.  Label stored in bytes 0-3 of targets[18].player.
-#define TRY_ASSIGN_IN_COUNTERS(pos, lbl_byte)	\
-		  if (instance->pos == 0)			\
-			{								\
-			  position = &instance->pos;	\
-			  label = &t18[lbl_byte];		\
-			  goto found;					\
-			}
+#define TRY_ASSIGN_IN_COUNTERS(pos, lbl_byte)             \
+      if (instance->pos == 0)                             \
+        {                                                 \
+          position = &instance->pos;                      \
+          label = &t18[lbl_byte];                         \
+          goto found;                                     \
+        }
 
-		  // Bytes 0 and 1 of targets[18].card: slot free if label is COUNTER_invalid.  Label stored in bytes 2 and 3 of targets[18].card.
-		  // (Those correspond to t18[4] and t18[5] for the slots, and t18[6] and t18[7] for the labels, respectively.)
-#define TRY_ASSIGN_IN_TARGETS(pos_byte, lbl_byte)	\
-		  if (t18[lbl_byte] == COUNTER_invalid)		\
-			{								\
-			  position = &t18[pos_byte];	\
-			  label = &t18[lbl_byte];		\
-			  goto found;					\
-			}
+#define TRY_ASSIGN_IN_TARGETS(pos_byte, lbl_byte)         \
+      if (counter_label_is_invalid(t18[lbl_byte]))        \
+        {                                                 \
+          position = &t18[pos_byte];                      \
+          label = &t18[lbl_byte];                         \
+          goto found;                                     \
+        }
 
-		  TRY_ASSIGN_IN_COUNTERS(counters2, 0);
-		  TRY_ASSIGN_IN_COUNTERS(counters3, 1);
-		  TRY_ASSIGN_IN_COUNTERS(counters4, 2);
-		  TRY_ASSIGN_IN_COUNTERS(counters5, 3);
+      TRY_ASSIGN_IN_COUNTERS(counters2, 0);
+      TRY_ASSIGN_IN_COUNTERS(counters3, 1);
+      TRY_ASSIGN_IN_COUNTERS(counters4, 2);
+      TRY_ASSIGN_IN_COUNTERS(counters5, 3);
 
-		  // No other visible slots free, so consider adding in the special counter slot even if doesn't match the preferred type.
-		  if (instance->special_counters == 0)
-			{
-			  position = &instance->special_counters;
-			  label = &instance->special_counter_type;
-			  goto found;
-			}
+      // No other visible slots free, so consider adding in the special counter slot even if doesn't match the preferred type.
+      if (instance->special_counters == 0)
+        {
+          position = &instance->special_counters;
+          label = &instance->special_counter_type;
+          goto found;
+        }
 
-		  TRY_ASSIGN_IN_TARGETS(4, 6);
-		  TRY_ASSIGN_IN_TARGETS(5, 7);
+      TRY_ASSIGN_IN_TARGETS(4, 6);
+      TRY_ASSIGN_IN_TARGETS(5, 7);
 
 #undef TRY_ASSIGN_IN_COUNTERS
 #undef TRY_ASSIGN_IN_TARGETS
 
-		  // Otherwise, nowhere to store.  We'll still apply power and toughness later, but otherwise do nothing.
+      // Otherwise, nowhere to store.  We'll still apply power and toughness later, but otherwise do nothing.
 
-		found:;
-		}
+    found:;
+    }
 
-	  // If we found a slot, update the slot and its label
-	  if (position)
-		{
-		  if (label && *label == COUNTER_invalid)	// Slot previously unused
-			*position = 0;
+  // If we found a slot, update the slot and its label.
+  if (position)
+    {
+      if (label && counter_label_is_invalid(*label))
+        *position = 0;
 
-		  // truncate to maximum of 255 and minimum of 0
-		  if (num > 0)
-			{
-			  if (num + *position > 255)
-				num = 255 - *position;
-			}
-		  else if (num < 0)
-			{
-			  if (num + *position < 0)
-				num = 0 - *position;
-			}
+      num = clamp_counter_delta(*position, num);
+      *position += num;
 
-		  *position += num;
+      // If it's not a dedicated slot:
+      if (label)
+        {
+          if (orig_num > 0)
+            *label = (uint8_t)type;
+          else if (*position == 0)
+            {
+              *label = (uint8_t)COUNTER_invalid;
 
-		  // If it's not a dedicated slot:
-		  if (label)
-			{
-			  if (orig_num > 0)		// If adding counters, make sure that the slot is labelled.
-				*label = type;
-			  else if (*position == 0)	// If removing counters and we just removed the last one, free the label, and maybe move other counters there.
-				{
-				  *label = COUNTER_invalid;	// mark unused
+              /* If it was the label for special_counters, counters2, counters3, counters4, or counters5 (which are displayed), and one of the two
+               * non-displayed slots (in targets[18].card byte 0 or 1) has counters, move the latter to the former. */
+              if (label == &instance->special_counter_type || label <= &t18[3])
+                {
+                  // Try to move targets[18].card:0, labeled in targets[18].card:2.
+                  if (t18[4] != 0 && !counter_label_is_invalid(t18[6]))
+                    {
+                      *position = t18[4];
+                      *label = t18[6];
+                      t18[4] = 0;
+                      t18[6] = (uint8_t)COUNTER_invalid;
+                    }
+                  // Try to move targets[18].card:1, labeled in targets[18].card:3.
+                  else if (t18[5] != 0 && !counter_label_is_invalid(t18[7]))
+                    {
+                      *position = t18[5];
+                      *label = t18[7];
+                      t18[5] = 0;
+                      t18[7] = (uint8_t)COUNTER_invalid;
+                    }
+                }
+            }
+        }
+    }
 
-				  /* If it was the label for special_counters, counters2, counters3, counters4, or counters5 (which are displayed), and one of the two
-				   * non-displayed slots (in targets[18].card byte 0 or 1) have counters, move the latter to the former. */
-				  if (label == &instance->special_counter_type || label <= &t18[3])
-					{
-					  // Try to move targets[18].card:0, labeled in targets[18].card:2
-					  if (t18[4] != 0 && t18[6] != COUNTER_invalid)
-						{
-						  *position = t18[4];
-						  *label = t18[6];
-						  t18[4] = 0;
-						  t18[6] = COUNTER_invalid;
-						}
-					  // Try to move targets[18].card:1, labeled in targets[18].card:3
-					  else if (t18[5] != 0 && t18[7] != COUNTER_invalid)
-						{
-						  *position = t18[5];
-						  *label = t18[7];
-						  t18[5] = 0;
-						  t18[7] = COUNTER_invalid;
-						}
-					}
-				}
-			}
-		}
+  // Apply power and toughness and, if we added a counter, play a sound.
+  if (num)
+    {
+      if (p)
+        {
+          instance->counter_power += p * num;
+          instance->regen_status |= KEYWORD_RECALC_POWER;
+        }
 
-	  // Apply power and toughness and, if we added a counter, play a sound.
-	  if (num)
-		{
-		  if (p)
-			{
-			  instance->counter_power += p * num;
-			  instance->regen_status |= KEYWORD_RECALC_POWER;
-			}
+      if (t)
+        {
+          instance->counter_toughness += t * num;
+          instance->regen_status |= KEYWORD_RECALC_TOUGHNESS;
+        }
 
-		  if (t)
-			{
-			  instance->counter_toughness += t * num;
-			  instance->regen_status |= KEYWORD_RECALC_TOUGHNESS;
-			}
-
-		  if (num > 0)
-			play_counters_sound(WAV_COUNTER);
-		}
-	}
+      if (num > 0)
+        play_counters_sound(WAV_COUNTER);
+    }
 
   if (type == COUNTER_P1_P1 && num > 0 && (enable_xtrigger_flags & ENABLE_XTRIGGER_1_1_COUNTERS))
 	{
@@ -1030,12 +1132,9 @@ static void add_or_remove_counters_impl(int player, int card, counter_t type, in
 // num must be > 0, or no effect
 void add_counters(int player, int card, counter_t type, int num)
 {
-  card_instance_t* instance = get_card_instance(player, card);
-  if (instance->internal_card_id == activation_card)
-	{
-	  player = instance->parent_controller;
-	  card = instance->parent_card;
-	}
+  if (num <= 0 || !resolve_counter_card_ref(&player, &card))
+    return;
+
   num = get_updated_counters_number(player, card, type, num);
   if (num > 0)
 	add_or_remove_counters_impl(player, card, type, num);
@@ -1045,6 +1144,9 @@ void add_counters(int player, int card, counter_t type, int num)
  * Melira's Keepers, but not onto effect cards.  Do not call for the latter. */
 void add_counters_predoubled(int player, int card, counter_t type, int num)
 {
+  if (num <= 0 || !resolve_counter_card_ref(&player, &card) || !counter_type_can_be_stored(type))
+    return;
+
   ASSERT(!is_what(player, card, TYPE_EFFECT));
   if (get_id(player, card) == CARD_ID_MELIRAS_KEEPERS && !is_humiliated(player, card))
 	return;
@@ -1055,6 +1157,9 @@ void add_counters_predoubled(int player, int card, counter_t type, int num)
 // unaffected by doubling effects; num may be positive or negative
 void add_counters_as_cost(int player, int card, counter_t type, int num)
 {
+  if (num == 0 || !resolve_counter_card_ref(&player, &card) || !counter_type_can_be_stored(type))
+    return;
+
   if (num > 0)
 	{
 	  num = get_updated_counters_number_as_cost(player, card, type, num);
@@ -1068,113 +1173,110 @@ void add_counters_as_cost(int player, int card, counter_t type, int num)
 // num must be > 0, or no effect
 void remove_counters(int player, int card, counter_t type, int num)
 {
-	if (num > 0)
-	{
-		card_instance_t* instance = get_card_instance(player, card);
-		if (instance->internal_card_id == activation_card)
-		{
-			player = instance->parent_controller;
-			card = instance->parent_card;
-		}
-		int counters_removed = MIN(num, count_counters(player, card, type));
-		add_or_remove_counters_impl(player, card, type, -num);
+  if (num <= 0 || !resolve_counter_card_ref(&player, &card) || !counter_type_can_be_stored(type))
+    return;
 
-		// Special cases
-		if( type == COUNTER_TIME && is_suspend_legacy(player, card) ){
+  card_instance_t* instance = get_card_instance(player, card);
+  int counters_removed = MIN(num, count_counters(player, card, type));
+  if (counters_removed <= 0)
+    return;
 
-			if( instance->targets[9].card == CARD_ID_AEON_CHRONICLER ){
-				draw_cards(player, counters_removed);
-			}
+  add_or_remove_counters_impl(player, card, type, -num);
 
-			if( instance->targets[9].card == CARD_ID_BENALISH_COMMANDER ){
-				token_generation_t token;
-				default_token_definition(player, card, CARD_ID_SOLDIER, &token);
-				token.qty = counters_removed;
-				generate_token(&token);
-			}
+  // Special cases.
+  if (type == COUNTER_TIME && is_suspend_legacy(player, card))
+    {
+      if (instance->targets[9].card == CARD_ID_AEON_CHRONICLER)
+        draw_cards(player, counters_removed);
 
-			if( instance->targets[9].card == CARD_ID_DETRITIVORE){
-				target_definition_t td;
-				default_target_definition(player, card, &td, TYPE_LAND);
-				td.required_subtype = SUBTYPE_BASIC;
-				td.special = TARGET_SPECIAL_ILLEGAL_SUBTYPE;
-				td.allow_cancel = 0;
+      if (instance->targets[9].card == CARD_ID_BENALISH_COMMANDER)
+        {
+          token_generation_t token;
+          default_token_definition(player, card, CARD_ID_SOLDIER, &token);
+          token.qty = counters_removed;
+          generate_token(&token);
+        }
 
-				int i;
-				for(i=0; i<counters_removed; i++){
-					instance->number_of_targets = 0;
+      if (instance->targets[9].card == CARD_ID_DETRITIVORE)
+        {
+          target_definition_t td;
+          default_target_definition(player, card, &td, TYPE_LAND);
+          td.required_subtype = SUBTYPE_BASIC;
+          td.special = TARGET_SPECIAL_ILLEGAL_SUBTYPE;
+          td.allow_cancel = 0;
 
-					if( can_target(&td) && new_pick_target(&td, "Select target nonbasic land.", 0, GS_LITERAL_PROMPT) ){
-						kill_card(instance->targets[0].player, instance->targets[0].card, KILL_DESTROY);
-					}
-				}
-			}
+          int i;
+          for (i = 0; i < counters_removed; ++i)
+            {
+              instance->number_of_targets = 0;
 
-			if( instance->targets[9].card == CARD_ID_FUNGAL_BEHEMOTH){
-				target_definition_t td;
-				default_target_definition(player, card, &td, TYPE_CREATURE);
-				td.preferred_controller = player;
+              if (can_target(&td) && new_pick_target(&td, "Select target nonbasic land.", 0, GS_LITERAL_PROMPT))
+                kill_card(instance->targets[0].player, instance->targets[0].card, KILL_DESTROY);
+            }
+        }
 
-				int i;
-				for(i=0; i<counters_removed; i++){
-					instance->number_of_targets = 0;
+      if (instance->targets[9].card == CARD_ID_FUNGAL_BEHEMOTH)
+        {
+          target_definition_t td;
+          default_target_definition(player, card, &td, TYPE_CREATURE);
+          td.preferred_controller = player;
 
-					if( can_target(&td) && pick_target(&td, "TARGET_CREATURE") ){
-						add_1_1_counter(instance->targets[0].player, instance->targets[0].card);
-					}
-				}
-			}
+          int i;
+          for (i = 0; i < counters_removed; ++i)
+            {
+              instance->number_of_targets = 0;
 
-			if( instance->targets[9].card == CARD_ID_ROILING_HORROR ){
-				target_definition_t td;
-				default_target_definition(player, card, &td, TYPE_CREATURE);
-				td.zone = TARGET_ZONE_PLAYERS;
-				td.allow_cancel = 0;
+              if (can_target(&td) && pick_target(&td, "TARGET_CREATURE"))
+                add_1_1_counter(instance->targets[0].player, instance->targets[0].card);
+            }
+        }
 
-				int i;
-				for(i=0; i<counters_removed; i++){
-					instance->number_of_targets = 0;
+      if (instance->targets[9].card == CARD_ID_ROILING_HORROR)
+        {
+          target_definition_t td;
+          default_target_definition(player, card, &td, TYPE_CREATURE);
+          td.zone = TARGET_ZONE_PLAYERS;
+          td.allow_cancel = 0;
 
-					if( can_target(&td) && pick_target(&td, "TARGET_PLAYER") ){
-						lose_life(instance->targets[0].player, 1);
-						gain_life(player, 1);
-					}
-				}
-			}
-		}
-	}
+          int i;
+          for (i = 0; i < counters_removed; ++i)
+            {
+              instance->number_of_targets = 0;
+
+              if (can_target(&td) && pick_target(&td, "TARGET_PLAYER"))
+                {
+                  lose_life(instance->targets[0].player, 1);
+                  gain_life(player, 1);
+                }
+            }
+        }
+    }
 }
 
 /* For each counter on {src_player, src_card}, add one of that type to {t_player, t_card}.  If raw is set, add the exact amount (even for Melira's Keepers or
  * Melira, Sylvok Outcast, or if Doubling Season etc. are present). */
 void copy_counters(int t_player, int t_card, int src_player, int src_card, int raw)
 {
+  if (!resolve_counter_card_ref(&src_player, &src_card) || !resolve_counter_card_ref(&t_player, &t_card))
+    return;
+
   card_instance_t* instance = get_card_instance(src_player, src_card);
-  if (instance->internal_card_id == activation_card)
-	instance = get_card_instance(instance->parent_controller, instance->parent_card);
-
-  card_instance_t* t_instance = get_card_instance(t_player, t_card);
-  if (t_instance->internal_card_id == activation_card)
-	{
-	  t_player = t_instance->parent_controller;
-	  t_card = t_instance->parent_card;
-	}
-
-  uint8_t* t18 = (void*)(&instance->targets[18].player);
+  uint8_t* t18 = counter_slot_bytes(instance);
 
   struct
   {
 	counter_t typ;
 	int num;
-  } counters[9];
+  } counters[COUNTERS_NUM_STORAGE_SLOTS];
   int num_types = 0;
 
-#define ADD_TYPE(pos, lbl)											\
-  if (pos && (counters[num_types].typ = lbl) != COUNTER_invalid)	\
-	{																\
-	  counters[num_types].num = pos;								\
-	  ++num_types;													\
-	}
+#define ADD_TYPE(pos, lbl)                                              \
+  if ((pos) && counter_type_can_be_stored((counter_t)(uint8_t)(lbl)))   \
+    {                                                                   \
+      counters[num_types].typ = (counter_t)(uint8_t)(lbl);              \
+      counters[num_types].num = (pos);                                  \
+      ++num_types;                                                      \
+    }
 
   ADD_TYPE(instance->special_counters, instance->special_counter_type);
   ADD_TYPE(instance->counters2, t18[0]);
@@ -1197,11 +1299,24 @@ void copy_counters(int t_player, int t_card, int src_player, int src_card, int r
 	  add_counters(t_player, t_card, counters[i].typ, counters[i].num);
 }
 
+static void restore_only_minus1_minus1_counters(card_instance_t* instance, int counters_m1m1)
+{
+  counters_m1m1 = MAX(0, MIN(counters_m1m1, COUNTERS_MAX_COUNTER_VALUE));
+
+  instance->counters_m1m1 = counters_m1m1;
+  instance->counter_power = -counters_m1m1;
+  instance->counter_toughness = -counters_m1m1;
+  instance->regen_status |= KEYWORD_RECALC_POWER | KEYWORD_RECALC_TOUGHNESS;
+}
+
 /* Moves number of counter_type from {src_player, src_card} to {t_player, t_card}.  Moves all counters of all types if counter_type is -1; moves all of
  * counter_type if number is -1. */
 void move_counters(int t_player, int t_card, int src_player, int src_card, counter_t counter_type, int number)
 {
-  // No effect if moving to same card
+  if (!resolve_counter_card_ref(&src_player, &src_card) || !resolve_counter_card_ref(&t_player, &t_card))
+    return;
+
+  // No effect if moving to same card.
   if (t_card == src_card && t_player == src_player)
 	return;
 
@@ -1209,42 +1324,46 @@ void move_counters(int t_player, int t_card, int src_player, int src_card, count
   if (get_id(t_player, t_card) == CARD_ID_MELIRAS_KEEPERS && !is_humiliated(t_player, t_card))
 	return;
 
-  if ((unsigned char)counter_type == COUNTER_invalid)
+  if (counter_type_is_invalid(counter_type))
 	{
 	  // If t_player controls a Melira, Sylvok Outcast, -1/-1 counters don't move.
 	  if (check_battlefield_for_id(t_player, CARD_ID_MELIRA_SYLVOK_OUTCAST))
 		{
-		  // Hack - remove all -1/-1 counters, move everything else, then put them back
 		  card_instance_t* instance = get_card_instance(src_player, src_card);
 		  int counters_m1m1 = instance->counters_m1m1;
 		  instance->counters_m1m1 = 0;
 
 		  ++hack_silent_counters;
 		  copy_counters(t_player, t_card, src_player, src_card, 1);
-		  remove_all_counters(src_player, src_card, -1);
+		  remove_all_counters(src_player, src_card, COUNTER_invalid);
 		  --hack_silent_counters;
 
-		  instance->counters_m1m1 = counters_m1m1;
+		  restore_only_minus1_minus1_counters(instance, counters_m1m1);
 		}
 	  else
 		{
 		  ++hack_silent_counters;
 		  copy_counters(t_player, t_card, src_player, src_card, 1);
-		  remove_all_counters(src_player, src_card, -1);
+		  remove_all_counters(src_player, src_card, COUNTER_invalid);
 		  --hack_silent_counters;
 		}
 	}
   else
 	{
+	  if (!counter_type_can_be_stored(counter_type))
+        return;
+
 	  // If t_player controls a Melira, Sylvok Outcast, -1/-1 counters don't move.
 	  if (check_battlefield_for_id(t_player, CARD_ID_MELIRA_SYLVOK_OUTCAST) && counter_type == COUNTER_M1_M1)
 		return;
 
 	  if (number < 0)
-		number = 255;
+		number = COUNTERS_MAX_COUNTER_VALUE;
 
 	  int curr = count_counters(src_player, src_card, counter_type);
 	  number = MIN(number, curr);
+      if (number <= 0)
+        return;
 
 	  remove_counters(src_player, src_card, counter_type, number);
 	  add_counters_predoubled(t_player, t_card, counter_type, number);
@@ -1253,61 +1372,69 @@ void move_counters(int t_player, int t_card, int src_player, int src_card, count
 
 static int count_counters_impl(card_instance_t* instance, counter_t type)
 {
+  if (!instance)
+    return 0;
+
   if (type == COUNTER_P1_P1)
 	return instance->counters;	// Dedicated slot for +1/+1 counters
 
   if (type == COUNTER_M1_M1)
 	return instance->counters_m1m1;	// Dedicated slot for -1/-1 counters
 
-  uint8_t* t18 = (void*)(&instance->targets[18].player);
+  uint8_t* t18 = counter_slot_bytes(instance);
 
   int tot;
-  if ((unsigned char)type == COUNTER_invalid)	// Total count of all counters
+  if (counter_type_is_invalid(type))	// Total count of all counters
 	{
-	  tot = (instance->special_counters		// dedicated to a type determined by card's csvid
-			 + instance->counters			// dedicated to +1/+1 counters
+	  tot = (instance->counters			// dedicated to +1/+1 counters
 			 + instance->counters_m1m1);	// dedicated to -1/-1 counters
 
+      if (!counter_label_is_invalid(instance->special_counter_type))
+        tot += instance->special_counters;
+
 	  // Dynamically-assigned counter types.
-	  // Four visible
-	  if (t18[0] != COUNTER_invalid)
+	  // Four visible.
+	  if (!counter_label_is_invalid(t18[0]))
 		tot += instance->counters2;
-	  if (t18[1] != COUNTER_invalid)
+	  if (!counter_label_is_invalid(t18[1]))
 		tot += instance->counters3;
-	  if (t18[2] != COUNTER_invalid)
+	  if (!counter_label_is_invalid(t18[2]))
 		tot += instance->counters4;
-	  if (t18[3] != COUNTER_invalid)
+	  if (!counter_label_is_invalid(t18[3]))
 		tot += instance->counters5;
-	  // Two more invisible
-	  if (t18[6] != COUNTER_invalid)
+	  // Two more invisible.
+	  if (!counter_label_is_invalid(t18[6]))
 		tot += t18[4];
-	  if (t18[7] != COUNTER_invalid)
+	  if (!counter_label_is_invalid(t18[7]))
 		tot += t18[5];
 
 	  return tot;
 	}
 
+  if (!counter_type_can_be_stored(type))
+    return 0;
+
   /* General case.  Be a little extra paranoid in case a card has gotten the same counter type both in special_counters (type determined by csvid) and an
-   * assignable counter slot, presumeably by an uncontrolled copy effect. */
+   * assignable counter slot, presumably by an uncontrolled copy effect. */
 
   tot = 0;
 
-  if (instance->special_counter_type == type)
+  if (counter_label_matches(instance->special_counter_type, type))
 	tot += instance->special_counters;
 
-  // Four visible
-  if (t18[0] == type)
+  // Four visible.
+  if (counter_label_matches(t18[0], type))
 	tot += instance->counters2;
-  if (t18[1] == type)
+  if (counter_label_matches(t18[1], type))
 	tot += instance->counters3;
-  if (t18[2] == type)
+  if (counter_label_matches(t18[2], type))
 	tot += instance->counters4;
-  if (t18[3] == type)
+  if (counter_label_matches(t18[3], type))
 	tot += instance->counters5;
-  // Two more invisible
-  if (t18[6] == type)
+  // Two more invisible.
+  if (counter_label_matches(t18[6], type))
 	tot += t18[4];
-  if (t18[7] == type)
+  if (counter_label_matches(t18[7], type))
 	tot += t18[5];
 
   return tot;
@@ -1316,28 +1443,30 @@ static int count_counters_impl(card_instance_t* instance, counter_t type)
 // use -1 to get total count
 int count_counters(int player, int card, counter_t type)
 {
-  card_instance_t* instance = get_card_instance(player, card);
-  if (instance->internal_card_id == activation_card)
-	instance = get_card_instance(instance->parent_controller, instance->parent_card);
+  if (!resolve_counter_card_ref(&player, &card))
+    return 0;
 
-  return count_counters_impl(instance, type);
+  return count_counters_impl(get_card_instance(player, card), type);
 }
 
-/* Just like count_counters(), but if called for an activation_card, return the counters that were on th parent card as it was activated, not how many are on it
+/* Just like count_counters(), but if called for an activation_card, return the counters that were on the parent card as it was activated, not how many are on it
  * now. */
 int count_counters_no_parent(int player, int card, counter_t type)
 {
-  return count_counters_impl(get_card_instance(player, card), type);
+  return count_counters_impl(counters_card_instance_or_null(player, card), type);
 }
 
 // use -1 to remove all of all types
 void remove_all_counters(int player, int card, counter_t type)
 {
-  if ((unsigned char)type == COUNTER_invalid)
+  if (!resolve_counter_card_ref(&player, &card))
+    return;
+
+  if (counter_type_is_invalid(type))
 	{
 	  card_instance_t* instance = get_card_instance(player, card);
 	  instance->special_counters = 0;
-	  instance->special_counter_type = -1;
+	  instance->special_counter_type = COUNTER_invalid;
 	  instance->counters2 = 0;
 	  instance->counters3 = 0;
 	  instance->counters4 = 0;
@@ -1345,14 +1474,14 @@ void remove_all_counters(int player, int card, counter_t type)
 	  instance->counters5 = 0;
 	  instance->counters_m1m1 = 0;
 	  instance->targets[18].player = -1;
-	  instance->targets[18].card = 0x0000FFFF;
+	  instance->targets[18].card = -1;
 
 	  instance->counter_power = 0;
 	  instance->counter_toughness = 0;
 	  instance->regen_status |= KEYWORD_RECALC_POWER | KEYWORD_RECALC_TOUGHNESS;
 	}
   else
-	remove_counters(player, card, type, 255);
+	remove_counters(player, card, type, COUNTERS_MAX_COUNTER_VALUE);
 }
 
 // May use ANYBODY for player and/or -1 for counter_type to indicate any player's cards or any kind of counter.  Returns a total count.
@@ -1361,7 +1490,7 @@ int count_counters_by_counter_and_card_type(int player, counter_t counter_type, 
   int p, c, result = 0;
   for (p = 0; p <= 1; ++p)
 	if (p == player || player == ANYBODY)
-	  for (c = 0; c < active_cards_count[p]; ++c)
+	  for (c = 0; c < counters_active_cards_count(p); ++c)
 		if (in_play(p, c) && is_what(p, c, type))
 			result += count_counters(p, c, counter_type);
 
@@ -1374,7 +1503,7 @@ int has_any_counters(int player, counter_t counter_type, type_t type)
   int p, c;
   for (p = 0; p <= 1; ++p)
 	if (p == player || player == ANYBODY)
-	  for (c = 0; c < active_cards_count[p]; ++c)
+	  for (c = 0; c < counters_active_cards_count(p); ++c)
 		if (in_play(p, c) && is_what(p, c, type) && count_counters(p, c, counter_type))
 		  return 1;
 
@@ -1393,15 +1522,21 @@ int has_any_counters(int player, counter_t counter_type, type_t type)
  * Eon counter from its own Magosi, the Waterveil; and is very, very much in favor of removing an Eon counter from the human player's Magosi, the Waterveil. */
 static int raw_counter_value(int player, int t_player, int t_card, counter_t counter_type, int adding)
 {
+  if (!counters_is_card_ref(t_player, t_card))
+    return 0;
+
   card_instance_t* instance = get_card_instance(t_player, t_card);
   int iid = instance->internal_card_id >= 0 ? instance->internal_card_id : instance->backup_internal_card_id;
+  if (iid < 0)
+    return 0;
+
   int csvid = cards_data[iid].id;
 
-#define IS(type)			(is_what(t_player, t_card, (type)))
-#define ANY_CONTROLLER(x)	(player == t_player ? (x) : -(x))	// i.e., invert value if controlled by opponent.  Since this is normally done anyway, specifying ANY_CONTROLLER() means that the eventual value is x no matter who controls {t_player, t_card}.
-#define IS_NATIVE()			(get_counter_type_by_instance(instance) == (int)counter_type)
-#define NATIVE0(native)		(IS_NATIVE() ? (native) : 0)
-#define CREATURE0(creature)	(IS(TYPE_CREATURE) ? creature : 0)
+#define IS(type)            (is_what(t_player, t_card, (type)))
+#define ANY_CONTROLLER(x)   (player == t_player ? (x) : -(x))
+#define IS_NATIVE()         (get_counter_type_by_instance(instance) == (int)counter_type)
+#define NATIVE0(native)     (IS_NATIVE() ? (native) : 0)
+#define CREATURE0(creature) (IS(TYPE_CREATURE) ? creature : 0)
 
   if (adding == 2)
 	{
@@ -1715,7 +1850,7 @@ static int raw_counter_value(int player, int t_player, int t_card, counter_t cou
 			default:	return 0;
 		  }
 
-		if (adding && count_counters(t_player, t_card, COUNTER_LEVEL) >= max_level)
+		if (adding && max_level > 0 && count_counters(t_player, t_card, COUNTER_QUEST) >= max_level)
 		  return 0;
 		else
 		  return benefit;
@@ -1755,7 +1890,7 @@ static int raw_counter_value(int player, int t_player, int t_card, counter_t cou
 		if (!IS_NATIVE())
 		  return 0;
 
-		if (count_counters(t_player, t_card, COUNTER_TIDE == 3))
+		if (count_counters(t_player, t_card, COUNTER_TIDE) == 3)
 		  return -300;
 		else
 		  return 28;
@@ -1850,7 +1985,7 @@ static int raw_counter_value(int player, int t_player, int t_card, counter_t cou
   return 0;
 
 #undef IS
-#undef CONTROLLER
+#undef ANY_CONTROLLER
 #undef IS_NATIVE
 #undef NATIVE0
 #undef CREATURE0
@@ -1861,33 +1996,39 @@ counter_t choose_existing_counter_type(int who_chooses, int src_player, int src_
 {
   STATIC_ASSERT(sizeof(counter_t) >= 2, counter_t_must_be_at_least_two_bytes_wide);
 
-  char choices[10][100];
+  if (!counters_is_card_ref(t_player, t_card))
+    {
+      cancel = 1;
+      return COUNTER_invalid;
+    }
+
+  char choices[COUNTERS_NUM_DIALOG_CHOICES][100];
   int i;
-  for (i = 0; i < 10; ++i)
+  for (i = 0; i < COUNTERS_NUM_DIALOG_CHOICES; ++i)
 	choices[i][0] = 0;
-  counter_t counter_types[10];
-  int priorities[10];
+  counter_t counter_types[COUNTERS_NUM_DIALOG_CHOICES];
+  int priorities[COUNTERS_NUM_DIALOG_CHOICES];
 
   int num_types = 0;
 
   card_instance_t* instance = get_card_instance(t_player, t_card);
-  uint8_t* t18 = (void*)(&instance->targets[18].player);
+  uint8_t* t18 = counter_slot_bytes(instance);
 
   struct
   {
 	uint8_t num;
-	uint8_t typ;
-  } counter_data[9] =
+	counter_t typ;
+  } counter_data[COUNTERS_NUM_STORAGE_SLOTS] =
 	  {
-		{ instance->special_counters, instance->special_counter_type },	// Top
-		{ instance->counters2, t18[0] },	// Upper right
-		{ instance->counters3, t18[1] },	// Upper center
-		{ instance->counters4, t18[2] },	// Upper left
-		{ instance->counters5, t18[3] },	// Lower right
+		{ instance->special_counters, (counter_t)instance->special_counter_type },	// Top
+		{ instance->counters2, (counter_t)t18[0] },	// Upper right
+		{ instance->counters3, (counter_t)t18[1] },	// Upper center
+		{ instance->counters4, (counter_t)t18[2] },	// Upper left
+		{ instance->counters5, (counter_t)t18[3] },	// Lower right
 		{ instance->counters, COUNTER_P1_P1 },		// Lower left
 		{ instance->counters_m1m1, COUNTER_M1_M1 },	// Also lower left
-		{ t18[4], t18[6] },	// undisplayed 1
-		{ t18[5], t18[7] }	// undisplayed 2
+		{ t18[4], (counter_t)t18[6] },	// undisplayed 1
+		{ t18[5], (counter_t)t18[7] }	// undisplayed 2
 	  };
 
   int add_remove_mode = mode & (CECT_REMOVE | CECT_ADD_OR_REMOVE | CECT_MOVE);
@@ -1896,8 +2037,8 @@ counter_t choose_existing_counter_type(int who_chooses, int src_player, int src_
   if (!add_remove_mode)
 	add_remove_mode |= CECT_ADD;
 
-  for (i = 0; i < 9; ++i)
-	if (counter_data[i].num > 0 && counter_data[i].typ != COUNTER_invalid)
+  for (i = 0; i < COUNTERS_NUM_STORAGE_SLOTS && num_types < COUNTERS_NUM_DIALOG_CHOICES - 1; ++i)
+	if (counter_data[i].num > 0 && counter_type_can_be_stored(counter_data[i].typ))
 	  {
 		counter_types[num_types] = counter_data[i].typ;
 		scnprintf(choices[num_types], 100, "%s: %d", counter_names[counter_data[i].typ], counter_data[i].num);
@@ -1964,9 +2105,11 @@ counter_t choose_existing_counter_type(int who_chooses, int src_player, int src_
 		++num_types;
 	  }
 
+  cect_t chooser_cancel_mode = IS_AI(who_chooses) ? CECT_AI_CAN_CANCEL : CECT_HUMAN_CAN_CANCEL;
+
   if (num_types == 0)
 	{
-	  if (!(mode & CECT_AI_CAN_CANCEL))
+	  if (!(mode & chooser_cancel_mode))
 		cancel = 1;
 	  return COUNTER_invalid;
 	}
@@ -1982,9 +2125,9 @@ counter_t choose_existing_counter_type(int who_chooses, int src_player, int src_
 			best = i;
 		  }
 
-	  if (best_pri <= 0 && (mode & (IS_AI(who_chooses) ? CECT_HUMAN_CAN_CANCEL : CECT_AI_CAN_CANCEL)))
+	  if (best_pri <= 0 && (mode & chooser_cancel_mode))
 		{
-		  if (!(mode & CECT_AI_CAN_CANCEL))
+		  if (!IS_AI(who_chooses))
 			cancel = 1;
 		  return COUNTER_invalid;
 		}
@@ -1994,7 +2137,7 @@ counter_t choose_existing_counter_type(int who_chooses, int src_player, int src_
 
   if (mode & CECT_AI_CAN_CANCEL)
 	{
-	  mode &= ~CECT_HUMAN_CAN_CANCEL;	// We'll be displaying a cancel option with this, so suppress the automatic one
+	  mode &= ~CECT_HUMAN_CAN_CANCEL;	// We'll be displaying a cancel option with this, so suppress the automatic one.
 	  strcpy(choices[num_types], EXE_STR(0x7281A4));	// localized Cancel
 	  counter_types[num_types] = COUNTER_invalid;
 
@@ -2004,7 +2147,7 @@ counter_t choose_existing_counter_type(int who_chooses, int src_player, int src_
 		priorities[num_types] = 1;
 	}
 
-#undef ADD_TYPE
+#undef CECT_ADD
 
   const char* prompt;
   if (mode & CECT_MOVE)
@@ -2018,8 +2161,8 @@ counter_t choose_existing_counter_type(int who_chooses, int src_player, int src_
 
   int choice;
 
-#define ADD_CHOICE(x)	choices[x][0] ? choices[x] : NULL, 1, priorities[x]
-#define ADD_CHOICES		ADD_CHOICE(0), ADD_CHOICE(1), ADD_CHOICE(2), ADD_CHOICE(3), ADD_CHOICE(4), ADD_CHOICE(5), ADD_CHOICE(6), ADD_CHOICE(7), ADD_CHOICE(8), ADD_CHOICE(9)
+#define ADD_CHOICE(x) choices[x][0] ? choices[x] : NULL, 1, priorities[x]
+#define ADD_CHOICES ADD_CHOICE(0), ADD_CHOICE(1), ADD_CHOICE(2), ADD_CHOICE(3), ADD_CHOICE(4), ADD_CHOICE(5), ADD_CHOICE(6), ADD_CHOICE(7), ADD_CHOICE(8), ADD_CHOICE(9)
 
   // We avoid DLG_OMIT_ILLEGAL by making sure we pass NULL when we run out of choices, and not having any valid choices after invalid ones.
   choice = DIALOG(src_player, src_card, EVENT_ACTIVATE,
@@ -2044,13 +2187,13 @@ counter_t choose_existing_counter_type(int who_chooses, int src_player, int src_
 
 void poison(int player, int number_of_counters)
 {
-  if (number_of_counters <= 0)
+  if (!counters_is_real_player(player) || number_of_counters <= 0)
     return;
 
   int pois = POISON_COUNTERS(player);
   pois += number_of_counters;
-  if (pois > 255)
-    pois = 255;
+  if (pois > COUNTERS_MAX_COUNTER_VALUE)
+    pois = COUNTERS_MAX_COUNTER_VALUE;
   player_counters[player].poison_ = pois;
 
   /* in Shandalar, check_loss_of_game() checks for Platinum Angel-like effects, and if there aren't any and a player has < 0 life or > 10 poison, sets life[] to
@@ -2061,6 +2204,9 @@ void poison(int player, int number_of_counters)
 
 void raw_set_poison(int player, uint8_t new_number_of_counters)
 {
+  if (!counters_is_real_player(player))
+    return;
+
   //if (ai_is_speculating == 1 && new_number_of_counters > player_counters[player].poison_)
   //  {
   //    player_counters[player].poison_ = new_number_of_counters;
@@ -2072,20 +2218,23 @@ void raw_set_poison(int player, uint8_t new_number_of_counters)
 
 void add_experience(int player, int number_of_counters)
 {
-  if (number_of_counters <= 0)
+  if (!counters_is_real_player(player) || number_of_counters <= 0)
     return;
 
   int exp = player_counters[player].experience_;
   exp += number_of_counters;
-  if (exp > 255)
-    exp = 255;
+  if (exp > COUNTERS_MAX_COUNTER_VALUE)
+    exp = COUNTERS_MAX_COUNTER_VALUE;
   player_counters[player].experience_ = exp;
 
   if (ai_is_speculating != 1)
-    play_sound_effect(WAV_COUNTER);
+    play_counters_sound(WAV_COUNTER);
 }
 
 void raw_set_experience(int player, uint8_t new_number_of_counters)
 {
+  if (!counters_is_real_player(player))
+    return;
+
   player_counters[player].experience_ = new_number_of_counters;
 }

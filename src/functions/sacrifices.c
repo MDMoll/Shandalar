@@ -1,8 +1,31 @@
+#include <string.h>
+
 #include "manalink.h"
+
+enum
+{
+  MAX_SACRIFICE_ACTIVE_CARDS = 150,
+  SACRIFICE_MARKED_SIZE = MAX_SACRIFICE_ACTIVE_CARDS + 1
+};
+
+static int valid_sacrifice_player(int player)
+{
+  return player >= HUMAN && player <= AI;
+}
 
 static int bounded_sacrifice_active_cards_count(int player)
 {
-  return player >= HUMAN && player <= AI ? MIN(active_cards_count[player], 150) : 0;
+  return valid_sacrifice_player(player) ? MIN(active_cards_count[player], MAX_SACRIFICE_ACTIVE_CARDS) : 0;
+}
+
+static int valid_sacrifice_card_slot(int player, int card)
+{
+  return valid_sacrifice_player(player) && card >= 0 && card < bounded_sacrifice_active_cards_count(player);
+}
+
+static card_instance_t* sacrifice_in_play(int player, int card)
+{
+  return valid_sacrifice_card_slot(player, card) ? in_play(player, card) : NULL;
 }
 
 // Returns nonzero if there's a non-humiliated Angel of Jubilation in play.  (check_battlefield_for_special_card returns true for humiliated ones.)
@@ -14,13 +37,19 @@ static int angel_of_jubilation_on_bf(void)
 	{
 	  int active_count = bounded_sacrifice_active_cards_count(p);
 	  for (c = 0; c < active_count; ++c)
-		if ((inst = in_play(p, c)) && cards_data[inst->internal_card_id].id == CARD_ID_ANGEL_OF_JUBILATION && !is_humiliated(p, c))
+		if ((inst = in_play(p, c))
+			&& inst->internal_card_id >= 0
+			&& cards_data[inst->internal_card_id].id == CARD_ID_ANGEL_OF_JUBILATION
+			&& !is_humiliated(p, c))
 		  return 1;
 	}
   return 0;
 }
 
 int can_sacrifice_this_as_cost(int player, int card){
+	if( ! sacrifice_in_play(player, card) ){
+		return 0;
+	}
 	if( ! check_special_flags2(player, card, SF2_CANNOT_BE_SACRIFICED) ){
 		if (is_what(player, card, TYPE_CREATURE) ){
 			return !angel_of_jubilation_on_bf();
@@ -34,6 +63,12 @@ int can_sacrifice_this_as_cost(int player, int card){
 
 static int new_can_sacrifice_as_cost_impl(int player, int card, int amount, test_definition_t* test)
 {
+  if (!valid_sacrifice_player(player) || !test)
+	return amount <= 0 ? 1 : 0;
+
+  if (amount == 0)
+	return 1;
+
   int c = 0, found = 0, allow_creatures = 1;
   if (angel_of_jubilation_on_bf())
 	{
@@ -66,7 +101,7 @@ static int new_can_sacrifice_as_cost_impl(int player, int card, int amount, test
 // Verify that "player" could sacrifice amount permanents matching test for paying a cost.
 int new_can_sacrifice_as_cost(int player, int card, test_definition_t* test)
 {
-  return new_can_sacrifice_as_cost_impl(player, card, test->qty, test);
+  return test ? new_can_sacrifice_as_cost_impl(player, card, test->qty, test) : 0;
 }
 
 int max_can_sacrifice_as_cost(int player, int card, test_definition_t* test)
@@ -100,6 +135,9 @@ int can_sacrifice_type_as_cost(int player, int amount, type_t type)
 
 int can_cause_sacrifice(int player, int t_player)
 {
+  if (!valid_sacrifice_player(t_player))
+	return 0;
+
   int c;
   if (player != t_player)
 	{
@@ -120,6 +158,9 @@ int can_cause_sacrifice(int player, int t_player)
 
 int new_can_sacrifice(int player, int card, int t_player, test_definition_t* test)
 {
+  if (!valid_sacrifice_player(t_player))
+	return 0;
+
   int amount = test ? test->qty : 1;
   if (amount <= 0)
 	return 1;
@@ -154,6 +195,10 @@ int can_sacrifice(int player, int t_player, int amount, type_t type, subtype_t s
 
 int is_nice_creature_to_sacrifice(int player, int card){
 
+	if( ! valid_sacrifice_card_slot(player, card) ){
+		return 0;
+	}
+
 	card_data_t* card_d = get_card_data(player, card);
 
 	if( card_d->cc[2] == 9 && ! is_what(player, card, TYPE_ENCHANTMENT) ){
@@ -187,6 +232,10 @@ int get_best_permanent_for_sacrifice(int player, int type){
 }
 
 int new_get_special_permanent_for_sacrifice(int player, int card, test_definition_t* test){
+
+	if( ! test ){
+		return -1;
+	}
 
 	int count = 0;
 	int result = -1;
@@ -237,6 +286,9 @@ static int get_special_permanent_for_sacrifice(int player, int type, int flag1, 
 
 static void get_sacrifice_prompt_text(char* prompt, int maxlen, int type, int invert)
 {
+  if (!prompt || maxlen <= 0)
+	return;
+
   if (ai_is_speculating == 1){
 	*prompt = 0;
 	return;
@@ -255,7 +307,7 @@ static const char* can_sacrifice_this(int who_chooses, int player, int card)
 	if( ! check_special_flags2(player, card, SF2_CANNOT_BE_SACRIFICED) ){
 		return NULL;
 	}
-	return "can't sacririce this";
+	return "can't sacrifice this";
 }
 
 int pick_creature_for_sacrifice(int player, int card, int cannot_cancel){
@@ -319,7 +371,7 @@ int pick_permanent_for_sacrifice(int player, int card, int type, int cannot_canc
 			target_t picked = { -1, -1 };
 			select_target(player, card, &td, prompt, &picked);
 
-			if (cancel != 1){
+			if (cancel != 1 && picked.player == player && valid_sacrifice_card_slot(picked.player, picked.card)){
 				instance->number_of_targets = 1;
 				instance->targets[0] = picked;
 				result = picked.card;
@@ -355,7 +407,8 @@ int pick_special_permanent_for_sacrifice(int player, int card, int cannot_cancel
 			target_t picked = { -1, -1 };
 			select_target(player, card, &td, prompt, &picked);
 
-			if (cancel != 1 && make_test_in_play(picked.player, picked.card, -1, type, flag1, subtype, flag2, color, flag3, id, flag4, cc, flag5)){
+			if (cancel != 1 && picked.player == player && valid_sacrifice_card_slot(picked.player, picked.card)
+				&& make_test_in_play(picked.player, picked.card, -1, type, flag1, subtype, flag2, color, flag3, id, flag4, cc, flag5)){
 				instance->number_of_targets = 1;
 				instance->targets[0] = picked;
 				result = picked.card;
@@ -372,12 +425,17 @@ int pick_special_permanent_for_sacrifice(int player, int card, int cannot_cancel
 static test_definition_t* sacrifice_test;
 static const char* passes_test_definition(int who_chooses, int player, int card, int targeting_player, int targeting_card)
 {
-  if (new_make_test_in_play(player, card, -1, sacrifice_test) && ! check_special_flags2(player, card, SF2_CANNOT_BE_SACRIFICED) )
+  if (sacrifice_test && new_make_test_in_play(player, card, -1, sacrifice_test) && ! check_special_flags2(player, card, SF2_CANNOT_BE_SACRIFICED) )
 	return NULL;
   else
 	return "Illegal sacrifice";
 }
 static int new_sacrifice_impl(int player, int card, int t_player, sacrifice_t options, test_definition_t* test, char* marked_for_sacrifice){
+	if (!valid_sacrifice_player(t_player) || !test){
+		cancel = 1;
+		return 0;
+	}
+
 	target_definition_t td;
 	base_target_definition(player, card, &td, TYPE_PERMANENT);
 	td.allowed_controller = t_player;
@@ -417,6 +475,7 @@ static int new_sacrifice_impl(int player, int card, int t_player, sacrifice_t op
 
 	sacrifice_test = test;
 	if ((options & SAC_ALL_OR_NONE) ? (target_available(player, card, &td) < test->qty) : !can_target(&td)){
+		sacrifice_test = NULL;
 		cancel = 1;
 		return 0;
 	}
@@ -435,7 +494,7 @@ static int new_sacrifice_impl(int player, int card, int t_player, sacrifice_t op
 	int old_number_of_targets = instance->number_of_targets;
 	target_t old_target0 = instance->targets[0];	// struct copy
 
-	char marked[151] = {0};
+	char marked[SACRIFICE_MARKED_SIZE] = {0};
 	int active_count = bounded_sacrifice_active_cards_count(t_player);
 
 	int num_picked = 0;
@@ -455,7 +514,8 @@ static int new_sacrifice_impl(int player, int card, int t_player, sacrifice_t op
 
 		if (tgt.card == -1){
 			instance->number_of_targets = 0;
-			sacrifice_test = test;	select_target(player, card, &td, prompt, &tgt);
+			sacrifice_test = test;
+			select_target(player, card, &td, prompt, &tgt);
 		}
 
 		if (tgt.card < 0){
@@ -465,6 +525,14 @@ static int new_sacrifice_impl(int player, int card, int t_player, sacrifice_t op
 				cancel = tgt.card == -1 ? 1 : 0;
 				break;
 			}
+		}
+
+		if (tgt.player != t_player || tgt.card >= active_count){
+			if (cannot_cancel){
+				continue;
+			}
+			cancel = 1;
+			break;
 		}
 
 		if (marked[tgt.card]){
@@ -478,6 +546,8 @@ static int new_sacrifice_impl(int player, int card, int t_player, sacrifice_t op
 			last_picked = tgt;	// struct copy
 		}
 	}
+
+	sacrifice_test = NULL;
 
 	instance->number_of_targets = old_number_of_targets;
 	instance->targets[0] = old_target0;	// struct copy
@@ -506,7 +576,7 @@ static int new_sacrifice_impl(int player, int card, int t_player, sacrifice_t op
 		instance->targets[2].card	= get_toughness(last_picked.player, last_picked.card);
 		instance->targets[3].card	= get_card_instance(last_picked.player, last_picked.card)->internal_card_id;
 
-		int csvid = get_id(player, card);
+		int csvid = valid_sacrifice_card_slot(player, card) ? get_id(player, card) : -1;
 		if (csvid == CARD_ID_FALKENRATH_TORTURER){
 			instance->targets[3].player = has_subtype(last_picked.player, last_picked.card, SUBTYPE_HUMAN);
 		}
@@ -654,12 +724,6 @@ int prevent_damage_sacrificing_a_creature(int player, int card, event_t event, i
 	td.required_type = 0;
 	td.allow_cancel = 0;
 
-	target_definition_t td1;
-	default_target_definition(player, card, &td1, TYPE_CREATURE);
-	td1.allowed_controller = player;
-	td1.preferred_controller = player;
-	td1.illegal_abilities = 0;
-
 	card_instance_t *instance = get_card_instance(player, card);
 
 	if( event == EVENT_CAN_ACTIVATE && can_sacrifice_as_cost(player, 1, TYPE_CREATURE, 0, 0, 0, 0, 0, 0, 0, -1, 0) && can_target(&td) ){
@@ -687,7 +751,10 @@ int prevent_damage_sacrificing_a_creature(int player, int card, event_t event, i
 					  resolved = 1;
 			 }
 
-			 if( resolved == 1 && controller_sacrifices_a_permanent(player, card, TYPE_CREATURE, 0) ){
+			 test_definition_t test;
+			 new_default_test_definition(&test, TYPE_CREATURE, "");
+
+			 if( resolved == 1 && new_sacrifice(player, card, player, SAC_AS_COST | SAC_NO_CANCEL, &test) ){
 				 pick_target(&td, "TARGET_DAMAGE");
 			 }
 			 else{
@@ -762,19 +829,37 @@ int can_activate_altar_basic(int player, int card, int act_mode, int type){
 	return 0;
 }
 
+static int choose_permanent_to_sacrifice_as_cost(int player, int card, test_definition_t* test)
+{
+	int sac = new_sacrifice(player, card, player, SAC_AS_COST | SAC_JUST_MARK | SAC_RETURN_CHOICE, test);
+	if (sac <= 0){
+		return 0;
+	}
+	return sac;
+}
+
 int altar_basic_activation(int player, int card, int act_mode, int type){
 
 	card_instance_t *instance = get_card_instance(player, card);
 
 	if( charge_mana_for_activated_ability(player, card, MANACOST0) ){
-		int result = pick_permanent_for_sacrifice(player, card, type, 0);
-		if( result != -1 ){
+		test_definition_t test;
+		new_default_test_definition(&test, type, "");
+
+		int sac = choose_permanent_to_sacrifice_as_cost(player, card, &test);
+		if( sac > 0 ){
+			int s_player = BYTE2(sac);
+			int s_card = BYTE3(sac);
+			if (!valid_sacrifice_card_slot(s_player, s_card)){
+				return 0;
+			}
 			instance->number_of_targets = 1;
-			instance->targets[1].player = get_power(player, result);
-			instance->targets[1].card = get_toughness(player, result);
-			instance->targets[2].player = get_color(player, result);
-			instance->targets[2].card = get_cmc(player, result);
-			kill_card(player, result, KILL_SACRIFICE);
+			instance->targets[1].player = get_power(s_player, s_card);
+			instance->targets[1].card = get_toughness(s_player, s_card);
+			instance->targets[2].player = get_color(s_player, s_card);
+			instance->targets[2].card = get_cmc(s_player, s_card);
+			remove_state(s_player, s_card, STATE_CANNOT_TARGET);
+			kill_card(s_player, s_card, KILL_SACRIFICE);
 			if( act_mode & 4 ){
 				tap_card(player, card);
 			}
@@ -831,14 +916,32 @@ int altar_extended(int player, int card, event_t event, int act_mode, int type, 
 	}
 
 	else if(event == EVENT_ACTIVATE ){
-			int result = pick_special_permanent_for_sacrifice(player, card, 0, type, flag1, subtype, flag2, color,
-															  flag3, id, flag4, cmc, flag5);
-			if( result != -1 ){
-				instance->targets[1].player = get_power(player, result);
-				instance->targets[1].card = get_toughness(player, result);
-				instance->targets[2].player = get_color(player, result);
-				instance->targets[2].card = get_cmc(player, result);
-				kill_card(player, result, KILL_SACRIFICE);
+			test_definition_t test;
+			new_default_test_definition(&test, type, "");
+			test.type_flag = flag1;
+			test.subtype = subtype;
+			test.subtype_flag = flag2;
+			test.color = color;
+			test.color_flag = flag3;
+			test.id = id;
+			test.id_flag = flag4;
+			test.cmc = cmc;
+			test.cmc_flag = flag5;
+
+			int sac = choose_permanent_to_sacrifice_as_cost(player, card, &test);
+			if( sac > 0 ){
+				int s_player = BYTE2(sac);
+				int s_card = BYTE3(sac);
+				if (!valid_sacrifice_card_slot(s_player, s_card)){
+					spell_fizzled = 1;
+					return 0;
+				}
+				instance->targets[1].player = get_power(s_player, s_card);
+				instance->targets[1].card = get_toughness(s_player, s_card);
+				instance->targets[2].player = get_color(s_player, s_card);
+				instance->targets[2].card = get_cmc(s_player, s_card);
+				remove_state(s_player, s_card, STATE_CANNOT_TARGET);
+				kill_card(s_player, s_card, KILL_SACRIFICE);
 				if( act_mode & 4 ){
 					tap_card(player, card);
 				}
@@ -859,9 +962,12 @@ int sacrifice_and_report_value(int player, int card, int t_player, int flags, te
 	int sac_flags = SAC_JUST_MARK | SAC_RETURN_CHOICE;
 	sac_flags |= ((flags & SARV_EXTRA_IMPOSE_SACRIFICE) ? SAC_NO_CANCEL | SAC_CAUSED : 0);
 	int sac = new_sacrifice(player, card, t_player, sac_flags, test);
-	if( sac > -1 ){
+	if( sac > 0 ){
 		int s_player = BYTE2(sac);
 		int s_card = BYTE3(sac);
+		if (!valid_sacrifice_card_slot(s_player, s_card)){
+			return -1;
+		}
 		result = get_card_instance(s_player, s_card)->internal_card_id;
 		if( flags & SARV_REPORT_POWER ){
 			result = get_power(s_player, s_card);

@@ -1,3 +1,9 @@
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "manalink.h"
 
 extern int target_controller, target_card;
@@ -29,7 +35,10 @@ enum
   CARD_INSTANCE_TARGET_CAPACITY = 19,
   TARGET_MARKED_CARD_CAPACITY = 151,
   TARGET_ERROR_BUFFER_SIZE = 200,
-  TARGETS_GLOBAL_ALL_PURPOSE_BUFFER_SIZE = 1000
+  TARGETS_GLOBAL_ALL_PURPOSE_BUFFER_SIZE = 1000,
+  TARGET_AI_CANDIDATE_CAPACITY = 60,
+  TARGET_AI_CARD_CANDIDATE_CAPACITY = TARGET_AI_CANDIDATE_CAPACITY - 2,
+  TARGET_AUTO_TARGET_CAPACITY = 500
 };
 
 static int bounded_targets_number_of_targets(card_instance_t* instance)
@@ -95,12 +104,17 @@ get_protections_from(int player, int card)
 
   int kw = KEYWORD_SHROUD;	// everything that targets calls get_protections_from(); everything that doesn't, doesn't.
 
+  if (!target_player_is_valid(player) || !target_card_slot_is_valid(card))
+	return kw;
+
   card_instance_t* instance = get_card_instance(player, card);
   int iid;
   while (instance->internal_card_id == activation_card)
 	{
 	  player = instance->parent_controller;
 	  card = instance->parent_card;
+	  if (!target_player_is_valid(player) || !target_card_slot_is_valid(card))
+		return kw;
 	  instance = get_card_instance(player, card);
 	}
 
@@ -109,7 +123,10 @@ get_protections_from(int player, int card)
   else
 	iid = instance->internal_card_id;
 
-  uint8_t typ = cards_data[iid].type;
+  if (iid < 0)
+	return kw;
+
+  type_t typ = cards_data[iid].type;
 
   if (typ & TYPE_SORCERY)
 	kw |= KEYWORD_PROT_SORCERIES;
@@ -142,6 +159,9 @@ is_protected_from_mode_t protection_mode = IPF_TARGET;
 int
 is_protected_from(int protected_player, int protected_card, int from_player, int from_card, is_protected_from_mode_t new_protection_mode)
 {
+  if (!target_player_is_valid(protected_player))
+	return 0;
+
   int abils;
   if (protected_card >= 0)
 	abils = get_abilities(protected_player, protected_card, EVENT_ABILITIES, -1);
@@ -152,7 +172,7 @@ is_protected_from(int protected_player, int protected_card, int from_player, int
 	return is_player_protected_from(protected_player, from_player, from_card, new_protection_mode);
 #endif
 
-  if (from_card >= 0)
+  if (from_card >= 0 && target_player_is_valid(from_player))
 	{
 	  int gpf = get_protections_from(from_player, from_card) & ~KEYWORD_SHROUD;	// Shroud is checked for in the targeting functions independently of this
 
@@ -189,10 +209,13 @@ static int target_match_type(card_instance_t* tgt_instance, int tgt_player, int 
   // int internal_id = (special & TARGET_SPECIAL_0x200) ? (int)tgt_instance->original_internal_card_id : tgt_instance->internal_card_id;
   // TARGET_SPECIAL_0x200 set for Vesuvan Doppelganger, Copy Artifact, and the exe version of clone - it really should be the target's current type under modern rules so ignore
   int internal_id = tgt_instance->internal_card_id;
+  if (internal_id < 0)
+	return 0;
 
   if (special & TARGET_SPECIAL_EFFECT_CARD)
 	{
-	  if (is_what(-1, tgt_instance->original_internal_card_id, type & (TYPE_ANY | TARGET_TYPE_PLANESWALKER)))
+	  if (tgt_instance->original_internal_card_id >= 0
+		  && is_what(-1, tgt_instance->original_internal_card_id, type & (TYPE_ANY | TARGET_TYPE_PLANESWALKER)))
 		return 1;
 
 	  type |= TYPE_EFFECT;
@@ -238,20 +261,20 @@ validate_target_impl(int player, int card,	// Beware - these will both be -1 whe
   int rval = 1;
   char error_str[TARGET_ERROR_BUFFER_SIZE];
 
-#define FAIL_STR(err_str)										\
-  do															\
-	{															\
-	  rval = 0;													\
+#define FAIL_STR(err_str)											\
+  do																\
+	{																\
+	  rval = 0;														\
 	  append_target_error(error_str, sizeof(error_str), err_str);	\
-	  goto epilog;												\
+	  goto epilog;													\
 	} while (0)
 
-#define FAILURE(error_addr)											\
-	do																\
-	  {																\
-		rval = 0;													\
-		append_target_error(error_str, sizeof(error_str), EXE_STR(error_addr));	\
-		goto epilog;												\
+#define FAILURE(error_addr)															\
+	do																				\
+	  {																				\
+		rval = 0;																	\
+		append_target_error(error_str, sizeof(error_str), EXE_STR(error_addr));		\
+		goto epilog;																\
 	  } while (0)
 
   if (!target_player_is_valid(tgt_player)
@@ -410,12 +433,12 @@ validate_target_impl(int player, int card,	// Beware - these will both be -1 whe
 		  if (special & TARGET_SPECIAL_CMC_LESSER_OR_EQUAL)
 			{
 			  if (extra >= 0 && !(get_cmc(tgt_player, tgt_card) <= extra))
-				FAILURE(",converted mana cost");
+				FAIL_STR("converted mana cost");
 			}
 		  else if (special & TARGET_SPECIAL_CMC_GREATER_OR_EQUAL)
 			{
 			  if (extra >= 0 && !(get_cmc(tgt_player, tgt_card) >= extra))
-				FAILURE(",converted mana cost");
+				FAIL_STR("converted mana cost");
 			}
 		  else if (special & TARGET_SPECIAL_NOT_LAND_SUBTYPE)
 			{
@@ -692,7 +715,7 @@ validate_target_impl(int player, int card,	// Beware - these will both be -1 whe
 
 		  if ((required_state & TARGET_STATE_SUMMONING_SICK)
 			  && !(tgt_instance->state & STATE_SUMMON_SICK))
-			FAILURE(0x4EC769);//",summoning sickness
+			FAILURE(0x4EC769);//",summoning sickness"
 		}
 
 	  if (illegal_state)
@@ -817,6 +840,9 @@ target_available_impl(int player, int card,
   int count;
   int i;
 
+  if (return_count)
+	*return_count = 0;
+
   if (test_damage_target_or_source != 0 && test_damage_target_or_source != 1 && test_damage_target_or_source != 2)
 	return 0;
 
@@ -847,10 +873,14 @@ target_available_impl(int player, int card,
   for (i = 0; i < 2; ++i, p ^= 1)
 	{
 	  int c, actives = bounded_targets_max_active_cards_count();	// really!
+	  int player_active_count = bounded_targets_active_cards_count(p);
 
 	  for (c = 0; c < actives; ++c)
 		{
 		  int pl, cd;
+		  if (c >= player_active_count)
+			continue;
+
 		  card_instance_t* instance = get_card_instance(p, c);
 
 		  if (instance->internal_card_id == -1)
@@ -1086,7 +1116,7 @@ select_target_impl(int player, int card,
   else
 	{
 	  int can_target_player_0, can_target_player_1, num_candidates, p, c;
-	  target_t candidates[60];
+	  target_t candidates[TARGET_AI_CANDIDATE_CAPACITY];
 
 	  if ((EXE_DWORD(0x60E9FC) & 1)
 		  && (allowed_controller & 2))
@@ -1136,21 +1166,37 @@ select_target_impl(int player, int card,
 				  candidates[num_candidates].player = p;
 				  candidates[num_candidates].card = c;
 				  ++num_candidates;
-				  if (num_candidates >= 58)
+				  if (num_candidates >= TARGET_AI_CARD_CANDIDATE_CAPACITY)
 					goto break2;
 				}
 			}
 		}
 	break2:
 
-	  if (can_target_player_1)
+	  if (can_target_player_1
+		  && num_candidates < TARGET_AI_CANDIDATE_CAPACITY
+		  && validate_target_impl(player, card,
+								  1, -1, NULL,
+								  who_chooses, allowed_controller, preferred_controller, zone,
+								  required_type, illegal_type, required_abilities, illegal_abilities,
+								  required_color, illegal_color, extra, required_subtype,
+								  power_requirement, toughness_requirement, special, required_state,
+								  illegal_state))
 		{
 		  candidates[num_candidates].player = 1;
 		  candidates[num_candidates].card = -1;
 		  ++num_candidates;
 		}
 
-	  if (can_target_player_0)
+	  if (can_target_player_0
+		  && num_candidates < TARGET_AI_CANDIDATE_CAPACITY
+		  && validate_target_impl(player, card,
+								  0, -1, NULL,
+								  who_chooses, allowed_controller, preferred_controller, zone,
+								  required_type, illegal_type, required_abilities, illegal_abilities,
+								  required_color, illegal_color, extra, required_subtype,
+								  power_requirement, toughness_requirement, special, required_state,
+								  illegal_state))
 		{
 		  candidates[num_candidates].player = 0;
 		  candidates[num_candidates].card = -1;
@@ -1258,8 +1304,8 @@ real_select_target(int who_chooses, int allowed_controller, int preferred_contro
 								   prompt, allow_cancel, ret_tgt);
 }
 
-int auto_targets[500];
-int auto_targets_target[500];
+int auto_targets[TARGET_AUTO_TARGET_CAPACITY];
+int auto_targets_target[TARGET_AUTO_TARGET_CAPACITY];
 int read_auto_target_file = 0;
 
 static int read_auto_target_entries(const char* path, int target_player, int count)
@@ -1270,7 +1316,7 @@ static int read_auto_target_entries(const char* path, int target_player, int cou
 		return count;
 	}
 
-	while(count < 499 && fgets(buffer, sizeof(buffer), file)){
+	while(count < TARGET_AUTO_TARGET_CAPACITY - 1 && fgets(buffer, sizeof(buffer), file)){
 		char* card_id_text = buffer;
 		if (*card_id_text != '.'){
 			break;
@@ -1386,7 +1432,7 @@ int target_available(int player, int card, target_definition_t *td)
   return count;
 }
 
-int choose_default_target(int player, int card, target_definition_t *td){
+int choose_default_target( int player, int card, target_definition_t *td){
 	card_instance_t *instance = get_card_instance(player, card);
 
 	// if there is only 1 target, then pick it
@@ -1407,9 +1453,11 @@ int choose_default_target(int player, int card, target_definition_t *td){
 		int i;
 		int original_allowed_controller = td->allowed_controller;
 		int original_preferred_controller = td->preferred_controller;
+		target_t original_target0 = instance->targets[0];
+		int original_number_of_targets = instance->number_of_targets;
 
-		for(i=0;i<500;i++){
-			if( auto_targets[i] >= 0 && auto_targets[i] == id ){
+		for(i=0; i<TARGET_AUTO_TARGET_CAPACITY && auto_targets[i] != -1; i++){
+			if( auto_targets[i] == id ){
 				td->allowed_controller = auto_targets_target[i];
 				td->preferred_controller = auto_targets_target[i];
 				break;
@@ -1423,22 +1471,23 @@ int choose_default_target(int player, int card, target_definition_t *td){
 				for(i=-1;i<active_count;i++){
 					instance->targets[0].player = p;
 					instance->targets[0].card = i;
-					instance->number_of_targets = 0;
+					instance->number_of_targets = 1;
 					if( would_validate_target(player, card, td, 0 )){
 						return 1;
 					}
 				}
 			}
 		}
-		else{
-			td->allowed_controller = original_allowed_controller;
-			td->preferred_controller = original_preferred_controller;
-		}
+
+		instance->targets[0] = original_target0;
+		instance->number_of_targets = original_number_of_targets;
+		td->allowed_controller = original_allowed_controller;
+		td->preferred_controller = original_preferred_controller;
 	}
 	return 0;
 }
 
-// Selects a target into (td->player, td->card)->targets[0].  Loads prompt from Tetx.res.  Sets spell_fizzled if cancelled.
+// Selects a target into (td->player, td->card)->targets[0].  Loads prompt from Text.res.  Sets spell_fizzled if cancelled.
 int pick_target(target_definition_t *td, const char *prompt ){
 	load_text(0, prompt);
 	int result = select_target(td->player, td->card, td, text_lines[0], NULL);
@@ -1470,8 +1519,11 @@ int new_pick_target(target_definition_t *td, const char *prompt, int ret_locatio
 	}
 	target_t picked = { -1, -1 };
 	int result = select_target(td->player, td->card, td, prompt, &picked);
-	if (result)
+	if (result){
 		instance->targets[ret_location] = picked;
+		if (instance->number_of_targets <= ret_location)
+			instance->number_of_targets = ret_location + 1;
+	}
 	if( ! result && (mode & 1) ){
 		spell_fizzled = 1;
 	}
@@ -1503,6 +1555,9 @@ int pick_up_to_n_targets_noload(target_definition_t* td, const char* prompt, int
   if (num <= 0)
 	return 0;
   num = MIN(num, CARD_INSTANCE_TARGET_CAPACITY);
+
+  if (!prompt)
+	prompt = "";
 
   card_instance_t* instance = get_card_instance(td->player, td->card);
   instance->number_of_targets = 0;
@@ -1690,7 +1745,7 @@ int select_target(int player, int card, target_definition_t *td, const char *pro
 			use_default_target_slot = 1;
 		}
 
-		if (choose_default_target(player, card, td)){
+		if (use_default_target_slot && instance->number_of_targets == 0 && choose_default_target(player, card, td)){
 			return 1;
 		}
 		if (!can_record_another_target(instance))
@@ -1900,14 +1955,16 @@ int autoselect_target( int player, int card, int i, int j, int k, int who_choose
 		return 0;
 	}
 
-
 	target_definition_t td;
 	default_target_definition(player, card, &td, TYPE_ANY);
+	td.who_chooses = who_chooses;
 	td.allowed_controller = allowed_controller;
 	td.preferred_controller = preferred_controller;
 	td.zone = zone;
 	td.required_type = required_type;
 	td.illegal_type = illegal_type;
+	td.required_abilities = required_abilities;
+	td.illegal_abilities = illegal_abilities;
 	td.required_color = required_color;
 	td.illegal_color = illegal_color;
 	td.extra = extra;
@@ -1954,6 +2011,14 @@ int autoselect_target( int player, int card, int i, int j, int k, int who_choose
 }
 
 int is_protected_from_me(int player, int card, int t_player, int t_card){
+
+	if (!target_player_is_valid(player)
+		|| !target_player_is_valid(t_player)
+		|| !target_card_slot_is_valid(card)
+		|| !target_card_slot_is_valid(t_card)
+		|| !in_play(t_player, t_card)){
+		return 0;
+	}
 
 	card_instance_t *instance = get_card_instance(player, card);
 	int clr = instance->card_color;

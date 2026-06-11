@@ -137,7 +137,7 @@ check_file "src/Makefile" "top-level-src" "required" "top-level source makefile"
 check_file "Program/src/Makefile" "program-src" "required" "Program source makefile"
 check_file "src/card_id.h" "top-level-src" "required" "top-level card id header required by src/Makefile-targets"
 check_file "Program/src/card_id.h" "program-src" "required" "Program source snapshot has generated card id header"
-check_same_file "src/card_id.h" "Program/src/card_id.h" "source-provenance" "top-level header is intentionally restored from the Program source snapshot"
+check_same_file "src/card_id.h" "Program/src/card_id.h" "source-provenance" "card id headers are intentionally mirrored across source snapshots"
 
 check_tool "make" "dry-run-build" "required"
 check_tool "perl" "tooling" "required"
